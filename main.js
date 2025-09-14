@@ -81,12 +81,18 @@ navSwitcher();
 const createCards = (data, status) => {
   const listContainer = $('.list');
   listContainer.innerHTML = '';
-  
-  data.filter(item => status === item.status).forEach(item => {
+
+  const filtered = data.filter(item => status === item.status);
+
+  if (filtered.length === 0) {
+    listContainer.innerHTML = `<li class="empty">No data available</li>`;
+    return;
+  }
+
+  filtered.forEach(item => {
     const listItem = document.createElement('li');
     listItem.classList.add('list-item');
     listItem.setAttribute("data-sn", item.sn);
-    
     listItem.innerHTML = cardLayout(item);
     listContainer.appendChild(listItem);
   });

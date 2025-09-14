@@ -44,6 +44,7 @@ header{
     background: #22c3bb;
 background: linear-gradient(0deg, rgba(34, 195, 187, 1) 0%, #008FFF 100%);
 text-align: center;
+background: #868686;
 
 border-radius: 0 0 30px 30px;
 color: #fff;
@@ -73,6 +74,7 @@ nav a{
 
 nav a.active{
     background: linear-gradient(90deg, rgba(34, 195, 187, 1) 0%, #008FFF 100%);
+    background: #000;
     color: #fff;
 }
 
@@ -200,4 +202,8 @@ button.add{
 
 .hidden{
     display: none;
+}
+.empty{
+    color: #999999;
+    text-align: center;
 }
