@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>App</title>
+  
+  <!-- HTML -->
+  
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+  <header>
+    <h2>Service Status</h2>
+    
+    <div class="search-bar">
+      <input type="text" name="search" id="search" placeholder="Search" />
+    </div>
+  </header>
+  <div class="search-out hidden">
+    
+  </div>
+  <main class="home">
+    
+
+  <nav>
+    <a class="active" href="#" data-text="pending">Pending</a>
+    <a href="#" data-text="progress">In Progress</a>
+    <a href="#" data-text="done">Done</a>
+  </nav>
+  
+  <section class="list-section">
+    <ul class="list">
+
+    </ul>
+  </section>
+    <button class="add"><a href="#add">+</a></button>
+    </main>
+    
+    <main class="form">
+      <h3>Add to List</h3>
+      <div class="input-group">
+        <input type="text" name="name" id="name" placeholder="Name" />
+        
+        <input type="number" name="number" id="number" placeholder="Number" />
+        <input type="text" name="model" id="model" placeholder="Model" />
+        <input type="text" name="complaint" id="complaint" placeholder="Complaints" />
+        
+        <select name="status" id="status">
+          <option value="pending">pending</option>
+          <option value="progress">In Progress</option>
+          <option value="done">Done</option>
+          
+        </select>
+      </div>
+      
+      <button class="add-data">Add to List</button>
+    </main>
+    
+    <audio id="newSound" src="./mixkit.wav" preload="auto"></audio>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
