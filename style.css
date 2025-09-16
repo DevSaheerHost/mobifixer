@@ -223,6 +223,12 @@ button.add{
 
 
 
+.call-btn{
+    background: #00A267;
+    color: #fff;
+    font-weight: 600;
+}
+
 /* Responsive*/
 
 
@@ -230,3 +236,4 @@ button.add{
   /* CSS rules for devices with a width between 769px and 1024px (e.g., landscape tablets) */
   
 }
+

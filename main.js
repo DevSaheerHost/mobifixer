@@ -266,7 +266,7 @@ search.addEventListener("input", () => {
     return;
   }
 
-  // Filter ചെയ്യുക
+  // Filter 
   const results = data.filter(item => 
     item.name.toLowerCase().includes(query) ||
     String(item.sn).includes(query) ||

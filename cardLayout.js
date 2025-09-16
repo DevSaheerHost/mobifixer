@@ -51,5 +51,8 @@ export const cardLayout=({name, status, number, model,  complaints, sn, date})=>
   <input type="radio" ${status==='return'? 'checked':''} name="status-${sn}" id="return-${sn}" />
   <label for="return-${sn}">Return</label>
 </span>
+
+<button class='call-btn' onclick = "window.location.href='tel:+91${number}'">
+  Call Now </button>
  </div>
 `
