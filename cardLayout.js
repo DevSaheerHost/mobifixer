@@ -1,4 +1,4 @@
-export const cardLayout=({name, status, number, model,  complaints, sn})=>`
+export const cardLayout=({name, status, number, model,  complaints, sn, date})=>`
   <div class="flex">
           
        
@@ -8,6 +8,7 @@ export const cardLayout=({name, status, number, model,  complaints, sn})=>`
         <p><b>Number</b></p>
         <p><b>Model</b></p>
         <p><b>Complaints</b></p>
+        <p><b>Date</b></p>
         </div>
 
 <div class="right">
@@ -16,6 +17,7 @@ export const cardLayout=({name, status, number, model,  complaints, sn})=>`
   <p>+91 ${number}</p>
   <p>${model}</p>
   <p>${complaints}</p>
+  <p>${date||''}</p>
 </div>
  </div>
  

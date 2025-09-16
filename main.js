@@ -171,6 +171,16 @@ $('.add-data').disabled=true
     });
 
     newSn = newSn.snapshot.val();
+    
+    const date = new Date();
+const options = { day: "2-digit", month: "short", year: "numeric" };
+const formatted = date
+  .toLocaleDateString("en-GB", options)
+  .toUpperCase()
+  .replace(/ /g, "-");
+
+console.log(formatted);  
+// Example: 17-SEP-2025
 
     const itemRef = ref(db, "service/" + newSn);
     await set(itemRef, {
@@ -179,7 +189,8 @@ $('.add-data').disabled=true
       number,
       complaints,
       model,
-      status
+      status,
+      date: formatted
     });
       $('.add-data').disabled=false
   $('.add-data').textContent='Add to List'
