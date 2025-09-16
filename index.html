@@ -28,12 +28,14 @@
   <main class="home">
     
 
-  <nav>
-    <a class="active" href="#" data-text="pending">Pending</a>
-    <a href="#" data-text="progress">In Progress</a>
-    <a href="#" data-text="done">Done</a>
-  </nav>
-  
+<nav>
+  <a class="active" href="#" data-text="pending">Pending</a>
+  <a href="#" data-text="spare">Spare</a>
+  <a href="#" data-text="progress">In Progress</a>
+  <a href="#" data-text="done">Done</a>
+  <a href="#" data-text="collected">Collected</a>
+  <a href="#" data-text="return">Return</a>
+</nav>
   <section class="list-section">
     <ul class="list">
 
@@ -42,7 +44,7 @@
     <button class="add"><a href="#add">+</a></button>
     </main>
     
-    <main class="form">
+    <main class="form hidden">
       <h3>Add to List</h3>
       <div class="input-group">
         <input type="text" name="name" id="name" placeholder="Name" />
@@ -63,6 +65,7 @@
     </main>
     
     <audio id="newSound" src="./mixkit.wav" preload="auto"></audio>
+    <audio id="update" src="./update.mp3" preload="auto"></audio>
 
   <script type="module" src="./main.js"></script>
 </body>

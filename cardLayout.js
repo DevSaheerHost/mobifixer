@@ -1,4 +1,4 @@
-export const cardLayout=({name, status, number, complaints, sn})=>`
+export const cardLayout=({name, status, number, model,  complaints, sn})=>`
   <div class="flex">
           
        
@@ -6,6 +6,7 @@ export const cardLayout=({name, status, number, complaints, sn})=>`
                   <p><b>Name</b></p>
         <p><b>SN</b></p>
         <p><b>Number</b></p>
+        <p><b>Model</b></p>
         <p><b>Complaints</b></p>
         </div>
 
@@ -13,6 +14,7 @@ export const cardLayout=({name, status, number, complaints, sn})=>`
   <p>${name}</p>
   <p>${sn}</p>
   <p>+91 ${number}</p>
+  <p>${model}</p>
   <p>${complaints}</p>
 </div>
  </div>
@@ -24,13 +26,28 @@ export const cardLayout=({name, status, number, complaints, sn})=>`
 </span>
 
 <span>
-     <input type="radio" ${status==='in progress'? 'checked':''} name="status-${sn}" id="progress-${sn}" />
+     <input type="radio" ${status==='spare'? 'checked':''} name="status-${sn}" id="spare-${sn}" />
+   <label for="spare-${sn}">Wait for Spare</label>
+</span>
+
+<span>
+     <input type="radio" ${status==='progress'? 'checked':''} name="status-${sn}" id="progress-${sn}" />
    <label for="progress-${sn}">In Progress</label>
 </span>
 
 <span>
   <input type="radio" ${status==='done'? 'checked':''} name="status-${sn}" id="done-${sn}" />
   <label for="done-${sn}">Done</label>
+</span>
+
+<span>
+  <input type="radio" ${status==='collected'? 'checked':''} name="status-${sn}" id="collected-${sn}" />
+  <label for="collected-${sn}">Collected</label>
+</span>
+
+<span>
+  <input type="radio" ${status==='return'? 'checked':''} name="status-${sn}" id="return-${sn}" />
+  <label for="return-${sn}">Return</label>
 </span>
  </div>
 `

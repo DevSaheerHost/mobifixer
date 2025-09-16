@@ -55,6 +55,11 @@ onChildAdded(itemsRef, (snapshot) => {
 // When existing data is updated
 onChildChanged(itemsRef, (snapshot) => {
   const updated = snapshot.val();
+  const audio = document.getElementById("update");
+  if (audio) {
+    audio.currentTime = 0;
+    audio.play().catch(err => console.log("Audio play blocked:", err));
+  }
   
   // replace old item in array
   data = data.map(item => item.sn === updated.sn ? updated : item);
@@ -154,7 +159,8 @@ $('.add-data').onclick = async () => {
     alert("All fields are required!");
     return;
   }
-
+  $('.add-data').textContent='Loading...'
+$('.add-data').disabled=true
   try {
     const lastSnRef = ref(db, "lastSn");
 
@@ -175,7 +181,8 @@ $('.add-data').onclick = async () => {
       model,
       status
     });
-
+      $('.add-data').disabled=false
+  $('.add-data').textContent='Add to List'
     console.log("✅ Data added successfully, SN:", newSn);
 
     // clear form
@@ -183,11 +190,13 @@ $('.add-data').onclick = async () => {
     $('#number').value = '';
     $('#complaint').value = '';
     $('#model').value = '';
-    $('#status').value = '';
+    //$('#status').value = '';
     
     location.hash = "";
 
   } catch (err) {
+    $('.add-data').textContent=err.message
+    $('.add-data').style.background='red'
     console.error("❌ Error adding data:", err);
   }
 };
@@ -228,4 +237,47 @@ document.addEventListener("click", (e) => {
   if (!search.contains(e.target) && !searchOut.contains(e.target)) {
     searchOut.classList.add("hidden");
   }
+});
+
+
+
+
+
+
+// Search function
+search.addEventListener("input", () => {
+  const query = search.value.trim().toLowerCase();
+  searchOut.innerHTML = ""; // reset suggestions
+  searchOut.classList.remove("hidden");
+
+  if (!query) {
+    searchOut.classList.add("hidden");
+    return;
+  }
+
+  // Filter ചെയ്യുക
+  const results = data.filter(item => 
+    item.name.toLowerCase().includes(query) ||
+    String(item.sn).includes(query) ||
+    item.model.toLowerCase().includes(query) ||
+    item.number.includes(query)
+  );
+
+  if (results.length === 0) {
+    searchOut.innerHTML = `<li class="empty">No matches found</li>`;
+    return;
+  }
+
+  // suggestions render
+  results.forEach(item => {
+    const li = document.createElement("li");
+    li.textContent = `${item.sn} - ${item.name} (${item.model}) ~${item.status}`;
+    li.onclick = () => {
+      // click -> direct filter
+      search.value = item.name;
+      filterByStatus(item.status); 
+      searchOut.classList.add("hidden");
+    };
+    searchOut.appendChild(li);
+  });
 });
