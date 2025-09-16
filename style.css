@@ -272,7 +272,10 @@ button.add{
   font-size: 0.7rem;
   margin-left: 4px;
 }
-
+.badge {
+  pointer-events: none;
+  user-select: none;
+}
 
 /* Responsive*/
 
