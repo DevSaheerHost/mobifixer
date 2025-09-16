@@ -33,18 +33,39 @@ let data = [];
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 let unseenCount = 0;
+let unseen = {
+  pending: 0,
+  spare: 0,
+  progress: 0,
+  done: 0,
+  collected: 0,
+  return: 0
+};
 // When new data is added
 onChildAdded(itemsRef, (snapshot) => {
   const item = snapshot.val();
-
-  // check if already exists
-  if (!data.find(d => d.sn === item.sn)) {
+  
+  // Duplicate check → push or replace
+  const existingIndex = data.findIndex(d => d.sn === item.sn);
+  if (existingIndex === -1) {
     data.push(item);
+  } else {
+    data[existingIndex] = item; // update existing
   }
-
-  const activeStatus = document.querySelector("nav a.active")?.textContent.toLowerCase() || "pending";
-  filterByStatus(activeStatus);
-
+  
+  // ഇപ്പോഴത്തെ active status tab
+  const activeStatus = document.querySelector("nav a.active")?.dataset.text.toLowerCase() || "pending";
+  
+  // active status ആയെങ്കിൽ → refresh list
+  if (item.status === activeStatus) {
+    filterByStatus(activeStatus);
+  } else {
+    // unseen counter കൂട്ടുക
+    unseen[item.status] = (unseen[item.status] || 0) + 1;
+    showUnseenCount();
+  }
+  
+  // sound play
   const audio = document.getElementById("newSound");
   if (audio) {
     audio.currentTime = 0;
@@ -52,20 +73,56 @@ onChildAdded(itemsRef, (snapshot) => {
   }
 });
 
+const showUnseenCount = () => {
+  Object.keys(unseen).forEach(status => {
+    const badge = document.getElementById(`badge-${status}`);
+    if (!badge) return;
+    if (unseen[status] > 0) {
+      badge.textContent = unseen[status];
+      badge.classList.remove("hidden");
+    } else {
+      badge.classList.add("hidden");
+    }
+  });
+};
+
 // When existing data is updated
 onChildChanged(itemsRef, (snapshot) => {
   const updated = snapshot.val();
+
+  // find old item 
+  const oldIndex = data.findIndex(item => item.sn === updated.sn);
+  let oldStatus = null;
+
+  if (oldIndex !== -1) {
+    oldStatus = data[oldIndex].status; // old status
+    data[oldIndex] = updated;          //  replace update
+  } else {
+    data.push(updated); // fallback safety
+  }
+
+  // 🔊 sound
   const audio = document.getElementById("update");
   if (audio) {
     audio.currentTime = 0;
     audio.play().catch(err => console.log("Audio play blocked:", err));
   }
-  
-  // replace old item in array
-  data = data.map(item => item.sn === updated.sn ? updated : item);
-  
-  // current active tab കണ്ടെത്തുക
-  const activeStatus = document.querySelector("nav a.active")?.textContent.toLowerCase() || "done";
+
+  //  unseen badge update
+  if (oldStatus && oldStatus !== updated.status) {
+    // minus old status count 
+    if (unseen[oldStatus] > 0) unseen[oldStatus]--;
+
+    // new status count + (except active tab)
+    const activeStatus = document.querySelector("nav a.active")?.dataset.text.toLowerCase() || "pending";
+    if (updated.status !== activeStatus) {
+      unseen[updated.status] = (unseen[updated.status] || 0) + 1;
+    }
+    showUnseenCount();
+  }
+
+  // ✅ current active tab refresh
+  const activeStatus = document.querySelector("nav a.active")?.dataset.text.toLowerCase() || "pending";
   filterByStatus(activeStatus);
 });
 
@@ -76,7 +133,13 @@ const navSwitcher = () => {
     n.onclick = e => {
       navs.forEach(n => n.classList.remove('active'));
       e.target.classList.add('active');
-      filterByStatus(e.target.dataset.text.toLowerCase());
+
+      const status = e.target.dataset.text.toLowerCase();
+      filterByStatus(status);
+
+      // reset unseen counter for this status
+      unseen[status] = 0;
+      showUnseenCount();
     };
   });
 };
