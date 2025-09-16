@@ -16,13 +16,23 @@
 
 <body>
   <header>
-    <h2>MobiFixer</h2>
+<div class="shop-selector-wrap">
+<span class="active" onclick="window.history.back()">
+  <h2>MobiFixer</h2>
+</span>
+
+<span onclick="window.location.href='#shop-work'">
+  <h2>MKLM</h2>
+</span>
+</div>
     
     <div class="search-bar">
       <input type="text" name="search" id="search" placeholder="Search" />
     </div>
+    
+
   </header>
-  <div class="search-out hidden">
+      <div class="search-out hidden">
     
   </div>
   <main class="home">
@@ -52,6 +62,7 @@
         <input type="number" name="number" id="number" placeholder="Number" />
         <input type="text" name="model" id="model" placeholder="Model" />
         <input type="text" name="complaint" id="complaint" placeholder="Complaints" />
+        <input type="number" name="lock" id="lock" placeholder="Lock"/>
         
         <select name="status" id="status">
           <option value="pending">pending</option>
@@ -62,6 +73,14 @@
       </div>
       
       <button class="add-data">Add to List</button>
+    </main>
+    
+    <main class="shop-work">
+      mzk
+    </main>
+    
+    <main class="not-found hidden">
+      <h3>Page not found || 404</h3>
     </main>
     
     <audio id="newSound" src="./mixkit.wav" preload="auto"></audio>

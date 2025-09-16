@@ -48,6 +48,7 @@ background: #868686;
 
 border-radius: 0 0 30px 30px;
 color: #fff;
+
 }
 
 header .search-bar{
@@ -202,8 +203,11 @@ button.add{
 .search-out{
     width: 100%;
     background: #E9E9E9;
-    height: 100px;
+    height: auto;
     padding: 2rem;
+    
+    
+
 }
 .search-out li{
     margin-bottom: 1rem;
@@ -229,7 +233,36 @@ button.add{
     font-weight: 600;
 }
 
+
+
+.shop-selector-wrap{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.shop-selector-wrap span{
+    background: #656565;
+    color: #fff;
+    padding: .5rem 1rem;
+    border-radius: 100px;
+}
+
+.shop-selector-wrap .active{
+    background: black;
+}
+
+.not-found {
+    text-align: center;
+    padding-top: 2rem;
+}
+
+
+
 /* Responsive*/
+
+
 
 
 @media screen and (min-width: 769px) and (max-width: 1024px) {

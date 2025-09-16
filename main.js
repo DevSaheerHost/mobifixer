@@ -32,7 +32,7 @@ let data = [];
 // DOM helpers
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
-
+let unseenCount = 0;
 // When new data is added
 onChildAdded(itemsRef, (snapshot) => {
   const item = snapshot.val();
@@ -116,29 +116,56 @@ const updateData = (name, number, complaints, status, sn) => {
 
 
 
-
-
-const home = $(".home");
-const form = $(".form");
-
-// hash change handler
-const handleHashChange = () => {
-  if (location.hash === "#add") {
-    home.style.display = "none";
-    form.style.display = "block";
-    $('header').classList.add('slide-up')
-  } else {
-    home.style.display = "block";
-    form.style.display = "none";
-    $('header').classList.remove('slide-up')
-  }
+const routes = {
+  "": ".home",     // default (no hash)
+  "#add": ".form",
+  "#shop-work": ".shop-work"
 };
 
-// first load check
-handleHashChange();
+const router = () => {
+  //  hide all
+  Object.values(routes).forEach(selector => {
+    $(selector).style.display = "none";
+  });
 
-// listen to hash changes (back button / forward button support)
-window.addEventListener("hashchange", handleHashChange);
+  // current hash 
+  const hash = location.hash || "";
+
+  // match ?. show 
+  if (routes[hash]) {
+    $(routes[hash]).style.display = "block";
+  } else {
+    $(".not-found").style.display = "block"; // 404 view
+  }
+
+  // header animation handle
+  $('header').classList.toggle('slide-up', hash === "#add");
+};
+
+window.addEventListener("DOMContentLoaded", router);
+window.addEventListener("hashchange", router);
+
+// const home = $(".home");
+// const form = $(".form");
+
+// // hash change handler
+// const handleHashChange = () => {
+//   if (location.hash === "#add") {
+//     home.style.display = "none";
+//     form.style.display = "block";
+//     $('header').classList.add('slide-up')
+//   } else {
+//     home.style.display = "block";
+//     form.style.display = "none";
+//     $('header').classList.remove('slide-up')
+//   }
+// };
+
+// // first load check
+// handleHashChange();
+
+// // listen to hash changes (back button / forward button support)
+// window.addEventListener("hashchange", handleHashChange);
 
 
 
@@ -153,7 +180,8 @@ $('.add-data').onclick = async () => {
   const number = $('#number').value.trim();
   const complaints = $('#complaint').value.trim();
   const model = $('#model').value.trim();
-  const status = $('#status').value.trim();
+  const lock = $('#lock').value?.trim();
+  const status = $('#status').value.trim()||'None';
   
   if (!name || !number || !complaints || !model || !status) {
     alert("All fields are required!");
@@ -189,6 +217,7 @@ console.log(formatted);
       number,
       complaints,
       model,
+      lock,
       status,
       date: formatted
     });
@@ -201,6 +230,7 @@ console.log(formatted);
     $('#number').value = '';
     $('#complaint').value = '';
     $('#model').value = '';
+    $('#lock').value = '';
     //$('#status').value = '';
     
     location.hash = "";
