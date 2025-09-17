@@ -258,7 +258,7 @@ button.add{
     background: black;
 }
 
-.not-found {
+.not-found , .shop-work{
     text-align: center;
     padding-top: 2rem;
 }

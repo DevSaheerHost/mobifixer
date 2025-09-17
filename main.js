@@ -145,6 +145,16 @@ const navSwitcher = () => {
 };
 navSwitcher();
 
+const shopSwitcher=()=>{
+  const navs = $$('.shop-selector-wrap span');
+  navs.forEach(n => {
+    n.onclick = e => {
+      navs.forEach(n => n.classList.remove('active'));
+      e.target.parentElement.classList.add('active');
+    };
+  });
+}
+shopSwitcher()
 // Create cards
 const createCards = (data, status) => {
   const listContainer = $('.list');
@@ -385,3 +395,24 @@ search.addEventListener("input", () => {
     searchOut.appendChild(li);
   });
 });
+
+
+
+
+
+// Permission ചോദിക്കണം
+if (Notification.permission === "granted") {
+  new Notification("Hello 👋", {
+    body: "This is a test notification!",
+    icon: "https://devsaheerhost.github.io/-/avatar-no-bg.png"
+  });
+} else if (Notification.permission !== "denied") {
+  Notification.requestPermission().then(permission => {
+    if (permission === "granted") {
+      new Notification("Permission Granted ✅", {
+        body: "Now you will get notifications.",
+        icon: "https://devsaheerhost.github.io/-/avatar-no-bg.png"
+      });
+    }
+  });
+}
