@@ -285,5 +285,116 @@ button.add{
 @media screen and (min-width: 769px) and (max-width: 1024px) {
   /* CSS rules for devices with a width between 769px and 1024px (e.g., landscape tablets) */
   
+  .form .input-group{
+      width: 50%;
+  }
+  
 }
 
+
+
+notice {
+position: fixed;
+top: 3rem;
+background: #fff;
+border-radius: 10px;
+right: 50%;
+transform: translateX(50%) translateY(-100px);
+padding: .5rem 1rem;
+display: flex;
+align-items: center;
+text-align: center;
+gap: 1rem;
+color: #666666;
+max-width: 0;
+white-space: nowrap;
+overflow: hidden;
+animation: notification 3s cubic-bezier(0.4, 0, 1, 0.5) forwards;
+box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+border-left: 5px solid #f39c12;
+max-height: 3.5rem;
+
+}
+
+
+
+@keyframes notification {
+0% {
+border-radius: 100px;
+transform: translateX(50%) translateY(-100px) scale(0.95);
+max-width: 0;
+opacity: 0;
+color: #fff;
+white-space: nowrap;
+}
+
+15% {
+transform: translateX(50%) translateY(0) scale(1);
+max-width: 0;
+opacity: 1;
+color: #fff;
+border-radius: 10px;
+white-space: nowrap;
+}
+
+25% {
+width: max-content;
+max-width: 80vw;
+opacity: 1;
+color: #666666;
+border-radius: 10px;
+white-space: wrap;
+}
+
+70% {
+/* stay fully visible longer */
+transform: translateX(50%) translateY(0) scale(1);
+width: max-content;
+max-width: 80vw;
+opacity: 1;
+color: #666666;
+border-radius: 10px;
+white-space: wrap;
+}
+
+85% {
+max-width: 0;
+opacity: 0.5;
+color: rgba(0,0,0,0);
+border-radius: 100px;
+transform: translateX(50%) translateY(0) scale(1);
+white-space: nowrap;
+}
+
+100% {
+transform: translateX(50%) translateY(-100px) scale(0.95);
+max-width: 0;
+opacity: 0;
+color: rgba(0,0,0,0);
+border-radius: 100px;
+white-space: nowrap;
+}
+}
+
+
+
+
+/* error: this not working */
+notice.title{
+    font-weight: bold;
+}
+
+.notice.warn { border-left: 5px solid #f39c12; }
+.notice.success { border-left: 5px solid #27ae60; }
+.notice.info { border-left: 5px solid #3498db; }
+.notice.error { border-left: 5px solid #e74c3c; }
+
+
+.sn-flex{
+    display: flex;
+    gap: 2rem;
+}
+#new_sn{
+    color: #e74c3c;
+    font-size: 1.4rem;
+}

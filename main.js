@@ -29,6 +29,7 @@ const itemsRef = ref(db, "service");
 // Global data array
 let data = [];
 
+let notification;
 // DOM helpers
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
@@ -42,6 +43,31 @@ let unseen = {
   return: 0
 };
 // When new data is added
+
+console.time("fetchTime"); // start timer
+
+        // for done status (if customer not collected their mobile ) for for notify the problem that few customers is not collected their mobile
+let notified = false;
+
+const checkDoneDevices=(data)=>{
+    // Notify if multiple customers not collected their phones
+  const filtered = data.filter(i => i.status === 'done');
+  
+  if (filtered.length > 3 && !notified) {
+    notified = true;
+    showNotice({
+      title: 'WARN',
+      body: `${filtered.length} or More Customers have not collected their phones`,
+      type: 'warn',
+      delay: 8
+    });
+    
+    console.log(' notification. Done count:', filtered.length);
+  } else {
+    console.log('No notification triggered. Done count:', filtered.length);
+  }
+}
+
 onChildAdded(itemsRef, (snapshot) => {
   const item = snapshot.val();
   
@@ -50,27 +76,35 @@ onChildAdded(itemsRef, (snapshot) => {
   if (existingIndex === -1) {
     data.push(item);
   } else {
-    data[existingIndex] = item; // update existing
+    data[existingIndex] = item;
   }
   
-  // ഇപ്പോഴത്തെ active status tab
+  // current active status tab
   const activeStatus = document.querySelector("nav a.active")?.dataset.text.toLowerCase() || "pending";
   
-  // active status ആയെങ്കിൽ → refresh list
+  // refresh list if active
   if (item.status === activeStatus) {
     filterByStatus(activeStatus);
   } else {
-    // unseen counter കൂട്ടുക
+    // unseen counter +
     unseen[item.status] = (unseen[item.status] || 0) + 1;
     showUnseenCount();
   }
   
-  // sound play
+  // play sound
   const audio = document.getElementById("newSound");
   if (audio) {
     audio.currentTime = 0;
     audio.play().catch(err => console.log("Audio play blocked:", err));
   }
+  
+  // update last SN
+  $('#new_sn').textContent = (data[data.length - 1].sn) + 1;
+  console.timeEnd("fetchTime");
+  
+  // ----------------------
+  // Notify if multiple customers not collected their phones
+  checkDoneDevices(data)
 });
 
 const showUnseenCount = () => {
@@ -150,13 +184,16 @@ const shopSwitcher=()=>{
   navs.forEach(n => {
     n.onclick = e => {
       navs.forEach(n => n.classList.remove('active'));
-      e.target.parentElement.classList.add('active');
+      e.target.closest("span").classList.add("active");
     };
   });
 }
 shopSwitcher()
-// Create cards
+
+
 const createCards = (data, status) => {
+
+  
   const listContainer = $('.list');
   listContainer.innerHTML = '';
 
@@ -173,8 +210,13 @@ const createCards = (data, status) => {
     listItem.setAttribute("data-sn", item.sn);
     listItem.innerHTML = cardLayout(item);
     listContainer.appendChild(listItem);
+
   });
+  
+  //$('#new_sn').textContent=;
+  
 };
+  
 
 // Filter cards by status
 const filterByStatus = (status) => {
@@ -273,14 +315,14 @@ $('.add-data').disabled=true
 
     newSn = newSn.snapshot.val();
     
-    const date = new Date();
+  const date = new Date();
 const options = { day: "2-digit", month: "short", year: "numeric" };
 const formatted = date
   .toLocaleDateString("en-GB", options)
   .toUpperCase()
   .replace(/ /g, "-");
 
-console.log(formatted);  
+console.log(formatted);
 // Example: 17-SEP-2025
 
     const itemRef = ref(db, "service/" + newSn);
@@ -312,6 +354,7 @@ console.log(formatted);
     $('.add-data').textContent=err.message
     $('.add-data').style.background='red'
     console.error("❌ Error adding data:", err);
+    showNotice({title:'ERROR', body:`Data didn't Added, Please Trying again later. REASON: ${err.message}`, type:'error', delay: 6})
   }
 };
 
@@ -328,9 +371,13 @@ document.addEventListener("change", (e) => {
     console.log("🔄 Updating SN:", sn, "→", newStatus);
 
     const itemRef = ref(db, `service/${sn}`);
+    
     update(itemRef, { status: newStatus })
       .then(() => console.log("✅ Status updated"))
-      .catch(err => console.error("❌ Error updating status:", err));
+      .catch(err => {
+        console.error("❌ Error updating status:", err)
+        showNotice({title:'ERROR', body:`Data didn't updated!, Please Trying again later. REASON: ${err.message}`, type:'error', delay: 6})
+      });
   }
 });
 
@@ -399,20 +446,108 @@ search.addEventListener("input", () => {
 
 
 
-
-// Permission ചോദിക്കണം
-if (Notification.permission === "granted") {
-  new Notification("Hello 👋", {
-    body: "This is a test notification!",
-    icon: "https://devsaheerhost.github.io/-/avatar-no-bg.png"
-  });
-} else if (Notification.permission !== "denied") {
-  Notification.requestPermission().then(permission => {
-    if (permission === "granted") {
-      new Notification("Permission Granted ✅", {
-        body: "Now you will get notifications.",
-        icon: "https://devsaheerhost.github.io/-/avatar-no-bg.png"
+// not calling yet. (this is the notification function )
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js").then(reg => {
+    console.log("Service Worker registered:", reg);
+    
+    notification =(msg) => {
+      Notification.requestPermission().then(permission => {
+        if (permission === "granted") {
+          reg.showNotification("MOBIFIXER", {
+            body: "New Service added",
+            icon: "https://cdn-icons-png.flaticon.com/512/1827/1827349.png",
+            actions: [
+              { action: "view", title: "View" },
+              { action: "dismiss", title: "Cancel" }
+            ]
+          });
+        }
       });
-    }
+    };
   });
 }
+
+
+
+const noticeQueue = [];
+let isShowing = false;
+
+function showNotice({ title, body, type = "info" , delay}) {
+  noticeQueue.push({ title, body, type , delay});
+  if (!isShowing) {
+    processQueue();
+  }
+}
+
+function processQueue() {
+  if (noticeQueue.length === 0) {
+    isShowing = false;
+    return;
+  }
+
+  isShowing = true;
+  const { title, body, type, delay } = noticeQueue.shift();
+console.log(delay)
+// notice element 
+
+  const newNotice = document.createElement("notice");
+  newNotice.classList.add("notice", type);
+  newNotice.style.animation = `notification ${delay}s cubic-bezier(2,3,3,2) forwards`;
+
+// notice title element
+  const titleElem = document.createElement("p");
+  titleElem.classList.add("title");
+  titleElem.textContent = title;
+
+// notice body element
+  const bodyElem = document.createElement("p");
+  bodyElem.classList.add("body");
+  bodyElem.textContent = body;
+  
+  // close btn for notice
+  const closeBtn = document.createElement('span');
+  closeBtn.textContent='×';
+  closeBtn.style.cssText=`
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #000;
+  font-size: 1.3rem;
+  `;
+  
+  // closeBtn function 
+  closeBtn.onclick=()=>{
+    newNotice.style.animation='notification 2s ease-in-out reverse forwards'//check rev forv first
+  }
+
+// add to UI
+  newNotice.appendChild(titleElem);
+  newNotice.appendChild(bodyElem);
+  newNotice.appendChild(closeBtn);
+  document.body.appendChild(newNotice);
+
+// automatic remove the created notice for clean UI.
+  newNotice.addEventListener("animationend", () => {
+    newNotice.remove();
+    processQueue(); // show next
+  });
+}
+
+// // Example usage
+// setTimeout(() => {
+//   showNotice({ title: "WARN", body: "Data is deleted", type: "warn" });
+// }, 1000);
+
+// setTimeout(() => {
+//   showNotice({ title: "SUCCESS", body: "Profile updated", type: "success" });
+// }, 4000);
+
+// setTimeout(() => {
+//   showNotice({ title: "INFO", body: "New message received", type: "info" });
+// }, 7000);
+
+
+
+document.onerror=()=>showNotice({title:'ERROR', body: `Somthing went wrong. ${e.message}`, type: 'error'});
