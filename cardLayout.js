@@ -1,10 +1,10 @@
 export const cardLayout=({name, status, number, model, lock, complaints, sn, date})=>`
+
   <div class="flex">
           
        
         <div class="left">
-        <p><b>Name</b></p>
-        <p><b>SN</b></p>
+      
         <p><b>Number</b></p>
         <p><b>Model</b></p>
         <p><b>Complaints</b></p>
@@ -13,16 +13,19 @@ export const cardLayout=({name, status, number, model, lock, complaints, sn, dat
         </div>
 
 <div class="right">
-  <p>${name}</p>
-  <p>${sn}</p>
+  
   <p>+91 ${number}</p>
   <p>${model}</p>
   <p>${complaints}</p>
-  <p>${lock||''}</p>
+  <p>${lock||'<i>none</i>'}</p>
   <p>${date||''}</p>
 </div>
  </div>
  
+ <div class='note-input-wrap'>
+  <textarea id='note-input-${sn}' class='add-note-input' placeholder='Add note+'></textarea>
+  <button id='note-btn-${sn}' class='add-note-btn'>Add</button>
+</div>
  <div class="status">
 <span>
      <input type="radio" ${status==='pending'? 'checked':''} name="status-${sn}" id="pending-${sn}" />

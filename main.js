@@ -44,6 +44,14 @@ let unseen = {
 };
 // When new data is added
 
+const setAutoHeightTextArea=  ()=>{
+  document.querySelectorAll(".add-note-input").forEach(area => {
+  area.addEventListener("input", () => {
+    area.style.height = "auto";
+    area.style.height = area.scrollHeight + "px";
+  });
+});
+}
 console.time("fetchTime"); // start timer
 
         // for done status (if customer not collected their mobile ) for for notify the problem that few customers is not collected their mobile
@@ -105,6 +113,8 @@ onChildAdded(itemsRef, (snapshot) => {
   // ----------------------
   // Notify if multiple customers not collected their phones
   checkDoneDevices(data)
+  
+  setAutoHeightTextArea()
 });
 
 const showUnseenCount = () => {
@@ -112,7 +122,7 @@ const showUnseenCount = () => {
     const badge = document.getElementById(`badge-${status}`);
     if (!badge) return;
     if (unseen[status] > 0) {
-      badge.textContent = unseen[status];
+      badge.textContent = unseen[status] > 99?'99+':unseen[status];
       badge.classList.remove("hidden");
     } else {
       badge.classList.add("hidden");
@@ -158,6 +168,7 @@ onChildChanged(itemsRef, (snapshot) => {
   // ✅ current active tab refresh
   const activeStatus = document.querySelector("nav a.active")?.dataset.text.toLowerCase() || "pending";
   filterByStatus(activeStatus);
+  setAutoHeightTextArea()
 });
 
 // Navigation switcher
@@ -174,6 +185,7 @@ const navSwitcher = () => {
       // reset unseen counter for this status
       unseen[status] = 0;
       showUnseenCount();
+      setAutoHeightTextArea()
     };
   });
 };
@@ -206,9 +218,12 @@ const createCards = (data, status) => {
 
   filtered.forEach(item => {
     const listItem = document.createElement('li');
+    const nav = document.createElement('nav')
     listItem.classList.add('list-item');
     listItem.setAttribute("data-sn", item.sn);
-    listItem.innerHTML = cardLayout(item);
+    nav.innerHTML=`<h3>${item.name}</h4> <h3 class='sn'>${item.sn}</h4> `;
+    listItem.appendChild(nav)
+    listItem.innerHTML += cardLayout(item);
     listContainer.appendChild(listItem);
 
   });
@@ -255,6 +270,7 @@ const router = () => {
 
   // header animation handle
   $('header').classList.toggle('slide-up', hash === "#add");
+  if(hash ==='#add') $('.form input#name').focus()
 };
 
 window.addEventListener("DOMContentLoaded", router);
@@ -339,6 +355,7 @@ console.log(formatted);
       $('.add-data').disabled=false
   $('.add-data').textContent='Add to List'
     console.log("✅ Data added successfully, SN:", newSn);
+    showNotice({title: newSn, body:'Data added successfully' , type: 'success', delay: 30})
 
     // clear form
     $('#name').value = '';
@@ -373,13 +390,27 @@ document.addEventListener("change", (e) => {
     const itemRef = ref(db, `service/${sn}`);
     
     update(itemRef, { status: newStatus })
-      .then(() => console.log("✅ Status updated"))
+      .then(() => showNotice({title: sn, body:`Status Updated →, ${newStatus.toUpperCase()}` , type: 'info', delay: 5000}))
       .catch(err => {
         console.error("❌ Error updating status:", err)
         showNotice({title:'ERROR', body:`Data didn't updated!, Please Trying again later. REASON: ${err.message}`, type:'error', delay: 6})
       });
   }
+  
 });
+
+// note update listener
+document.oninput=(e)=>{
+  if (e.target.matches("textarea")) {
+    alert('yes')
+  }
+}
+
+document.onclick=e=>{
+  if (e.target.classList.contains('add-note-btn')) {
+    showNotice({title:'DEBUG', body:"You can't add Note at the moment!", type:'info', delay: 0})
+  }
+}
 
 
 
@@ -474,10 +505,11 @@ const noticeQueue = [];
 let isShowing = false;
 
 function showNotice({ title, body, type = "info" , delay}) {
+  console.log('New notice Function called')
   noticeQueue.push({ title, body, type , delay});
   if (!isShowing) {
     processQueue();
-  }
+  } else console.log('New notice already visible, so not created')
 }
 
 function processQueue() {
@@ -486,15 +518,88 @@ function processQueue() {
     return;
   }
 
-  isShowing = true;
+  isShowing = false;
   const { title, body, type, delay } = noticeQueue.shift();
 console.log(delay)
 // notice element 
 
-  const newNotice = document.createElement("notice");
+  const newNotice = document.createElement("div");
   newNotice.classList.add("notice", type);
   newNotice.style.animation = `notification ${delay}s cubic-bezier(2,3,3,2) forwards`;
+  
+  console.log('New notice was created')
+  // newNorice swipe position events
+  
+  let noticeStartX = 0;
+  let noticeCurrentX = 0;
+  let noticeDragging = false;
+  
+  newNotice.ontouchstart = e => {
+  noticeStartX = e.touches[0].clientX;
+  noticeDragging = true;
 
+
+
+  // Stop keyframe from interfering
+  newNotice.style.animation='none'
+  newNotice.style.animationPlayState = 'paused';
+
+  // remove transition while dragging
+  newNotice.style.transition = 'none';
+
+  // optimize performance
+  newNotice.style.willChange = 'transform, opacity';
+  
+newNotice.style.transform = 'translateX(50%) translateY(0)';
+newNotice.style.whiteSpace = 'wrap';
+newNotice.style.maxHeight = '4rem';
+newNotice.style.maxWidth = '80vw';
+newNotice.style.width = 'max-content';
+
+};
+
+
+  // notice touch move
+  
+  newNotice.ontouchmove = e => {
+  if (!noticeDragging) return;
+  noticeCurrentX = e.touches[0].clientX - noticeStartX;
+
+  // use calc if your CSS uses right:50% + translateX(50%)
+  newNotice.style.transform = `translateX(calc(50% + ${noticeCurrentX}px)) translateY(0)`;
+  newNotice.style.opacity = 1 - Math.min(Math.abs(noticeCurrentX) / 150, 1);
+};
+  
+  // notice touch end
+  
+  
+  newNotice.ontouchend = () => {
+  noticeDragging = false;
+isShowing = false;
+
+  // add smooth transition for reset or swipe out
+  newNotice.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+
+  if (Math.abs(noticeCurrentX) > 100) {
+    // dismiss
+    newNotice.style.transform = `translateX(${noticeCurrentX > 0 ? '500px' : '-500px'}) translateY(0)`;
+    newNotice.remove()
+    console.log('done removed of new notice')
+    
+  } else {
+    // reset back to original
+    newNotice.style.transform = 'translateX(50%) translateY(0)';
+    newNotice.style.opacity = '1';
+  }
+
+  noticeCurrentX = 0;
+  newNotice.style.willChange = '';
+};
+  
+  //setTimeout(()=>{newNotice.classList.add('dismiss')
+  //}, 3000)
+  
+  
 // notice title element
   const titleElem = document.createElement("p");
   titleElem.classList.add("title");
@@ -517,20 +622,25 @@ console.log(delay)
   font-size: 1.3rem;
   `;
   
-  // closeBtn function 
-  closeBtn.onclick=()=>{
-    newNotice.style.animation='notification 2s ease-in-out reverse forwards'//check rev forv first
-  }
+
 
 // add to UI
   newNotice.appendChild(titleElem);
   newNotice.appendChild(bodyElem);
-  newNotice.appendChild(closeBtn);
+  // newNotice.appendChild(closeBtn);
   document.body.appendChild(newNotice);
+  
+    // closeBtn function 
+  closeBtn.onclick=()=>{
+    alert('c')
+    console.log('removed?', newNotice)
+    newNotice.style.animation='notification 2s ease-in-out reverse forwards'//check rev forv first
+    
+  }
 
 // automatic remove the created notice for clean UI.
   newNotice.addEventListener("animationend", () => {
-    newNotice.remove();
+    newNotice?.remove();
     processQueue(); // show next
   });
 }
@@ -550,4 +660,26 @@ console.log(delay)
 
 
 
-document.onerror=()=>showNotice({title:'ERROR', body: `Somthing went wrong. ${e.message}`, type: 'error'});
+document.onerror=()=>showNotice({title:'ERROR', body: `Somthing went wrong. ${e.message}`, type: 'error', delay:10000});
+
+
+
+const CURRENT_VERSION = '1.2.0';
+const LAST_VERSION = localStorage.getItem('app_version') || null;
+
+if (LAST_VERSION !== CURRENT_VERSION) {
+    // show notice
+    showNotice({
+        title: "New Version Available!",
+        body: "You are now using version " + CURRENT_VERSION,
+        type: "info",
+        delay: 5 // seconds or use animation timing
+    });
+
+    // update last seen version
+    localStorage.setItem('app_version', CURRENT_VERSION);
+}
+
+window.addEventListener('beforeunload', () => {
+  localStorage.setItem('app_version', CURRENT_VERSION);
+});
