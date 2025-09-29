@@ -1,4 +1,4 @@
-//import {data} from './data.js';
+const initialTime = performance.now();
 import { cardLayout } from './cardLayout.js';
 
 // Firebase core import
@@ -42,8 +42,10 @@ let unseen = {
   collected: 0,
   return: 0
 };
-// When new data is added
 
+const timerElement = $('#timerElement')
+
+// in the card section nots textarea size
 const setAutoHeightTextArea=  ()=>{
   document.querySelectorAll(".add-note-input").forEach(area => {
   area.addEventListener("input", () => {
@@ -52,7 +54,7 @@ const setAutoHeightTextArea=  ()=>{
   });
 });
 }
-console.time("fetchTime"); // start timer
+
 
         // for done status (if customer not collected their mobile ) for for notify the problem that few customers is not collected their mobile
 let notified = false;
@@ -108,13 +110,17 @@ onChildAdded(itemsRef, (snapshot) => {
   
   // update last SN
   $('#new_sn').textContent = (data[data.length - 1].sn) + 1;
-  console.timeEnd("fetchTime");
   
   // ----------------------
   // Notify if multiple customers not collected their phones
   checkDoneDevices(data)
   
   setAutoHeightTextArea()
+
+
+
+  timerElement.textContent = Math.floor(performance.now() - initialTime) + " ms";
+setTimeout(()=>timerElement.remove(), 2000)
 });
 
 const showUnseenCount = () => {
@@ -188,6 +194,7 @@ const navSwitcher = () => {
       setAutoHeightTextArea()
     };
   });
+  
 };
 navSwitcher();
 
@@ -256,6 +263,7 @@ const router = () => {
   //  hide all
   Object.values(routes).forEach(selector => {
     $(selector).style.display = "none";
+    console.log(selector)
   });
 
   // current hash 
@@ -307,6 +315,7 @@ import { set, get, runTransaction }
 from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
 $('.add-data').onclick = async () => {
+  const dataAddingTime = performance.now()
   const name = $('#name').value.trim();
   const number = $('#number').value.trim();
   const complaints = $('#complaint').value.trim();
@@ -355,7 +364,10 @@ console.log(formatted);
       $('.add-data').disabled=false
   $('.add-data').textContent='Add to List'
     console.log("✅ Data added successfully, SN:", newSn);
-    showNotice({title: newSn, body:'Data added successfully' , type: 'success', delay: 30})
+    const dataAddedTime = performance.now() - dataAddingTime
+    
+    showNotice({title: newSn, body:`Data added successfully. ${Math.floor(dataAddedTime)}ms` , type: 'success', delay: 30})
+    
 
     // clear form
     $('#name').value = '';
@@ -664,7 +676,48 @@ document.onerror=()=>showNotice({title:'ERROR', body: `Somthing went wrong. ${e.
 
 
 
-const CURRENT_VERSION = '1.2.0';
+
+
+// addbutton animation when scroll 
+let lastScroll = 0;
+
+const addBtnWidth = $('button.add').offsetWidth+'px'
+$('button.add').style.width = addBtnWidth
+
+document.addEventListener('scroll', () => {
+  const currentScroll = window.scrollY;
+  const addBtn = $('button.add');
+
+  if (currentScroll < lastScroll) {
+    addBtn.classList.remove('smallAddBtn');
+    addBtn.style.width = addBtnWidth
+    addBtn.textContent='Add Customer'
+  } else {
+    addBtn.classList.add('smallAddBtn');
+    addBtn.style.width = '50px'
+    addBtn.textContent='+'
+  }
+
+  lastScroll = currentScroll;
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// put it down 👇 
+const CURRENT_VERSION = '1.3.0';
 const LAST_VERSION = localStorage.getItem('app_version') || null;
 
 if (LAST_VERSION !== CURRENT_VERSION) {
@@ -683,3 +736,6 @@ if (LAST_VERSION !== CURRENT_VERSION) {
 window.addEventListener('beforeunload', () => {
   localStorage.setItem('app_version', CURRENT_VERSION);
 });
+
+
+
