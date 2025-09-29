@@ -1,5 +1,11 @@
--- feat(ui): implement new layout for main interface
--- feat(notice): add time-progress indicator for notifications
--- feat(notes): add input field to create new notes
--- fix: minor adjustments and finalize recent features
+# Project Updates
 
+## Changelog
+
+### Features
+- **UI:** Implemented new layout for main interface
+- **Notice:** Added time-progress indicator for notifications
+- **Notes:** Added input field to create new notes
+
+### Fixes
+- Minor adjustments and finalized recent features
