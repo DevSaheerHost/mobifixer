@@ -132,6 +132,7 @@ $('#signup').onclick = async (e) => {
 
     // Create new shop entry
     await set(child(shopRef, businessName), {
+      shop: businessName,
       owner: userName,
       email: businessEmail,
       password: businessPass, // ⚠️ plaintext — better use hashing

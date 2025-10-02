@@ -31,6 +31,7 @@ if(!shopName) location='./auth/index.html'
 // Reference to your data
 //const itemsRef = ref(db, "service");
 const itemsRef = ref(db, `shops/${shopName}/service`)
+
 // const itemsRef = query(
 //   ref(db, "shops/mobifixer/service"),
 //   orderByKey(),
@@ -53,7 +54,7 @@ let unseen = {
   collected: 0,
   return: 0
 };
-
+$('#shopname').textContent=shopName || 'My Shop';
 const timerElement = $('#timerElement')
 
 // in the card section nots textarea size
@@ -94,7 +95,6 @@ const checkDoneDevices=(data)=>{
 
 onChildAdded(itemsRef, (snapshot) => {
   const item = snapshot.val();
-  
   // Duplicate check → push or replace
   const existingIndex = data.findIndex(d => d.sn === item.sn);
   if (existingIndex === -1) {
@@ -138,6 +138,8 @@ onChildAdded(itemsRef, (snapshot) => {
   
   if($('#staticText')) $('#staticText').textContent='No Pending works'
 setTimeout(()=>timerElement.remove(), 2000)
+
+
 });
 
 const showUnseenCount = () => {
@@ -553,7 +555,7 @@ document.addEventListener("change", (e) => {
         console.error("❌ Error updating status:", err)
         showNotice({title:'ERROR', body:`Data didn't updated!, Please Trying again later. REASON: ${err.message}`, type:'error', delay: 6})
       });
-      alert(e.target.parentElement.parentElement.parentElement.classList)
+      //alert(e.target.parentElement.parentElement.parentElement.classList)
   }
   
 });
