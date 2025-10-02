@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 - Authentication added For one by one shop with email and password or google
+- ui fixes
 
 ## [2.0.1] 2025-10-02
 - Auto page designed
