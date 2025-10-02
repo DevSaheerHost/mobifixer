@@ -10,9 +10,9 @@ It provides a simple CRUD (Create, Read, Update, Delete) system for all customer
 ## Features in v1.3.0
 - Redesigned "Add Customer" button on Home screen
 - Button animates while scrolling
-- Two new input fields for advance and approx amounts
+- Two new input fields for advance , approx amounts and notes
 
-## Features (Latest)
+## Features
 - **Add new customer:** Capture name, phone number, mobile model, complaints, and other details.  
 - **View customer list:** Quickly browse all customers added so far.  
 - **Edit customer details:** Update information as required.  

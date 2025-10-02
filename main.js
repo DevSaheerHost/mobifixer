@@ -1,5 +1,6 @@
 const initialTime = performance.now();
 import { cardLayout } from './cardLayout.js';
+import { searchCard } from './searchCard.js';
 
 // Firebase core import
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
@@ -52,6 +53,9 @@ const setAutoHeightTextArea=  ()=>{
     area.style.height = "auto";
     area.style.height = area.scrollHeight + "px";
   });
+  
+  area.style.height = "auto";
+    area.style.height = area.scrollHeight + "px";
 });
 }
 
@@ -74,7 +78,7 @@ const checkDoneDevices=(data)=>{
     
     console.log(' notification. Done count:', filtered.length);
   } else {
-    console.log('No notification triggered. Done count:', filtered.length);
+    console.log('notification Not triggered. Done length:', filtered.length);
   }
 }
 
@@ -120,6 +124,9 @@ onChildAdded(itemsRef, (snapshot) => {
 
 
   timerElement.textContent = Math.floor(performance.now() - initialTime) + " ms";
+  
+  
+  if($('#staticText')) $('#staticText').textContent='No Pending works'
 setTimeout(()=>timerElement.remove(), 2000)
 });
 
@@ -210,11 +217,38 @@ const shopSwitcher=()=>{
 shopSwitcher()
 
 
-const createCards = (data, status) => {
+const createCards = (data, status, sn) => {
+  if (!status) {
+    console.log('Noo status is success')
+    console.log(sn)
+    
+    const listContainer = $('.list');
+  listContainer.innerHTML = ``;
 
+  const filtered = data.filter(item => sn === item.sn);
+  
+   if (filtered.length === 0) {
+   listContainer.innerHTML = `<li class="empty">No data available</li>`;
+   return;
+ }
+ 
+ filtered.forEach(item => {
+    const listItem = document.createElement('li');
+    const nav = document.createElement('nav')
+    listItem.classList.add('list-item');
+    listItem.setAttribute("data-sn", item.sn);
+    nav.innerHTML=`<h3>${item.name}</h4> <h3 class='sn'>${item.sn}</h4> `;
+    listItem.appendChild(nav)
+    listItem.innerHTML += cardLayout(item);
+    listContainer.appendChild(listItem);
+
+  });
+    return
+  }
+console.log('card created')
   
   const listContainer = $('.list');
-  listContainer.innerHTML = '';
+  listContainer.innerHTML = ``;
 
   const filtered = data.filter(item => status === item.status);
 
@@ -222,7 +256,7 @@ const createCards = (data, status) => {
     listContainer.innerHTML = `<li class="empty">No data available</li>`;
     return;
   }
-
+  
   filtered.forEach(item => {
     const listItem = document.createElement('li');
     const nav = document.createElement('nav')
@@ -245,6 +279,10 @@ const filterByStatus = (status) => {
   createCards(data, status);
 };
 
+// filter cards by SN
+
+const filterBySn = sn => createCards(data, status=null, sn)
+
 // Update data in Firebase
 const updateData = (name, number, complaints, status, sn) => {
   const itemRef = ref(db, `service/${sn}`);
@@ -263,8 +301,7 @@ const router = () => {
   //  hide all
   Object.values(routes).forEach(selector => {
     $(selector).style.display = "none";
-    console.log(selector)
-  });
+    });
 
   // current hash 
   const hash = location.hash || "";
@@ -323,6 +360,15 @@ $('.add-data').onclick = async () => {
   const lock = $('#lock').value?.trim();
   const status = $('#status').value.trim()||'None';
   
+  const notes = $('#notes').value.trim()||'';
+  
+  const amount = $('#amount').value.trim() || 0;
+  const advance = $('#advance').value.trim() || 0;
+  
+  if(!$('#sim').checked){
+    showNotice({title:'WARN',body:"Please check the 'SIM and accessories' box before submitting!"})
+    return
+  }
   if (!name || !number || !complaints || !model || !status) {
     alert("All fields are required!");
     return;
@@ -359,6 +405,9 @@ console.log(formatted);
       model,
       lock,
       status,
+      notes,
+      amount,
+      advance,
       date: formatted
     });
       $('.add-data').disabled=false
@@ -375,9 +424,14 @@ console.log(formatted);
     $('#complaint').value = '';
     $('#model').value = '';
     $('#lock').value = '';
+     $('#advance').value = '';
+     $('#amount').value = '';
+     $('#notes').value = '';
+     $('#sim').checked=false
     //$('#status').value = '';
     
-    location.hash = "";
+    //location.hash = ""; || history.back())
+    
 
   } catch (err) {
     $('.add-data').textContent=err.message
@@ -414,13 +468,25 @@ document.addEventListener("change", (e) => {
 // note update listener
 document.oninput=(e)=>{
   if (e.target.matches("textarea")) {
-    alert('yes')
+    console.log(e.target.closest('button'))
+
   }
 }
 
 document.onclick=e=>{
   if (e.target.classList.contains('add-note-btn')) {
-    showNotice({title:'DEBUG', body:"You can't add Note at the moment!", type:'info', delay: 0})
+    const sn = e.target.name.split("-")[1];   // e.g. "status-2001" → 2001
+    const newNote = e.target.closest('.note-input-wrap').querySelector('textarea').value ||''
+    const itemRef = ref(db, `service/${sn}`);
+    
+    update(itemRef, { notes: newNote })
+      .then(() => showNotice({title: sn, body:`Notes added to ${sn}` , type: 'success', delay: 5000}))
+      .catch(err => {
+        console.error("❌ Error adding notes:", err)
+        showNotice({title:'ERROR', body:`Data didn't add the notes!, Please Trying again later. REASON: ${err.message}`, type:'error', delay: 6})
+      });
+    
+    //showNotice({title:'DEBUG', body:"You can't add Note at the moment!", type:'info', delay: 0})
   }
 }
 
@@ -475,11 +541,13 @@ search.addEventListener("input", () => {
   // suggestions render
   results.forEach(item => {
     const li = document.createElement("li");
-    li.textContent = `${item.sn} - ${item.name} (${item.model}) ~${item.status}`;
+    //li.innerHTML = `${item.sn} - ${item.name} (${item.model}) ~${item.status}`;
+    li.innerHTML=searchCard(item)
     li.onclick = () => {
       // click -> direct filter
       search.value = item.name;
-      filterByStatus(item.status); 
+     // filterByStatus(item.status); 
+     filterBySn(item.sn)
       searchOut.classList.add("hidden");
     };
     searchOut.appendChild(li);
@@ -691,11 +759,11 @@ document.addEventListener('scroll', () => {
   if (currentScroll < lastScroll) {
     addBtn.classList.remove('smallAddBtn');
     addBtn.style.width = addBtnWidth
-    addBtn.textContent='Add Customer'
+    addBtn.innerHTML='<a href="#add">Add Customer</a>'
   } else {
     addBtn.classList.add('smallAddBtn');
     addBtn.style.width = '50px'
-    addBtn.textContent='+'
+    addBtn.innerHTML='<a href="#add">+</a>'
   }
 
   lastScroll = currentScroll;
@@ -717,7 +785,7 @@ document.addEventListener('scroll', () => {
 
 
 // put it down 👇 
-const CURRENT_VERSION = '1.3.0';
+const CURRENT_VERSION = '2.0.0';
 const LAST_VERSION = localStorage.getItem('app_version') || null;
 
 if (LAST_VERSION !== CURRENT_VERSION) {

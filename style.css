@@ -11,6 +11,10 @@
     user-select: none;
     transition: all .3s ease-out;
 }
+
+.form textarea{
+    border-radius: 10px !important;
+}
 a{
     text-decoration: none;
     color: #fff;
@@ -19,7 +23,7 @@ input, button{
     border-radius: 10px;
     padding: .5rem 1rem;
 }
-input[type="text"]{
+input[type="text"], input[type="number"]{
     border-radius: 50px;
     padding: .7rem 1rem;
     width: 100%;
@@ -97,6 +101,7 @@ nav a.active{
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
     gap: 2rem;
+    
 }
 
 .list .list-item{
@@ -147,7 +152,7 @@ li nav h3.sn{
 .list-item .add-note-input{
     background: #E6E6E6;
     padding: .5rem;
-    color: #999;
+    color: #000;
     border-radius: 10px;
     display: block;
     margin: auto;
@@ -161,6 +166,7 @@ li nav h3.sn{
 
 .list-item button.add-note-btn{
     margin-top: 1rem;
+    font-weight: 600;
 }
 
 .list-item .flex{
@@ -251,7 +257,7 @@ button.add:hover {
 .form{
     padding: 2rem;
 }
-.form input{
+.form input, .form textarea {
     margin-top: 2rem;
     border: 1px solid #999999;
     width: 100%;
@@ -291,10 +297,10 @@ button.add:hover {
 }
 .search-out li{
     margin-bottom: 1rem;
-    background: #999;
-    color: #fff;
+    background: #979797;
+    color: #FFFFFF;
     padding: .5rem;
-    border-radius: 100px;
+    border-radius: 10px;
 }
 
 .hidden{
@@ -513,4 +519,52 @@ white-space: nowrap;
     left: 1rem;
     font-size: 10px;
     color: #E1E1E1;
+}
+
+
+input[type="checkbox"]{
+    appearance: none;
+    vertical-align: middle; 
+    height: 18px;
+    width: 18px;
+    padding: 0;
+    margin: 0;
+    
+    border: 2px solid #666;
+border-radius: 4px;
+cursor: pointer;
+}
+
+input[type="checkbox"]:checked {
+  background-color: #0ba2ff;
+  border-color: #0ba2ff;
+  position: relative;
+}
+
+input[type="checkbox"]:checked::after {
+  content: "✔";
+  position: absolute;
+  color: white;
+  font-size: 13px;
+  left: 2px;
+  top: -2px;
+}
+.checkBox-container{
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-style: italic;
+}
+
+
+.status, .s_status, .amount, .advance{
+    font-weight: bold;
+    color: #e74c3c;
+}
+
+.advance{
+    color: #27ae60;
 }

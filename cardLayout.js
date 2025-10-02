@@ -1,4 +1,4 @@
-export const cardLayout=({name, status, number, model, lock, complaints, sn, date})=>`
+export const cardLayout=({name, status, number, model, lock, complaints, sn, date, advance, amount, notes})=>`
 
   <div class="flex">
           
@@ -10,6 +10,8 @@ export const cardLayout=({name, status, number, model, lock, complaints, sn, dat
         <p><b>Complaints</b></p>
         <p><b>Lock</b></p>
         <p><b>Date</b></p>
+        <p><b>Approx Rate</b></p>
+        <p><b>Advance</b></p>
         </div>
 
 <div class="right">
@@ -19,12 +21,15 @@ export const cardLayout=({name, status, number, model, lock, complaints, sn, dat
   <p>${complaints}</p>
   <p>${lock||'<i>none</i>'}</p>
   <p>${date||''}</p>
+ <p class='amount'>₹${amount?Number(amount).toLocaleString('en-IN') :''}</p>
+<p class='advance'>₹${advance?Number(advance).toLocaleString('en-IN') : ''}</p>
+  
 </div>
  </div>
  
  <div class='note-input-wrap'>
-  <textarea id='note-input-${sn}' class='add-note-input' placeholder='Add note+'></textarea>
-  <button id='note-btn-${sn}' class='add-note-btn'>Add</button>
+  <textarea id='note-input-${sn}' class='add-note-input' placeholder='Add note+' '>${notes||''}</textarea>
+  <button id='note-btn-${sn}' class='add-note-btn' name='sn-${sn}'>Save notes</button>
 </div>
  <div class="status">
 <span>

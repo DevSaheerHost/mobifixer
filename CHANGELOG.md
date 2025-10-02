@@ -1,11 +1,21 @@
-# # Changelog
+### Changelog
 
 ## [Unreleased]
+- Authentication added For one by one shop with email and password or google
 
-## [1.4.0] - 2025-09-29
-- Added 2 new input fields: advance amount and approx amount
 
-## [1.3.0]
+## [2.0.0] - 2025-10-01
+ feat: add advance & approx amount fields, improve UI and fix search bug
+
+- Added input fields: advance amount and approx amount
+- Added more input fields for detailed customer info
+- Fixed search function error
+- Updated UI (button, cards, layout) with new look and feel
+- Minor bug fixes
+- New search result improved
+- add more details on the card
+
+## [1.2.1]
 - **UI:** New design for "add customer" button on Home screen
 - **UI:** Animate "add customer" button while user scrolling
 

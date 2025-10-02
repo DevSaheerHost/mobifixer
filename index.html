@@ -18,7 +18,7 @@
   <header>
 <div class="shop-selector-wrap">
 <span class="active" onclick="window.history.back()">
-  <h2>MobiFixer</h2>
+  <h2><a href="">MobiFixer</a></h2>
 </span>
   <p id="timerElement">0ms</p>
 <span>
@@ -60,8 +60,9 @@
   </a>
 </nav>
   <section class="list-section">
+    
     <ul class="list">
-
+<i class="empty" id="staticText">Loading...</i>
     </ul>
   </section>
     <button class="add"><a href="#add">Add Customer</a></button>
@@ -75,10 +76,18 @@
       <div class="input-group">
         <input type="text" name="name" id="name" placeholder="Name" />
         
-        <input type="number" name="number" id="number" placeholder="Number" />
+      <input type="number" name="number" id="number" placeholder="Number" />
         <input type="text" name="model" id="model" placeholder="Model" />
         <input type="text" name="complaint" id="complaint" placeholder="Complaints" />
-        <input type="number" name="lock" id="lock" placeholder="Lock"/>
+        <input type="text" name="lock" id="lock" placeholder="Lock"/>
+        
+        
+        
+
+          <input type="number" name="amount" id="amount" placeholder="Approx Amount" />
+        <input type="number" name="advance" id="advance" placeholder="Advance" />
+
+<textarea name="notes" id=notes rows="8" cols="40" placeholder="Notes"></textarea>
         
         <select name="status" id="status">
           <option value="pending">pending</option>
@@ -86,6 +95,12 @@
           <option value="done">Done</option>
           
         </select>
+        
+        
+      <div class="checkBox-container">
+          <input type="checkbox" name="sim" id="sim" />
+  <label for="sim">Hand over SIM & accessories to Customer</label>
+      </div>
       </div>
       
       
