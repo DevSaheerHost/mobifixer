@@ -38,3 +38,10 @@ router();
 
 $(".get-started-btn").onclick = () => (location.hash = "#/login");
 
+
+
+
+
+$('#login').onclick=()=>{
+  $('#login-page')
+}

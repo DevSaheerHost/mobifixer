@@ -2,7 +2,15 @@
 
 ## [Unreleased]
 - Authentication added For one by one shop with email and password or google
+
+
+
+## [2.6.0] - 2025-10-02
+- back-end updated for multiple shops.
+- data scaled 
 - ui fixes
+- data sorted by newest first 
+- notification improvement UI
 
 ## [2.0.1] 2025-10-02
 - Auto page designed

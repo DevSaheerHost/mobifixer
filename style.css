@@ -298,8 +298,8 @@ button.add:hover {
     background: #E9E9E9;
     height: auto;
     padding: 2rem;
-    
-    
+    max-height: 50vh;
+    overflow-y: auto;
 
 }
 .search-out li{
@@ -500,10 +500,10 @@ white-space: nowrap;
     font-weight: bold;
 }
 
-.notice.warn { border-left: 5px solid #f39c12; }
-.notice.success { border-left: 5px solid #27ae60; }
-.notice.info { border-left: 5px solid #3498db; }
-.notice.error { border-left: 5px solid #e74c3c; }
+.notice.warn   { border-left: 5px solid #f39c12; background: #FFE7C0; } /* already sexy */
+.notice.success { border-left: 5px solid #27ae60; background: #DFFFE0; } /* light green */
+.notice.info    { border-left: 5px solid #3498db; background: #D0E7FF; } /* light blue */
+.notice.error   { border-left: 5px solid #e74c3c; background: #FFD6D6; } /* light red/pink */
 
 .notice.warn::before {background: #f39c12;}
 .notice.success::before {background: #27ae60;}
@@ -575,3 +575,5 @@ input[type="checkbox"]:checked::after {
 .advance{
     color: #27ae60;
 }
+
+

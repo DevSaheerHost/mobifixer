@@ -25,7 +25,8 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 // Reference to your data
-const itemsRef = ref(db, "service");
+//const itemsRef = ref(db, "service");
+const itemsRef = ref(db, "shops/mobifixer/service")
 
 // Global data array
 let data = [];
@@ -143,6 +144,9 @@ const showUnseenCount = () => {
   });
 };
 
+
+
+
 // When existing data is updated
 onChildChanged(itemsRef, (snapshot) => {
   const updated = snapshot.val();
@@ -154,6 +158,8 @@ onChildChanged(itemsRef, (snapshot) => {
   if (oldIndex !== -1) {
     oldStatus = data[oldIndex].status; // old status
     data[oldIndex] = updated;          //  replace update
+    
+    
   } else {
     data.push(updated); // fallback safety
   }
@@ -182,6 +188,7 @@ onChildChanged(itemsRef, (snapshot) => {
   const activeStatus = document.querySelector("nav a.active")?.dataset.text.toLowerCase() || "pending";
   filterByStatus(activeStatus);
   setAutoHeightTextArea()
+  
 });
 
 // Navigation switcher
@@ -227,10 +234,13 @@ const createCards = (data, status, sn) => {
 
   const filtered = data.filter(item => sn === item.sn);
   
+  
+  console.log('DEBUGGGG')
    if (filtered.length === 0) {
    listContainer.innerHTML = `<li class="empty">No data available</li>`;
    return;
  }
+ 
  
  filtered.forEach(item => {
     const listItem = document.createElement('li');
@@ -245,17 +255,21 @@ const createCards = (data, status, sn) => {
   });
     return
   }
-console.log('card created')
+console.log('card created Line: 250')
   
   const listContainer = $('.list');
   listContainer.innerHTML = ``;
 
-  const filtered = data.filter(item => status === item.status);
+ // const filtered = data.filter(item => status === item.status);
+  const filtered = data
+  .filter(item => status === item.status)
+  .sort((a, b) => b.sn - a.sn); // newest first
 
   if (filtered.length === 0) {
     listContainer.innerHTML = `<li class="empty">No data available</li>`;
     return;
   }
+  
   
   filtered.forEach(item => {
     const listItem = document.createElement('li');
@@ -285,7 +299,8 @@ const filterBySn = sn => createCards(data, status=null, sn)
 
 // Update data in Firebase
 const updateData = (name, number, complaints, status, sn) => {
-  const itemRef = ref(db, `service/${sn}`);
+  const itemRef = ref(db, `shops/mobifixer/service/${sn}`);
+  
   update(itemRef, { name, number, complaints, status, sn });
 };
 
@@ -366,7 +381,7 @@ $('.add-data').onclick = async () => {
   const advance = $('#advance').value.trim() || 0;
   
   if(!$('#sim').checked){
-    showNotice({title:'WARN',body:"Please check the 'SIM and accessories' box before submitting!"})
+    showNotice({title:'WARN',body:"Please check the 'SIM and accessories' box before submitting!", type: 'error'})
     return
   }
   if (!name || !number || !complaints || !model || !status) {
@@ -376,7 +391,7 @@ $('.add-data').onclick = async () => {
   $('.add-data').textContent='Loading...'
 $('.add-data').disabled=true
   try {
-    const lastSnRef = ref(db, "lastSn");
+    const lastSnRef = ref(db, "shops/mobifixer/lastServiceSn");
 
     // 🔹 Transaction: auto-increment lastSn
     let newSn = await runTransaction(lastSnRef, (current) => {
@@ -396,7 +411,7 @@ const formatted = date
 console.log(formatted);
 // Example: 17-SEP-2025
 
-    const itemRef = ref(db, "service/" + newSn);
+    const itemRef = ref(db, "shops/mobifixer/service/" + newSn);
     await set(itemRef, {
       sn: newSn,
       name,
@@ -430,7 +445,8 @@ console.log(formatted);
      $('#sim').checked=false
     //$('#status').value = '';
     
-    //location.hash = ""; || history.back())
+    //location.hash = ""; || 
+    history.back()
     
 
   } catch (err) {
@@ -453,7 +469,7 @@ document.addEventListener("change", (e) => {
 
     console.log("🔄 Updating SN:", sn, "→", newStatus);
 
-    const itemRef = ref(db, `service/${sn}`);
+    const itemRef = ref(db, `shops/mobifixer/service/${sn}`);
     
     update(itemRef, { status: newStatus })
       .then(() => showNotice({title: sn, body:`Status Updated →, ${newStatus.toUpperCase()}` , type: 'info', delay: 5000}))
@@ -477,7 +493,7 @@ document.onclick=e=>{
   if (e.target.classList.contains('add-note-btn')) {
     const sn = e.target.name.split("-")[1];   // e.g. "status-2001" → 2001
     const newNote = e.target.closest('.note-input-wrap').querySelector('textarea').value ||''
-    const itemRef = ref(db, `service/${sn}`);
+    const itemRef = ref(db, `shops/mobifixer/service/${sn}`);
     
     update(itemRef, { notes: newNote })
       .then(() => showNotice({title: sn, body:`Notes added to ${sn}` , type: 'success', delay: 5000}))
@@ -740,9 +756,14 @@ isShowing = false;
 
 
 
-document.onerror=()=>showNotice({title:'ERROR', body: `Somthing went wrong. ${e.message}`, type: 'error', delay:10000});
-
-
+document.onerror = (msg, src, line, col, err) => {
+  showNotice({ 
+    title:'ERROR', 
+    body: `Something went wrong. ${msg}`, 
+    type: 'error', 
+    delay:10 
+  });
+};
 
 
 
@@ -785,7 +806,7 @@ document.addEventListener('scroll', () => {
 
 
 // put it down 👇 
-const CURRENT_VERSION = '2.0.1';
+const CURRENT_VERSION = '2.6.0';
 const LAST_VERSION = localStorage.getItem('app_version') || null;
 
 if (LAST_VERSION !== CURRENT_VERSION) {
@@ -807,3 +828,13 @@ window.addEventListener('beforeunload', () => {
 
 
 
+// New ref
+//const newRef = ref(db, "shops/mobifixer/service");
+
+// Copy data
+// get(itemsRef).then(snapshot => {
+//   if (snapshot.exists()) {
+//     set(newRef, snapshot.val());
+//     console.log("Data copied successfully!");
+//   }
+// });
