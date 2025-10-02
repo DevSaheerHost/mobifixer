@@ -96,7 +96,7 @@ $('#login').onclick = async (e) => {
     const shopData = snapshot.val();
     if (shopData.password == businessPass) {
       localStorage.setItem('shopName', businessName)
-      location = "../";
+      location = "/";
     } else {
       alert('Password not match')
     }
@@ -110,7 +110,6 @@ $('#login').onclick = async (e) => {
 
 $('#signup').onclick = async (e) => {
   e.preventDefault(); // prevent page reload
-
   const userName = $('#signup_name').value.trim();
   const businessName = $('#signup_businessName').value.trim().toLowerCase();
   const businessEmail = $('#signup_businessEmail').value.trim();
