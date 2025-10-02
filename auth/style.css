@@ -23,13 +23,10 @@ button {
   color: #fff;
   font-size: 1rem;
   font-weight: 600;
+  background: #42445A;
 }
 
-button:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-  background: linear-gradient(135deg, #ff8177, #ffcc70, #cf556c);
-}
+
 
 button:active {
   transform: scale(0.95);
@@ -127,38 +124,17 @@ font-weight: 600;
   margin: auto;
 }
 
-.round-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.35);
-  background: linear-gradient(135deg, #ff8177, #ffcc70, #cf556c);
-}
 
-.round-btn:active {
-  transform: scale(0.9);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-}
 
-.get-started-btn:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
-  background: linear-gradient(135deg, #ff8177, #ffcc70, #cf556c);
-}
+
 
 .get-started-btn:active {
   transform: scale(0.95);
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-}
-
-.get-started-btn:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
   background: linear-gradient(135deg, #ff8177, #ffcc70, #cf556c);
 }
 
-.get-started-btn:active {
-  transform: scale(0.95);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-}
+
 
 
 
@@ -194,3 +170,29 @@ input:focus {
   }
 }
 
+
+
+.auth-page{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-flow: column;
+  gap: 1rem;
+}
+.auth-page .form{
+  padding: 2rem;
+}
+
+.auth-page .form input{
+  margin-bottom: 1rem;
+}
+
+.auth-page .form p{
+  margin-top: 1rem;
+  color: #999;
+  font-style: italic;
+  font-size: 13px;
+  font-weight: 600;
+  margin: auto;
+  text-align: right;
+}

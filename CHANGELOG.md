@@ -3,6 +3,11 @@
 ## [Unreleased]
 - Authentication added For one by one shop with email and password or google
 
+## [2.0.1] 2025-10-02
+- Auto page designed
+- New search result improved
+- add more details on the card
+- Added input fields: advance amount and approx amount
 
 ## [2.0.0] - 2025-10-01
  feat: add advance & approx amount fields, improve UI and fix search bug
