@@ -27,7 +27,7 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 const shopName = localStorage.getItem('shopName')
-if(!shopName) location='./auth'
+if(!shopName) location='./auth/index.html'
 // Reference to your data
 //const itemsRef = ref(db, "service");
 const itemsRef = ref(db, `shops/${shopName}/service`)
