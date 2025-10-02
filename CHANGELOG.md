@@ -1,9 +1,19 @@
 ### Changelog
 
 ## [Unreleased]
-- Authentication added For one by one shop with email and password or google
 
 
+## [3.0.0] 2025-10-02
+feat(auth): add signup and login with Firebase Realtime DB
+
+- Implemented login validation by checking shop existence under `shops/`
+- Added signup flow with duplicate shop name check
+- New shops are created with owner, email, password, createdAt, and empty service branch
+- Integrated hash routing redirect after successful login/signup
+- Added form field validation and basic error handling
+
+- bug fixes
+- UI improvements 
 
 ## [2.6.0] - 2025-10-02
 - back-end updated for multiple shops.

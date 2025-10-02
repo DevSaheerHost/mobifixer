@@ -40,8 +40,8 @@
     <main class="auth-page hidden" id="login-page">
   <h1>Login</h1>
   <div class="form">
-    <input type="text" id="login_bus" placeholder="Business Name" /><br>
-    <input type="password" id="password" placeholder="Password" /><br>
+    <input type="text" id="login_businessName" placeholder="Business Name" /><br>
+    <input type="password" id="login_businessPass" placeholder="Password" /><br>
     <button id="login">Login</button>
               <p>Open new shop? <a href="#/signup">SignUp</a></p>
 
@@ -52,17 +52,17 @@
 <main class="auth-page hidden" id="signup-page">
         <h1>Signup Page</h1>
         <div class="form">
-          <input type="text" placeholder="Name" /><br>
-          <input type="text" name="businessname" id="businessname" placeholder="Business Name" />
-          <input type="email" placeholder="Email" /><br>
-          <input type="password" placeholder="Password" /><br>
-          <button>Sign-up</button>
+          <input type="text" id="signup_name" placeholder="Name" /><br>
+          <input type="text" name="businessname" id="signup_businessName" placeholder="Business Name" />
+          <input type="email" placeholder="Email" id="signup_businessEmail" /><br>
+          <input type="password" placeholder="Password" id="signup_businessPassword" /><br>
+          <button id="signup">Sign-up</button>
         </div>
 </main>
   
   
   
-  <script type="text/javascript" charset="utf-8" src="./main.js"></script>
+  <script type="module" charset="utf-8" src="./main.js"></script>
 </body>
 
 </html>

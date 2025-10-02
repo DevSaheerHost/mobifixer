@@ -6,8 +6,10 @@ import { searchCard } from './searchCard.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 
 // Realtime Database import
-import { getDatabase, ref, onChildAdded, onChildChanged, update }
+import { getDatabase, ref, onChildAdded, onChildChanged, update, query, limitToLast, orderByKey }
 from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyAWQP1HENutTN4cPyMM86norOGMSXDnc2g",
@@ -24,9 +26,16 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
+const shopName = localStorage.getItem('shopName')
+if(!shopName) location='./auth'
 // Reference to your data
 //const itemsRef = ref(db, "service");
-const itemsRef = ref(db, "shops/mobifixer/service")
+const itemsRef = ref(db, `shops/${shopName}/service`)
+// const itemsRef = query(
+//   ref(db, "shops/mobifixer/service"),
+//   orderByKey(),
+//   limitToLast(100)  // last 50 items only
+// );
 
 // Global data array
 let data = [];
@@ -224,7 +233,8 @@ const shopSwitcher=()=>{
 shopSwitcher()
 
 
-const createCards = (data, status, sn) => {
+// stopped from version 2.6.0
+const createCardsyyyy = (data, status, sn) => {
   if (!status) {
     console.log('Noo status is success')
     console.log(sn)
@@ -240,9 +250,10 @@ const createCards = (data, status, sn) => {
    listContainer.innerHTML = `<li class="empty">No data available</li>`;
    return;
  }
- 
+ // not working 👇 
  
  filtered.forEach(item => {
+  
     const listItem = document.createElement('li');
     const nav = document.createElement('nav')
     listItem.classList.add('list-item');
@@ -251,7 +262,7 @@ const createCards = (data, status, sn) => {
     listItem.appendChild(nav)
     listItem.innerHTML += cardLayout(item);
     listContainer.appendChild(listItem);
-
+console.log(filtered[i])
   });
     return
   }
@@ -270,22 +281,87 @@ console.log('card created Line: 250')
     return;
   }
   
+  let limit = 50;
+let rendered = 0
+filtered.forEach(item => {
+  console.log(rendered)
+  if (rendered >= limit) return;
+  rendered++
+  const listItem = document.createElement('li');
+  const nav = document.createElement('nav')
+  listItem.classList.add('list-item');
+  listItem.setAttribute("data-sn", item.sn);
+  nav.innerHTML = `<h3>${item.name}</h4> <h3 class='sn'>${item.sn}</h4> `;
+  listItem.appendChild(nav)
+  listItem.innerHTML += cardLayout(item);
+  listContainer.appendChild(listItem);
   
-  filtered.forEach(item => {
-    const listItem = document.createElement('li');
-    const nav = document.createElement('nav')
-    listItem.classList.add('list-item');
-    listItem.setAttribute("data-sn", item.sn);
-    nav.innerHTML=`<h3>${item.name}</h4> <h3 class='sn'>${item.sn}</h4> `;
-    listItem.appendChild(nav)
-    listItem.innerHTML += cardLayout(item);
-    listContainer.appendChild(listItem);
-
-  });
+  
+});
   
   //$('#new_sn').textContent=;
   
 };
+
+// v3.0.0 limited loading and dynamic rendering by user scrolling.
+let renderLimit = 20;  // load at a time 
+let renderStart = 0;   // where to start
+let activeFiltered = []; // last filtered data
+
+const createCards = (data, status, sn) => {
+  const listContainer = $('.list');
+  
+  // reset if new filter
+  renderStart = 0;
+  listContainer.innerHTML = "";
+  
+  // filter
+  const filtered = sn ?
+    data.filter(item => sn === item.sn) :
+    data.filter(item => status === item.status).sort((a, b) => b.sn - a.sn);
+  
+  activeFiltered = filtered; // save for scroll loading
+  
+  if (filtered.length === 0) {
+    listContainer.innerHTML = `<li class="empty">No data available</li>`;
+    return;
+  }
+  
+  renderNext(); // 👈 first 3 load
+};
+
+
+const renderNext = () => {
+  const listContainer = $('.list');
+  const nextSlice = activeFiltered.slice(renderStart, renderStart + renderLimit);
+
+  nextSlice.forEach(item => {
+    const listItem = document.createElement('li');
+    listItem.classList.add('list-item');
+    listItem.setAttribute("data-sn", item.sn);
+
+    const nav = document.createElement('nav');
+    nav.innerHTML = `<h3>${item.name}</h3> <h3 class='sn'>${item.sn}</h3>`;
+    listItem.appendChild(nav);
+    listItem.innerHTML += cardLayout(item);
+
+    listContainer.appendChild(listItem);
+  });
+
+  renderStart += renderLimit;
+}
+
+window.addEventListener('scroll', () => {
+  const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+  
+  if (scrollTop + clientHeight >= scrollHeight - 100) {
+    // near bottom
+    if (renderStart < activeFiltered.length) {
+      renderNext();
+    }
+  }
+});
+
   
 
 // Filter cards by status
@@ -299,7 +375,7 @@ const filterBySn = sn => createCards(data, status=null, sn)
 
 // Update data in Firebase
 const updateData = (name, number, complaints, status, sn) => {
-  const itemRef = ref(db, `shops/mobifixer/service/${sn}`);
+  const itemRef = ref(db, `shops/${shopName}/service/${sn}`);
   
   update(itemRef, { name, number, complaints, status, sn });
 };
@@ -391,7 +467,7 @@ $('.add-data').onclick = async () => {
   $('.add-data').textContent='Loading...'
 $('.add-data').disabled=true
   try {
-    const lastSnRef = ref(db, "shops/mobifixer/lastServiceSn");
+    const lastSnRef = ref(db, `shops/${shopName}/lastServiceSn`);
 
     // 🔹 Transaction: auto-increment lastSn
     let newSn = await runTransaction(lastSnRef, (current) => {
@@ -411,7 +487,7 @@ const formatted = date
 console.log(formatted);
 // Example: 17-SEP-2025
 
-    const itemRef = ref(db, "shops/mobifixer/service/" + newSn);
+    const itemRef = ref(db, `shops/${shopName}/service/${newSn}`);
     await set(itemRef, {
       sn: newSn,
       name,
@@ -469,7 +545,7 @@ document.addEventListener("change", (e) => {
 
     console.log("🔄 Updating SN:", sn, "→", newStatus);
 
-    const itemRef = ref(db, `shops/mobifixer/service/${sn}`);
+    const itemRef = ref(db, `shops/${shopName}/service/${sn}`);
     
     update(itemRef, { status: newStatus })
       .then(() => showNotice({title: sn, body:`Status Updated →, ${newStatus.toUpperCase()}` , type: 'info', delay: 5000}))
@@ -477,6 +553,7 @@ document.addEventListener("change", (e) => {
         console.error("❌ Error updating status:", err)
         showNotice({title:'ERROR', body:`Data didn't updated!, Please Trying again later. REASON: ${err.message}`, type:'error', delay: 6})
       });
+      alert(e.target.parentElement.parentElement.parentElement.classList)
   }
   
 });
@@ -493,7 +570,7 @@ document.onclick=e=>{
   if (e.target.classList.contains('add-note-btn')) {
     const sn = e.target.name.split("-")[1];   // e.g. "status-2001" → 2001
     const newNote = e.target.closest('.note-input-wrap').querySelector('textarea').value ||''
-    const itemRef = ref(db, `shops/mobifixer/service/${sn}`);
+    const itemRef = ref(db, `shops/${shopName}/service/${sn}`);
     
     update(itemRef, { notes: newNote })
       .then(() => showNotice({title: sn, body:`Notes added to ${sn}` , type: 'success', delay: 5000}))
@@ -530,7 +607,11 @@ document.addEventListener("click", (e) => {
 
 
 
-// Search function
+// Search function start at / edit at v3.0.0
+let searchFiltered = [];
+let searchRenderStart = 0;
+let searchRenderLimit = 20;
+
 search.addEventListener("input", () => {
   const query = search.value.trim().toLowerCase();
   searchOut.innerHTML = ""; // reset suggestions
@@ -541,7 +622,7 @@ search.addEventListener("input", () => {
     return;
   }
 
-  // Filter 
+  // Filter
   const results = data.filter(item => 
     item.name.toLowerCase().includes(query) ||
     String(item.sn).includes(query) ||
@@ -549,25 +630,39 @@ search.addEventListener("input", () => {
     item.number.includes(query)
   );
 
+  searchFiltered = results;
+  searchRenderStart = 0;
+
   if (results.length === 0) {
     searchOut.innerHTML = `<li class="empty">No matches found</li>`;
     return;
   }
 
-  // suggestions render
-  results.forEach(item => {
+  renderSearchNext(); // 👈 ആദ്യം 50
+});
+
+function renderSearchNext() {
+  const slice = searchFiltered.slice(searchRenderStart, searchRenderStart + searchRenderLimit);
+  slice.forEach(item => {
     const li = document.createElement("li");
-    //li.innerHTML = `${item.sn} - ${item.name} (${item.model}) ~${item.status}`;
-    li.innerHTML=searchCard(item)
+    li.innerHTML = searchCard(item);
     li.onclick = () => {
-      // click -> direct filter
       search.value = item.name;
-     // filterByStatus(item.status); 
-     filterBySn(item.sn)
+      filterBySn(item.sn);
       searchOut.classList.add("hidden");
     };
     searchOut.appendChild(li);
   });
+  searchRenderStart += searchRenderLimit;
+}
+
+// Scroll listener inside suggestion box
+searchOut.addEventListener("scroll", () => {
+  if (searchOut.scrollTop + searchOut.clientHeight >= searchOut.scrollHeight - 10) {
+    if (searchRenderStart < searchFiltered.length) {
+      renderSearchNext();
+    }
+  }
 });
 
 
@@ -806,7 +901,7 @@ document.addEventListener('scroll', () => {
 
 
 // put it down 👇 
-const CURRENT_VERSION = '2.6.0';
+const CURRENT_VERSION = '3.0.0';
 const LAST_VERSION = localStorage.getItem('app_version') || null;
 
 if (LAST_VERSION !== CURRENT_VERSION) {
