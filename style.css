@@ -597,7 +597,17 @@ input[type="checkbox"]:checked::after {
     border-radius: 10px;
 }
 
+.blue{
+    color: #09a0ff;
+    font-weight: 600;
+}
 
+.tips{
+    padding: 2rem;
+    font-style: italic;
+    color: #999;
+    letter-spacing: 1.2px;
+}
 .hidden{
     display: none;
 }

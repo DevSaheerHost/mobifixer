@@ -32,6 +32,17 @@ if(!shopName) location='./auth/index.html'
 //const itemsRef = ref(db, "service");
 const itemsRef = ref(db, `shops/${shopName}/service`)
 
+// first check if folder exists
+get(itemsRef).then(snapshot => {
+  if (!snapshot.exists()) {
+    $('.loader').classList.add('hidden');
+    console.log("⚠️ No service data found yet");
+    $('.list').innerHTML = `<li class="empty">No data available</li>
+<p>Need to create a new entry? <a class="blue" href="#add">Click here</a> to get started.</p>
+    `;
+  }
+});
+
 // const itemsRef = query(
 //   ref(db, "shops/mobifixer/service"),
 //   orderByKey(),
@@ -226,6 +237,8 @@ navSwitcher();
 
 const shopSwitcher=()=>{
   const navs = $$('.shop-selector-wrap span');
+  navs.forEach(n => n.classList.remove('active'));
+  $('.myshop').classList.add('active')
   navs.forEach(n => {
     n.onclick = e => {
       navs.forEach(n => n.classList.remove('active'));
@@ -388,7 +401,9 @@ const updateData = (name, number, complaints, status, sn) => {
 const routes = {
   "": ".home",     // default (no hash)
   "#add": ".form",
-  "#shop-work": ".shop-work"
+  "#shop-work": ".shop-work",
+  '#inventory':'.inventory-page',
+  '#addInventory':'.inventory-create-page'
 };
 
 const router = () => {
@@ -410,6 +425,7 @@ const router = () => {
   // header animation handle
   $('header').classList.toggle('slide-up', hash === "#add");
   if(hash ==='#add') $('.form input#name').focus()
+  if(hash==='') shopSwitcher()
 };
 
 window.addEventListener("DOMContentLoaded", router);
@@ -475,7 +491,7 @@ $('.add-data').disabled=true
 
     // 🔹 Transaction: auto-increment lastSn
     let newSn = await runTransaction(lastSnRef, (current) => {
-      if (current === null) return 1000; // starting SN
+      if (current === null) return 1; // starting SN
       return current + 1;
     });
 
@@ -630,8 +646,9 @@ search.addEventListener("input", () => {
 
   // Filter
   const results = data.filter(item => 
+  String(item.sn).includes(query) ||
     item.name.toLowerCase().includes(query) ||
-    String(item.sn).includes(query) ||
+    
     item.model.toLowerCase().includes(query) ||
     item.number.includes(query)
   );
@@ -644,7 +661,7 @@ search.addEventListener("input", () => {
     return;
   }
 
-  renderSearchNext(); // 👈 ആദ്യം 50
+  renderSearchNext(); // 👈 first 20
 });
 
 function renderSearchNext() {
