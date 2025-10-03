@@ -15,6 +15,7 @@
 </head>
 
 <body>
+  <script src="https://cdn.jsdelivr.net/npm/showdown/dist/showdown.min.js"></script>
   <header>
 <div class="shop-selector-wrap">
   <span><a href="#inventory">INV</a></span>
@@ -25,6 +26,11 @@
 <span>
   <h2><a href="#shop-work">MKLM</a></h2>
 </span>
+
+<span>
+  <a href="#changelog">i</a>
+</span>
+
 </div>
     
   
@@ -113,6 +119,10 @@
       <h3>Page not Available </h3>
     </main>
     
+    
+    
+    
+    
 <main class="inventory-page hidden">
   <p class="tips">
     Our Inventory Management feature is coming soon.  
@@ -124,12 +134,42 @@
   </button>
 </main>
 
-<main class="inventory-create-page">
+<main class="inventory-create-page hidden">
   <p class="tips">
     Add new inventory items and keep your stock organized.  
     (Feature under development)
   </p>
+  
+  <div class="input-group">
+    <input type="text" name="prod_name" id="prod_name" placeholder="Product Name">
+    <input type="text" name="prod_model" id="prod_model" placeholder="Product Model Name">
+    
+    <input type="number" name="prod_quantity" id="prod_quantity" placeholder="Quantity">
+    
+    <input type="text" name="prod_category" id="prod_category" placeholder="Product Category">
+    <div id="category_search_out hidden">
+      category_search_out
+    </div>
+    <div class="flex_input_wrap">
+      <input type="text" name="key" id="key" placeholder="Key" />
+      <input type="text" name="value" id="value" placeholder="Value" />
+
+    </div>
+    <button class="new_key">New key</button>
+  </div>
+  
+  <button class="create_prod_data">Create Product</button>
 </main>
+
+<main class="changelog-page hidden">
+  <pre id="changelog">
+    loading 
+  </pre>
+</main>
+
+
+
+
     
     <main class="not-found hidden">
       <h3>Page not found || 404</h3>
@@ -137,6 +177,7 @@
     
     <audio id="newSound" src="./mixkit.wav" preload="auto"></audio>
     <audio id="update" src="./update.mp3" preload="auto"></audio>
+    <audio id="disconnect" src="./disconnect.mp3" preload="auto"></audio>
 
 <div class="loader">
   <div class="loading-card">

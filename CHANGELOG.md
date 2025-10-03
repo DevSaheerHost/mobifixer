@@ -1,57 +1,76 @@
-### Changelog
+# 📌 Changelog
 
-## [Unreleased]
-- loading animation 
+## 🚧 [Unreleased]
 
+### ✨ Inventory
+- 🆕 Designed **Add Inventory Page** with input fields:  
+  - Product name  
+  - Product model  
+  - Category  
+  - (and more details)
+- ⏳ Loading animation in progress  
+- 🛠️ Add new inventory items & organize stock efficiently  
 
-## [3.0.1] 2025-10-03 
-- bug fixes 
-- inventory page created 
-- bug fixes and mainer changes
+---
 
-## [3.0.0] 2025-10-03
-feat(auth): add signup and login with Firebase Realtime DB
+## [3.0.1] - 2025-10-03  
+- 
+- 🐞 Minor bug fixes  
+- 📦 Initial **Inventory Page** created  
+- 🔧 Stability improvements  
 
-- loading animation 
-- bug fixes
-- Implemented login validation by checking shop existence under `shops/`
-- Added signup flow with duplicate shop name check
-- New shops are created with owner, email, password, createdAt, and empty service branch
-- Integrated hash routing redirect after successful login/signup
-- Added form field validation and basic error handling
+---
 
-- bug fixes
-- UI improvements 
+## [3.0.0] - 2025-10-03  
+### ✨ Authentication System  
+- 🔑 Added **signup & login** with Firebase Realtime DB  
+- ✅ Implemented login validation (shop existence check under `shops/`)  
+- 🆕 Added signup with duplicate shop name check  
+- 📂 New shops now include: owner, email, password, createdAt, and service branch  
 
-## [2.6.0] - 2025-10-02
-- back-end updated for multiple shops.
-- data scaled 
-- ui fixes
-- data sorted by newest first 
-- notification improvement UI
+### 🔄 UI & Functionality  
+- ⚡ Integrated hash-routing redirect after successful login/signup  
+- 📝 Improved form validation & error handling  
+- 🎨 UI improvements & refinements  
+- 🐞 Multiple bug fixes  
 
-## [2.0.1] 2025-10-02
-- Auto page designed
-- New search result improved
-- add more details on the card
-- Added input fields: advance amount and approx amount
+---
 
-## [2.0.0] - 2025-10-01
- feat: add advance & approx amount fields, improve UI and fix search bug
+## [2.6.0] - 2025-10-02  
+- 🔧 Backend updated for **multi-shop support**  
+- 📊 Scaled data handling for performance  
+- 🎨 UI fixes & improvements  
+- ⏫ Data sorted by **newest first**  
+- 🔔 Improved notification UI  
 
-- Added input fields: advance amount and approx amount
-- Added more input fields for detailed customer info
-- Fixed search function error
-- Updated UI (button, cards, layout) with new look and feel
-- Minor bug fixes
-- New search result improved
-- add more details on the card
+---
 
-## [1.2.1]
-- **UI:** New design for "add customer" button on Home screen
-- **UI:** Animate "add customer" button while user scrolling
+## [2.0.1] - 2025-10-02  
+- 🎨 Auto page redesigned  
+- 🔍 Improved search results  
+- 📝 Added more details in customer card  
+- 💰 Added new input fields: **advance amount** & **approx amount**  
 
-## [1.2.0]
-- **UI:** Implemented new layout for main interface
-- **Notice:** Added time-progress indicator for notifications
-- **Notes:** Added input field to create new notes
+---
+
+## [2.0.0] - 2025-10-01  
+### ✨ Major Feature Update  
+- 💰 Advance & Approx amount fields added  
+- 📝 More detailed customer info fields  
+- 🔍 Fixed search function error  
+- 🎨 Revamped UI (buttons, cards, layout)  
+- 🐞 Minor bug fixes  
+- 🔎 Improved search results & detail cards  
+
+---
+
+## [1.2.1]  
+- 🎨 New design for "Add Customer" button on Home screen  
+- 🌀 Animated button on scroll  
+
+---
+
+## [1.2.0]  
+- 🎨 Implemented new **main interface layout**  
+- ⏳ Added time-progress indicator for notifications  
+- 📝 Added input field for creating notes

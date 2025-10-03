@@ -34,6 +34,7 @@ const itemsRef = ref(db, `shops/${shopName}/service`)
 
 // first check if folder exists
 get(itemsRef).then(snapshot => {
+  autoScrollNavIcons()
   if (!snapshot.exists()) {
     $('.loader').classList.add('hidden');
     console.log("⚠️ No service data found yet");
@@ -81,7 +82,8 @@ const setAutoHeightTextArea=  ()=>{
 });
 }
 
-
+// to get dev info
+let device = {}
         // for done status (if customer not collected their mobile ) for for notify the problem that few customers is not collected their mobile
 let notified = false;
 
@@ -103,6 +105,24 @@ const checkDoneDevices=(data)=>{
     console.log('notification Not triggered. Done length:', filtered.length);
   }
 }
+
+
+// header nav auto scroll function 
+const autoScrollNavIcons = ()=>
+{
+  const shopNameWraper = $('.shop-selector-wrap')
+    // store original scroll
+    const start = shopNameWraper.scrollLeft;
+
+    // scroll to end smoothly
+    shopNameWraper.scrollTo({ left: shopNameWraper.scrollWidth, behavior: "smooth" });
+
+    // after scroll ends, return back
+    setTimeout(() => {
+      shopNameWraper.scrollTo({ left: start, behavior: "smooth" });
+    }, 1000); // wait ~2s before going back
+}
+
 
 onChildAdded(itemsRef, (snapshot) => {
   $('.loader').classList.add('hidden')
@@ -403,7 +423,8 @@ const routes = {
   "#add": ".form",
   "#shop-work": ".shop-work",
   '#inventory':'.inventory-page',
-  '#addInventory':'.inventory-create-page'
+  '#addInventory':'.inventory-create-page',
+  '#changelog':'.changelog-page'
 };
 
 const router = () => {
@@ -425,7 +446,19 @@ const router = () => {
   // header animation handle
   $('header').classList.toggle('slide-up', hash === "#add");
   if(hash ==='#add') $('.form input#name').focus()
-  if(hash==='') shopSwitcher()
+  if(hash==='') shopSwitcher();
+  if (hash==='#changelog') {
+    fetch("./CHANGELOG.md")
+    .then(res => res.text())
+    .then(md => {
+      const converter = new showdown.Converter();
+      document.getElementById("changelog").innerHTML = converter.makeHtml(md);
+    })
+    .catch(err => {
+      document.getElementById("changelog").textContent = "⚠️ Unable to load changelog.";
+      console.error(err);
+    });
+  }
 };
 
 window.addEventListener("DOMContentLoaded", router);
@@ -909,6 +942,28 @@ document.addEventListener('scroll', () => {
 });
 
 
+// New ref
+//const newRef = ref(db, "shops/mobifixer/service");
+
+// Copy data
+// get(itemsRef).then(snapshot => {
+//   if (snapshot.exists()) {
+//     set(newRef, snapshot.val());
+//     console.log("Data copied successfully!");
+//   }
+// });
+
+window.onoffline=()=>{
+    // play sound
+    showNotice({title:'Offline', body:'Device disconnect.', type:'error'})
+  const audio = document.getElementById("disconnect");
+  if (audio) {
+    audio.currentTime = 0;
+    audio.play().catch(err => console.log("Audio play blocked:", err));
+  }
+  location.reload()
+}
+window.ononline=()=> showNotice({title:'Online', body:'Device Connected.', type:'success'})
 
 
 
@@ -922,6 +977,7 @@ document.addEventListener('scroll', () => {
 
 
 
+//#####################################################################//
 
 // put it down 👇 
 const CURRENT_VERSION = '3.0.1';
@@ -944,15 +1000,4 @@ window.addEventListener('beforeunload', () => {
   localStorage.setItem('app_version', CURRENT_VERSION);
 });
 
-
-
-// New ref
-//const newRef = ref(db, "shops/mobifixer/service");
-
-// Copy data
-// get(itemsRef).then(snapshot => {
-//   if (snapshot.exists()) {
-//     set(newRef, snapshot.val());
-//     console.log("Data copied successfully!");
-//   }
-// });
+//######################### THE END ###################################//

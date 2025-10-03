@@ -264,10 +264,10 @@ button.add:hover {
     transform: translateY(-200px);
 }
 
-.form{
+.form, .inventory-create-page{
     padding: 2rem;
 }
-.form input, .form textarea {
+.form input, .form textarea , .inventory-create-page input{
     margin-top: 2rem;
     border: 1px solid #999999;
     width: 100%;
@@ -275,7 +275,7 @@ button.add:hover {
     font-size: 18px;
 }
 
-.form select{
+.form select, .inventory-create-page select{
     padding: 1rem 1.3rem;
     background: #fff;
     color: #000;
@@ -287,7 +287,7 @@ button.add:hover {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.21);
 }
 
-.add-data{
+.add-data, .create_prod_data{
     padding: 1rem 1.3rem;
     background: #000;
     margin-top: 2rem;
@@ -334,6 +334,7 @@ button.add:hover {
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
+    overflow-x: auto;
 }
 
 .shop-selector-wrap span{
@@ -374,7 +375,7 @@ button.add:hover {
 @media screen and (min-width: 769px) and (max-width: 1024px) {
   /* CSS rules for devices with a width between 769px and 1024px (e.g., landscape tablets) */
   
-  .form .input-group{
+ .form .input-group, .inventory-create-page .input-group{
       width: 50%;
   }
   
@@ -608,6 +609,40 @@ input[type="checkbox"]:checked::after {
     color: #999;
     letter-spacing: 1.2px;
 }
+
+pre {
+    background: #f9f9f9;
+    padding: 1rem;
+    white-space: pre-wrap;
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 14px;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.27);
+    margin: 2rem;
+    max-height: 80vh;
+    overflow-x: auto;
+  }
+  
+  
+  #category_search_out{
+      padding: 1rem;
+      background: #E0E0E0;
+  }
+  
+  .flex_input_wrap{
+      display: flex;
+      gap: 1rem;
+  }
+  
+  .flex_input_wrap input{
+      border-radius: 7px;
+  }
+  .new_key{
+      margin: auto;
+      display: block;
+      margin-right: 0;
+      margin-top: 2rem;
+  }
 .hidden{
     display: none;
 }
