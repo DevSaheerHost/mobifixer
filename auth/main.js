@@ -79,17 +79,19 @@ $('#login').onclick = async (e) => {
 
   if (!businessName || !businessPass) {
     alert("Please enter all fields!");
+    
     return;
   }
 
   console.log('Attempt login', businessName);
-
+$('.loader').classList.remove('hidden')
   try {
     const snapshot = await get(child(shopRef, businessName));
     console.log(snapshot.val());
 
     if (!snapshot.exists()) {
       alert("Shop not found! Please Create new Shop");
+      $('.loader').classList.add('hidden')
       return;
     }
 
@@ -98,11 +100,13 @@ $('#login').onclick = async (e) => {
       localStorage.setItem('shopName', businessName)
       location = "/";
     } else {
+      $('.loader').classList.add('hidden')
       alert('Password not match')
     }
   } catch (err) {
     console.error(err);
     alert("❌ Error: " + err.message);
+    $('.loader').classList.add('hidden')
   }
 };
 
@@ -117,16 +121,18 @@ $('#signup').onclick = async (e) => {
 
   if (!userName || !businessName || !businessEmail || !businessPass) {
     alert("Please enter all fields!");
+
     return;
   }
 
   console.log('Attempt signup →', businessName);
-
+$('.loader').classList.remove('hidden')
   try {
     const snapshot = await get(child(shopRef, businessName));
 
     if (snapshot.exists()) {
       alert("❌ Shop already exists! Please choose a new shop name");
+      $('.loader').classList.add('hidden')
       return;
     }
 
@@ -143,9 +149,10 @@ $('#signup').onclick = async (e) => {
     localStorage.setItem('shopName', businessName)
     alert("✅ Signup successful! Please login now.");
     location.hash = "#/login";
-
+$('.loader').classList.add('hidden')
   } catch (err) {
     console.error(err);
     alert("❌ Error: " + err.message);
+    $('.loader').classList.add('hidden')
   }
 };

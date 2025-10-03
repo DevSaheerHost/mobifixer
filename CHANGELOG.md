@@ -3,6 +3,8 @@
 ## [Unreleased]
 - loading animation 
 
+## [3.0.1] 2025-10-03 
+- bug fixes and mainer changes
 ## [3.0.0] 2025-10-03
 feat(auth): add signup and login with Firebase Realtime DB
 

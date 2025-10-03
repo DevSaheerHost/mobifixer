@@ -907,13 +907,13 @@ document.addEventListener('scroll', () => {
 
 
 // put it down 👇 
-const CURRENT_VERSION = '3.0.0';
+const CURRENT_VERSION = '3.0.1';
 const LAST_VERSION = localStorage.getItem('app_version') || null;
 
 if (LAST_VERSION !== CURRENT_VERSION) {
     // show notice
     showNotice({
-        title: "New Version Available!",
+        title: "App updated!",
         body: "You are now using version " + CURRENT_VERSION,
         type: "info",
         delay: 5 // seconds or use animation timing

@@ -33,8 +33,9 @@ It provides a simple CRUD (Create, Read, Update, Delete) system for all customer
 
 ## Future Updates (Planned)
 - Analytics dashboard for sales and repairs.  
+- inventory management system.
 
 ---
 
 ## Current Version
-**v1.2.0** – Basic CRUD functionality implemented.
+**v3.0.0** – Auth added
