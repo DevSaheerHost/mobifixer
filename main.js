@@ -480,7 +480,7 @@ $('.add-data').onclick = async () => {
     return
   }
   if (!name || !number || !complaints || !model || !status) {
-    alert("All fields are required!");
+    showNotice({title:'Validation Error', body:'All fields are required!', type:'error', delay:10});
     return;
   }
   $('.add-data').textContent='Loading...'

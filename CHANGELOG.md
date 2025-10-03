@@ -8,6 +8,7 @@
 - bug fixes 
 - inventory page created 
 - bug fixes and mainer changes
+
 ## [3.0.0] 2025-10-03
 feat(auth): add signup and login with Firebase Realtime DB
 
