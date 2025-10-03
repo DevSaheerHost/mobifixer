@@ -1,11 +1,13 @@
 ### Changelog
 
 ## [Unreleased]
+- loading animation 
 
-
-## [3.0.0] 2025-10-02
+## [3.0.0] 2025-10-03
 feat(auth): add signup and login with Firebase Realtime DB
 
+- loading animation 
+- bug fixes
 - Implemented login validation by checking shop existence under `shops/`
 - Added signup flow with duplicate shop name check
 - New shops are created with owner, email, password, createdAt, and empty service branch

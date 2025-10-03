@@ -94,6 +94,7 @@ const checkDoneDevices=(data)=>{
 }
 
 onChildAdded(itemsRef, (snapshot) => {
+  $('.loader').classList.add('hidden')
   const item = snapshot.val();
   // Duplicate check → push or replace
   const existingIndex = data.findIndex(d => d.sn === item.sn);
@@ -468,6 +469,7 @@ $('.add-data').onclick = async () => {
   }
   $('.add-data').textContent='Loading...'
 $('.add-data').disabled=true
+  $('.loader').classList.remove('hidden');
   try {
     const lastSnRef = ref(db, `shops/${shopName}/lastServiceSn`);
 
@@ -503,6 +505,7 @@ console.log(formatted);
       advance,
       date: formatted
     });
+      $('.loader').classList.add('hidden');
       $('.add-data').disabled=false
   $('.add-data').textContent='Add to List'
     console.log("✅ Data added successfully, SN:", newSn);
@@ -528,6 +531,7 @@ console.log(formatted);
     
 
   } catch (err) {
+    $('.loader').classList.add('hidden');
     $('.add-data').textContent=err.message
     $('.add-data').style.background='red'
     console.error("❌ Error adding data:", err);

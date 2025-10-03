@@ -313,9 +313,7 @@ button.add:hover {
     border-radius: 10px;
 }
 
-.hidden{
-    display: none;
-}
+
 .empty{
     color: #999999;
     text-align: center;
@@ -580,3 +578,26 @@ input[type="checkbox"]:checked::after {
 }
 
 
+.loader{
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.44);
+    z-index: 9;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.loader .loading-card{
+    padding: 1rem;
+    background: #fff;
+    border-radius: 10px;
+}
+
+
+.hidden{
+    display: none;
+}
