@@ -143,6 +143,14 @@ li nav{
 li nav h3.sn{
     color: #e74c3c;
 }
+li nav span{
+    display: flex;
+    gap: 1rem;
+}
+li nav span i{
+    color: #686868;font-size: 15px;
+    margin-top: 2px;
+}
 
 @keyframes slide-up{
     from{
@@ -179,15 +187,22 @@ li nav h3.sn{
     font-weight: 600;
 }
 
-.list-item .flex{
+.list-item .box{
     margin-top: 1rem;
+}
+.list-item .box .item_flex{
     display: flex;
-gap: 1rem;
+}
+.list-item .box .item_flex p.value{
+    flex: 2;
+}
+.list-item .box .item_flex p.key{
+    flex: 1;
 }
 .list-item .right i{
     color: #999;
 }
-.list .list-item .right p::before{
+.list .list-item p.value::before{
     content: ":    ";
     font-weight: bold;
 }
@@ -643,6 +658,67 @@ pre {
       margin-right: 0;
       margin-top: 2rem;
   }
+  
+  
+  main.form{
+      transition: all .5s;
+      animation: open .5s ease-out forwards;
+  }
+  
+  main.form input{
+      animation: slideUp 1s;
+  }
+  
+  main{
+      animation: zom 0.4s;
+  }
+  
+  main .page-title, #new_sn{
+      animation: slideFromLeft 1s;
+  }
+  .sn{
+      animation: slideFromLeft 0.5s;
+  }
+  @keyframes zom {
+      from{
+          opacity: 0;
+          scale: 1.1;
+      }
+  }
+  
+  @keyframes slideFromLeft{
+      0%, 40%{
+          opacity: 0;
+          transform: translateY(17px);
+      }
+      
+  }
+  
+  @keyframes open {
+  0% {
+    border-radius: 50%;
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  30%, 60% {
+    transform: scale(0.9);
+    opacity: .9;
+  }
+  
+  
+  90%, 100% {
+    transform: scale(1);
+    border-radius: 0;
+  }
+}
+
+@keyframes slideUp{
+    from{
+        transform: translateY(20px);
+        scale: 0.9;
+    }
+}
+  
 .hidden{
     display: none;
 }

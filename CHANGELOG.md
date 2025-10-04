@@ -2,6 +2,35 @@
 
 ## 🚧 [Unreleased]
 
+---
+
+## [3.2.0] - 2025-10-04
+### 🚀 Features
+- Added **Edit Option** for existing service entries
+- Enabled auto-fill form for quick editing experience
+- Introduced new **zoom in zoom out animation** from bottom-right corner
+- Enhanced transition effects for buttons and components
+
+### 🎨 UI/UX
+- Improved **animation smoothness** using transform scaling
+- Added subtle fade-in and morph effects for better visual feedback
+- Unified color and motion consistency across pages
+- Enhanced interaction feel using short vibration patterns
+- Synchronized notice animation with vibration pulse for realistic feedback
+
+### 🛠️ Fixes & Improvements
+- Fixed minor form validation delays during edit mode
+- Optimized button interactions and notice timing
+- General performance and responsiveness improvements
+
+### 🔔 Notifications
+- Added vibration feedback for all notice alerts (success, error, info)
+- Improved tactile response timing for better user feedback
+
+### ⚙️ Technical
+- Implemented navigator.vibrate() API with pattern-based feedback
+- Optimized vibration trigger to occur only on user-initiated actions
+
 ### ✨ Inventory
 - 🆕 Designed **Add Inventory Page** with input fields:  
   - Product name  
@@ -14,7 +43,6 @@
 ---
 
 ## [3.0.1] - 2025-10-03  
-- 
 - 🐞 Minor bug fixes  
 - 📦 Initial **Inventory Page** created  
 - 🔧 Stability improvements  

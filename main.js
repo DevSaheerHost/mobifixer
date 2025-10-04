@@ -294,7 +294,7 @@ const createCardsyyyy = (data, status, sn) => {
     const nav = document.createElement('nav')
     listItem.classList.add('list-item');
     listItem.setAttribute("data-sn", item.sn);
-    nav.innerHTML=`<h3>${item.name}</h4> <h3 class='sn'>${item.sn}</h4> `;
+    nav.innerHTML=`<h3>${item.name}</h4> <h3 class='sn'>${item.sn} </h4> `;
     listItem.appendChild(nav)
     listItem.innerHTML += cardLayout(item);
     listContainer.appendChild(listItem);
@@ -327,7 +327,7 @@ filtered.forEach(item => {
   const nav = document.createElement('nav')
   listItem.classList.add('list-item');
   listItem.setAttribute("data-sn", item.sn);
-  nav.innerHTML = `<h3>${item.name}</h4> <h3 class='sn'>${item.sn}</h4> `;
+  nav.innerHTML = `<h3>${item.name}</h4> <h3 class='sn'>${item.sn} </h4> `;
   listItem.appendChild(nav)
   listItem.innerHTML += cardLayout(item);
   listContainer.appendChild(listItem);
@@ -377,7 +377,7 @@ const renderNext = () => {
     listItem.setAttribute("data-sn", item.sn);
 
     const nav = document.createElement('nav');
-    nav.innerHTML = `<h3>${item.name}</h3> <h3 class='sn'>${item.sn}</h3>`;
+    nav.innerHTML = `<h3>${item.name}</h3> <span><h3 class='sn'>${item.sn}</h3><i class="fa-solid fa-pen editIcon" data-sn='${item.sn}'></i></span>`;
     listItem.appendChild(nav);
     listItem.innerHTML += cardLayout(item);
 
@@ -445,7 +445,17 @@ const router = () => {
 
   // header animation handle
   $('header').classList.toggle('slide-up', hash === "#add");
-  if(hash ==='#add') $('.form input#name').focus()
+  if(hash ==='#add'){ 
+    $('.form input#name').focus()
+    if (dataIsEdit) {
+    $('.page-title').textContent = 'Edit Service';
+    $('#new_sn').textContent = editDataSn;
+  }
+else {
+  $('.page-title').textContent = 'Add Service';
+  $('#new_sn').textContent = (data[data.length - 1].sn) + 1;
+}
+  }
   if(hash==='') shopSwitcher();
   if (hash==='#changelog') {
     fetch("./CHANGELOG.md")
@@ -493,56 +503,53 @@ window.addEventListener("hashchange", router);
 
 import { set, get, runTransaction }
 from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
-
+let dataIsEdit = false;
+let editDataSn = 0
 $('.add-data').onclick = async () => {
-  const dataAddingTime = performance.now()
+  const dataAddingTime = performance.now();
   const name = $('#name').value.trim();
   const number = $('#number').value.trim();
   const complaints = $('#complaint').value.trim();
   const model = $('#model').value.trim();
   const lock = $('#lock').value?.trim();
-  const status = $('#status').value.trim()||'None';
-  
-  const notes = $('#notes').value.trim()||'';
-  
+  const status = $('#status').value.trim() || 'None';
+  const notes = $('#notes').value.trim() || '';
   const amount = $('#amount').value.trim() || 0;
   const advance = $('#advance').value.trim() || 0;
   
-  if(!$('#sim').checked){
-    showNotice({title:'WARN',body:"Please check the 'SIM and accessories' box before submitting!", type: 'error'})
-    return
-  }
-  if (!name || !number || !complaints || !model || !status) {
-    showNotice({title:'Validation Error', body:'All fields are required!', type:'error', delay:10});
+  if (!$('#sim').checked) {
+    showNotice({ title: 'WARN', body: "Please check the 'SIM and accessories' box before submitting!", type: 'error' });
     return;
   }
-  $('.add-data').textContent='Loading...'
-$('.add-data').disabled=true
-  $('.loader').classList.remove('hidden');
-  try {
-    const lastSnRef = ref(db, `shops/${shopName}/lastServiceSn`);
-
-    // 🔹 Transaction: auto-increment lastSn
-    let newSn = await runTransaction(lastSnRef, (current) => {
-      if (current === null) return 1; // starting SN
-      return current + 1;
-    });
-
-    newSn = newSn.snapshot.val();
+  if (!name || !number || !complaints || !model || !status) {
+    showNotice({ title: 'Validation Error', body: 'All fields are required!', type: 'error', delay: 10 });
+    return;
+  }
     
-  const date = new Date();
-const options = { day: "2-digit", month: "short", year: "numeric" };
-const formatted = date
-  .toLocaleDateString("en-GB", options)
-  .toUpperCase()
-  .replace(/ /g, "-");
 
-console.log(formatted);
-// Example: 17-SEP-2025
+  
+  
 
-    const itemRef = ref(db, `shops/${shopName}/service/${newSn}`);
+  $('.add-data').textContent = dataIsEdit ? 'Updating...' : 'Loading...';
+  $('.add-data').disabled = true;
+  $('.loader').classList.remove('hidden');
+  
+  try {
+    let snToUse = editDataSn;
+    if (!dataIsEdit) {
+      // ➕ ADD MODE
+      const lastSnRef = ref(db, `shops/${shopName}/lastServiceSn`);
+      const tx = await runTransaction(lastSnRef, (current) => (current === null ? 1 : current + 1));
+      snToUse = tx.snapshot.val();
+    }
+    
+    const date = new Date();
+    const options = { day: "2-digit", month: "short", year: "numeric" };
+    const formatted = date.toLocaleDateString("en-GB", options).toUpperCase().replace(/ /g, "-");
+    
+    const itemRef = ref(db, `shops/${shopName}/service/${snToUse}`);
     await set(itemRef, {
-      sn: newSn,
+      sn: snToUse,
       name,
       number,
       complaints,
@@ -554,40 +561,43 @@ console.log(formatted);
       advance,
       date: formatted
     });
-      $('.loader').classList.add('hidden');
-      $('.add-data').disabled=false
-  $('.add-data').textContent='Add to List'
-    console.log("✅ Data added successfully, SN:", newSn);
-    const dataAddedTime = performance.now() - dataAddingTime
     
-    showNotice({title: newSn, body:`Data added successfully. ${Math.floor(dataAddedTime)}ms` , type: 'success', delay: 30})
+    $('.loader').classList.add('hidden');
+    $('.add-data').disabled = false;
+    $('.add-data').textContent = 'Add to List';
     
-
-    // clear form
+    showNotice({
+      title: snToUse,
+      body: dataIsEdit ?
+        'Data updated successfully ✅' :
+        `Data added successfully (${Math.floor(performance.now() - dataAddingTime)}ms)`,
+      type: 'success',
+      delay: 30
+    });
+    
+    // reset form & flags
     $('#name').value = '';
     $('#number').value = '';
     $('#complaint').value = '';
     $('#model').value = '';
     $('#lock').value = '';
-     $('#advance').value = '';
-     $('#amount').value = '';
-     $('#notes').value = '';
-     $('#sim').checked=false
-    //$('#status').value = '';
+    $('#advance').value = '';
+    $('#amount').value = '';
+    $('#notes').value = '';
+    $('#sim').checked = false;
     
-    //location.hash = ""; || 
-    history.back()
+    dataIsEdit = false;
+    editDataSn = 0;
+    history.back();
     
-
   } catch (err) {
     $('.loader').classList.add('hidden');
-    $('.add-data').textContent=err.message
-    $('.add-data').style.background='red'
-    console.error("❌ Error adding data:", err);
-    showNotice({title:'ERROR', body:`Data didn't Added, Please Trying again later. REASON: ${err.message}`, type:'error', delay: 6})
+    $('.add-data').textContent = err.message;
+    $('.add-data').style.background = 'red';
+    console.error("❌ Error saving data:", err);
+    showNotice({ title: 'ERROR', body: `Operation failed: ${err.message}`, type: 'error', delay: 6 });
   }
 };
-
 
 
 
@@ -636,6 +646,32 @@ document.onclick=e=>{
     
     //showNotice({title:'DEBUG', body:"You can't add Note at the moment!", type:'info', delay: 0})
   }
+  
+  if (e.target.classList.contains('editIcon')) {
+  (async () => {
+    editDataSn = e.target.dataset.sn;
+    dataIsEdit = true;
+    location.hash = '#add';
+
+    const itemRef = ref(db, `shops/${shopName}/service/${editDataSn}`);
+    const snapshot = await get(itemRef);
+
+    if (snapshot.exists()) {
+      const data = snapshot.val();
+      $('#name').value = data.name || '';
+      $('#number').value = data.number || '';
+      $('#complaint').value = data.complaints || '';
+      $('#model').value = data.model || '';
+      $('#lock').value = data.lock || '';
+      $('#notes').value = data.notes || '';
+      $('#amount').value = data.amount || '';
+      $('#advance').value = data.advance || '';
+      $('#status').value = data.status || '';
+      $('#sim').checked = true;
+      $('.add-data').textContent = 'Update Data';
+    }
+  })();
+}
 }
 
 
@@ -775,6 +811,17 @@ console.log(delay)
   newNotice.style.animation = `notification ${delay}s cubic-bezier(2,3,3,2) forwards`;
   
   console.log('New notice was created')
+  // Pattern: vibrate → pause → vibrate
+  if (type==='error' || type ==='warn') {
+    navigator.vibrate([50, 50, 50]);
+  }
+  if (type ==='info') {
+    navigator.vibrate([70, 70, 70]);
+  }
+  if (type ==='success') {
+    navigator.vibrate([50]);
+  }
+//navigator.vibrate([50, 50, 50]);
   // newNorice swipe position events
   
   let noticeStartX = 0;
@@ -953,6 +1000,28 @@ document.addEventListener('scroll', () => {
 //   }
 // });
 
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.call-btn');
+  if (!btn) return;
+
+  const num = btn.dataset.num;
+  const telUrl = `tel:${num}`;
+
+  showNotice(`📞 Dialing ${num}...`, "info");
+
+  setTimeout(() => {
+    try {
+      window.location.href = telUrl;
+    } catch {
+      try {
+        window.open(telUrl, '_system');
+      } catch {
+        showNotice({title: 'Cant Call', body:"⚠️ Calling feature not supported in this environment.", type:'error'});
+      }
+    }
+  }, 400);
+});
+
 window.onoffline=()=>{
     // play sound
     showNotice({title:'Offline', body:'Device disconnect.', type:'error'})
@@ -967,7 +1036,21 @@ window.ononline=()=> showNotice({title:'Online', body:'Device Connected.', type:
 
 
 
-
+$('.add').onclick=()=>{
+  dataIsEdit=false
+  $('#name').value = data.name || '';
+      $('#number').value = data.number || '';
+      $('#complaint').value = data.complaints || '';
+      $('#model').value = data.model || '';
+      $('#lock').value = data.lock || '';
+      $('#notes').value = data.notes || '';
+      $('#amount').value = data.amount || '';
+      $('#advance').value = data.advance || '';
+      $('#status').value = data.status || '';
+      $('#sim').checked = false;
+      $('.add-data').textContent = 'Add to List';
+  location.hash='#add'
+}
 
 
 

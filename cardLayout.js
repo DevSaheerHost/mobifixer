@@ -1,30 +1,45 @@
 export const cardLayout=({name, status, number, model, lock, complaints, sn, date, advance, amount, notes})=>`
 
-  <div class="flex">
+  <div class="box">
           
+       <div class='item_flex'>
+       <p class='key'><b>Number</b></p>
+         <p class='value'>+91 ${number}</p>
+       </div>
        
-        <div class="left">
-      
-        <p><b>Number</b></p>
-        <p><b>Model</b></p>
-        <p><b>Complaints</b></p>
-        <p><b>Lock</b></p>
-        <p><b>Date</b></p>
-        <p><b>Approx Rate</b></p>
-        <p><b>Advance</b></p>
-        </div>
+        <div class='item_flex'>
+        <p class='key'><b>Model</b></p>
+         <p class='value'>${model}</p>
+       </div>
+       
+       <div class='item_flex'>
+       <p class='key'><b>Complaints</b></p>
+         <p class='value'>${complaints}</p>
+       </div>
+       
+              <div class='item_flex'>
+       <p class='key'><b>Lock</b></p>
+         <p class='value'>${lock || '<i>none</i>'}</p>
+       </div>
+       
+       
+       <div class='item_flex'>
+       <p class='key'><b>Date</b></p>
+         <p class='value'>${date || ''}</p>
+       </div>
+       
+       
+       <div class='item_flex'>
+       <p class='key'><b>Approx Rate</b></p>
+         <p class='amount value'>₹${amount?Number(amount).toLocaleString('en-IN') :''}</p>
+       </div>
+       
+        <div class='item_flex'>
+       <p class='key'><b>Advance</b></p>
+         <p class='advance value'>₹${advance?Number(advance).toLocaleString('en-IN') : ''}</p>
+       </div>
 
-<div class="right">
-  
-  <p>+91 ${number}</p>
-  <p>${model}</p>
-  <p>${complaints}</p>
-  <p>${lock||'<i>none</i>'}</p>
-  <p>${date||''}</p>
- <p class='amount'>₹${amount?Number(amount).toLocaleString('en-IN') :''}</p>
-<p class='advance'>₹${advance?Number(advance).toLocaleString('en-IN') : ''}</p>
-  
-</div>
+
  </div>
  
  <div class='note-input-wrap'>
@@ -62,7 +77,8 @@ export const cardLayout=({name, status, number, model, lock, complaints, sn, dat
   <label for="return-${sn}">Return</label>
 </span>
 
-<button class='call-btn' onclick = "window.location.href='tel:+91${number}'">
-  Call Now </button>
+   <button class='call-btn' data-num="+91${number}">
+      <i class="fa-solid fa-phone"></i>
+    </button>
  </div>
 `
