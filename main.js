@@ -44,6 +44,8 @@ get(itemsRef).then(snapshot => {
   }
 });
 
+
+
 // const itemsRef = query(
 //   ref(db, "shops/mobifixer/service"),
 //   orderByKey(),
@@ -1063,7 +1065,7 @@ $('.add').onclick=()=>{
 //#####################################################################//
 
 // put it down 👇 
-const CURRENT_VERSION = '3.0.1';
+const CURRENT_VERSION = '3.2.0';
 const LAST_VERSION = localStorage.getItem('app_version') || null;
 
 if (LAST_VERSION !== CURRENT_VERSION) {
