@@ -4,6 +4,12 @@
 
 ---
 
+## [3.2.1] - 2025-10-05
+- **Fixed** call button function
+- **UI** Animation enhanced 
+- 🪲 Minor Bug fixes
+- Performance Improved
+
 ## [3.2.0] - 2025-10-04
 ### 🚀 Features
 - Added **Edit Option** for existing service entries

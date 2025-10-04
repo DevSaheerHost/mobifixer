@@ -44,7 +44,23 @@ get(itemsRef).then(snapshot => {
   }
 });
 
+const speakText=(text, lang = 'en-IN', rate = 1, pitch = 1)=> {
+  if (!('speechSynthesis' in window)) {
+    // showNotice({ title: '⚠️ Unsupported', body: 'Text-to-Speech not supported in this browser.', type: 'error' });
+    
+    return;
+  }
 
+  const msg = new SpeechSynthesisUtterance(text);
+  msg.lang = lang;        // Language (ml-IN for Malayalam, en-IN for Indian English)
+  msg.rate = rate;        // Speed (0.5 – 2)
+  msg.pitch = pitch;      // Voice pitch (0 – 2)
+
+  // Vibration + speak
+  if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+  window.speechSynthesis.cancel(); // Stop any previous speech
+  window.speechSynthesis.speak(msg);
+}
 
 // const itemsRef = query(
 //   ref(db, "shops/mobifixer/service"),
@@ -610,12 +626,12 @@ document.addEventListener("change", (e) => {
     const sn = e.target.name.split("-")[1];   // e.g. "status-2001" → 2001
     const newStatus = e.target.id.split("-")[0]; // e.g. "done-2001" → done
 
-    console.log("🔄 Updating SN:", sn, "→", newStatus);
+    
 
     const itemRef = ref(db, `shops/${shopName}/service/${sn}`);
     
     update(itemRef, { status: newStatus })
-      .then(() => showNotice({title: sn, body:`Status Updated →, ${newStatus.toUpperCase()}` , type: 'info', delay: 5000}))
+      .then(() => showNotice({title: sn, body:`Status Updated To, ${newStatus.toUpperCase()}` , type: 'info', delay: 5000}))
       .catch(err => {
         console.error("❌ Error updating status:", err)
         showNotice({title:'ERROR', body:`Data didn't updated!, Please Trying again later. REASON: ${err.message}`, type:'error', delay: 6})
@@ -790,7 +806,6 @@ const noticeQueue = [];
 let isShowing = false;
 
 function showNotice({ title, body, type = "info" , delay}) {
-  console.log('New notice Function called')
   noticeQueue.push({ title, body, type , delay});
   if (!isShowing) {
     processQueue();
@@ -805,20 +820,22 @@ function processQueue() {
 
   isShowing = false;
   const { title, body, type, delay } = noticeQueue.shift();
-console.log(delay)
+
 // notice element 
 
   const newNotice = document.createElement("div");
   newNotice.classList.add("notice", type);
   newNotice.style.animation = `notification ${delay}s cubic-bezier(2,3,3,2) forwards`;
-  
+  speakText(body);
   console.log('New notice was created')
   // Pattern: vibrate → pause → vibrate
   if (type==='error' || type ==='warn') {
     navigator.vibrate([50, 50, 50]);
+    
+    //speakText("നന്ദി, വീണ്ടും വരുക kumar ഏട്ടാ!", "ml-IN", 1.1, 1);
   }
   if (type ==='info') {
-    navigator.vibrate([70, 70, 70]);
+    navigator.vibrate([50, 70, 50]);
   }
   if (type ==='success') {
     navigator.vibrate([50]);
@@ -1013,15 +1030,21 @@ document.addEventListener('click', e => {
 
   setTimeout(() => {
     try {
-      window.location.href = telUrl;
+      window.open(telUrl, '_system');
     } catch {
       try {
-        window.open(telUrl, '_system');
+        window.location.href = telUrl;
+        
       } catch {
         showNotice({title: 'Cant Call', body:"⚠️ Calling feature not supported in this environment.", type:'error'});
       }
     }
   }, 400);
+  
+  
+ // speakText("Welcome back, Babu! The system is ready.");
+// Malayalam voice
+//speakText("സിസ്റ്റം റെഡി ആണേ ബാബു!", "ml-IN", 1.1, 1);
 });
 
 window.onoffline=()=>{
@@ -1053,6 +1076,9 @@ $('.add').onclick=()=>{
       $('.add-data').textContent = 'Add to List';
   location.hash='#add'
 }
+
+
+
 
 
 

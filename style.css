@@ -700,10 +700,7 @@ pre {
     transform: scale(0.4);
     opacity: 0;
   }
-  30%, 60% {
-    transform: scale(0.9);
-    opacity: .9;
-  }
+  
   
   
   90%, 100% {
