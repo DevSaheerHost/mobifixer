@@ -29,7 +29,62 @@ const db = getDatabase(app);
 const shopName = localStorage.getItem('shopName')
 if(!shopName) location='./auth/index.html'
 // Reference to your data
-//const itemsRef = ref(db, "service");
+const backupRef = ref(db, `shops/${shopName}`);
+
+get(backupRef).then(snapshot => {
+  if (!snapshot.exists()) {
+    showNotice({ title: 'Backup', body: 'No data found in cloud', type: 'warn' });
+    return;
+  }
+  
+  const cloudData = snapshot.val();
+  const cloudServices = cloudData.service ?
+    (Array.isArray(cloudData.service) ? cloudData.service : Object.values(cloudData.service)) :
+    [];
+  
+  const localData = JSON.parse(localStorage.getItem('backupData') || '{}');
+  const localServices = localData.service ?
+    (Array.isArray(localData.service) ? localData.service : Object.values(localData.service)) :
+    [];
+  
+  const cloudCount = cloudServices.length;
+  const localCount = localServices.length;
+  
+  console.log(`Local: ${localCount} | Cloud: ${cloudCount}`);
+  
+  // 🧠 Compare logic
+  if (localCount < cloudCount) {
+    // Cloud has more data → update local
+    localStorage.setItem('backupData', JSON.stringify(cloudData));
+    showNotice({
+      title: 'Backup Updated',
+      body: `New data synced (${cloudCount} services)`,
+      type: 'info'
+    });
+  } else if (localCount > cloudCount) {
+    // Data loss or hacking suspected
+    console.error("⚠️ Data loss detected! Cloud data smaller than local.");
+    showNotice({
+      title: 'Backup Error',
+      body: '⚠️ Data loss detected — Backup not updated! Please Inform to the Developer!!!',
+      type: 'error'
+    });
+  } else {
+    // Equal → no changes
+    // showNotice({
+    //   title: 'Backup',
+    //   body: 'Backup already up to date ✅',
+    //   type: 'success'
+    // });
+  }
+}).catch(err => {
+  console.error("Backup fetch failed:", err);
+  showNotice({
+    title: 'Backup',
+    body: 'Backup failed — ' + err.message,
+    type: 'error'
+  });
+});
 const itemsRef = ref(db, `shops/${shopName}/service`)
 
 // first check if folder exists
@@ -459,6 +514,7 @@ const router = () => {
     $(routes[hash]).style.display = "block";
   } else {
     $(".not-found").style.display = "block"; // 404 view
+    return
   }
 
   // header animation handle
@@ -826,16 +882,17 @@ function processQueue() {
   const newNotice = document.createElement("div");
   newNotice.classList.add("notice", type);
   newNotice.style.animation = `notification ${delay}s cubic-bezier(2,3,3,2) forwards`;
-  speakText(body);
+  
   console.log('New notice was created')
   // Pattern: vibrate → pause → vibrate
   if (type==='error' || type ==='warn') {
     navigator.vibrate([50, 50, 50]);
-    
+    speakText(body);
     //speakText("നന്ദി, വീണ്ടും വരുക kumar ഏട്ടാ!", "ml-IN", 1.1, 1);
   }
   if (type ==='info') {
     navigator.vibrate([50, 70, 50]);
+    speakText(body);
   }
   if (type ==='success') {
     navigator.vibrate([50]);

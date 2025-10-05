@@ -1,8 +1,28 @@
 # 📌 Changelog
 
 ## 🚧 [Unreleased]
-
+- Bug fixes 
 ---
+
+## [3.3.0] - 2025-10-05
+### ⚙️ Backup System
+- 🔄 Added real-time backup comparison between **Cloud** data and **LocalStorage backup
+- 🧠 Implemented auto sync logic:
+- - If localStorage.service.length < cloud.service.length → update local backup
+- - If localStorage.service.length > cloud.service.length → trigger error (possible data loss or tampering)
+- - If equal → skip update (already synced)
+
+### 🛡️ Security & Integrity
+- 🚫 Prevents overwriting backup when data loss is detected
+- 🧩 Safe handling of Cloud object-to-array conversion using Object.values()
+- 🧱 Added try/catch and structured error notifications for reliability
+
+### 💬 UI / Feedback
+- ✅ Added dynamic notifications via showNotice()
+- info: Backup synced successfully
+- warn: No data found
+- error: Data loss detected or fetch failed
+
 
 ## [3.2.1] - 2025-10-05
 - **Fixed** call button function
