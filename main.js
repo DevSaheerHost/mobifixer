@@ -1148,7 +1148,7 @@ $('.add').onclick=()=>{
 //#####################################################################//
 
 // put it down 👇 
-const CURRENT_VERSION = '3.2.0';
+const CURRENT_VERSION = '3.3.0';
 const LAST_VERSION = localStorage.getItem('app_version') || null;
 
 if (LAST_VERSION !== CURRENT_VERSION) {
