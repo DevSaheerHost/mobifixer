@@ -308,8 +308,16 @@ onChildChanged(itemsRef, (snapshot) => {
 });
 
 // Navigation switcher
-const navSwitcher = () => {
+const navSwitcher = (statusToSelect) => {
   const navs = $$('nav a');
+  if (statusToSelect) {
+  navs.forEach(n => {
+    const status = n.dataset.text?.toLowerCase();
+    n.classList.toggle('active', status === statusToSelect.toLowerCase());
+  });
+  return;
+}
+  
   navs.forEach(n => {
     n.onclick = e => {
       navs.forEach(n => n.classList.remove('active'));
@@ -460,11 +468,20 @@ const renderNext = () => {
   renderStart += renderLimit;
 }
 
+let keyboardOpen = false;
+
+window.visualViewport?.addEventListener('resize', () => {
+  const vh = window.visualViewport.height;
+  const full = window.innerHeight;
+  keyboardOpen = vh < full * 0.8; // ~20% reduction → keyboard likely open
+});
+
 window.addEventListener('scroll', () => {
+  if (keyboardOpen) return; // prevent triggering while keyboard active
+  
   const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
   
   if (scrollTop + clientHeight >= scrollHeight - 100) {
-    // near bottom
     if (renderStart < activeFiltered.length) {
       renderNext();
     }
@@ -476,6 +493,7 @@ window.addEventListener('scroll', () => {
 // Filter cards by status
 const filterByStatus = (status) => {
   createCards(data, status);
+  
 };
 
 // filter cards by SN
@@ -663,6 +681,11 @@ $('.add-data').onclick = async () => {
     dataIsEdit = false;
     editDataSn = 0;
     history.back();
+    // show ui here
+    //filterByStatus('pending')
+    $$('nav a').forEach(elem=>elem.classList.remove('active'))
+    filterBySn(snToUse);
+    
     
   } catch (err) {
     $('.loader').classList.add('hidden');
@@ -1128,7 +1151,7 @@ $('.add').onclick=()=>{
       $('#notes').value = data.notes || '';
       $('#amount').value = data.amount || '';
       $('#advance').value = data.advance || '';
-      $('#status').value = data.status || '';
+      $('#status').value = data.status || 'pending';
       $('#sim').checked = false;
       $('.add-data').textContent = 'Add to List';
   location.hash='#add'
@@ -1148,7 +1171,7 @@ $('.add').onclick=()=>{
 //#####################################################################//
 
 // put it down 👇 
-const CURRENT_VERSION = '3.3.0';
+const CURRENT_VERSION = '3.3.1';
 const LAST_VERSION = localStorage.getItem('app_version') || null;
 
 if (LAST_VERSION !== CURRENT_VERSION) {
