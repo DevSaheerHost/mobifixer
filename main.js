@@ -1161,7 +1161,12 @@ $('.add').onclick=()=>{
 
 
 
-
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    // User reopened tab
+    location.reload();
+  }
+});
 
 
 
