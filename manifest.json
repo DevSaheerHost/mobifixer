@@ -1,0 +1,20 @@
+{
+  "name": "MobiFixer",
+  "short_name": "M",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#E8EAFF",
+  "theme_color": "#0BA2FF",
+  "icons": [
+    {
+      "src": "./icon-192.jpg",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./icon-192.jpg",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

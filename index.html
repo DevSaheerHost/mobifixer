@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=Edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <meta name="theme-color" content="#999999">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.jpg">
 
   <title>MobiFixer</title>
   
@@ -20,7 +27,7 @@
   <header>
 <div class="shop-selector-wrap">
   <span><a href="#inventory">INV</a></span>
-<span class="active myshop" onclick="window.history.back()">
+<span class="active myshop" onclick="location.hash=""">
   <h2><a href="" id="shopname"></a></h2>
 </span>
   <p id="timerElement">0ms</p>
@@ -81,7 +88,10 @@
     
     <main class="form hidden">
      <div class="sn-flex">
-        <h3 class="page-title">Add to List</h3>
+<div class="sub_flex">
+  <a href="#" class="intro-anim" data-key="backBtnFromAdd"><i class="fa-solid fa-arrow-left"></i></a>
+<h3 class="page-title">Add to List</h3>
+</div>
  <h3 id="new_sn">1</h3>
      </div>
       <div class="input-group">

@@ -56,9 +56,10 @@ get(backupRef).then(snapshot => {
   if (localCount < cloudCount) {
     // Cloud has more data → update local
     localStorage.setItem('backupData', JSON.stringify(cloudData));
+    const difference = Math.abs(localCount - cloudCount);
     showNotice({
       title: 'Backup Updated',
-      body: `New data synced (${cloudCount} services)`,
+      body: `New data synced (${difference} services)`,
       type: 'info'
     });
   } else if (localCount > cloudCount) {
@@ -175,7 +176,7 @@ const checkDoneDevices=(data)=>{
     
     console.log(' notification. Done count:', filtered.length);
   } else {
-    console.log('notification Not triggered. Done length:', filtered.length);
+    //console.log('notification Not triggered. Done length:', filtered.length);
   }
 }
 
@@ -538,6 +539,7 @@ const router = () => {
   // header animation handle
   $('header').classList.toggle('slide-up', hash === "#add");
   if(hash ==='#add'){ 
+    showFirstAnim()
     $('.form input#name').focus()
     if (dataIsEdit) {
     $('.page-title').textContent = 'Edit Service';
@@ -590,7 +592,14 @@ window.addEventListener("hashchange", router);
 
 
 
-
+const getCurrentTime = ()=> {
+  const now = new Date();
+  let hours = now.getHours();
+  const minutes = now.getMinutes().toString().padStart(2, "0");
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12 || 12; // 0 hours → 12
+  return `${hours}:${minutes} ${ampm}`;
+}
 // Add data
 
 import { set, get, runTransaction }
@@ -636,8 +645,10 @@ $('.add-data').onclick = async () => {
     }
     
     const date = new Date();
+    const time = getCurrentTime()
     const options = { day: "2-digit", month: "short", year: "numeric" };
     const formatted = date.toLocaleDateString("en-GB", options).toUpperCase().replace(/ /g, "-");
+    
     
     const itemRef = ref(db, `shops/${shopName}/service/${snToUse}`);
     await set(itemRef, {
@@ -651,7 +662,8 @@ $('.add-data').onclick = async () => {
       notes,
       amount,
       advance,
-      date: formatted
+      date: formatted,
+      time: time
     });
     
     $('.loader').classList.add('hidden');
@@ -1161,16 +1173,77 @@ $('.add').onclick=()=>{
 
 
 
+// document.addEventListener("visibilitychange", () => {
+//   if (document.visibilityState === "visible") {
+//     // User reopened tab
+//     location.reload();
+//     //$('.loader').classList.remove('hidden')
+    
+//   }
+// });
+
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") {
-    // User reopened tab
-    location.reload();
+    console.log("🔄 Tab reopened → Re-fetching data...");
+    refreshServiceData();
   }
 });
 
+function refreshServiceData() {
+  $('.loader').classList.remove('hidden')
+  const itemsRef = ref(db, `shops/${shopName}/service`);
+  
+  get(itemsRef).then(snapshot => {
+    if (snapshot.exists()) {
+      data = Object.values(snapshot.val());
+      const activeStatus =
+        document.querySelector("nav a.active")?.dataset.text.toLowerCase() ||
+        "pending";
+      filterByStatus(activeStatus);
+      $('.loader').classList.add('hidden')
+      showNotice({title: ' ✅', body:`Data refreshed successfully.`, type:'success'})
+      console.log("✅ Data refreshed successfully.");
+    } else {
+      $('.list').innerHTML = `
+        <li class="empty">No data available</li>
+        <p>Need to create a new entry? 
+          <a class="blue" href="#add">Click here</a>
+        </p>
+      `;
+      console.log("⚠️ No service data found yet");
+      $('.loader').classList.add('hidden')
+      showNotice({title:'404', body:'No data found', type:'warn'})
+    }
+  }).catch(err => {
+    console.error("❌ Error reloading data:", err)
+   showNotice({title: ' ❌', body:`Error Reloading data: ${err.message}`, type:'error'})
+  });
+}
 
 
 
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js');
+}
+
+
+
+//  New buttons
+const showFirstAnim=()=>{
+  document.querySelectorAll('.intro-anim').forEach(el => {
+  const key = el.dataset.key || Math.random().toString(36).slice(2);
+  const storageKey = `seen_${key}`;
+
+  if (!localStorage.getItem(storageKey)) {
+    // Animate only first-time
+    setTimeout(() => el.classList.add('animate'), 150);
+    localStorage.setItem(storageKey, 'true');
+  } else {
+    el.style.transform = 'scale(1)';
+    el.style.opacity = '1';
+  }
+});
+}
 
 
 //#####################################################################//

@@ -527,10 +527,29 @@ white-space: nowrap;
 .notice.info::before {background: #3498db;}
 .notice.error::before {background: #e74c3c;}
 
-
+.myshop{
+    animation: scale 0.5s;
+}
+@keyframes scale{
+    from
+    {
+        scale: 0;
+    }
+}
 .sn-flex{
     display: flex;
+    align-items: center;
     gap: 2rem;
+}
+.sn-flex .sub_flex{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: .5rem;
+}
+.sn-flex a{
+    color: #000;
+    font-size: 19px;
 }
 #new_sn{
     color: #e74c3c;
@@ -714,6 +733,18 @@ pre {
         transform: translateY(20px);
         scale: 0.9;
     }
+}
+
+
+.intro-anim {
+  transform: scale(0.8);
+  opacity: 0;
+  transition: transform 0.4s ease, opacity 0.4s ease;
+}
+
+.intro-anim.animate {
+  transform: scale(1);
+  opacity: 1;
 }
   
 .hidden{

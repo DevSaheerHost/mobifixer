@@ -5,8 +5,15 @@
 
 ##  🚧 [Unreleased]
 
-- 
+- Accessibility Improvements.
+- UI fixes
+- install app option with meta tag. in web.
+- User Experience Improved
+- time added for new data
+
+
 ---
+
 
 ## [3.3.1] - 2025-10-06
 - Bug fixes

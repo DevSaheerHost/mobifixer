@@ -12,3 +12,13 @@ self.addEventListener("notificationclick", event => {
     event.waitUntil(clients.openWindow("https://mobifixer.vercel.app/"));
   }
 });
+
+
+self.addEventListener('install', (e) => {
+  console.log('Service Worker installed');
+});
+
+self.addEventListener('fetch', (e) => {
+  // Optional: cache handling
+  console.log(e)
+});

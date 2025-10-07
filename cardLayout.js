@@ -1,4 +1,4 @@
-export const cardLayout=({name, status, number, model, lock, complaints, sn, date, advance, amount, notes})=>`
+export const cardLayout=({name, status, number, model, lock, complaints, sn, date, advance, amount, notes, time})=>`
 
   <div class="box">
           
@@ -25,7 +25,7 @@ export const cardLayout=({name, status, number, model, lock, complaints, sn, dat
        
        <div class='item_flex'>
        <p class='key'><b>Date</b></p>
-         <p class='value'>${date || ''}</p>
+         <p class='value'>${date || ''} ${time || ''}</p>
        </div>
        
        
