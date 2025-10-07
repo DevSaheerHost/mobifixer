@@ -672,7 +672,7 @@ $('.add-data').onclick = async () => {
       advance,
       date: formatted,
       time: time,
-      author: author
+      author: localStorage.getItem('author')
     });
     
     $('.loader').classList.add('hidden');
