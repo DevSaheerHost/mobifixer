@@ -124,6 +124,8 @@ nav.status-nav{
     position: relative;
     animation: slide-up .5s ease-in-out;
     overflow: hidden;
+    /* font-size: calc(10px + 1vw); */
+    max-width: 100%;
 }
 
 li nav{

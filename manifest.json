@@ -1,6 +1,6 @@
 {
   "name": "MobiFixer",
-  "short_name": "M",
+  "short_name": "MobiFixer",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#E8EAFF",

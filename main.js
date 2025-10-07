@@ -1316,45 +1316,6 @@ $('#applyStatus').onclick = async () => {
 
 
 
-let initialDistance = 0;
-let scale = 1;
-
-const zoomout = () => {
-  const grid = $('.list-section'); // parent grid
-
-  document.addEventListener('touchstart', e => {
-    if (e.touches.length === 2) {
-      const dx = e.touches[0].pageX - e.touches[1].pageX;
-      const dy = e.touches[0].pageY - e.touches[1].pageY;
-      initialDistance = Math.hypot(dx, dy);
-    }
-  });
-
-  document.addEventListener('touchmove', e => {
-    if (e.touches.length === 2) {
-      e.preventDefault();
-      const dx = e.touches[0].pageX - e.touches[1].pageX;
-      const dy = e.touches[0].pageY - e.touches[1].pageY;
-      const distance = Math.hypot(dx, dy);
-
-      if (initialDistance) {
-        const newScale = distance / initialDistance;
-        scale = Math.min(Math.max(newScale, 0.7), 1.3); // clamp
-
-        // 🔥 Change grid base width dynamically (less scale = more columns)
-        const baseWidth = 350 * scale;
-        grid.style.setProperty('--col-width', `${baseWidth}px`);
-
-        console.log('scale:', scale.toFixed(2), '→', baseWidth.toFixed(0), 'px');
-      }
-    }
-  }, { passive: false });
-};
-
-zoomout();
-
-
-
 
 
 

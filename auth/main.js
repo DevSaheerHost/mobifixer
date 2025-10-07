@@ -87,7 +87,7 @@ $('#login').onclick = async (e) => {
 $('.loader').classList.remove('hidden')
   try {
     const snapshot = await get(child(shopRef, businessName));
-    console.log(snapshot.val());
+    //console.log(snapshot.val());
 
     if (!snapshot.exists()) {
       alert("Shop not found! Please Create new Shop");
@@ -97,6 +97,7 @@ $('.loader').classList.remove('hidden')
 
     const shopData = snapshot.val();
     if (shopData.password == businessPass) {
+     // localStorage.setItem('author', shopData.owner || '')
       localStorage.setItem('shopName', businessName)
       location = "/";
     } else {
@@ -147,6 +148,7 @@ $('.loader').classList.remove('hidden')
     });
     
     localStorage.setItem('shopName', businessName)
+    localStorage.setItem('author', owner)
     alert("✅ Signup successful! Please login now.");
     location.hash = "#/login";
 $('.loader').classList.add('hidden')
