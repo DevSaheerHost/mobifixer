@@ -233,7 +233,7 @@ onChildAdded(itemsRef, (snapshot) => {
   }
   
   // update last SN
-  $('#new_sn').textContent = (data[data.length - 1].sn) + 1;
+  $('#new_sn').textContent = Number(data[data.length - 1].sn) + 1;
   
   // ----------------------
   // Notify if multiple customers not collected their phones
@@ -547,6 +547,10 @@ const router = () => {
   // header animation handle
   $('header').classList.toggle('slide-up', hash === "#add");
   if(hash ==='#add'){ 
+    window.scrollTo({
+  top: 0,
+  behavior: 'smooth'
+});
     showFirstAnim()
     $('.form input#name').focus()
     if (dataIsEdit) {
@@ -555,7 +559,7 @@ const router = () => {
   }
 else {
   $('.page-title').textContent = 'Add Service';
-  $('#new_sn').textContent = (data[data.length - 1].sn) + 1;
+$('#new_sn').textContent = Number(data[data.length - 1].sn) + 1;
 }
   }
   if(hash==='') shopSwitcher();
@@ -1358,7 +1362,8 @@ nameInput.oninput = (e) => {
   });
 };
 
-
+nameInput.onblur=()=> setTimeout(()=>nameSuggestContainer.classList.add('hidden'), 200)
+nameInput.onfocus=()=> nameSuggestContainer.classList.remove('hidden')
 
 
 const modelSuggestContainer = $('#model_suggest_container');
@@ -1402,6 +1407,101 @@ modelInput.oninput = (e) => {
     modelSuggestContainer.appendChild(div);
   });
 };
+modelInput.onblur=()=> setTimeout(()=>modelSuggestContainer.classList.add('hidden'), 200)
+modelInput.onfocus=()=> modelSuggestContainer.classList.remove('hidden')
+
+
+// Suggesition for Number 
+
+
+const numberSuggestContainer = $('#number_suggest_container')
+
+numberInput.oninput = (e) => {
+  const value = e.target.value.trim().toLowerCase();
+  
+  numberSuggestContainer.innerHTML = '';
+  if (!value || numberInput.value.length < 3) return;
+  
+  // filter data first
+  const matches = data.filter(item =>
+    item.number.includes(value)
+  );
+  
+  // ✅ remove duplicate names
+  const uniqueMatches = [];
+  const seenNimbers = new Set();
+  
+  matches.forEach(item => {
+    const nameLower = item.number;
+    if (!seenNimbers.has(nameLower)) {
+      seenNimbers.add(nameLower);
+      uniqueMatches.push(item);
+    }
+  });
+  
+  // show suggestions
+  uniqueMatches.forEach(item => {
+    const div = document.createElement('div');
+    div.textContent = item.number;
+    div.classList.add('suggest-item');
+    
+    div.onclick = () => {
+      numberInput.value = item.number;
+      numberSuggestContainer.innerHTML = '';
+    };
+    
+    numberSuggestContainer.appendChild(div);
+  });
+};
+numberInput.onblur=()=> setTimeout(()=>numberSuggestContainer.classList.add('hidden'), 200)
+numberInput.onfocus=()=> numberSuggestContainer.classList.remove('hidden')
+
+
+// Complaints input suggestions 
+
+const complaintSuggestInput = $('#complaint_suggest_container');
+const complaintInput = $('.form #complaint')
+
+
+complaintInput.oninput = (e) => {
+  const value = e.target.value.trim().toLowerCase();
+  
+  complaintSuggestInput.innerHTML = '';
+  if (!value || complaintInput.value.length < 2) return;
+  
+  // filter data first
+  const matches = data.filter(item =>
+    item.complaints.toLowerCase().includes(value)
+  );
+  
+  // ✅ remove duplicate names
+  const uniqueMatches = [];
+  const seenNames = new Set();
+  
+  matches.forEach(item => {
+    const nameLower = item.complaints.toLowerCase();
+    if (!seenNames.has(nameLower)) {
+      seenNames.add(nameLower);
+      uniqueMatches.push(item);
+    }
+  });
+  
+  // show suggestions
+  uniqueMatches.forEach(item => {
+    const div = document.createElement('div');
+    div.textContent = item.complaints;
+    div.classList.add('suggest-item');
+    
+    div.onclick = () => {
+      complaintInput.value = item.complaints;
+      complaintSuggestInput.innerHTML = '';
+    };
+    
+    complaintSuggestInput.appendChild(div);
+  });
+};
+complaintInput.onblur=()=> setTimeout(()=>complaintSuggestInput.classList.add('hidden'), 200)
+complaintInput.onfocus=()=> complaintSuggestInput.classList.remove('hidden')
 
 
 
@@ -1426,7 +1526,7 @@ const showFirstAnim=()=>{
 //#####################################################################//
 
 // put it down 👇 
-const CURRENT_VERSION = '3.3.4';
+const CURRENT_VERSION = '3.4.0';
 const LAST_VERSION = localStorage.getItem('app_version') || null;
 
 if (LAST_VERSION !== CURRENT_VERSION) {

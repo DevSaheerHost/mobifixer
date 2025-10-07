@@ -148,7 +148,7 @@ $('.loader').classList.remove('hidden')
     });
     
     localStorage.setItem('shopName', businessName)
-    localStorage.setItem('author', owner)
+    localStorage.setItem('author', userName)
     alert("✅ Signup successful! Please login now.");
     location.hash = "#/login";
 $('.loader').classList.add('hidden')
