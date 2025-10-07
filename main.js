@@ -1315,7 +1315,93 @@ $('#applyStatus').onclick = async () => {
 
 
 
+const nameInput = $('.form #name');
+const numberInput = $('.form #number');
+const nameSuggestContainer = $('#name_suggest_container');
 
+nameInput.oninput = (e) => {
+  const value = e.target.value.trim().toLowerCase();
+
+  nameSuggestContainer.innerHTML = '';
+  if (!value || nameInput.value.length < 3) return;
+
+  // filter data first
+  const matches = data.filter(item =>
+    item.name.toLowerCase().includes(value)
+  );
+
+  // ✅ remove duplicate names
+  const uniqueMatches = [];
+  const seenNames = new Set();
+
+  matches.forEach(item => {
+    const nameLower = item.name.toLowerCase();
+    if (!seenNames.has(nameLower)) {
+      seenNames.add(nameLower);
+      uniqueMatches.push(item);
+    }
+  });
+
+  // show suggestions
+  uniqueMatches.forEach(item => {
+    const div = document.createElement('div');
+    div.textContent = `${item.name}, ${item.number}`;
+    div.classList.add('suggest-item');
+
+    div.onclick = () => {
+      nameInput.value = item.name;
+      numberInput.value = item.number;
+      nameSuggestContainer.innerHTML = '';
+    };
+
+    nameSuggestContainer.appendChild(div);
+  });
+};
+
+
+
+
+const modelSuggestContainer = $('#model_suggest_container');
+const modelInput = $('.form #model')
+
+
+modelInput.oninput = (e) => {
+  const value = e.target.value.trim().toLowerCase();
+  
+  modelSuggestContainer.innerHTML = '';
+  if (!value || modelInput.value.length < 3) return;
+  
+  // filter data first
+  const matches = data.filter(item =>
+    item.model.toLowerCase().includes(value)
+  );
+  
+  // ✅ remove duplicate names
+  const uniqueMatches = [];
+  const seenNames = new Set();
+  
+  matches.forEach(item => {
+    const nameLower = item.model.toLowerCase();
+    if (!seenNames.has(nameLower)) {
+      seenNames.add(nameLower);
+      uniqueMatches.push(item);
+    }
+  });
+  
+  // show suggestions
+  uniqueMatches.forEach(item => {
+    const div = document.createElement('div');
+    div.textContent = item.model;
+    div.classList.add('suggest-item');
+    
+    div.onclick = () => {
+      modelInput.value = item.model;
+      modelSuggestContainer.innerHTML = '';
+    };
+    
+    modelSuggestContainer.appendChild(div);
+  });
+};
 
 
 

@@ -9,6 +9,12 @@
 - Improved visibility and focus states for better user interaction
 - Added responsive layout for status control section (select + button)
 
+### 🚀 Improvements
+
+- Refactored name suggestion system with unique filtering for better scalability
+- Prepared codebase for future enhancements like real-time database lookup and keyboard navigation
+- Improved maintainability and readability for future expansion of suggestion features
+
 
 ---
 
