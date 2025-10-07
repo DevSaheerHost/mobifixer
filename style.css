@@ -613,7 +613,7 @@ input[type="checkbox"]:checked::after {
 }
 
 
-.loader{
+.loader, .customInput{
     position: fixed;
     top: 0;
     bottom: 0;
@@ -625,13 +625,37 @@ input[type="checkbox"]:checked::after {
     display: flex;
     align-items: center;
     justify-content: center;
+    
+    
 }
-.loader .loading-card{
+.customInput{
+    z-index: 5;
+}
+.loader .loading-card, .customInput .card{
     padding: 1rem;
     background: #fff;
     border-radius: 10px;
 }
 
+.customInput input{
+    margin-top: 2rem;
+    background: #E1E1E1;
+    box-shadow: none;
+    border: 1px solid #CACACA;
+}
+.customInput .btn-wrap{
+    margin-top: 1rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+.customInput button{
+    font-weight: bold;
+}
+.customInput .save{
+    background : black;
+    color: #fff;
+}
 .blue{
     color: #09a0ff;
     font-weight: 600;
@@ -734,7 +758,18 @@ pre {
         scale: 0.9;
     }
 }
-
+.author_name{
+    
+    font-style: italic;
+    color: #666666;
+    font-size: 12px;
+    font-weight: 500;
+    margin: 0;
+}
+#author_name_p{
+    margin-top: 1rem;
+    text-align: center;
+}
 
 .intro-anim {
   transform: scale(0.8);

@@ -1,4 +1,4 @@
-export const cardLayout=({name, status, number, model, lock, complaints, sn, date, advance, amount, notes, time})=>`
+export const cardLayout=({name, status, number, model, lock, complaints, sn, date, advance, amount, notes, time, author})=>`
 
   <div class="box">
           
@@ -25,7 +25,7 @@ export const cardLayout=({name, status, number, model, lock, complaints, sn, dat
        
        <div class='item_flex'>
        <p class='key'><b>Date</b></p>
-         <p class='value'>${date || ''} ${time || ''}</p>
+         <p class='value'>${date || ''}  ${time || ''}</p>
        </div>
        
        
@@ -80,5 +80,7 @@ export const cardLayout=({name, status, number, model, lock, complaints, sn, dat
    <button class='call-btn' data-num="+91${number}">
       <i class="fa-solid fa-phone"></i>
     </button>
+    
+    <p class='author_name'>${author ||''}</p>
  </div>
 `

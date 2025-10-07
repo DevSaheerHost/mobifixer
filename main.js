@@ -42,6 +42,10 @@ get(backupRef).then(snapshot => {
     (Array.isArray(cloudData.service) ? cloudData.service : Object.values(cloudData.service)) :
     [];
   
+  const author = localStorage.getItem('author') || ''
+  !author?$('.customInput').classList.remove('hidden'): '';
+  $('#author_name_p').textContent=author || 'Unknown';
+   
   const localData = JSON.parse(localStorage.getItem('backupData') || '{}');
   const localServices = localData.service ?
     (Array.isArray(localData.service) ? localData.service : Object.values(localData.service)) :
@@ -663,7 +667,8 @@ $('.add-data').onclick = async () => {
       amount,
       advance,
       date: formatted,
-      time: time
+      time: time,
+      author: author
     });
     
     $('.loader').classList.add('hidden');
@@ -1228,6 +1233,24 @@ if ('serviceWorker' in navigator) {
 
 
 
+$('#saveAuthorName').onclick=()=>{
+  const Name = $('#authorName').value
+  if (Name.length>3) {
+   
+   localStorage.setItem('author', Name)
+   showNotice({title:'🫴', body: `Welcome ${Name} ;)`, type: 'info'})
+   $('.customInput').classList.add('hidden')
+  } else {
+    
+    showNotice({title: 'Validation Error', body:'Name include minimum 3 charector', type:'error'})
+  }
+}
+$('.customInput .cancel').onclick=()=> $('.customInput').classList.add('hidden')
+
+
+
+
+
 //  New buttons
 const showFirstAnim=()=>{
   document.querySelectorAll('.intro-anim').forEach(el => {
@@ -1249,7 +1272,7 @@ const showFirstAnim=()=>{
 //#####################################################################//
 
 // put it down 👇 
-const CURRENT_VERSION = '3.3.2';
+const CURRENT_VERSION = '3.3.3';
 const LAST_VERSION = localStorage.getItem('app_version') || null;
 
 if (LAST_VERSION !== CURRENT_VERSION) {

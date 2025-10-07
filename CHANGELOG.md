@@ -7,12 +7,19 @@
 
 ---
 
+## [3.3.3] - 2025-10-07
+- author name added
+- Stability Improved
+
+---
+
 ## [3.3.2] - 2025-10-07
 - Accessibility Improvements.
 - UI fixes
 - install app option with meta tag. in web.
 - User Experience Improved
 - time added for new data
+
 
 
 ---
