@@ -4,7 +4,10 @@
 
 
 ##  🚧 [Unreleased]
-
+### 🎨 UI Enhancements
+- Styled <select> element with modern flat design and custom arrow
+- Improved visibility and focus states for better user interaction
+- Added responsive layout for status control section (select + button)
 ---
 
 ## [3.3.3] - 2025-10-07

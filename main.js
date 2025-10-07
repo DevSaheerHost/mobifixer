@@ -463,7 +463,11 @@ const renderNext = () => {
     listItem.setAttribute("data-sn", item.sn);
 
     const nav = document.createElement('nav');
-    nav.innerHTML = `<h3>${item.name}</h3> <span><h3 class='sn'>${item.sn}</h3><i class="fa-solid fa-pen editIcon" data-sn='${item.sn}'></i></span>`;
+    nav.innerHTML = `
+    <span> 
+    <input type="checkbox" class="multiSelect" data-sn="${item.sn}">
+    <h3>${item.name}</h3></span>
+    <span><h3 class='sn'>${item.sn}</h3><i class="fa-solid fa-pen editIcon" data-sn='${item.sn}'></i></span>`;
     listItem.appendChild(nav);
     listItem.innerHTML += cardLayout(item);
 
@@ -1248,6 +1252,109 @@ $('#saveAuthorName').onclick=()=>{
 $('.customInput .cancel').onclick=()=> $('.customInput').classList.add('hidden')
 
 
+// Store selected SNs
+let selectedItems = new Set();
+
+// Listen for checkbox clicks
+document.addEventListener('change', (e) => {
+  if (e.target.classList.contains('multiSelect')) {
+    const sn = e.target.dataset.sn;
+    if (e.target.checked) selectedItems.add(sn);
+    else selectedItems.delete(sn);
+    
+    toggleBulkActionBar();
+  }
+});
+
+// Show/hide bulk action bar
+function toggleBulkActionBar() {
+  const bar = document.querySelector('.bulk-action');
+  if (selectedItems.size > 0) {
+    bar.classList.remove('hide');
+    bar.querySelector('.count').textContent = `${selectedItems.size} selected`;
+  } else {
+    bar.classList.add('hide');
+  }
+}
+
+
+
+$('#applyStatus').onclick = async () => {
+  const newStatus = $('#bulkStatus').value;
+  if (!newStatus) {
+    showNotice({ title: 'Select Status', body: 'Please choose a status first', type: 'warn' });
+    return;
+  }
+
+  $('.bulk-action').classList.add('loading');
+  const updates = {};
+
+  selectedItems.forEach(sn => {
+    updates[`shops/${shopName}/service/${sn}/status`] = newStatus;
+  });
+
+  try {
+    await update(ref(db), updates);
+    showNotice({
+      title: '✅ Updated',
+      body: `${selectedItems.size} items updated to ${newStatus}`,
+      type: 'success'
+    });
+    selectedItems.clear();
+    toggleBulkActionBar();
+  } catch (err) {
+    showNotice({
+      title: 'Error',
+      body: err.message,
+      type: 'error'
+    });
+  } finally {
+    $('.bulk-action').classList.remove('loading');
+  }
+};
+
+
+
+
+let initialDistance = 0;
+let scale = 1;
+
+const zoomout = () => {
+  const grid = $('.list-section'); // parent grid
+
+  document.addEventListener('touchstart', e => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].pageX - e.touches[1].pageX;
+      const dy = e.touches[0].pageY - e.touches[1].pageY;
+      initialDistance = Math.hypot(dx, dy);
+    }
+  });
+
+  document.addEventListener('touchmove', e => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const dx = e.touches[0].pageX - e.touches[1].pageX;
+      const dy = e.touches[0].pageY - e.touches[1].pageY;
+      const distance = Math.hypot(dx, dy);
+
+      if (initialDistance) {
+        const newScale = distance / initialDistance;
+        scale = Math.min(Math.max(newScale, 0.7), 1.3); // clamp
+
+        // 🔥 Change grid base width dynamically (less scale = more columns)
+        const baseWidth = 350 * scale;
+        grid.style.setProperty('--col-width', `${baseWidth}px`);
+
+        console.log('scale:', scale.toFixed(2), '→', baseWidth.toFixed(0), 'px');
+      }
+    }
+  }, { passive: false });
+};
+
+zoomout();
+
+
+
 
 
 
@@ -1272,7 +1379,7 @@ const showFirstAnim=()=>{
 //#####################################################################//
 
 // put it down 👇 
-const CURRENT_VERSION = '3.3.3';
+const CURRENT_VERSION = '3.3.4';
 const LAST_VERSION = localStorage.getItem('app_version') || null;
 
 if (LAST_VERSION !== CURRENT_VERSION) {

@@ -250,7 +250,7 @@ button.add {
     transition: width 0.4s, height 0.3s, padding 0.3s, font-size 0.3s, transform 0.3s, color 0.3s;
     overflow: hidden;
     white-space: nowrap;
-    z-index: 1000;
+    z-index: 8;
     
 }
 
@@ -771,6 +771,60 @@ pre {
     text-align: center;
 }
 
+
+.bulk-action {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background: #2f2f2f;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.7rem 1rem;
+  box-shadow: 0 -3px 10px rgba(0,0,0,0.2);
+  transition: 0.3s;
+  z-index: 9;
+}
+.bulk-action.hide { transform: translateY(100%); }
+
+
+select {
+  background: #fff;
+  color: #333;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 15px;
+  outline: none;
+  cursor: pointer;
+  transition: 0.2s ease;
+  appearance: none; /* remove default arrow */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, #0ba2ff 50%), 
+                    linear-gradient(135deg, #0ba2ff 50%, transparent 50%);
+  background-position: calc(100% - 20px) calc(1em + 2px), 
+                       calc(100% - 15px) calc(1em + 2px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+select:hover {
+  border-color: #000000;
+}
+
+select:focus {
+  box-shadow: 0 0 0 2px rgba(11, 162, 255, 0.2);
+  border-color: #000000;
+}
+
+select option {
+  background: #fff;
+  color: #333;
+}
+
+
 .intro-anim {
   transform: scale(0.8);
   opacity: 0;
@@ -781,6 +835,16 @@ pre {
   transform: scale(1);
   opacity: 1;
 }
+
+
+.list-item {
+  transition: transform 0.25s ease, width 0.25s ease;
+  transform-origin: center center;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+  
   
 .hidden{
     display: none;
