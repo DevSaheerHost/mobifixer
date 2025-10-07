@@ -5,6 +5,9 @@
 
 ##  🚧 [Unreleased]
 
+---
+
+## [3.3.2] - 2025-10-07
 - Accessibility Improvements.
 - UI fixes
 - install app option with meta tag. in web.
