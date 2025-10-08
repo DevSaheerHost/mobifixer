@@ -5,6 +5,7 @@
 
 ##  🚧 [Unreleased]
 - inventory form function created
+- clean UI created for Inventory management 
 ---
 
 ## [3.4.0] - 2025-10-07

@@ -873,6 +873,130 @@ select option {
   background: #f0f0f0;
 }
 
+
+
+
+/*######### INVENTORY STYLE ############*/
+
+main.inventory-page{
+    background: #F7F7F7;
+}
+
+.header{
+  background: linear-gradient(#8F00DE ,#BA00E2);
+  color: #fff;
+  padding: 2rem;
+  height: 140px;
+  position: relative;
+}
+.header .top{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.header .card{
+    background: #fff;
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #000;
+    border-radius: 10px;
+    position: absolute;
+    right: 50%;
+    transform: translateX(50%) translateY(40px);
+    width: fit-content;
+    min-width: 330px;
+    max-width: 90vw;
+    text-align: center;
+    
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.16);
+}
+
+.header .card h4{
+    font-weight: 800;
+    font-size: 18px;
+}
+.header .card p{
+    color: #BCBCBC;
+    font-size: 13px;
+    margin-top: 0.5rem;
+    font-weight: bold;
+    
+}
+
+/*----------------------*/
+
+.table_switcher_container{
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    overflow-y: auto;
+    color: #BCBCBC;
+    padding: auto 1rem;
+    
+    margin-top: 4rem;
+}
+.table_switcher_container span{
+    padding: 1rem 0.5rem;
+    text-wrap: nowrap;
+    white-space: nowrap;
+    text-align: center;
+    margin: auto 0.5rem;
+    font-weight: 500;
+    font-size: 15px;
+}
+.table_switcher_container span.active{
+    color: #BA00E2;
+    border-bottom: 2px solid #BA00E2;
+}
+
+/*---------------------------------------*/
+
+.card_container{
+    padding: 1.5rem;
+}
+.card_container .card{
+    display: flex;
+    align-items: center;
+    justify-content: space-between; 
+    background: #fff;
+    padding: 1rem;
+    border-radius: 10px;
+    box-shadow: 0px 0px 7px rgba(0, 0, 0, 0.08);
+    margin-bottom: 1.3rem;
+}
+
+.card_container .card .img_container{
+    width: 60px;
+}
+.card_container .card .middle_container{
+    width: 100%;
+}
+.category_qty_container{
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #bcbcbc;
+    font-size: 14px;
+    font-weight: 500;
+}
+.category_qty_container h3{
+    color: #000;
+}
+.category_qty_container p.qty{
+    color: #09a0ff;
+}
+
+
+/*######## INVENTORY STYLE END #########*/
+
+
+
+
+
 .hidden{
     display: none;
 }

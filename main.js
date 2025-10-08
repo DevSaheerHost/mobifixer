@@ -545,7 +545,7 @@ const router = () => {
   }
 
   // header animation handle
-  $('header').classList.toggle('slide-up', hash === "#add");
+  $('header').classList.toggle('slide-up', hash === "#add" || hash === '#inventory' || hash ==='#addInventory');
   if(hash ==='#add'){ 
     window.scrollTo({
   top: 0,
@@ -575,6 +575,8 @@ $('#new_sn').textContent = Number(data[data.length - 1].sn) + 1;
       console.error(err);
     });
   }
+  
+  
 };
 
 window.addEventListener("DOMContentLoaded", router);
@@ -1564,7 +1566,7 @@ onChildAdded(stockRef, (snapshot) => {
 
 // Next task create UI 
 
-
+location.hash='#inventory'
 
 
 // ###### END OFF INVENTORY MANAGEMENT SECTION ###### //
