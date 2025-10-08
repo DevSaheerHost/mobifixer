@@ -4,7 +4,7 @@
 
 
 ##  🚧 [Unreleased]
-
+- inventory form function created
 ---
 
 ## [3.4.0] - 2025-10-07

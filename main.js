@@ -1505,6 +1505,75 @@ complaintInput.onfocus=()=> complaintSuggestInput.classList.remove('hidden')
 
 
 
+
+// ########### INVENTORY MANAGEMENT SECTION ######### //
+
+
+const stockRef = ref(db, `shops/${shopName}/stock`);
+const createProdDataBtn = $('.create_prod_data')
+
+createProdDataBtn.onclick=async()=>{
+  
+  // All input fields 
+  const prodName = $('#prod_name').value.trim();
+  const prodModel = $('#prod_model').value.trim();
+  const prodQuantity = $('#prod_quantity').value.trim();
+  const prodCategory = $('#prod_category').value.trim();
+  const prodRate = $('#prod_rate').value.trim() || 0;
+  const prodCustRate = $('#prod_customer_rate').value.trim() || 0;
+  
+  
+  // check empty fields
+  if (!prodName || !prodModel || !prodQuantity || !prodCategory ) {
+    showNotice({title:'Validation Error!', body: 'All input is required!!', type: 'error'})
+    return;
+  }
+  // ###### //
+  
+  const lastStockSnRef = ref(db, `shops/${shopName}/lastStockSn`);
+      const tx = await runTransaction(lastStockSnRef, (current) => (current === null ? 100 : current + 1));
+      let snToUse = tx.snapshot.val();
+      
+      
+  // Add to db
+  
+  const newStockRef = ref(db, `shops/${shopName}/stock/${snToUse}`);
+  
+  await set(newStockRef, {
+  sn: snToUse,
+  prodName,
+  prodModel,
+  prodCategory,
+  prodQuantity,
+  prodRate,
+  prodCustRate,
+  author: localStorage.getItem('author') || 'None Author'
+}).then(()=>showNotice({title:'Success', body:'Product Added successful!', type:'success'})).catch(err=>showNotice({title:'Error', body:err.message, type:'error'}));
+}
+
+
+//#₹###### //
+
+// When new Data Added
+
+onChildAdded(stockRef, (snapshot) => {
+  $('.loader').classList.add('hidden')
+  const product = snapshot.val();
+  console.log(product)
+})
+
+// Next task create UI 
+
+
+
+
+// ###### END OFF INVENTORY MANAGEMENT SECTION ###### //
+
+
+
+
+//#########################//
+
 //  New buttons
 const showFirstAnim=()=>{
   document.querySelectorAll('.intro-anim').forEach(el => {
