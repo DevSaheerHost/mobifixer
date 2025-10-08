@@ -1349,7 +1349,7 @@ nameInput.oninput = (e) => {
   // show suggestions
   uniqueMatches.forEach(item => {
     const div = document.createElement('div');
-    div.textContent = `${item.name}, ${item.number}`;
+    div.textContent = `${item.name}, ${item.number}, ${item.model}`;
     div.classList.add('suggest-item');
 
     div.onclick = () => {

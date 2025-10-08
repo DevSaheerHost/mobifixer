@@ -858,6 +858,10 @@ select option {
   z-index: 99;
   right: 2rem;
   left: 2rem;
+  
+  white-space: nowrap;
+  overflow: auto;
+  text-overflow: ellipsis;
 }
 
 .suggest-item {
