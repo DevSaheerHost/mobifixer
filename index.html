@@ -26,17 +26,22 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <header>
 <div class="shop-selector-wrap">
-  <span><a href="#inventory">INV</a></span>
+  <span><a href="#inventory">
+    <i class="fa-solid fa-box-archive"></i>
+    </a>
+  </span>
 <span class="active myshop" onclick="location.hash=""">
-  <h2><a href="" id="shopname"></a></h2>
+  <h3><a href="" id="shopname"></a></h3>
 </span>
   <p id="timerElement">0ms</p>
-<span>
-  <h2><a href="#shop-work">MKLM</a></h2>
+<span class="hidden">
+  <h3><a href="#shop-work">MKLM</a></h3>
 </span>
 
 <span>
-  <a href="#changelog">i</a>
+  <a href="#changelog">
+    <i class="fa-solid fa-info"></i>
+  </a>
 </span>
 
 </div>
@@ -158,16 +163,16 @@
     
     
     
-    
+    <!--######### INVENTORY START ##########-->
 <main class="inventory-page hidden">
   <div class="header">
     <div class="top">
       <div class="menu_bar">
-        =
+        <i class="fa-solid fa-bars"></i>
       </div>
       <h3 class="title">Inventory</h3>
       <div class="add_btn">
-        +
+        <i class="fa-solid fa-plus"></i>
       </div>
     </div>
     
@@ -247,6 +252,12 @@
     <a href="#addInventory">+</a>
   </button>
 </main>
+
+
+
+    <!--######### INVENTORY START ##########-->
+
+
 
 <main class="inventory-create-page hidden">
   <p class="tips">

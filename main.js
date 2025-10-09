@@ -464,7 +464,7 @@ const renderNext = () => {
 
     const nav = document.createElement('nav');
     nav.innerHTML = `
-    <span> 
+    <span class='flex_center'> 
     <input type="checkbox" class="multiSelect" data-sn="${item.sn}">
     <h3>${item.name}</h3></span>
     <span><h3 class='sn'>${item.sn}</h3><i class="fa-solid fa-pen editIcon" data-sn='${item.sn}'></i></span>`;
@@ -748,12 +748,13 @@ document.addEventListener("change", (e) => {
 });
 
 // note update listener
-document.oninput=(e)=>{
+document.oninput = (e) => {
   if (e.target.matches("textarea")) {
-    console.log(e.target.closest('button'))
-
+    const wrap = e.target.closest('.note-input-wrap'); 
+    const button = wrap.querySelector('button');
+    button.classList.add('active')
   }
-}
+};
 
 document.onclick=e=>{
   if (e.target.classList.contains('add-note-btn')) {
@@ -1566,7 +1567,7 @@ onChildAdded(stockRef, (snapshot) => {
 
 // Next task create UI 
 
-location.hash='#inventory'
+// location.hash='#inventory'
 
 
 // ###### END OFF INVENTORY MANAGEMENT SECTION ###### //
@@ -1597,7 +1598,7 @@ const showFirstAnim=()=>{
 //#####################################################################//
 
 // put it down 👇 
-const CURRENT_VERSION = '3.4.0';
+const CURRENT_VERSION = '3.5.0';
 const LAST_VERSION = localStorage.getItem('app_version') || null;
 
 if (LAST_VERSION !== CURRENT_VERSION) {

@@ -4,8 +4,16 @@
 
 
 ##  🚧 [Unreleased]
+
+
+
+## [3.5.0] - 2025-10-09
+### 🎨 UI Enhancements
 - inventory form function created
-- clean UI created for Inventory management 
+- clean UI created for Inventory management
+- new UI looks implemented 
+
+
 ---
 
 ## [3.4.0] - 2025-10-07

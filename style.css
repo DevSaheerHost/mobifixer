@@ -12,6 +12,9 @@
     transition: all .3s ease-out;
 }
 
+body{
+    background: #F7F7F7;
+}
 .form textarea{
     border-radius: 10px !important;
 }
@@ -61,6 +64,15 @@ color: #fff;
 
 header .search-bar{
     margin-top: 2rem;
+    position: absolute;
+    bottom: -1rem;
+    z-index: 8;
+    right: 50%;
+    transform: translateX(50%);
+    width: 80%;
+}
+header .search-bar input{
+    box-shadow: 0 0 7px rgba(0, 0, 0, 0.7);
 }
 
 nav{
@@ -69,13 +81,12 @@ nav{
     gap: 1rem;
     justify-content: space-around;
     padding: 2rem;
-    
     overflow-x: auto;
 }
 
 nav a{
     padding: .7rem 1.2rem;
-    background: #EDEDED;
+    background: #fff;
     border-radius: 100px;
     color: #232323;
     text-decoration: none;
@@ -90,8 +101,8 @@ nav a{
 }
 
 nav a.active{
-    background: linear-gradient(90deg, rgba(34, 195, 187, 1) 0%, #008FFF 100%);
-    background: #000;
+    background: linear-gradient(to left, #8F00DE ,#BA00E2);
+    
     color: #fff;
 }
 
@@ -99,7 +110,8 @@ nav.status-nav{
     position: sticky;
     top: 0;
     z-index: 1;
-    background: #fff;
+    background: transparent;
+    margin-top: 1rem;
 }
 
 
@@ -131,7 +143,9 @@ nav.status-nav{
 li nav{
     padding: .5rem 1rem;
     background: #E6E6E6;
+    background: linear-gradient(to left, rgba(143, 0, 222, 0.61) ,rgba(186, 0, 226, 0.64));
     color: #151515;
+    color: #fff;
     
     display: flex;
     align-items: center;
@@ -142,15 +156,25 @@ li nav{
     left: 0;
     right: 0;
 }
+li nav .flex_center{ 
+    display: flex;
+    align-items: center;
+}
+li nav .flex_center input{
+    border-color: #fff ;
+}
 li nav h3.sn{
     color: #e74c3c;
+    color: #fff;
 }
 li nav span{
     display: flex;
     gap: 1rem;
 }
 li nav span i{
-    color: #686868;font-size: 15px;
+    color: #686868;
+    color: #fff;
+    font-size: 15px;
     margin-top: 2px;
 }
 
@@ -187,6 +211,12 @@ li nav span i{
 .list-item button.add-note-btn{
     margin-top: 1rem;
     font-weight: 600;
+    background: #fff;
+    color: #999;
+}
+.list-item button.add-note-btn.active{
+    background: linear-gradient(#8F00DE ,#BA00E2);
+    color: #fff;
 }
 
 .list-item .box{
@@ -247,6 +277,7 @@ button.add {
     right: 2rem;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
     background-color: #000;
+    background: linear-gradient(to left, #8F00DE ,#BA00E2);
     color: #fff;
     cursor: pointer;
     transition: width 0.4s, height 0.3s, padding 0.3s, font-size 0.3s, transform 0.3s, color 0.3s;
@@ -306,7 +337,7 @@ button.add:hover {
 
 .add-data, .create_prod_data{
     padding: 1rem 1.3rem;
-    background: #000;
+    background: linear-gradient(to left, #8F00DE ,#BA00E2);
     margin-top: 2rem;
     color: #fff;
     font-size: 18px;
@@ -355,14 +386,20 @@ button.add:hover {
 }
 
 .shop-selector-wrap span{
-    background: #656565;
-    color: #fff;
+    background: rgba(0, 0, 0, 0.17);
+    backdrop-filter: blur(3px);
+    color: #000;
     padding: .5rem 1rem;
     border-radius: 100px;
 }
+.shop-selector-wrap span a{
+}
 
 .shop-selector-wrap .active{
-    background: black;
+    background: #fff;
+}
+.shop-selector-wrap .active a{
+    color: #BA00E2;
 }
 
 .not-found , .shop-work{
@@ -373,6 +410,7 @@ button.add:hover {
 
 .badge{
     background: red;
+    background: linear-gradient(to left, #8F00DE ,#BA00E2);
   color: white;
   border-radius: 100px;
   padding: 2px 6px;
@@ -716,6 +754,7 @@ pre {
   
   main{
       animation: zom 0.4s;
+      background: #F7F7F7;
   }
   
   main .page-title, #new_sn{
@@ -845,6 +884,8 @@ select option {
   width: 100%;
   max-width: 600px;
   margin: 0 auto;
+  
+  background: linear-gradient(to left, rgba(143, 0, 222, 0.01) ,rgba(186, 0, 226, 0.01)) !important;
 }
   
   
@@ -882,7 +923,7 @@ main.inventory-page{
     background: #F7F7F7;
 }
 
-.header{
+.header, header{
   background: linear-gradient(#8F00DE ,#BA00E2);
   color: #fff;
   padding: 2rem;
@@ -894,6 +935,10 @@ main.inventory-page{
     align-items: center;
     justify-content: space-between;
 }
+.header .top i{
+    font-size: 25px;
+}
+
 
 .header .card{
     background: #fff;
