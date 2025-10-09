@@ -1,6 +1,7 @@
 const initialTime = performance.now();
 import { cardLayout } from './cardLayout.js';
 import { searchCard } from './searchCard.js';
+import { inventoryCard} from './inventoryCard.js';
 
 // Firebase core import
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
@@ -1514,6 +1515,33 @@ complaintInput.onfocus=()=> complaintSuggestInput.classList.remove('hidden')
 
 // ########### INVENTORY MANAGEMENT SECTION ######### //
 
+let stockData=[];
+// Yab switching function 
+
+const tableItems = $$('.table_switcher_container span')
+
+tableItems.forEach(el=>el.onclick=()=>{
+  tableItems.forEach(el=>el.classList.remove('active'))
+  el.classList.add('active')
+  filterByCategory(el.dataset.category)
+})
+
+const filterByCategory= category =>{
+  inventoryCardContainer.innerHTML=''
+  let stock=stockData.filter(d=>d.prodCategory.toLowerCase()===category)
+  if (category==='') stock = stockData;
+  if (category === 'ringer' || category === 'earpiece') stock = stockData.filter(d =>
+    ['ringer', 'earpiece'].includes(d.prodCategory.toLowerCase())
+  );
+  
+  
+  stock.forEach(s=>{
+    const card = document.createElement('div')
+  card.classList.add('card')
+  card.innerHTML=inventoryCard(s)
+  inventoryCardContainer.appendChild(card)
+  })
+}
 
 const stockRef = ref(db, `shops/${shopName}/stock`);
 const createProdDataBtn = $('.create_prod_data')
@@ -1561,17 +1589,29 @@ createProdDataBtn.onclick=async()=>{
 //#₹###### //
 
 // When new Data Added
+const inventoryCardContainer = $('#card_container');
+inventoryCardContainer.innerHTML=''
 
 onChildAdded(stockRef, (snapshot) => {
   $('.loader').classList.add('hidden')
   const product = snapshot.val();
-  console.log(product)
+  createInventoryCard(product)
+  stockData.push(product)
 })
 
 // Next task create UI 
 
 // location.hash='#inventory'
 
+
+// create UI CARDS 
+
+const createInventoryCard = stock =>{
+  const card = document.createElement('div')
+  card.classList.add('card')
+  card.innerHTML=inventoryCard(stock)
+  inventoryCardContainer.appendChild(card)
+}
 
 // ###### END OFF INVENTORY MANAGEMENT SECTION ###### //
 

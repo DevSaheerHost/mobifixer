@@ -1060,6 +1060,10 @@ main.inventory-page{
     box-shadow: 0px 0px 7px rgba(0, 0, 0, 0.08);
     margin-bottom: 1.3rem;
 }
+.card_container .card:active {
+  transform: scale(0.98);
+  transition: 0.1s;
+}
 
 .card_container .card .img_container{
     width: 60px;
