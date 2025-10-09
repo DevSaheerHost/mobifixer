@@ -75,6 +75,9 @@ color: #fff;
     text-transform: uppercase;
 }
 }
+header i{
+    font-size: 25px;
+}
 
 header .search-bar{
     margin-top: 2rem;
@@ -1060,6 +1063,8 @@ main.inventory-page{
 
 .card_container .card .img_container{
     width: 60px;
+    color: #8E8E8E;
+    font-size: 30px;
 }
 .card_container .card .middle_container{
     width: 100%;
