@@ -1597,6 +1597,11 @@ onChildAdded(stockRef, (snapshot) => {
   const product = snapshot.val();
   createInventoryCard(product)
   stockData.push(product)
+  
+  $('#totel_stock').textContent=stockData.length.toLocaleString()
+  const outOfStock = stockData.filter(d=>d.prodQuantity<3
+  )
+  $('#out_of_stock').textContent=outOfStock.length.toLocaleString()
 })
 
 // Next task create UI 
