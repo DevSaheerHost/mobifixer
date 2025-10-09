@@ -26,6 +26,10 @@ input, button{
     border-radius: 10px;
     padding: .5rem 1rem;
 }
+button:disabled {
+    background: #C7C7C7;
+    color: #ababab;
+}
 input[type="text"], input[type="number"]{
     border-radius: 50px;
     padding: .7rem 1rem;
@@ -106,12 +110,15 @@ nav a.active{
     color: #fff;
 }
 
+
 nav.status-nav{
     position: sticky;
     top: 0;
     z-index: 1;
     background: transparent;
     margin-top: 1rem;
+    backdrop-filter: blur(5px);
+    background: rgba(247, 247, 247, 0.55);
 }
 
 
@@ -668,7 +675,7 @@ input[type="checkbox"]:checked::after {
     bottom: 0;
     left: 0;
     right: 0;
-    background: rgba(0, 0, 0, 0.21);
+    background: rgba(0, 0, 0, 0.11);
     backdrop-filter: blur(6px);
     z-index: 9;
     
@@ -683,8 +690,9 @@ input[type="checkbox"]:checked::after {
 }
 .loader .loading-card, .customInput .card{
     padding: 1rem;
-    background: #fff;
+    background: rgba(0, 0, 0, 0.15);
     border-radius: 10px;
+    
 }
 
 .customInput input{

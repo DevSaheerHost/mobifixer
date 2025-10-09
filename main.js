@@ -465,8 +465,10 @@ const renderNext = () => {
     const nav = document.createElement('nav');
     nav.innerHTML = `
     <span class='flex_center'> 
-    <input type="checkbox" class="multiSelect" data-sn="${item.sn}">
+    <input type="checkbox" class="multiSelect" data-sn="${item.sn}" id='${item.sn}'>
+    <label for='${item.sn}'>
     <h3>${item.name}</h3></span>
+    </label>
     <span><h3 class='sn'>${item.sn}</h3><i class="fa-solid fa-pen editIcon" data-sn='${item.sn}'></i></span>`;
     listItem.appendChild(nav);
     listItem.innerHTML += cardLayout(item);
@@ -720,6 +722,7 @@ $('.add-data').onclick = async () => {
     $('.add-data').style.background = 'red';
     console.error("❌ Error saving data:", err);
     showNotice({ title: 'ERROR', body: `Operation failed: ${err.message}`, type: 'error', delay: 6 });
+    $('.add-data').disabled = false;
   }
 };
 

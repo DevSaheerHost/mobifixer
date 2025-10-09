@@ -24,6 +24,7 @@
 <body>
   <script src="https://cdn.jsdelivr.net/npm/showdown/dist/showdown.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
   <header>
 <div class="shop-selector-wrap">
   <span><a href="#inventory">
@@ -315,6 +316,14 @@
     
     <main class="not-found hidden">
       <h3>Page not found || 404</h3>
+        <lottie-player
+  src="./Error 404.json"
+  background="transparent"
+  speed="1"
+  style="width: 200px; height: 200px;"
+  loop
+  autoplay>
+</lottie-player>
     </main>
     
     <audio id="newSound" src="./mixkit.wav" preload="auto"></audio>
@@ -323,7 +332,14 @@
 
 <div class="loader">
   <div class="loading-card">
-    <h3>Please wait...</h3>
+    <lottie-player
+  src="./Loading Animation.json"
+  background="transparent"
+  speed="1"
+  style="width: 200px; height: 200px;"
+  loop
+  autoplay>
+</lottie-player>
   </div>
 </div>
   <script type="module" src="./main.js"></script>
