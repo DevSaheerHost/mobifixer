@@ -829,7 +829,7 @@ document.addEventListener("click", (e) => {
 // Search function start at / edit at v3.0.0
 let searchFiltered = [];
 let searchRenderStart = 0;
-let searchRenderLimit = 20;
+let searchRenderLimit = 10;
 
 search.addEventListener("input", () => {
   const query = search.value.trim().toLowerCase();
