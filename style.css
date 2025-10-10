@@ -11,6 +11,16 @@
     user-select: none;
     transition: all .3s ease-out;
 }
+:root{
+    --bh: #F7F7F7;
+    --white: #FFFFFF;
+    --black: #000000;
+    --primary: #959DFF;
+    --gradient: linear-gradient(to left, #8F00DE ,#BA00E2)
+    --light: #ababab
+    --dark: #999;
+    
+}
 
 /* ✅ All browsers compatible scrollbar hide */
 ::-webkit-scrollbar {
@@ -682,7 +692,7 @@ input[type="checkbox"]:checked::after {
 }
 
 
-.loader, .customInput, .inventory_option_container{
+.loader, .customInput, .inventory_option_container, .delete_page{
     position: fixed;
     top: 0;
     bottom: 0;
@@ -1061,7 +1071,7 @@ main.inventory-page{
     margin-bottom: 1.3rem;
     position: relative;
 }
-.card_container .card:active {
+.card_container .card:active, .list-item:active {
   transform: scale(0.98);
   transition: 0.1s;
 }
@@ -1091,7 +1101,7 @@ main.inventory-page{
 }
 
 
-.inventory_option_container{
+.inventory_option_container, main.delete_page{
     display: none;
     background: transparent;
     backdrop-filter: blur(0);
@@ -1127,6 +1137,37 @@ main.inventory-page{
 /*######## INVENTORY STYLE END #########*/
 
 
+/*Delete page*/
+main.delete_page{
+    display: flex;
+    backdrop-filter: blur(4px);
+}
+main.delete_page .card{
+    color: #000;
+    padding: 2rem;
+    background: rgba(255, 255, 255, 0.82);
+    box-shadow: 0 0 7px rgba(0, 0, 0, 0.21);
+    border-radius: 10px;
+    text-shadow: none;
+}
+.delete_page .card .title{
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+.delete_page .card .btn_wrap{
+    margin-top: 2rem;
+    border-top: 1px solid #D0D0D0;
+    padding-top: 1rem;
+    display: flex;
+    gap: 2rem;
+}
+.delete_page .delete {
+    background: #BA00E2;
+    color: #fff;
+    font-weight: bold;
+}
+
+
 li.list-item {
   transition: transform 0.5s, opacity 1s;
   transform: translateX(0px);
@@ -1138,7 +1179,25 @@ li.slid-out {
 }
 
 
+
+.list-item {
+  transition: transform 0.4s ease, opacity 0.4s ease, scale 0.4s;
+}
+
+.list-item.slide-out {
+  transform: translateY(-600px) scale(0.2);
+  opacity: 0;
+  background: rgba(255, 3, 3, 0.17) !important;
+}
+
+.list-item.hidden {
+  display: none;
+}
+
 .hidden{
     display: none;
 }
 
+.delete_page.hidden{
+    display: none;
+}

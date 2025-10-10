@@ -7,7 +7,7 @@ import { inventoryCard} from './inventoryCard.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 
 // Realtime Database import
-import { getDatabase, ref, onChildAdded, onChildChanged, update, query, limitToLast, orderByKey }
+import { getDatabase, ref, onChildAdded, onChildChanged, update, query, limitToLast, orderByKey, remove }
 from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
 
@@ -37,6 +37,8 @@ get(backupRef).then(snapshot => {
     showNotice({ title: 'Backup', body: 'No data found in cloud', type: 'warn' });
     return;
   }
+  
+  
   
   const cloudData = snapshot.val();
   const cloudServices = cloudData.service ?
@@ -473,12 +475,65 @@ const renderNext = () => {
     <span><h3 class='sn'>${item.sn}</h3><i class="fa-solid fa-pen editIcon" data-sn='${item.sn}'></i></span>`;
     listItem.appendChild(nav);
     listItem.innerHTML += cardLayout(item);
+    
+    // delete function 
+    listItem.oncontextmenu = (e) => {
+  e.preventDefault();
+  $('.delete_page').classList.remove('hidden');
+  $('.delete_page').dataset.sn = item.sn;
+};
+
+
 
     listContainer.appendChild(listItem);
   });
 
   renderStart += renderLimit;
 }
+$('.delete_page').onclick=e=>{
+  if(e.target.matches('main')) e.target.classList.add('hidden')
+  
+}
+
+$('.delete_page .cancel').onclick=()=>$('.delete_page').classList.add('hidden')
+
+$('.delete_page .delete').onclick = async () => {
+  $('.loader').classList.remove('hidden')
+  const sn = $('.delete_page').dataset.sn;
+  $('.delete_page').classList.add('hidden');
+
+  if (!sn) {
+    $('.loader').classList.add('hidden')
+    showNotice({title: 'Write Error', body: '❌ No Data found to delete', type: 'warn'});
+    return
+  }
+
+  const itemsRef = ref(db, `shops/${shopName}/service/${sn}`);
+
+  try {
+    await remove(itemsRef);
+    const lastSnRef = ref(db, `shops/${shopName}/lastServiceSn`);
+      const tx = await runTransaction(lastSnRef, (current) => (current === null ? 1 : current - 1));
+    $('.loader').classList.add('hidden');
+   showNotice({title: 'Deleted', body: ` Customer Data ${sn} deleted successfully.`, type:'info'});
+   
+   
+   $$('.list .list-item').forEach(el => {
+  if (el.dataset.sn === sn) {
+    el.classList.add('slide-out');
+
+    
+    el.addEventListener('transitionend', () => {
+      el.classList.add('hidden');
+    }, { once: true });
+  }
+});
+   
+  } catch (err) {
+    $('.loader').classList.add('hidden')
+    showNotice({title:'Backend Error',body:`❌ Error deleting item: ${err.message}`, type:'error'});
+  }
+};
 
 let keyboardOpen = false;
 
@@ -661,6 +716,7 @@ $('.add-data').onclick = async () => {
       const lastSnRef = ref(db, `shops/${shopName}/lastServiceSn`);
       const tx = await runTransaction(lastSnRef, (current) => (current === null ? 1 : current + 1));
       snToUse = tx.snapshot.val();
+      $('#new_sn').textContent=snToUse
     }
     
     const date = new Date();
@@ -774,7 +830,7 @@ document.addEventListener("change", (e) => {
 
 // note update listener
 document.oninput = (e) => {
-  if (e.target.matches("textarea")) {
+  if (e.target.matches(".add-note-input")) {
     const wrap = e.target.closest('.note-input-wrap'); 
     const button = wrap.querySelector('button');
     button.classList.add('active')
@@ -1695,3 +1751,4 @@ window.addEventListener('beforeunload', () => {
 });
 
 //######################### THE END ###################################//
+
