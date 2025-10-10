@@ -532,6 +532,7 @@ const routes = {
 
 const router = () => {
   //  hide all
+    $('.inventory_option_container').classList.remove('show')
   Object.values(routes).forEach(selector => {
     $(selector).style.display = "none";
     });
@@ -562,7 +563,8 @@ const router = () => {
   }
 else {
   $('.page-title').textContent = 'Add Service';
-$('#new_sn').textContent = Number(data[data.length - 1].sn) + 1;
+$('#new_sn').textContent = Number(data[data.length - 1]?.sn) + 1 || 1;
+
 }
   }
   if(hash==='') shopSwitcher();
@@ -733,22 +735,41 @@ $('.add-data').onclick = async () => {
 // status update listener
 document.addEventListener("change", (e) => {
   if (e.target.matches("input[type=radio][name^='status-']")) {
-    const sn = e.target.name.split("-")[1];   // e.g. "status-2001" → 2001
-    const newStatus = e.target.id.split("-")[0]; // e.g. "done-2001" → done
+    const sn = e.target.name.split("-")[1];
+    const newStatus = e.target.id.split("-")[0];
+    const parent = e.target.closest('li');
 
-    
+    // Trigger slide-out animation
+    parent.classList.add('slid-out');
 
-    const itemRef = ref(db, `shops/${shopName}/service/${sn}`);
-    
-    update(itemRef, { status: newStatus })
-      .then(() => showNotice({title: sn, body:`Status Updated To, ${newStatus.toUpperCase()}` , type: 'info', delay: 5000}))
-      .catch(err => {
-        console.error("❌ Error updating status:", err)
-        showNotice({title:'ERROR', body:`Data didn't updated!, Please Trying again later. REASON: ${err.message}`, type:'error', delay: 6})
-      });
-      //alert(e.target.parentElement.parentElement.parentElement.classList)
+    // Wait for the transition to finish
+    parent.addEventListener('transitionend', function handler(event) {
+      if (event.propertyName === 'transform') { // only trigger once
+        // Hide the element after sliding
+        parent.style.display = 'none';
+
+        const itemRef = ref(db, `shops/${shopName}/service/${sn}`);
+        update(itemRef, { status: newStatus })
+          .then(() => showNotice({
+            title: sn,
+            body: `Status Updated To, ${newStatus.toUpperCase()}`,
+            type: 'info',
+            delay: 5000
+          }))
+          .catch(err => {
+            console.error("❌ Error updating status:", err)
+            showNotice({
+              title: 'ERROR',
+              body: `Data didn't update! Please try again later. REASON: ${err.message}`,
+              type: 'error',
+              delay: 6000
+            })
+          });
+
+        parent.removeEventListener('transitionend', handler);
+      }
+    });
   }
-  
 });
 
 // note update listener
@@ -1582,7 +1603,10 @@ createProdDataBtn.onclick=async()=>{
   prodRate,
   prodCustRate,
   author: localStorage.getItem('author') || 'None Author'
-}).then(()=>showNotice({title:'Success', body:'Product Added successful!', type:'success'})).catch(err=>showNotice({title:'Error', body:err.message, type:'error'}));
+}).then(()=>{
+  showNotice({title:'Success', body:'Product Added successful!', type:'success'})
+  location.hash='#inventory'
+}).catch(err=>showNotice({title:'Error', body:err.message, type:'error'}));
 }
 
 
@@ -1615,6 +1639,10 @@ const createInventoryCard = stock =>{
   const card = document.createElement('div')
   card.classList.add('card')
   card.innerHTML=inventoryCard(stock)
+  const optionContainer = $('.inventory_option_container')
+  
+  
+  card.onclick=()=>optionContainer.classList.add('show')
   inventoryCardContainer.appendChild(card)
 }
 

@@ -144,6 +144,7 @@ $('.loader').classList.remove('hidden')
       email: businessEmail,
       password: businessPass, // ⚠️ plaintext — better use hashing
       createdAt: Date.now(),
+      lastServiceSn: 0,
       service: {} // create empty service branch for future use
     });
     

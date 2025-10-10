@@ -5,7 +5,12 @@
 
 ##  🚧 [Unreleased]
 
+---
 
+## [3.5.1] - 2025-10-10
+- UI Enhanced 
+- security Added
+- Bug Fixes 
 
 ## [3.5.0] - 2025-10-09
 ### 🎨 UI Enhancements

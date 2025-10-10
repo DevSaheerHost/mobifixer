@@ -682,7 +682,7 @@ input[type="checkbox"]:checked::after {
 }
 
 
-.loader, .customInput{
+.loader, .customInput, .inventory_option_container{
     position: fixed;
     top: 0;
     bottom: 0;
@@ -1059,6 +1059,7 @@ main.inventory-page{
     border-radius: 10px;
     box-shadow: 0px 0px 7px rgba(0, 0, 0, 0.08);
     margin-bottom: 1.3rem;
+    position: relative;
 }
 .card_container .card:active {
   transform: scale(0.98);
@@ -1090,12 +1091,54 @@ main.inventory-page{
 }
 
 
+.inventory_option_container{
+    display: none;
+    background: transparent;
+    backdrop-filter: blur(0);
+    align-items: center;
+    justify-content: center;
+}
+.inventory_option_container.show{
+    display: flex;
+    backdrop-filter: blur(3px);
+    background: rgba(0, 0, 0, 0.14);
+}
+
+.inventory_option_container .card{
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.55);
+    color: #000;
+    text-shadow: none;
+    width: 140px;
+    padding: 1rem;
+}
+.inventory_option_container .card ul{
+    display: flex;
+    flex-flow: column;
+    gap: 1rem;
+}
+.inventory_option_container .card li{
+    padding: 1rem;
+    background: #FFFFFF;
+    border-radius: 10px;
+    box-shadow: 0 0 6px #00000036;
+}
+
 /*######## INVENTORY STYLE END #########*/
 
 
+li.list-item {
+  transition: transform 0.5s, opacity 1s;
+  transform: translateX(0px);
+}
 
+li.slid-out {
+  transform: translateY(-300px) scale(0.2);
+  opacity: 0;
+}
 
 
 .hidden{
     display: none;
 }
+
