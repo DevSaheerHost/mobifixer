@@ -7,6 +7,49 @@
 
 ---
 
+## [4.0.0] - 2025-10-11
+### 🎨 UI / Theme Overhaul
+- ✨ Introduced a complete glassmorphism theme with layered transparency and subtle blur effects.
+- 🌌 New dark base palette built around #0d1117 and #161b22 for a modern, professional aesthetic.
+- 🧊 Updated cards, modals, and containers to use translucent backgrounds (rgba(255, 255, 255, 0.06)) with dynamic hover states.
+- 💡 Text colors rebalanced:
+  - Primary text: #e6edf3
+  - Muted text: #8b949e
+  - Headings: pure white #ffffff for strong contrast
+- 🧠 Added accent highlights using #0ba2ff and #0088d8 for focus and interactivity.
+- 🧯 Refined danger and success tones:
+  - Error: #ff3b3b
+  - Success: #00c36a
+- 🪩 Added glass gradient layer (--accent-glass) to enhance depth and realism across UI components.
+
+
+---
+
+
+### 🧰 Structural / CSS Improvements
+- 🪶 Unified all background variables under :root for easier theme management.
+- 🔁 Replaced hard-coded colors with new CSS variables for maintainability and scalability.
+- 🧩 Improved hover transitions for cards, buttons, and input elements.
+
+
+---
+
+
+### ⚙️ Performance & UX
+- ⚡ Reduced CSS redundancy → smaller stylesheet footprint.
+- 🧭 Improved UI clarity and visual hierarchy for better readability in dark environments.
+
+
+---
+
+
+### 📈 Version Note
+> This update marks a major design evolution for Mobifixer — focusing on elegance, readability, and a futuristic interface built around the glass aesthetic.
+
+
+---
+
+
 ## [3.5.1] - 2025-10-10
 - UI Enhanced 
 - security Added

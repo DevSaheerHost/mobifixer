@@ -14,7 +14,7 @@ export const cardLayout=({name, status, number, model, lock, complaints, sn, dat
        
        <div class='item_flex'>
        <p class='key'><b>Complaints</b></p>
-         <p class='value'>${complaints}</p>
+         <p class='value complaints'>${complaints}</p>
        </div>
        
               <div class='item_flex'>
