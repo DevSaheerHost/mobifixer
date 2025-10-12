@@ -7,6 +7,34 @@
 
 ---
 
+## ⚙️ 4.3.0 — Settings Page Introduced
+
+### ✨ New Features
+- Added a brand-new **Settings page** for better personalization and control  
+- Included **Profile Overview** with name, email, and shop summary  
+- Added **Quick Stats cards** showing total entries, today’s entries, and available spares  
+- Introduced **toggle controls** (e.g., Light Mode, Notifications) with smooth animations  
+- Basic **navigation routing** for sub-pages (`#settings/profile`, `#settings/shop`, etc.)  
+
+### 🎨 UI Enhancements
+- Glass-style interface aligned with new Mobifixer theme  
+- Improved section grouping with clean spacing and icons  
+- Responsive layout optimized for mobile and tablet view  
+
+### 🧩 Code Improvements
+- Modular route handling for hash-based navigation  
+- Universal toggle system supporting multiple switches  
+- LocalStorage support for theme persistence (Light/Dark mode)
+
+### 🧠 Developer Note
+This update lays the foundation for upcoming settings options like:
+Backup & Restore, Export Data, Notification preferences, and About Mobifixer page.
+
+
+---
+
+
+
 ## [4.0.0] - 2025-10-11
 ### 🎨 UI / Theme Overhaul
 - ✨ Introduced a complete glassmorphism theme with layered transparency and subtle blur effects.

@@ -29,6 +29,11 @@ const db = getDatabase(app);
 
 const shopName = localStorage.getItem('shopName')
 if(!shopName) location='./auth/index.html'
+
+// DOM helpers
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
 // Reference to your data
 const backupRef = ref(db, `shops/${shopName}`);
 
@@ -36,6 +41,12 @@ get(backupRef).then(snapshot => {
   if (!snapshot.exists()) {
     showNotice({ title: 'Backup', body: 'No data found in cloud', type: 'warn' });
     return;
+  } else {
+    const Main = snapshot.val()
+    
+    const email = Main.email || null
+    const userName = Main.username || null
+    console.log(email, userName)
   }
   
   
@@ -135,9 +146,7 @@ const speakText=(text, lang = 'en-IN', rate = 1, pitch = 1)=> {
 let data = [];
 
 let notification;
-// DOM helpers
-const $ = s => document.querySelector(s);
-const $$ = s => document.querySelectorAll(s);
+
 let unseenCount = 0;
 let unseen = {
   pending: 0,
@@ -149,7 +158,9 @@ let unseen = {
 };
 $('#shopname').textContent=shopName || 'My Shop';
 const timerElement = $('#timerElement')
-
+$('.settings_page .profile_container .name').textContent=shopName;
+$('.profile_page .profile_container .name').textContent=shopName;
+console.log(backupRef)
 // in the card section nots textarea size
 const setAutoHeightTextArea=  ()=>{
   document.querySelectorAll(".add-note-input").forEach(area => {
@@ -582,29 +593,44 @@ const routes = {
   "#shop-work": ".shop-work",
   '#inventory':'.inventory-page',
   '#addInventory':'.inventory-create-page',
-  '#changelog':'.changelog-page'
+  '#changelog':'.changelog-page',
+  '#settings' : '.settings_page',
+  '#settings/profile':'.profile_page'
 };
 
 const router = () => {
   //  hide all
     $('.inventory_option_container').classList.remove('show')
-  Object.values(routes).forEach(selector => {
-    $(selector).style.display = "none";
-    });
+  Object.values(routes).forEach(s => {
+  const page = $(s);
+  if(page) {
+        page.classList.add('hidden')
+  }else{
+    showNotice({ title: 'Page Error', body: `"${s}" Not found!`, type: 'error' });
+    
+  }
+});
 
   // current hash 
   const hash = location.hash || "";
 
+
+  // header animation handle
+ // const slideUpHashes = ["#add", "#inventory", "#addInventory", "#settings", "#changelog"];
+$('header').classList.toggle('slide-up', hash!='');
+
+
   // match ?. show 
   if (routes[hash]) {
-    $(routes[hash]).style.display = "block";
+    $(routes[hash]).classList.remove('hidden')
+    $(".not-found").classList.add('hidden'); // 404 view
   } else {
-    $(".not-found").style.display = "block"; // 404 view
+    $(".not-found").classList.remove('hidden'); // 404 view
     return
   }
 
-  // header animation handle
-  $('header').classList.toggle('slide-up', hash === "#add" || hash === '#inventory' || hash ==='#addInventory');
+
+
   if(hash ==='#add'){ 
     window.scrollTo({
   top: 0,
@@ -636,7 +662,22 @@ $('#new_sn').textContent = Number(data[data.length - 1]?.sn) + 1 || 1;
     });
   }
   
-  
+  $('#totalData').textContent = data.length;
+
+// 🔹 Get today's date in "DD-MMM-YYYY" format (e.g., 12-OCT-2025)
+const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+const d = new Date();
+const today =
+  `${String(d.getDate()).padStart(2, '0')}-${months[d.getMonth()]}-${d.getFullYear()}`;
+
+// 🔹 Filter today's entries
+const todayData = data.filter(item => item.date?.toUpperCase() === today);
+
+$('#todayData').textContent = todayData.length;
+
+//$('#spareAvailableCount')
+
+
 };
 
 window.addEventListener("DOMContentLoaded", router);
@@ -783,6 +824,7 @@ $('.add-data').onclick = async () => {
     showNotice({ title: 'ERROR', body: `Operation failed: ${err.message}`, type: 'error', delay: 6 });
     $('.add-data').disabled = false;
   }
+  // hereee
 };
 
 
@@ -1682,6 +1724,9 @@ onChildAdded(stockRef, (snapshot) => {
   const outOfStock = stockData.filter(d=>d.prodQuantity<3
   )
   $('#out_of_stock').textContent=outOfStock.length.toLocaleString()
+  
+  const availableSpare = stockData.filter(item => item.prodQuantity > 0);
+$('#spareAvailableCount').textContent=availableSpare.length
 })
 
 // Next task create UI 
@@ -1727,10 +1772,33 @@ const showFirstAnim=()=>{
 }
 
 
+//.     TOGGLE BTN FUNCTION    ////
+
+$$('.toggle_btn').forEach(btn => {
+  btn.onclick = () => {
+    btn.classList.toggle('active');
+
+    // linked input (for logic or saving)
+    const input = btn.parentElement.querySelector('input[type=checkbox]');
+    if (input) input.checked = btn.classList.contains('active');
+
+    // example: specific actions
+    if (input?.name === 'theme') {
+      document.documentElement.classList.toggle('light-mode', input.checked);
+      localStorage.setItem('theme', input.checked ? 'light' : 'dark');
+    }
+
+    if (input?.name === 'notify') {
+      console.log('Notifications:', input.checked ? 'Enabled' : 'Disabled');
+    }
+  };
+});
+
+
 //#####################################################################//
 
 // put it down 👇 
-const CURRENT_VERSION = '4.0.0';
+const CURRENT_VERSION = '4.3.0';
 const LAST_VERSION = localStorage.getItem('app_version') || null;
 
 if (LAST_VERSION !== CURRENT_VERSION) {
@@ -1752,3 +1820,4 @@ window.addEventListener('beforeunload', () => {
 
 //######################### THE END ###################################//
 
+// location.hash='#settings'

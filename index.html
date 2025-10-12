@@ -44,8 +44,8 @@
 </span>
 
 <span>
-  <a href="#changelog">
-    <i class="fa-solid fa-info"></i>
+  <a href="#settings">
+    <i class="fa-solid fa-gear"></i>
   </a>
 </span>
 
@@ -270,7 +270,7 @@
 </main>
 
 
-<main class="inventory_option_container">
+<main class="inventory_option_container hidden">
   <div class="card">
     <ul>
       <li>Edit</li>
@@ -347,11 +347,209 @@
 </main>
 
 
+<main class="settings_page hidden">
+  <div class="header">
+    <div class="flex">
+      <i class="fa-solid fa-arrow-left" onclick="window.history.back()"></i>
+      <h3>Settings</h3>
+    </div>
+  </div>
+  
+  <div class="profile_container">
+    <div class="box">
+      <img src="./assets/images/logo_s_no_bg.png" alt="Logo" />
+      <div class="name_wrap">
+        <p class="name">Babu</p>
+        <p class="mail">sheerbabu549@gmail.com</p>
+      </div>
+    </div>
+    
+    <div class="card_flex">
+      <div class="card">
+        <p class="count" id="totalData">0</p>
+        <p>Total Entry</p>
+      </div>
+      
+       <div class="card">
+        <p class="count" id="todayData">0</p>
+        <p>Today's Entry</p>
+      </div>
+      
+       <div class="card">
+        <p class="count" id="spareAvailableCount">0</p>
+        <p>Available Spares</p>
+      </div>
+    </div>
+  </div>
+  
+      <h4 class="title">Profile & Business</h4>
+
+  <ul class="settings_list">
+    <a href="#settings/profile">
+      <li class="list-item">
+        <p>Manage Profile</p>
+        <i class="fa-solid fa-angle-right"></i>
+      </li>
+    </a>
+    
+    <a href="#settings/shop">
+      <li class="list-item">
+        <p>Shop Details</p>
+        <i class="fa-solid fa-angle-right"></i>
+      </li>
+    </a>
+    
+      <a href="#settings/password">
+         <li class="list-item">
+           <p>Change Password</p>
+           <i class="fa-solid fa-angle-right"></i>
+         </li>
+      </a>
+  </ul>
+  
+  <h4 class="title">Records & Data</h4>
+  
+   <ul class="settings_list">
+    <li class="list-item">
+      <p>Backup & Restore Data</p>
+      <i class="fa-solid fa-angle-right"></i>
+    </li>
+    
+     <li class="list-item">
+      <p>Export to Excel / PDF</p>
+      <i class="fa-solid fa-angle-right"></i>
+    </li>
+    
+     <li class="list-item">
+      <p>Clear Old Entries</p>
+      <i class="fa-solid fa-angle-right"></i>
+    </li>
+  </ul>
+  
+  
+   <h4 class="title">Theme & Interface</h4>
+  
+   <ul class="settings_list">
+    <li class="list-item">
+      <p>Theme Modea</p>
+      <i class="fa-solid fa-angle-right"></i>
+    </li>
+    
+     <li class="list-item">
+      <p>Language</p>
+      <i class="fa-solid fa-angle-right"></i>
+    </li>
+    
+     <li class="list-item">
+      <p>Notification Settings</p>
+      <i class="fa-solid fa-angle-right"></i>
+    </li>
+    
+     <li class="list-item">
+      <p>Default Home Page</p>
+      <i class="fa-solid fa-angle-right"></i>
+    </li>
+  </ul>
+  
+     <h4 class="title">Tools & Utilities</h4>
+  
+   <ul class="settings_list">
+    <li class="list-item">
+      <p>Printer Settings</p>
+      <i class="fa-solid fa-angle-right"></i>
+    </li>
+    
+     <li class="list-item">
+      <p>Spare Parts Threshold Alert</p>
+      <i class="fa-solid fa-angle-right"></i>
+    </li>
+    
+     <li class="list-item">
+      <p>Auto Sync Settings</p>
+      <i class="fa-solid fa-angle-right"></i>
+    </li>
+  </ul>
+  
+    <h4 class="title">Help & Support</h4>
+  
+   <ul class="settings_list">
+    <li class="list-item">
+      <p>About MobiFixer</p>
+      <i class="fa-solid fa-angle-right"></i>
+    </li>
+    
+     <li class="list-item">
+      <p>Report a Bug / Suggest Feature</p>
+      <i class="fa-solid fa-angle-right"></i>
+    </li>
+    
+     <li class="list-item">
+      <p>Privacy Policy & Terms</p>
+      <i class="fa-solid fa-angle-right"></i>
+    </li>
+  </ul>
+</main>
+
+<!-- ########## PROFILE_PAGE ########## -->
+
+<main class="profile_page hidden">
+  
+   <div class="header">
+    <div class="flex">
+      <i class="fa-solid fa-arrow-left" onclick="window.history.back()"></i>
+      <h3>Settings</h3>
+    </div>
+  </div>
+  
+  
+  <div class="profile_container">
+     <div class="box">
+      <img src="./assets/images/logo_s_no_bg.png" alt="Logo" />
+      <div class="name_wrap">
+        <p class="name">Babu</p>
+        <p class="mail">sheerbabu549@gmail.com</p>
+      </div>
+    </div>
+  </div>
+  
+  
+  
+<div class="container">
+  <div class="lang_theme_flex">
+    <p>English</p>
+    <span>
+      <p>Light Mode</p>
+      <input type="checkbox" name="theme" id="theme" class="hidden"/>
+      <div class="toggle_btn">
+        <div class="toggle_ball"></div>
+      </div>
+    </span>
+  </div>
+  
+  
+  
+  
+  <ul class="profile_list">
+    <li class="list-item">
+      <input type="text" name="user_name" id="user_name" placeholder="Enter Your Name">
+      <input type="text" name="user_prof_url" id="user_prof_url" placeholder="Profile URL">
+      
+      <input type="text" name="user_shop_name" id="user_shop_name" placeholder="Shop/Business Name">
+      
+      <button class="save_user_pro_btn">Save</button>
+    </li>
+    
+     
+  </ul>
+</div>
+  
+</main>
+
 
 
     
     <main class="not-found hidden">
-      <h3>Page not found || 404</h3>
+      <div class="flex">
         <lottie-player
   src="./Error 404.json"
   background="transparent"
@@ -360,6 +558,7 @@
   loop
   autoplay>
 </lottie-player>
+      </div>
     </main>
     
     <audio id="newSound" src="./mixkit.wav" preload="auto"></audio>

@@ -62,6 +62,8 @@
 html, body {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;     /* Firefox */
+  height: 100dvh;
+  overflow-x: hidden;
 }
 
 
@@ -491,10 +493,21 @@ box-shadow: 0 0 10px rgba(0, 0, 0, 0.10);
     text-align: center;
     padding-top: 2rem;
 }
+.not-found{
+    height: 100%;
+}
+.not-found .flex{
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+}
 
 
 .badge{
-    background: var(--text-black);
+    background: var(--accent-glass);
   color: var(--text-color);
   border-radius: 100px;
   padding: 2px 6px;
@@ -1045,7 +1058,7 @@ select option {
 /*######### INVENTORY STYLE ############*/
 
 main.inventory-page{
-    background: #F7F7F7;
+    
 }
 
 .header, header{
@@ -1071,7 +1084,7 @@ main.inventory-page{
     display: flex;
     align-items: center;
     justify-content: space-between;
-    color: #000;
+    color: var(--text-color);
     border-radius: 10px;
     position: absolute;
     right: 50%;
@@ -1234,6 +1247,219 @@ main.delete_page .card{
     font-weight: bold;
 }
 
+/* Delete Page End*/
+
+
+/*########## SETTINGS PAGE #########*/
+
+
+
+.settings_page, .profile_page{
+    background-image: url(./assets/images/bg.jpg);
+    height: 100dvh;
+    backdrop-filter: blur(var(--glass-blur));
+    padding-bottom: 1rem;
+    overflow-y: auto;
+}
+.settings_page img{
+    max-width: 100%;
+}
+.settings_page .header, .profile_page .header{
+    background: var(--bg-secondary);
+    backdrop-filter: blur(var(--glass-blur));
+    height: auto;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 9;
+}
+
+.settings_page .header .flex,
+.profile_page .header .flex{
+    display: flex;
+    align-items: center;
+    justify-content: start;
+    gap: 1rem;
+}
+
+/* Profile container*/
+
+.settings_page .profile_container .box, 
+.profile_page .profile_container .box{
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    padding: 0 2rem;
+    
+    padding-top: 1rem;
+    backdrop-filter: blur(var(--glass-blur));
+}
+.settings_page .profile_container .box img,
+.profile_page .profile_container .box img{
+    width: 70px;
+    height: 70px;
+    border-radius: 100px;
+    object-fit: scale-down;
+    background: var(--glass-bg);
+    padding: 0 0.2rem;
+}
+.settings_page .profile_container .name,
+.profile_page .profile_container .name{
+    font-weight: 500;
+}
+.settings_page .profile_container .mail,
+.profile_page .profile_container .mail{
+    color: var(--text-muted);
+    font-size: 15px;
+}
+
+/* 3 Cards */
+
+.settings_page .profile_container .card_flex{
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    gap: 2rem;
+    padding: 1rem;
+    padding-top: 2rem;
+    
+    backdrop-filter: blur(var(--glass-blur));
+}
+
+.settings_page .profile_container .card_flex .card{
+    background: var(--accent-glass);
+    padding: 1rem;
+    text-align: center;
+    font-size: 10px;
+    
+    display: flex;
+    flex-flow: column;
+    gap: 0.5rem;
+    
+    font-weight: 500;
+    color: var(--text-muted);
+}
+.settings_page .profile_container .card_flex .card .count{
+    font-weight: 500;
+    font-size: 18px;
+    color: var(--accent-color);
+}
+
+
+/* List section*/
+
+.settings_page h4.title{
+    margin-left: 1rem;
+}
+.settings_page ul.settings_list{
+    background: var(--card-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    border-radius: var(--radius-large);
+    padding: 0;
+    margin: 1rem;
+    overflow: hidden;
+}
+.settings_page ul.settings_list li{
+    padding: 1rem;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    backdrop-filter: unset;
+    border-radius: 0;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--text-muted);
+    
+}
+
+
+/*########## SETTINGS PAGE END #########*/
+
+/* ########### PROFILE PAGE #############*/
+
+.profile_page .container {
+    padding: 1rem;
+}
+.profile_page .lang_theme_flex{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--text-muted);
+}
+.profile_page .lang_theme_flex span{
+    display: flex;
+    flex-flow: row;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+
+.profile_page .profile_list{
+    margin-top: 2rem;
+}
+.profile_page .profile_list li{
+    display: flex;
+    flex-flow: column;
+    gap: 1rem;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    color: var(--text-muted);
+}
+.profile_page .profile_list li span{
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.profile_page .profile_list button.save_user_pro_btn{
+    background: var(--accent-glass);
+    color: var(--text-color);
+    font-weight: var(--font-weight-bold);
+    padding: 0.6rem;
+    width: 100px;
+}
+.profile_page .profile_list li:active{
+    transform: scale(1);
+}
+
+/*########## PROFILE PAGE END ########## */
+
+/* TOGGLE_BTN */
+.toggle_btn {
+    height: 20px;
+    width: 40px;
+    border-radius: 100px;
+    background: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    transition: background 0.3s ease;
+    cursor: pointer;
+}
+
+.toggle_btn .toggle_ball {
+    height: 15px;
+    width: 15px;
+    background: var(--text-color);
+    border-radius: 100px;
+    margin: auto 2.5px;
+    transition: transform 0.3s ease;
+}
+
+/* Active state */
+.toggle_btn.active {
+    background: var(--accent-glass);
+    
+}
+
+.toggle_btn.active .toggle_ball {
+    transform: translateX(calc(20px));
+}
+
 
 li.list-item {
   transition: transform 0.5s, opacity 1s;
@@ -1301,3 +1527,6 @@ button.delete {
 button.delete:hover {
   background: #ff5050;
 }
+
+
+
