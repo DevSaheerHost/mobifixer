@@ -44,9 +44,9 @@ get(backupRef).then(snapshot => {
   } else {
     const Main = snapshot.val()
     
-    const email = Main.email || null
-    const userName = Main.username || null
-    console.log(email, userName)
+    const email = Main.email || null;
+    const userName = Main.username || null;
+    console.log(email, userName);
   }
   
   
@@ -555,6 +555,7 @@ window.visualViewport?.addEventListener('resize', () => {
 });
 
 window.addEventListener('scroll', () => {
+  // alert('scroll')
   if (keyboardOpen) return; // prevent triggering while keyboard active
   
   const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
@@ -595,7 +596,8 @@ const routes = {
   '#addInventory':'.inventory-create-page',
   '#changelog':'.changelog-page',
   '#settings' : '.settings_page',
-  '#settings/profile':'.profile_page'
+  '#settings/profile':'.profile_page',
+  '#settings/thememode': '.theme_page',
 };
 
 const router = () => {
@@ -1280,7 +1282,7 @@ document.addEventListener('click', e => {
 
 window.onoffline=()=>{
     // play sound
-    showNotice({title:'Offline', body:'Device disconnect.', type:'error'})
+    showNotice({title:'Offline', body:'Device disconnect. Reloading', type:'error'})
   const audio = document.getElementById("disconnect");
   if (audio) {
     audio.currentTime = 0;
@@ -1751,6 +1753,86 @@ const createInventoryCard = stock =>{
 
 
 
+// ################## THEME FUNCTION ############### //
+
+const themeInputs = {
+  accent: $('#accent'),
+  accentOpacity: $('#accentOpacity'),
+  blur: $('#blur'),
+  textColor: $('#textColor'),
+  cardGlass: $('#cardGlass'),
+  bgColor: $('#bgColor'),
+  radius_large: $('#radius_large'),
+  radius_small: $('#radius_small'),
+};
+
+// 🎨 Default fallback values
+const defaultTheme = {
+  accent: '#0ba2ff',
+  accentOpacity: '0.5',
+  blur: '8',
+  textColor: '#e6edf3',
+  cardGlass: 'rgba(11, 162, 255, 0.52)',
+  bgColor: '#0d1117',
+  radius_large: '16',
+  radius_small: '10',
+};
+
+function hexToRgba(hex, alpha = 1) {
+  if (!hex.startsWith('#')) return hex; // already rgba
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function applyTheme(theme) {
+  document.documentElement.style.setProperty('--accent-color', theme.accent);
+  document.documentElement.style.setProperty('--glass-blur', `${theme.blur}px`);
+  document.documentElement.style.setProperty('--text-color', theme.textColor);
+  document.documentElement.style.setProperty('--accent-glass', theme.cardGlass);
+  document.documentElement.style.setProperty('--card-bg', theme.bgColor);
+  document.documentElement.style.setProperty('--radius-large', `${theme.radius_large}px`);
+  document.documentElement.style.setProperty('--radius-small', `${theme.radius_small}px`);
+}
+
+function saveTheme() {
+  const theme = {};
+  for (const key in themeInputs) {
+    theme[key] = themeInputs[key]?.value || defaultTheme[key];
+  }
+
+  // ✅ Convert accent color with opacity
+  theme.accent = hexToRgba(theme.accent, parseFloat(theme.accentOpacity || 1));
+
+  localStorage.setItem('userTheme', JSON.stringify(theme));
+  applyTheme(theme);
+}
+
+function loadTheme() {
+  const saved = localStorage.getItem('userTheme');
+  const theme = saved ? { ...defaultTheme, ...JSON.parse(saved) } : defaultTheme;
+
+  applyTheme(theme);
+
+  // 🧩 Update input values safely
+  for (const key in themeInputs) {
+    if (themeInputs[key]) themeInputs[key].value = theme[key].toString().replace('px', '');
+  }
+}
+
+function resetTheme() {
+  localStorage.removeItem('userTheme');
+  location.reload();
+}
+
+// 🔄 Event listeners
+for (const key in themeInputs) themeInputs[key]?.addEventListener('input', saveTheme);
+$('#resetTheme')?.addEventListener('click', resetTheme);
+window.addEventListener('DOMContentLoaded', loadTheme);
+
+// ################## THEME FUNCTION END ############### //
+
 
 //#########################//
 
@@ -1820,4 +1902,4 @@ window.addEventListener('beforeunload', () => {
 
 //######################### THE END ###################################//
 
-// location.hash='#settings'
+// location.hash='#settings/thememode'

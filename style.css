@@ -29,7 +29,6 @@
   --success-color: #00c36a;
   --accent-glass: rgba(11, 162, 255, 0.52);
   --accent-gradient: var(--accent-glass);
-;
 
   --border-color: rgba(255, 255, 255, 0.15);
   --shadow-color: rgba(0, 0, 0, 0.5);
@@ -63,8 +62,10 @@ html, body {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;     /* Firefox */
   height: 100dvh;
-  overflow-x: hidden;
+  
 }
+
+
 
 
 .form textarea{
@@ -165,11 +166,12 @@ nav a{
     align-items: center;
     justify-content: center;
     gap: 1rem;
+    border: 1px solid var(--border-color);
 }
 
 nav a.active{
     background: var(--accent-glass);
-    
+    border: 1px solid var(--border-color);
     color: var(--text-color);
 }
 
@@ -180,7 +182,7 @@ nav.status-nav{
     z-index: 1;
     background: transparent;
     margin-top: 1rem;
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(var(--glass-blur));
     
 }
 
@@ -193,11 +195,13 @@ nav.status-nav{
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
     gap: 2rem;
-    
+    perspective: 600px;
+    transform-style: preserve-3d;
 }
 
 .list .list-item{
     border-radius: 10px;
+    border-radius: var(--radius-large);
     padding: 1.6rem;
     padding-top: 2rem;
     
@@ -209,18 +213,27 @@ nav.status-nav{
     overflow: hidden;
     /* font-size: calc(10px + 1vw); */
     max-width: 100%;
-    animation: slideDown 0.7s ease;
+    animation: slideDown 0.5s ease;
+    transform: translateZ(0px);
 }
 .list-item .complaints{
     color: var(--accent-color);
     font-weight: 600;
 }
 
-@keyframes slideDown{
-    from{
-        transform: translateY(-150vh) scale(0.3);
-        z-index: 0;
-    }
+@keyframes slideDown {
+  0% {
+    transform: translate3d(50px, -50px, 100px) rotateY(20deg) scale(0);
+    opacity: 0;
+  }
+  50%{
+      opacity: 1;
+      transform: translate3d(10px, -10px, 20px) rotateY(2deg) scale(0.95);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotateY(0deg) rotateY(0deg) scale(1);
+    opacity: 1;
+  }
 }
 
 li nav{
@@ -424,7 +437,7 @@ button.add:hover {
 .search-out{
     width: 100%;
     background: transparent;
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(--glass-blur);
     height: auto;
     padding: 2rem;
     width: 90vw;
@@ -473,7 +486,7 @@ box-shadow: 0 0 10px rgba(0, 0, 0, 0.10);
 
 .shop-selector-wrap span{
     background: var(--glass-bg);
-    backdrop-filter: blur(3px);
+    backdrop-filter: blur(--glass-blur);
     color: var(--text-color);
     padding: .5rem 1rem;
     border-radius: 100px;
@@ -775,8 +788,8 @@ input[type="checkbox"]:checked::after {
     left: 0;
     right: 0;
     background: var(--glass-bg);
-    color: #fff;
-    backdrop-filter: blur(8px);
+    color: var(--text-color);
+    backdrop-filter: blur(--glass-blur);
     text-shadow: 0 0 5px rgba(0, 0, 0, 0.29);
     z-index: 9;
     
@@ -964,7 +977,7 @@ pre {
 }
 select {
   background: var(--glass-bg);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(--glass-blur);
   color: var(--text-color);
   padding: 8px 12px;
   border: 1px solid var(--border-color);
@@ -1223,9 +1236,9 @@ main.delete_page{
     backdrop-filter: blur(4px);
 }
 main.delete_page .card{
-    color: #000;
+    color: var(--text-color);
     padding: 2rem;
-    background: rgba(255, 255, 255, 0.82);
+    background: var(--glass-bg);
     box-shadow: 0 0 7px rgba(0, 0, 0, 0.21);
     border-radius: 10px;
     text-shadow: none;
@@ -1236,14 +1249,14 @@ main.delete_page .card{
 }
 .delete_page .card .btn_wrap{
     margin-top: 2rem;
-    border-top: 1px solid #D0D0D0;
+    border-top: 1px solid var(--border-color);
     padding-top: 1rem;
     display: flex;
     gap: 2rem;
 }
 .delete_page .delete {
-    background: #BA00E2;
-    color: #fff;
+    background: var(--danger-color);
+    color: var(--text-color);
     font-weight: bold;
 }
 
@@ -1254,7 +1267,7 @@ main.delete_page .card{
 
 
 
-.settings_page, .profile_page{
+.settings_page, .profile_page, .theme_page{
     background-image: url(./assets/images/bg.jpg);
     height: 100dvh;
     backdrop-filter: blur(var(--glass-blur));
@@ -1264,7 +1277,7 @@ main.delete_page .card{
 .settings_page img{
     max-width: 100%;
 }
-.settings_page .header, .profile_page .header{
+.settings_page .header, .profile_page .header, .theme_page .header{
     background: var(--bg-secondary);
     backdrop-filter: blur(var(--glass-blur));
     height: auto;
@@ -1276,7 +1289,8 @@ main.delete_page .card{
 }
 
 .settings_page .header .flex,
-.profile_page .header .flex{
+.profile_page .header .flex,
+.theme_page .header .flex{
     display: flex;
     align-items: center;
     justify-content: start;
@@ -1349,10 +1363,12 @@ main.delete_page .card{
 
 /* List section*/
 
-.settings_page h4.title{
+.settings_page h4.title, .profile_page h4.title{
     margin-left: 1rem;
 }
-.settings_page ul.settings_list{
+.settings_page ul.settings_list,
+.profile_page ul.staff_list,
+.theme_page ul{
     background: var(--card-bg);
     backdrop-filter: blur(var(--glass-blur));
     border-radius: var(--radius-large);
@@ -1360,7 +1376,9 @@ main.delete_page .card{
     margin: 1rem;
     overflow: hidden;
 }
-.settings_page ul.settings_list li{
+.settings_page ul.settings_list li,
+.profile_page ul.staff_list li,
+.theme_page ul li{
     padding: 1rem;
     border: none;
     box-shadow: none;
@@ -1380,7 +1398,7 @@ main.delete_page .card{
 
 /* ########### PROFILE PAGE #############*/
 
-.profile_page .container {
+.container {
     padding: 1rem;
 }
 .profile_page .lang_theme_flex{
@@ -1427,6 +1445,103 @@ main.delete_page .card{
 }
 
 /*########## PROFILE PAGE END ########## */
+
+
+/*########## THEME PAGE ########## */
+
+.theme_page input[type="color"], .theme_page input[type="range"]{
+    height: 40px;
+    width: 100px;
+    box-shadow: none;
+    background: transparent;
+}
+
+.theme_page input[type=range] {
+    -webkit-appearance: none;
+    width: 200px;
+}
+input[type=range]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 12.8px;
+  cursor: pointer;
+  box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
+  background: #0065A3;
+  border-radius: 25px;
+  border: 0px solid #000101;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
+  border: 0px solid #000000;
+  height: 20px;
+  width: 39px;
+  border-radius: 7px;
+  background: #0ba2ff;
+  cursor: pointer;
+  -webkit-appearance: none;
+  margin-top: -3.6px;
+}
+input[type=range]:focus::-webkit-slider-runnable-track {
+  background: #ac51b5;
+}
+input[type=range]::-moz-range-track {
+  width: 100%;
+  height: 12.8px;
+  cursor: pointer;
+  animate: 0.2s;
+  box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
+  background: #0ba2ff;
+  border-radius: 25px;
+  border: 0px solid #000101;
+}
+input[type=range]::-moz-range-thumb {
+  box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
+  border: 0px solid #000000;
+  height: 20px;
+  width: 39px;
+  border-radius: 7px;
+  background: #0ba2ff;
+  cursor: pointer;
+}
+input[type=range]::-ms-track {
+  width: 100%;
+  height: 12.8px;
+  cursor: pointer;
+  animate: 0.2s;
+  background: transparent;
+  border-color: transparent;
+  border-width: 39px 0;
+  color: transparent;
+}
+input[type=range]::-ms-fill-lower {
+  background: #0ba2ff;
+  border: 0px solid #000101;
+  border-radius: 50px;
+  box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
+}
+input[type=range]::-ms-fill-upper {
+  background: #0ba2ff;
+  border: 0px solid #000101;
+  border-radius: 50px;
+  box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
+}
+input[type=range]::-ms-thumb {
+  box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
+  border: 0px solid #000000;
+  height: 20px;
+  width: 39px;
+  border-radius: 7px;
+  background: #0ba2ff;
+  cursor: pointer;
+}
+input[type=range]:focus::-ms-fill-lower {
+  background: #ac51b5;
+}
+input[type=range]:focus::-ms-fill-upper {
+  background: #ac51b5;
+}
+
+/*########## THEME PAGE END ########## */
 
 /* TOGGLE_BTN */
 .toggle_btn {
@@ -1527,6 +1642,3 @@ button.delete {
 button.delete:hover {
   background: #ff5050;
 }
-
-
-
