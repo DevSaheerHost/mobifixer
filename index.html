@@ -348,7 +348,7 @@
 
 
 <main class="settings_page hidden">
-  <div class="header">
+  <div class="page_header">
     <div class="flex">
       <i class="fa-solid fa-arrow-left" onclick="window.history.back()"></i>
       <h3>
@@ -384,7 +384,7 @@
     </div>
   </div>
   
-      <h4 class="title"> 
+      <h4 class="page_title"> 
       <i class="fa-solid fa-user">
       </i> Profile & Business</h4>
 
@@ -411,7 +411,7 @@
       </a>
   </ul>
   
-  <h4 class="title">
+  <h4 class="page_title">
     <i class="fa-solid fa-clipboard"></i>
 Records & Data</h4>
   
@@ -433,7 +433,7 @@ Records & Data</h4>
   </ul>
   
   
-   <h4 class="title">
+   <h4 class="page_title">
      <i class="fa-solid fa-mobile"></i>
      Theme & Interface</h4>
   
@@ -450,18 +450,19 @@ Records & Data</h4>
       <i class="fa-solid fa-angle-right"></i>
     </li>
     
+    <a href="#settings/sound">
      <li class="list-item">
-      <p>Notification Settings</p>
+      <p>Sound & Notification</p>
       <i class="fa-solid fa-angle-right"></i>
     </li>
-    
+    </a>
      <li class="list-item">
       <p>Default Home Page</p>
       <i class="fa-solid fa-angle-right"></i>
     </li>
   </ul>
   
-     <h4 class="title">
+     <h4 class="page_title">
      <i class="fa-solid fa-screwdriver-wrench"></i>
      Tools & Utilities</h4>
   
@@ -482,16 +483,17 @@ Records & Data</h4>
     </li>
   </ul>
   
-    <h4 class="title">
+    <h4 class="page_title">
       <i class="fa-solid fa-comment-dots"></i>
       Help & Support</h4>
   
    <ul class="settings_list">
+     <a href="#changelog">
     <li class="list-item">
       <p>About MobiFixer</p>
       <i class="fa-solid fa-angle-right"></i>
     </li>
-    
+     </a>
      <li class="list-item">
       <p>Report a Bug / Suggest Feature</p>
       <i class="fa-solid fa-angle-right"></i>
@@ -508,7 +510,7 @@ Records & Data</h4>
 
 <main class="profile_page hidden">
   
-   <div class="header">
+   <div class="page_header">
     <div class="flex">
       <i class="fa-solid fa-arrow-left" onclick="window.history.back()"></i>
       <h3>Settings</h3>
@@ -555,7 +557,7 @@ Records & Data</h4>
   </ul>
 </div>
 
-  <h4 class="title">Add/Manage Staffs</h4>
+  <h4 class="page_title">Add/Manage Staffs</h4>
   <ul class="staff_list">
     <li class="list-item">
       <p>Arun (Technician)</p>
@@ -579,15 +581,17 @@ Records & Data</h4>
 <!-- ########### THEME_PAGE ########## -->
 
 <main class="theme_page hidden">
-     <div class="header">
+     <div class="page_header">
     <div class="flex">
       <i class="fa-solid fa-arrow-left" onclick="window.history.back()"></i>
       <h3>Settings</h3>
     </div>
   </div>
   
-<div class="container glass-card">
-  <h4>🎨 Theme Mode</h4>
+<div class="mt-2">
+  <h4 class="page_title">
+    <i class="fa-solid fa-palette"></i>
+    Theme Mode</h4>
 
   <ul class="theme_list">
     <li class="list-item">
@@ -633,6 +637,58 @@ Records & Data</h4>
 
   <button id="resetTheme">Reset Default</button>
 </div>
+</main>
+
+
+<!-- ########## SOUND_PAGE ######### -->
+<main class="sound_page hidden">
+       <div class="page_header">
+    <div class="flex">
+      <i class="fa-solid fa-arrow-left" onclick="window.history.back()"></i>
+      <h3>Sound & Notification</h3>
+    </div>
+  </div>
+  
+
+  <h4 class="page_title mt-2"><i class="fa-solid fa-volume-off"></i>Sounds</h4>
+
+  <ul class="list">
+    <li class="list-item">
+      <p>Data Fetch/Update sound</p>
+<span>
+   <input type="checkbox" name="data_sound" id="data_theme" class="hidden" />
+ <div class="toggle_btn">
+   <div class="toggle_ball"></div>
+ </div>
+</span>
+    </li>
+
+    <li class="list-item">
+      <p>Voice Alert</p>
+      <span>
+         <input type="checkbox" name="voice_alert" id="voice_alert" class="hidden"/>
+      <div class="toggle_btn">
+        <div class="toggle_ball"></div>
+      </div>
+      </span>
+    </li>
+  </ul>
+  
+  <h4 class="page_title">
+    <i class="fa-solid fa-bell"></i>
+    Notification</h4>
+  <ul class="list">
+        <li class="list-item">
+      <p>Show Notification</p>
+   <span>
+         <input type="checkbox" name="voice_alert" id="voice_alert" class="hidden"/>
+      <div class="toggle_btn">
+        <div class="toggle_ball"></div>
+      </div>
+      </span>
+    </li>
+  </ul>
+
 </main>
 
 

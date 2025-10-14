@@ -598,6 +598,7 @@ const routes = {
   '#settings' : '.settings_page',
   '#settings/profile':'.profile_page',
   '#settings/thememode': '.theme_page',
+  '#settings/sound': '.sound_page'
 };
 
 const router = () => {
@@ -831,46 +832,39 @@ $('.add-data').onclick = async () => {
 
 
 
+// keep track of previous statuses temporarily
+const previousStatuses = {};// not set undo button 
+
 
 // status update listener
 document.addEventListener("change", (e) => {
-  if (e.target.matches("input[type=radio][name^='status-']")) {
-    const sn = e.target.name.split("-")[1];
-    const newStatus = e.target.id.split("-")[0];
-    const parent = e.target.closest('li');
+if (e.target.matches("input[type=radio][name^='status-']")) {
+const sn = e.target.name.split("-")[1];
+const newStatus = e.target.id.split("-")[0];
 
-    // Trigger slide-out animation
-    parent.classList.add('slid-out');
+const itemRef = ref(db, `shops/${shopName}/service/${sn}`);  
+    update(itemRef, { status: newStatus })  
+      .then(() => showNotice({  
+        title: sn,  
+        body: `Status Updated To, ${newStatus.toUpperCase()}`,  
+        type: 'info',  
+        delay: 5000  
+      }))  
+      .catch(err => {  
+        console.error("❌ Error updating status:", err)  
+        showNotice({  
+          title: 'ERROR',  
+          body: `Data didn't update! Please try again later. REASON: ${err.message}`,  
+          type: 'error',  
+          delay: 6000  
+        })  
+      });
 
-    // Wait for the transition to finish
-    parent.addEventListener('transitionend', function handler(event) {
-      if (event.propertyName === 'transform') { // only trigger once
-        // Hide the element after sliding
-        parent.style.display = 'none';
-
-        const itemRef = ref(db, `shops/${shopName}/service/${sn}`);
-        update(itemRef, { status: newStatus })
-          .then(() => showNotice({
-            title: sn,
-            body: `Status Updated To, ${newStatus.toUpperCase()}`,
-            type: 'info',
-            delay: 5000
-          }))
-          .catch(err => {
-            console.error("❌ Error updating status:", err)
-            showNotice({
-              title: 'ERROR',
-              body: `Data didn't update! Please try again later. REASON: ${err.message}`,
-              type: 'error',
-              delay: 6000
-            })
-          });
-
-        parent.removeEventListener('transitionend', handler);
-      }
-    });
-  }
+}
 });
+
+
+
 
 // note update listener
 document.oninput = (e) => {
@@ -879,6 +873,9 @@ document.oninput = (e) => {
     const button = wrap.querySelector('button');
     button.classList.add('active')
   }
+  
+  
+
 };
 
 document.onclick=e=>{
@@ -922,6 +919,38 @@ document.onclick=e=>{
     }
   })();
 }
+
+
+if (e.target.matches(".undo-status-btn")) {
+  
+  const li = e.target.closest('li');
+const oldStatus = li.dataset.currentStatus || previousStatuses[sn] || 'pending'; // fallback
+previousStatuses[sn] = oldStatus;
+
+
+    const sn = e.target.dataset.sn;
+    
+    if (!oldStatus) return;
+
+    const itemRef = ref(db, `shops/${shopName}/service/${sn}`);
+    update(itemRef, { status: oldStatus })
+      .then(() => {
+        showNotice({
+          title: sn,
+          body: `Undo Successful — reverted to ${oldStatus.toUpperCase()}`,
+          type: 'success',
+          delay: 4000
+        });
+        e.target.remove();
+      })
+      .catch(err => {
+        showNotice({
+          title: 'ERROR',
+          body: `Undo Failed! ${err.message}`,
+          type: 'error'
+        });
+      });
+  }
 }
 
 
@@ -1787,6 +1816,7 @@ function hexToRgba(hex, alpha = 1) {
 }
 
 function applyTheme(theme) {
+  if(!theme) return;
   document.documentElement.style.setProperty('--accent-color', theme.accent);
   document.documentElement.style.setProperty('--glass-blur', `${theme.blur}px`);
   document.documentElement.style.setProperty('--text-color', theme.textColor);
@@ -1811,12 +1841,14 @@ function saveTheme() {
 
 function loadTheme() {
   const saved = localStorage.getItem('userTheme');
-  const theme = saved ? { ...defaultTheme, ...JSON.parse(saved) } : defaultTheme;
+  //const theme = saved ? { ...defaultTheme, ...JSON.parse(saved) } : defaultTheme;
+  const theme = saved || null
 
   applyTheme(theme);
 
   // 🧩 Update input values safely
   for (const key in themeInputs) {
+    if(!theme) return
     if (themeInputs[key]) themeInputs[key].value = theme[key].toString().replace('px', '');
   }
 }
@@ -1880,7 +1912,7 @@ $$('.toggle_btn').forEach(btn => {
 //#####################################################################//
 
 // put it down 👇 
-const CURRENT_VERSION = '4.3.0';
+const CURRENT_VERSION = '4.4.0';
 const LAST_VERSION = localStorage.getItem('app_version') || null;
 
 if (LAST_VERSION !== CURRENT_VERSION) {
@@ -1902,4 +1934,4 @@ window.addEventListener('beforeunload', () => {
 
 //######################### THE END ###################################//
 
-// location.hash='#settings/thememode'
+ // location.hash='#settings'

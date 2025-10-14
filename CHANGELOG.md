@@ -7,6 +7,13 @@
 
 ---
 
+
+## [4.4.0] - 2025-10-14
+- Added Theme customisation 
+- control sounds and notification (also voice)
+- UI fixes
+- stability improve 
+
 ## ⚙️ 4.3.0 — Settings Page Introduced
 
 ### ✨ New Features

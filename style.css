@@ -65,6 +65,9 @@ html, body {
   
 }
 
+.mt-2{
+    margin-top: 2rem;
+}
 
 
 
@@ -195,8 +198,6 @@ nav.status-nav{
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
     gap: 2rem;
-    perspective: 600px;
-    transform-style: preserve-3d;
 }
 
 .list .list-item{
@@ -213,7 +214,7 @@ nav.status-nav{
     overflow: hidden;
     /* font-size: calc(10px + 1vw); */
     max-width: 100%;
-    animation: slideDown 0.5s ease;
+    
     transform: translateZ(0px);
 }
 .list-item .complaints{
@@ -222,17 +223,10 @@ nav.status-nav{
 }
 
 @keyframes slideDown {
-  0% {
-    transform: translate3d(50px, -50px, 100px) rotateY(20deg) scale(0);
-    opacity: 0;
-  }
-  50%{
-      opacity: 1;
-      transform: translate3d(10px, -10px, 20px) rotateY(2deg) scale(0.95);
-  }
-  100% {
-    transform: translate3d(0, 0, 0) rotateY(0deg) rotateY(0deg) scale(1);
-    opacity: 1;
+  from{
+      transform: translateY(50px);
+      opacity: 0;
+      scale: 0.8;
   }
 }
 
@@ -297,6 +291,7 @@ li nav span i{
     resize: none;
     line-height: 1.4;
     min-height: 40px;
+    max-width: 90%;
 }
 
 .list-item button.add-note-btn{
@@ -1267,7 +1262,7 @@ main.delete_page .card{
 
 
 
-.settings_page, .profile_page, .theme_page{
+.settings_page, .profile_page, .theme_page, .sound_page{
     background-image: url(./assets/images/bg.jpg);
     height: 100dvh;
     backdrop-filter: blur(var(--glass-blur));
@@ -1342,7 +1337,7 @@ main.delete_page .card{
 }
 
 .settings_page .profile_container .card_flex .card{
-    background: var(--accent-glass);
+    background: var(--card-bg);
     padding: 1rem;
     text-align: center;
     font-size: 10px;
@@ -1543,6 +1538,100 @@ input[type=range]:focus::-ms-fill-upper {
 
 /*########## THEME PAGE END ########## */
 
+
+
+/* ########## LIST AND LIST ITEM ##########*/
+
+
+.list{
+    background: var(--card-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    border-radius: var(--radius-large);
+    padding: 0;
+    margin: 1rem;
+    overflow: hidden;
+}
+.list .list-item{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    
+    padding: 1rem;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    backdrop-filter: unset;
+    border-radius: 0;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--text-muted);
+    animation: none;
+}
+
+/* ######### PAGE HEADER ######### */
+
+.page_header{
+    background: var(--bg-secondary);
+    backdrop-filter: blur(var(--glass-blur));
+    height: auto;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 9;
+}
+.page_header .flex{
+    display: flex;
+    align-items: center;
+    justify-content: start;
+    gap: 1rem;
+}
+
+/*///////// PAGE TITLE \\\\\\\\\\*/
+
+.page_title{
+    margin-left: 1rem;
+}
+
+
+.home .list-section{
+    padding: 1rem;
+}
+.home .list-section .list{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    perspective: 600px;
+    transform-style: preserve-3d;
+    background: transparent;
+    
+}
+
+.home .list .list-item{
+    display: block;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-large);
+    padding: 1.6rem;
+    padding-top: 2rem;
+    
+    line-height: 1.4rem;
+    box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.3);
+    
+    position: relative;
+    animation: slide-up .5s ease-in-out;
+    overflow: hidden;
+    /* font-size: calc(10px + 1vw); */
+    max-width: 100%;
+    animation: slideDown 0.5s ease;
+    transform: translateZ(0px);
+}
+
+
+/*____________________________________________________________________*/
+
 /* TOGGLE_BTN */
 .toggle_btn {
     height: 20px;
@@ -1581,22 +1670,10 @@ li.list-item {
   transform: translateX(0px);
 }
 
-li.slid-out {
-  transform: translateY(-300px) scale(0.2);
-  opacity: 0;
-}
 
 
 
-.list-item {
-  transition: transform 0.4s ease, opacity 0.4s ease, scale 0.4s;
-}
 
-.list-item.slide-out {
-  transform: translateY(-600px) scale(0.2);
-  opacity: 0;
-  background: rgba(255, 3, 3, 0.17) !important;
-}
 
 .list-item.hidden {
   display: none;
@@ -1619,7 +1696,7 @@ body , main{
 }
 
 .card, .list-item {
-  background: var(--card-bg) !important;
+  background: var(--card-bg) ;
   border-radius: var(--radius-medium);
   box-shadow: 0 0 10px var(--shadow-color);
   border: 1px solid var(--border-color);
@@ -1641,4 +1718,15 @@ button.delete {
 
 button.delete:hover {
   background: #ff5050;
+}
+
+.undo-status-btn{
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-large);
+    border: 1px solid var(--border-color);
+    
+    position: fixed;
+    bottom: 2rem;
+    left: 2rem;
+    z-index: 999;
 }
