@@ -92,7 +92,7 @@ export const cardLayout = ({
       `
         <div class='item_flex'>
       <p class='key'><b>Balance</b></p>
-      <p class='advance value'>₹${(Number(amount) - Number(advance)).toLocaleString('en-IN')}</p>
+      <p class='complaints value'>₹${(Number(amount) - Number(advance)).toLocaleString('en-IN')}</p>
     </div>`:''
     }
   </div>

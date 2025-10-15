@@ -215,6 +215,10 @@ const autoScrollNavIcons = ()=>
     }, 1000); // wait ~2s before going back
 }
 
+$('#todayEntry').onclick=()=>{
+  history.back()
+  filterByDate(data, new Date());
+}
 
 onChildAdded(itemsRef, (snapshot) => {
   $('.loader').classList.add('hidden')
@@ -444,25 +448,30 @@ let renderLimit = 20;  // load at a time
 let renderStart = 0;   // where to start
 let activeFiltered = []; // last filtered data
 
-const createCards = (data, status, sn) => {
-  const listContainer = $('.list');
-  
+const createCards = (data, status = null, sn = null, date = null) => {
+  const listContainer = $(".list");
+
   // reset if new filter
   renderStart = 0;
   listContainer.innerHTML = "";
-  
-  // filter
-  const filtered = sn ?
-    data.filter(item => sn === item.sn) :
-    data.filter(item => status === item.status).sort((a, b) => b.sn - a.sn);
-  
+
+  // apply filters
+  let filtered = [...data];
+
+  if (sn) filtered = filtered.filter(item => item.sn === sn);
+  if (status) filtered = filtered.filter(item => item.status === status);
+  if (date) filtered = filtered.filter(item => item.date === date);
+
+  // sort latest first (by SN)
+  filtered.sort((a, b) => b.sn - a.sn);
+
   activeFiltered = filtered; // save for scroll loading
-  
+
   if (filtered.length === 0) {
     listContainer.innerHTML = `<li class="empty">No data available</li>`;
     return;
   }
-  
+
   renderNext(); // 👈 first 3 load
 };
 
@@ -575,9 +584,26 @@ const filterByStatus = (status) => {
   
 };
 
+
+
 // filter cards by SN
 
 const filterBySn = sn => createCards(data, status=null, sn)
+
+// filter by date
+
+const filterByDate = (data, targetDate, status = null, sn = null) => {
+  // format the given date
+  const dateObj = new Date(targetDate);
+  const options = { day: "2-digit", month: "short", year: "numeric" };
+  const formatted = dateObj
+    .toLocaleDateString("en-GB", options)
+    .toUpperCase()
+    .replace(/ /g, "-");
+
+  // call createCards with formatted date
+  createCards(data, status, sn, formatted);
+};
 
 // Update data in Firebase
 const updateData = (name, number, complaints, status, sn) => {
