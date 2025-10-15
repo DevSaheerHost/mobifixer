@@ -12,7 +12,7 @@
 ### Features
 - 🔹 Added support for multiple devices per service entry, including model, complaints, and lock fields.
 - 🔹 Dynamic input generation for additional devices (up to 5), with separate fields for name, complaint, and lock.
-🔹 Edit functionality now loads all device data from devices[], including lock, for seamless updates.
+- 🔹 Edit functionality now loads all device data from devices[], including lock, for seamless updates.
 - 🔹 Stored all devices in service/devices array while keeping backward compatibility for old single-device structure.
 
 
