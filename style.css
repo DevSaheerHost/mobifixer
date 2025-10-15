@@ -886,7 +886,27 @@ pre {
   main.form input{
       animation: slideUp 1s;
   }
-  
+  main.form .total_device{
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 1rem;
+      margin-top: 2rem;
+  }
+  main.form .total_device input{
+      max-width: 70px;
+      width: 50px;
+      margin: 0;
+      border-radius: 7px;
+  }
+  main.form .total_device i{
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 100px;
+      height: 40px;
+      width: 40px;
+      display: flex;align-items: center;justify-content: center;
+  }
   main{
       animation: zom 0.4s;
   }
@@ -1729,4 +1749,20 @@ button.delete:hover {
     bottom: 2rem;
     left: 2rem;
     z-index: 999;
+}
+#commits{
+    padding: 1rem;
+}
+#commits li{
+    background: var(--card-bg);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: var(--radius-large);
+}
+#commits small{
+    color: var(--text-muted); 
+    margin-top: 1rem;
+}
+#commits a{
+    color: var(--text-color);
 }

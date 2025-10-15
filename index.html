@@ -117,17 +117,36 @@
  <h3 id="new_sn">0</h3>
      </div>
       <div class="input-group">
+        
         <input type="text" name="name" id="name" placeholder="Name" />
         <div id="name_suggest_container" class="hidden"></div>
         
       <input type="number" name="number" id="number" placeholder="Number " />
       <div id="number_suggest_container" class="hidden"></div>
+
+      <input type="number" name="alt_number" id="alt_number" placeholder="Alternative Number" />
+      <div id="alt_number_suggest_container" class="hidden"></div>
+      
+
         <input type="text" name="model" id="model" placeholder="Model" />
         <div id="model_suggest_container" class="hidden"></div>
+        <div id="more_device_input_container"></div>
         
-        
+        <div class="total_device">
+        <span id="decrease_device">
+          <i class="fa-solid fa-minus"></i>
+        </span>
+        <input type="number" name="total_device_count" disabled id="total_device_count" placeholder="Total Devices" value="1">
+        <span id="increase_device">
+          <i class="fa-solid fa-plus"></i>
+        </span>
+      </div>
+      
+      
         <input type="text" name="complaint" id="complaint" placeholder="Complaints" />
         <div id="complaint_suggest_container" class="hidden"></div>
+        
+        
         <input type="text" name="lock" id="lock" placeholder="Lock"/>
         
         
@@ -344,6 +363,10 @@
   <pre id="changelog">
     loading 
   </pre>
+  
+  <h4 class="page_title">Commit Messages</h4>
+  
+  <ul id="commits"></ul>
 </main>
 
 

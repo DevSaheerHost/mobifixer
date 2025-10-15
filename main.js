@@ -652,8 +652,9 @@ $('#new_sn').textContent = Number(data[data.length - 1]?.sn) + 1 || 1;
 }
   }
   if(hash==='') shopSwitcher();
-  if (hash==='#changelog') {
-    fetch("./CHANGELOG.md")
+if (hash === '#changelog') {
+  // 🔹 1️⃣ CHANGELOG.md load ചെയ്യുക
+  fetch("./CHANGELOG.md")
     .then(res => res.text())
     .then(md => {
       const converter = new showdown.Converter();
@@ -663,7 +664,38 @@ $('#new_sn').textContent = Number(data[data.length - 1]?.sn) + 1 || 1;
       document.getElementById("changelog").textContent = "⚠️ Unable to load changelog.";
       console.error(err);
     });
-  }
+
+  // 🔹 2️⃣ GitHub commits fetch ചെയ്യുക
+  const commitsList = document.querySelector("#commits");
+  commitsList.innerHTML = "<li>Loading latest commits...</li>"; // loader text
+
+  fetch("https://api.github.com/repos/DevSaheerHost/mobifixer/commits")
+    .then(res => {
+      if (!res.ok) throw new Error(`GitHub API error: ${res.status}`);
+      return res.json();
+    })
+    .then(data => {
+      commitsList.innerHTML = ""; // clear loader
+      data.slice(0, 5).forEach(commit => {
+        const li = document.createElement("li");
+        const msg = commit.commit.message;
+        const author = commit.commit.author.name;
+        const date = new Date(commit.commit.author.date).toLocaleString();
+        const link = commit.html_url;
+
+        li.innerHTML = `
+          <strong>${author}</strong>: 
+          <a href="${link}" target="_blank">${msg}</a>
+          <br><small>${date}</small>
+        `;
+        commitsList.appendChild(li);
+      });
+    })
+    .catch(err => {
+      commitsList.innerHTML = `<li>⚠️ Unable to load commits.</li>`;
+      console.error(err);
+    });
+}
   
   $('#totalData').textContent = data.length;
 
@@ -735,6 +767,8 @@ $('.add-data').onclick = async () => {
   const notes = $('#notes').value.trim() || '';
   const amount = $('#amount').value.trim() || 0;
   const advance = $('#advance').value.trim() || 0;
+  const total_device_count = $$('#more_device_input_container input').length
+  
   
   if (!$('#sim').checked) {
     showNotice({ title: 'WARN', body: "Please check the 'SIM and accessories' box before submitting!", type: 'error' });
@@ -1866,6 +1900,71 @@ window.addEventListener('DOMContentLoaded', loadTheme);
 // ################## THEME FUNCTION END ############### //
 
 
+// ########## Input count for multiple devices ######### //
+
+
+const decrease_device_btn = $('#decrease_device');
+const increase_device_btn = $('#increase_device');
+const device_count_input = $('#total_device_count');
+const more_device_input_container = $('#more_device_input_container');
+
+const handleDeviceCountChange = () => {
+  let count = parseInt(device_count_input.value) || 1;
+  
+  // Initialize inputs only if >1
+  updateInputs(count);
+  
+  decrease_device_btn.onclick = () => {
+    if (count > 1) {
+      count--;
+      device_count_input.value = count;
+      updateInputs(count);
+    }
+  };
+  
+  increase_device_btn.onclick = () => {
+    if (count < 5) {
+      count++;
+      device_count_input.value = count;
+      updateInputs(count);
+    }
+  };
+};
+
+const updateInputs = (count) => {
+  const existingSets = more_device_input_container.querySelectorAll('.device-set').length;
+  
+  // ➕ Add inputs for devices starting from 2nd
+  for (let i = existingSets + 2; i <= count; i++) {
+    const set = document.createElement('div');
+    set.className = 'device-set';
+    set.style.marginBottom = '10px';
+    
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.placeholder = `Device ${i} name`;
+    nameInput.className = 'device-input name-input';
+    
+    const complaintInput = document.createElement('input');
+    complaintInput.type = 'text';
+    complaintInput.placeholder = `Device ${i} complaint`;
+    complaintInput.className = 'device-input complaint-input';
+    
+    set.appendChild(nameInput);
+    set.appendChild(complaintInput);
+    more_device_input_container.appendChild(set);
+  }
+  
+  // ➖ Remove extra inputs if decreased
+  while (more_device_input_container.querySelectorAll('.device-set').length > count - 1) {
+    more_device_input_container.lastElementChild.remove();
+  }
+};
+
+handleDeviceCountChange();
+
+
+
 //#########################//
 
 //  New buttons
@@ -1935,3 +2034,10 @@ window.addEventListener('beforeunload', () => {
 //######################### THE END ###################################//
 
  // location.hash='#settings'
+ 
+ 
+ 
+if (navigator.hardwareConcurrency <= 4) {
+  alert('syatem slow')
+  console.log("Low-end device detected, enabling light mode...");
+}
