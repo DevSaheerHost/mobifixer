@@ -8,6 +8,33 @@
 ---
 
 
+## [4.5.0] - 2025-10-15
+### Features
+- 🔹 Added support for multiple devices per service entry, including model, complaints, and lock fields.
+- 🔹 Dynamic input generation for additional devices (up to 5), with separate fields for name, complaint, and lock.
+🔹 Edit functionality now loads all device data from devices[], including lock, for seamless updates.
+- 🔹 Stored all devices in service/devices array while keeping backward compatibility for old single-device structure.
+
+
+
+### UI/UX
+- 🔹 Updated cardLayout to display all devices with model, complaint, and lock.
+- 🔹 Updated searchCard to support devices array and show each device separately.
+- 🔹 Added suggestions/autocomplete for model and complaints fields, supporting both old and new data structures.
+
+
+
+### Search & Filter
+- 🔹 Updated filtering logic to handle multi-device structure (devices[]) for model search.
+- 🔹 Ensured complaint filtering works for both old structure (complaints) and new structure (devices[].complaints).
+
+
+### Bug Fixes
+- 🔹 Preserved input values while increasing device count dynamically (previously cleared on each increment).
+- 🔹 Fallbacks implemented for missing lock, model, or complaints in old structure.
+
+
+
 ## [4.4.0] - 2025-10-14
 - Added Theme customisation 
 - control sounds and notification (also voice)

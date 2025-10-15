@@ -431,8 +431,8 @@ button.add:hover {
 
 .search-out{
     width: 100%;
-    background: transparent;
-    backdrop-filter: blur(--glass-blur);
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
     height: auto;
     padding: 2rem;
     width: 90vw;
@@ -448,11 +448,15 @@ box-shadow: 0 0 10px rgba(0, 0, 0, 0.10);
 }
 .search-out li{
     margin-bottom: 1rem;
-    background: #fff;
-    color: #000;
+    background: var(--bg-secondary);
+    backdrop-filter: blur(var(--glass-blur));
+    color: var(--text-color);
     padding: .5rem;
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.10);
+}
+.search-out li i{
+    font-size: 16px;
 }
 
 

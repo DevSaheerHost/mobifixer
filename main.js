@@ -742,34 +742,34 @@ window.addEventListener("hashchange", router);
 
 
 
-const getCurrentTime = ()=> {
+const getCurrentTime = () => {
   const now = new Date();
   let hours = now.getHours();
   const minutes = now.getMinutes().toString().padStart(2, "0");
   const ampm = hours >= 12 ? "PM" : "AM";
-  hours = hours % 12 || 12; // 0 hours → 12
+  hours = hours % 12 || 12;
   return `${hours}:${minutes} ${ampm}`;
-}
-// Add data
+};
 
 import { set, get, runTransaction }
-from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+  from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+
 let dataIsEdit = false;
-let editDataSn = 0
+let editDataSn = 0;
+
 $('.add-data').onclick = async () => {
   const dataAddingTime = performance.now();
   const name = $('#name').value.trim();
   const number = $('#number').value.trim();
+  const altNumber = $('#alt_number').value.trim();
   const complaints = $('#complaint').value.trim();
   const model = $('#model').value.trim();
   const lock = $('#lock').value?.trim();
-  const status = $('#status').value.trim() || 'None';
+  const status = $('#status').value.trim() || 'pending';
   const notes = $('#notes').value.trim() || '';
   const amount = $('#amount').value.trim() || 0;
   const advance = $('#advance').value.trim() || 0;
-  const total_device_count = $$('#more_device_input_container input').length
-  
-  
+
   if (!$('#sim').checked) {
     showNotice({ title: 'WARN', body: "Please check the 'SIM and accessories' box before submitting!", type: 'error' });
     return;
@@ -778,64 +778,82 @@ $('.add-data').onclick = async () => {
     showNotice({ title: 'Validation Error', body: 'All fields are required!', type: 'error', delay: 10 });
     return;
   }
-    
-
-  
-  
 
   $('.add-data').textContent = dataIsEdit ? 'Updating...' : 'Loading...';
   $('.add-data').disabled = true;
   $('.loader').classList.remove('hidden');
-  
+
   try {
     let snToUse = editDataSn;
     if (!dataIsEdit) {
-      // ➕ ADD MODE
       const lastSnRef = ref(db, `shops/${shopName}/lastServiceSn`);
       const tx = await runTransaction(lastSnRef, (current) => (current === null ? 1 : current + 1));
       snToUse = tx.snapshot.val();
-      $('#new_sn').textContent=snToUse
+      $('#new_sn').textContent = snToUse;
     }
-    
+
     const date = new Date();
-    const time = getCurrentTime()
+    const time = getCurrentTime();
     const options = { day: "2-digit", month: "short", year: "numeric" };
     const formatted = date.toLocaleDateString("en-GB", options).toUpperCase().replace(/ /g, "-");
-    
-    
+
+    // 🔹 Collect dynamic devices (Device 2 onwards)
+    const devices = [];
+    const deviceSets = $$('#more_device_input_container .device-set');
+    deviceSets.forEach((set, index) => {
+      const nameInput = set.querySelector('.name-input')?.value.trim();
+      const complaintInput = set.querySelector('.complaint-input')?.value.trim();
+      const lockInput = set.querySelector('.lock-input')?.value.trim();
+      if (nameInput || complaintInput || lockInput) {
+        devices.push({
+          model: nameInput || '',
+          complaints: complaintInput || '',
+          lock: lockInput || ''
+        });
+      }
+    });
+
+    // 🔹 Include main (first) device
+    devices.unshift({
+      model,
+      complaints,
+      lock
+    });
+
+    // 🔹 Save to Firebase
     const itemRef = ref(db, `shops/${shopName}/service/${snToUse}`);
     await set(itemRef, {
       sn: snToUse,
       name,
       number,
-      complaints,
-      model,
-      lock,
+      altNumber,
       status,
       notes,
       amount,
       advance,
       date: formatted,
-      time: time,
-      author: localStorage.getItem('author')
+      time,
+      author: localStorage.getItem('author'),
+      devices // ✅ all devices with model, complaints, lock
     });
-    
+
     $('.loader').classList.add('hidden');
     $('.add-data').disabled = false;
     $('.add-data').textContent = 'Add to List';
-    
+
     showNotice({
       title: snToUse,
-      body: dataIsEdit ?
-        'Data updated successfully ✅' :
-        `Data added successfully (${Math.floor(performance.now() - dataAddingTime)}ms)`,
+      body: dataIsEdit
+        ? 'Data updated successfully ✅'
+        : `Data added successfully (${Math.floor(performance.now() - dataAddingTime)}ms)`,
       type: 'success',
       delay: 30
     });
-    
-    // reset form & flags
+
+    // 🔹 Reset form
     $('#name').value = '';
     $('#number').value = '';
+    $('#alt_number').value='';
     $('#complaint').value = '';
     $('#model').value = '';
     $('#lock').value = '';
@@ -843,16 +861,15 @@ $('.add-data').onclick = async () => {
     $('#amount').value = '';
     $('#notes').value = '';
     $('#sim').checked = false;
-    
+    $('#total_device_count').value = 1;
+    $('#more_device_input_container').innerHTML = '';
+
     dataIsEdit = false;
     editDataSn = 0;
     history.back();
-    // show ui here
-    //filterByStatus('pending')
-    $$('nav a').forEach(elem=>elem.classList.remove('active'))
+    $$('nav a').forEach(elem => elem.classList.remove('active'));
     filterBySn(snToUse);
-    
-    
+
   } catch (err) {
     $('.loader').classList.add('hidden');
     $('.add-data').textContent = err.message;
@@ -861,7 +878,6 @@ $('.add-data').onclick = async () => {
     showNotice({ title: 'ERROR', body: `Operation failed: ${err.message}`, type: 'error', delay: 6 });
     $('.add-data').disabled = false;
   }
-  // hereee
 };
 
 
@@ -939,17 +955,73 @@ document.onclick=e=>{
 
     if (snapshot.exists()) {
       const data = snapshot.val();
+
+      // 🔹 Basic fields
       $('#name').value = data.name || '';
       $('#number').value = data.number || '';
-      $('#complaint').value = data.complaints || '';
-      $('#model').value = data.model || '';
-      $('#lock').value = data.lock || '';
+      $('#alt_number').value= data.altNumber || ''
       $('#notes').value = data.notes || '';
       $('#amount').value = data.amount || '';
       $('#advance').value = data.advance || '';
       $('#status').value = data.status || '';
       $('#sim').checked = true;
       $('.add-data').textContent = 'Update Data';
+
+      // 🔹 Devices handling
+      const deviceCountInput = $('#total_device_count');
+      const deviceContainer = $('#more_device_input_container');
+      deviceContainer.innerHTML = '';
+
+      let devices = [];
+
+      if (Array.isArray(data.devices) && data.devices.length > 0) {
+        devices = data.devices;
+      } else {
+        // fallback for old structure
+        devices = [{
+          model: data.model || '',
+          complaints: data.complaints || '',
+          lock: data.lock || ''
+        }];
+      }
+
+      // Set main/static device inputs (first one)
+      const firstDevice = devices[0];
+      $('#model').value = firstDevice.model || '';
+      $('#complaint').value = firstDevice.complaints || '';
+      $('#lock').value = firstDevice.lock || '';
+
+      // Add additional devices if more than 1
+      deviceCountInput.value = devices.length;
+      for (let i = 1; i < devices.length; i++) {
+        const d = devices[i];
+        const set = document.createElement('div');
+        set.className = 'device-set';
+        set.style.marginBottom = '10px';
+
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.placeholder = `Device ${i + 1} name`;
+        nameInput.className = 'device-input name-input';
+        nameInput.value = d.model || '';
+
+        const complaintInput = document.createElement('input');
+        complaintInput.type = 'text';
+        complaintInput.placeholder = `Device ${i + 1} complaint`;
+        complaintInput.className = 'device-input complaint-input';
+        complaintInput.value = d.complaints || '';
+
+        const lockInput = document.createElement('input');
+        lockInput.type = 'text';
+        lockInput.placeholder = `Device ${i + 1} lock`;
+        lockInput.className = 'device-input lock-input';
+        lockInput.value = d.lock || '';
+
+        set.appendChild(nameInput);
+        set.appendChild(complaintInput);
+        set.appendChild(lockInput);
+        deviceContainer.appendChild(set);
+      }
     }
   })();
 }
@@ -1027,13 +1099,29 @@ search.addEventListener("input", () => {
   }
 
   // Filter
-  const results = data.filter(item => 
-  String(item.sn).includes(query) ||
-    item.name.toLowerCase().includes(query) ||
-    
-    item.model.toLowerCase().includes(query) ||
-    item.number.includes(query)
-  );
+  const results = data.filter(item => {
+  const q = query.toLowerCase();
+
+  // Check SN, name, number (always exist)
+  const matchesBasic =
+    String(item.sn).includes(query) ||
+    item.name.toLowerCase().includes(q) ||
+    item.number.includes(query);
+
+  // Check model: old structure
+  let matchesModel = false;
+  if (item.model) {
+    matchesModel = item.model.toLowerCase().includes(q);
+  }
+
+  // Check devices (new structure)
+  let matchesDevice = false;
+  if (item.devices && Array.isArray(item.devices)) {
+    matchesDevice = item.devices.some(d => d.model?.toLowerCase().includes(q));
+  }
+
+  return matchesBasic || matchesModel || matchesDevice;
+});
 
   searchFiltered = results;
   searchRenderStart = 0;
@@ -1563,38 +1651,45 @@ const modelInput = $('.form #model')
 
 modelInput.oninput = (e) => {
   const value = e.target.value.trim().toLowerCase();
-  
+
   modelSuggestContainer.innerHTML = '';
   if (!value || modelInput.value.length < 3) return;
-  
-  // filter data first
-  const matches = data.filter(item =>
-    item.model.toLowerCase().includes(value)
-  );
-  
-  // ✅ remove duplicate names
+
+  // 🔹 Flatten data for filtering both structures
+  const flattened = data.flatMap(item => {
+    if (item.devices && Array.isArray(item.devices)) {
+      // new structure
+      return item.devices.map(d => ({ model: d.model }));
+    } else if (item.model) {
+      // old structure
+      return [{ model: item.model }];
+    }
+    return [];
+  });
+
+  // 🔹 filter by input
+  const matches = flattened.filter(d => d.model.toLowerCase().includes(value));
+
+  // 🔹 remove duplicates
   const uniqueMatches = [];
-  const seenNames = new Set();
-  
-  matches.forEach(item => {
-    const nameLower = item.model.toLowerCase();
-    if (!seenNames.has(nameLower)) {
-      seenNames.add(nameLower);
-      uniqueMatches.push(item);
+  const seen = new Set();
+  matches.forEach(d => {
+    const lower = d.model.toLowerCase();
+    if (!seen.has(lower)) {
+      seen.add(lower);
+      uniqueMatches.push(d);
     }
   });
-  
-  // show suggestions
-  uniqueMatches.forEach(item => {
+
+  // 🔹 show suggestions
+  uniqueMatches.forEach(d => {
     const div = document.createElement('div');
-    div.textContent = item.model;
+    div.textContent = d.model;
     div.classList.add('suggest-item');
-    
     div.onclick = () => {
-      modelInput.value = item.model;
+      modelInput.value = d.model;
       modelSuggestContainer.innerHTML = '';
     };
-    
     modelSuggestContainer.appendChild(div);
   });
 };
@@ -1656,38 +1751,45 @@ const complaintInput = $('.form #complaint')
 
 complaintInput.oninput = (e) => {
   const value = e.target.value.trim().toLowerCase();
-  
+
   complaintSuggestInput.innerHTML = '';
   if (!value || complaintInput.value.length < 2) return;
-  
-  // filter data first
-  const matches = data.filter(item =>
-    item.complaints.toLowerCase().includes(value)
-  );
-  
-  // ✅ remove duplicate names
+
+  // 🔹 Flatten data to include complaints from both structures
+  const flattened = data.flatMap(item => {
+    if (item.devices && Array.isArray(item.devices)) {
+      // new structure
+      return item.devices.map(d => ({ complaints: d.complaints }));
+    } else if (item.complaints) {
+      // old structure
+      return [{ complaints: item.complaints }];
+    }
+    return [];
+  });
+
+  // 🔹 filter by input
+  const matches = flattened.filter(d => d.complaints?.toLowerCase().includes(value));
+
+  // 🔹 remove duplicates
   const uniqueMatches = [];
-  const seenNames = new Set();
-  
-  matches.forEach(item => {
-    const nameLower = item.complaints.toLowerCase();
-    if (!seenNames.has(nameLower)) {
-      seenNames.add(nameLower);
-      uniqueMatches.push(item);
+  const seen = new Set();
+  matches.forEach(d => {
+    const lower = d.complaints.toLowerCase();
+    if (!seen.has(lower)) {
+      seen.add(lower);
+      uniqueMatches.push(d);
     }
   });
-  
-  // show suggestions
-  uniqueMatches.forEach(item => {
+
+  // 🔹 show suggestions
+  uniqueMatches.forEach(d => {
     const div = document.createElement('div');
-    div.textContent = item.complaints;
+    div.textContent = d.complaints;
     div.classList.add('suggest-item');
-    
     div.onclick = () => {
-      complaintInput.value = item.complaints;
+      complaintInput.value = d.complaints;
       complaintSuggestInput.innerHTML = '';
     };
-    
     complaintSuggestInput.appendChild(div);
   });
 };
@@ -1910,10 +2012,10 @@ const more_device_input_container = $('#more_device_input_container');
 
 const handleDeviceCountChange = () => {
   let count = parseInt(device_count_input.value) || 1;
-  
-  // Initialize inputs only if >1
+
+  // Initialize inputs on load
   updateInputs(count);
-  
+
   decrease_device_btn.onclick = () => {
     if (count > 1) {
       count--;
@@ -1921,7 +2023,7 @@ const handleDeviceCountChange = () => {
       updateInputs(count);
     }
   };
-  
+
   increase_device_btn.onclick = () => {
     if (count < 5) {
       count++;
@@ -1933,29 +2035,39 @@ const handleDeviceCountChange = () => {
 
 const updateInputs = (count) => {
   const existingSets = more_device_input_container.querySelectorAll('.device-set').length;
-  
-  // ➕ Add inputs for devices starting from 2nd
+
+  // ➕ Add missing device input sets
   for (let i = existingSets + 2; i <= count; i++) {
     const set = document.createElement('div');
     set.className = 'device-set';
-    set.style.marginBottom = '10px';
     
+
+    // Device name input
     const nameInput = document.createElement('input');
     nameInput.type = 'text';
-    nameInput.placeholder = `Device ${i} name`;
+    nameInput.placeholder = `Device ${i} Model Name`;
     nameInput.className = 'device-input name-input';
-    
+
+    // Complaint input
     const complaintInput = document.createElement('input');
     complaintInput.type = 'text';
     complaintInput.placeholder = `Device ${i} complaint`;
     complaintInput.className = 'device-input complaint-input';
-    
+
+    // Lock input
+    const lockInput = document.createElement('input');
+    lockInput.type = 'text';
+    lockInput.placeholder = `Device ${i} lock`;
+    lockInput.className = 'device-input lock-input';
+
     set.appendChild(nameInput);
     set.appendChild(complaintInput);
+    set.appendChild(lockInput);
+
     more_device_input_container.appendChild(set);
   }
-  
-  // ➖ Remove extra inputs if decreased
+
+  // ➖ Remove extra device input sets if count decreased
   while (more_device_input_container.querySelectorAll('.device-set').length > count - 1) {
     more_device_input_container.lastElementChild.remove();
   }
@@ -2011,7 +2123,7 @@ $$('.toggle_btn').forEach(btn => {
 //#####################################################################//
 
 // put it down 👇 
-const CURRENT_VERSION = '4.4.0';
+const CURRENT_VERSION = '4.5.0';
 const LAST_VERSION = localStorage.getItem('app_version') || null;
 
 if (LAST_VERSION !== CURRENT_VERSION) {
