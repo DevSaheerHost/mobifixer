@@ -162,6 +162,7 @@ if(shopName && shopName.toLowerCase()==='mobifixer') {
   myLogo.classList.add('logo')
   myLogo.src='./assets/images/logo_s_no_bg.png';
   myLogo.alt='MOBIFIXER'
+  $('#shopname').innerHTML=''
   $('#shopname').appendChild(myLogo)
   
 }
@@ -370,7 +371,7 @@ navSwitcher();
 const shopSwitcher=()=>{
   const navs = $$('.shop-selector-wrap span');
   navs.forEach(n => n.classList.remove('active'));
-  $('.myshop').classList.add('active')
+  // $('.myshop').classList.add('active')
   navs.forEach(n => {
     n.onclick = e => {
       navs.forEach(n => n.classList.remove('active'));

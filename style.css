@@ -179,9 +179,7 @@ nav a.active{
     border: 1px solid var(--border-color);
     color: var(--text-color);
 }
-nav span#shopname{
-    background: transparent !important;
-}
+
 
 
 nav.status-nav{
@@ -1777,4 +1775,9 @@ button.delete:hover {
 }
 #commits a{
     color: var(--text-color);
+}
+
+
+header div.shop-selector-wrap span.myshop{
+    background: none;
 }
