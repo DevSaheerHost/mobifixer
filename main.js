@@ -157,6 +157,14 @@ let unseen = {
   return: 0
 };
 $('#shopname').textContent=shopName || 'My Shop';
+if(shopName && shopName.toLowerCase()==='mobifixer') {
+  const myLogo = document.createElement('img')
+  myLogo.classList.add('logo')
+  myLogo.src='./assets/images/logo_s_no_bg.png';
+  myLogo.alt='MOBIFIXER'
+  $('#shopname').appendChild(myLogo)
+  
+}
 const timerElement = $('#timerElement')
 $('.settings_page .profile_container .name').textContent=shopName;
 $('.profile_page .profile_container .name').textContent=shopName;
@@ -1939,6 +1947,175 @@ const createInventoryCard = stock =>{
   card.onclick=()=>optionContainer.classList.add('show')
   inventoryCardContainer.appendChild(card)
 }
+
+// ================== Auto suggestion ==================== //
+
+// prod model
+
+const prod_model = $('#prod_model')
+const prod_model_suggest_container = $('#prod_model_suggest_container')
+
+prod_model.oninput=(e)=>{
+  console.log(stockData)
+  const value = e.target.value.trim().toLowerCase();
+  prod_model_suggest_container.innerHTML = '';
+  if (!value || nameInput.value.length >=2) return;
+  
+  
+  // prod_model_suggest_container.classList.add('hidden')
+  if (value.length >=2) {
+    prod_model_suggest_container.classList.remove('hidden')
+    
+    
+  // filter data first
+  const matches = stockData.filter(item =>
+    item.prodModel.toLowerCase().includes(value)
+  );
+
+  // ✅ remove duplicate names
+  const uniqueMatches = [];
+  const seenNames = new Set();
+
+  matches.forEach(item => {
+    const nameLower = item.prodModel.toLowerCase();
+    if (!seenNames.has(nameLower)) {
+      seenNames.add(nameLower);
+      uniqueMatches.push(item);
+    }
+  });
+
+  // show suggestions
+  uniqueMatches.forEach(item => {
+    const div = document.createElement('div');
+    div.textContent = `${item.prodModel}`;
+    div.classList.add('suggest-item');
+
+    div.onclick = () => {
+      prod_model.value = item.prodModel;
+      prod_model_suggest_container.innerHTML = '';
+    };
+
+    prod_model_suggest_container.appendChild(div);
+  });
+  }
+}
+
+prod_model.onblur=()=>{
+  setTimeout(()=>prod_model_suggest_container.classList.add('hidden'), 100)
+}
+
+
+
+// prod name suggests 
+
+const prodNameInput = $('#prod_name')
+const prod_name_suggest_container = $('#prod_name_suggest_container')
+
+prodNameInput.oninput=(e)=>{
+  console.log(stockData)
+  const value = e.target.value.trim().toLowerCase();
+  prod_name_suggest_container.innerHTML = '';
+  if (!value || nameInput.value.length >=2) return;
+  
+  
+  // prod_name_suggest_container.classList.add('hidden')
+  if (value.length >=2) {
+    prod_name_suggest_container.classList.remove('hidden')
+    
+    
+  // filter data first
+  const matches = stockData.filter(item =>
+    item.prodName.toLowerCase().includes(value)
+  );
+
+  // ✅ remove duplicate names
+  const uniqueMatches = [];
+  const seenNames = new Set();
+
+  matches.forEach(item => {
+    const nameLower = item.prodName.toLowerCase();
+    if (!seenNames.has(nameLower)) {
+      seenNames.add(nameLower);
+      uniqueMatches.push(item);
+    }
+  });
+
+  // show suggestions
+  uniqueMatches.forEach(item => {
+    const div = document.createElement('div');
+    div.textContent = `${item.prodName}, ${item.prodModel}`;
+    div.classList.add('suggest-item');
+
+    div.onclick = () => {
+      prodNameInput.value = item.prodName;
+      prod_model.value = item.prodModel;
+      prod_name_suggest_container.innerHTML = '';
+    };
+
+    prod_name_suggest_container.appendChild(div);
+  });
+  }
+}
+
+prodNameInput.onblur=()=>{
+  setTimeout(()=>prod_name_suggest_container.classList.add('hidden'), 100)
+}
+
+
+
+  // category suggest 
+const prodCategoryInput = $('#prod_category')
+const category_suggest_container = $('#category_suggest_container')
+
+prodCategoryInput.oninput=(e)=>{
+  console.log(stockData)
+  const value = e.target.value.trim().toLowerCase();
+  category_suggest_container.innerHTML = '';
+  if (!value || nameInput.value.length >=2) return;
+  
+  
+  // category_suggest_container.classList.add('hidden')
+  if (value.length >=2) {
+    category_suggest_container.classList.remove('hidden')
+    
+    
+  // filter data first
+  const matches = stockData.filter(item =>
+    item.prodCategory.toLowerCase().includes(value)
+  );
+
+  // ✅ remove duplicate names
+  const uniqueMatches = [];
+  const seenNames = new Set();
+
+  matches.forEach(item => {
+    const nameLower = item.prodCategory.toLowerCase();
+    if (!seenNames.has(nameLower)) {
+      seenNames.add(nameLower);
+      uniqueMatches.push(item);
+    }
+  });
+
+  // show suggestions
+  uniqueMatches.forEach(item => {
+    const div = document.createElement('div');
+    div.textContent = `${item.prodCategory}`;
+    div.classList.add('suggest-item');
+
+    div.onclick = () => {
+      prodCategoryInput.value = item.prodCategory;
+      category_suggest_container.innerHTML = '';
+    };
+
+    category_suggest_container.appendChild(div);
+  });
+  }
+}
+
+prodCategoryInput.onblur=()=>{
+  setTimeout(()=>category_suggest_container.classList.add('hidden'), 100)
+}
+
 
 // ###### END OFF INVENTORY MANAGEMENT SECTION ###### //
 

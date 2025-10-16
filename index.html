@@ -305,7 +305,7 @@
 </main>
 
 
-    <!--######### INVENTORY START ##########-->
+    <!--######### INVENTORY Create Page START ##########-->
 
 
 
@@ -317,12 +317,19 @@
   
   <div class="input-group">
     <input type="text" name="prod_name" id="prod_name" placeholder="Product Name">
+    <div class="universal_input_suggest_container" id="prod_name_suggest_container">
+      
+    </div>
+    
     <input type="text" name="prod_model" id="prod_model" placeholder="Product Model Name">
+    <div class="universal_input_suggest_container" id="prod_model_suggest_container">
+      
+    </div>
     
     <input type="number" name="prod_quantity" id="prod_quantity" placeholder="Quantity">
     
     <input type="text" name="prod_category" id="prod_category" placeholder="Product Category">
-    <div id="category_search_out hidden">
+    <div id="category_suggest_container" class="prod_cat_suggest_container hidden">
       category_search_out
     </div>
     

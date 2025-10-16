@@ -69,14 +69,16 @@ html, body {
     margin-top: 2rem;
 }
 
-
+.logo{
+    width: 70px;
+}
 
 .form textarea{
     border-radius: 10px !important;
 }
 a{
     text-decoration: none;
-    color: var(--text-black);
+    color: var(--text-color);
 }
 input, button, select{
     border-radius: 10px;
@@ -176,6 +178,9 @@ nav a.active{
     background: var(--accent-glass);
     border: 1px solid var(--border-color);
     color: var(--text-color);
+}
+nav span#shopname{
+    background: transparent !important;
 }
 
 
@@ -423,7 +428,7 @@ button.add:hover {
 .add-data, .create_prod_data{
     padding: 1rem 1.3rem;
     margin-top: 2rem;
-    color: #fff;
+    color: var(--text-color);
     font-size: 18px;
     font-weight: 500;
     background: rgba(11, 162, 255, 0.52);
@@ -469,7 +474,7 @@ box-shadow: 0 0 10px rgba(0, 0, 0, 0.10);
 
 .call-btn{
     background: #00A267;
-    color: #fff;
+    color: --var(--text-color);
     font-weight: 600;
 }
 
@@ -1056,8 +1061,11 @@ select option {
 }
   
   
-#name_suggest_container, #model_suggest_container, #number_suggest_container,
-#complaint_suggest_container{
+#name_suggest_container, #model_suggest_container,
+#category_suggest_container,
+#number_suggest_container,
+#complaint_suggest_container,
+.universal_input_suggest_container{
   position: absolute;
   background: var(--glass-bg);
   backdrop-filter: blur(var(--glass-blur));
@@ -1095,7 +1103,7 @@ main.inventory-page{
 
 .header, header{
   background: var(--accent-gradient);
-  color: #fff;
+  color: var(--text-color);
   padding: 2rem;
   height: 140px;
   position: relative;
@@ -1111,7 +1119,7 @@ main.inventory-page{
 
 
 .header .card{
-    background: #fff;
+    background: var(--card-bg);
     padding: 1.5rem 2rem;
     display: flex;
     align-items: center;
@@ -1148,7 +1156,7 @@ main.inventory-page{
     align-items: center;
     gap: 1rem;
     overflow-y: auto;
-    color: #BCBCBC;
+    color: var(--text-muted);
     padding: auto 1rem;
     
     margin-top: 4rem;
@@ -1163,8 +1171,8 @@ main.inventory-page{
     font-size: 15px;
 }
 .table_switcher_container span.active{
-    color: #BA00E2;
-    border-bottom: 2px solid #BA00E2;
+    color: #00ECDD;
+    border-bottom: 2px solid #00ECDD;
 }
 
 /*---------------------------------------*/
@@ -1176,7 +1184,7 @@ main.inventory-page{
     display: flex;
     align-items: center;
     justify-content: space-between; 
-    background: #fff;
+    background: var(--card-bg);
     padding: 1rem;
     border-radius: 10px;
     box-shadow: 0px 0px 7px rgba(0, 0, 0, 0.08);
@@ -1190,7 +1198,7 @@ main.inventory-page{
 
 .card_container .card .img_container{
     width: 60px;
-    color: #8E8E8E;
+    color: var(--text-muted);
     font-size: 30px;
 }
 .card_container .card .middle_container{
@@ -1201,15 +1209,15 @@ main.inventory-page{
     display: flex;
     align-items: center;
     justify-content: space-between;
-    color: #bcbcbc;
+    color: var(--text-muted);
     font-size: 14px;
     font-weight: 500;
 }
 .category_qty_container h3{
-    color: #000;
+    color: var(--text-black);
 }
 .category_qty_container p.qty{
-    color: #09a0ff;
+    color: #00ECDD;
 }
 
 
@@ -1228,8 +1236,8 @@ main.inventory-page{
 
 .inventory_option_container .card{
     border-radius: 10px;
-    background: rgba(255, 255, 255, 0.55);
-    color: #000;
+    background: var(--card-bg);
+    color: var(--text-color);
     text-shadow: none;
     width: 140px;
     padding: 1rem;
@@ -1241,8 +1249,8 @@ main.inventory-page{
 }
 .inventory_option_container .card li{
     padding: 1rem;
-    background: #FFFFFF;
-    border-radius: 10px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-large);
     box-shadow: 0 0 6px #00000036;
 }
 
@@ -1252,14 +1260,14 @@ main.inventory-page{
 /*Delete page*/
 main.delete_page{
     display: flex;
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(var(--glass-blur));
 }
 main.delete_page .card{
     color: var(--text-color);
     padding: 2rem;
     background: var(--glass-bg);
     box-shadow: 0 0 7px rgba(0, 0, 0, 0.21);
-    border-radius: 10px;
+    border-radius: var(--radius-large);
     text-shadow: none;
 }
 .delete_page .card .title{
