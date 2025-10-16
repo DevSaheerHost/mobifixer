@@ -1876,6 +1876,7 @@ createProdDataBtn.onclick=async()=>{
   const prodCategory = $('#prod_category').value.trim();
   const prodRate = $('#prod_rate').value.trim() || 0;
   const prodCustRate = $('#prod_customer_rate').value.trim() || 0;
+  const prodPosition = $('#position').value.trim() || null;
   
   
   // check empty fields
@@ -1902,10 +1903,18 @@ createProdDataBtn.onclick=async()=>{
   prodQuantity,
   prodRate,
   prodCustRate,
+  prodPosition,
   author: localStorage.getItem('author') || 'None Author'
 }).then(()=>{
   showNotice({title:'Success', body:'Product Added successful!', type:'success'})
   location.hash='#inventory'
+   prodName.value=''
+   prodModel.value=''
+   prodQuantity.value=''
+   // prodCategory.value=''
+   prodRate.value=''
+   prodCustRate.value=''
+   prodPosition.value=''
 }).catch(err=>showNotice({title:'Error', body:err.message, type:'error'}));
 }
 
@@ -2327,7 +2336,7 @@ $$('.toggle_btn').forEach(btn => {
 //#####################################################################//
 
 // put it down 👇 
-const CURRENT_VERSION = '4.5.0';
+const CURRENT_VERSION = '4.5.1';
 const LAST_VERSION = localStorage.getItem('app_version') || null;
 
 if (LAST_VERSION !== CURRENT_VERSION) {

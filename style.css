@@ -1071,7 +1071,7 @@ select option {
   border-radius: 10px;
   max-height: 200px;
   overflow-y: auto;
-  z-index: 99;
+  z-index: 9;
   right: 2rem;
   left: 2rem;
   margin-top: 0.5rem;
