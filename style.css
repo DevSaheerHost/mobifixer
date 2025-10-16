@@ -741,7 +741,7 @@ input[type="checkbox"]{
     padding: 0;
     margin: 0;
     
-    border: 2px solid var(--text-black);
+    border: 2px solid var(--border-color);
 border-radius: 4px;
 cursor: pointer;
 box-shadow: none;
@@ -914,6 +914,8 @@ pre {
       width: 40px;
       display: flex;align-items: center;justify-content: center;
   }
+  
+  
   main{
       animation: zom 0.4s;
   }

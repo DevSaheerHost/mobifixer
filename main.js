@@ -1877,7 +1877,19 @@ createProdDataBtn.onclick=async()=>{
   const prodRate = $('#prod_rate').value.trim() || 0;
   const prodCustRate = $('#prod_customer_rate').value.trim() || 0;
   const prodPosition = $('#position').value.trim() || null;
-  
+
+let section = null, row = null, column = null;
+
+if (prodPosition) {
+  const match = prodPosition.match(/S(\d+)-R(\d+)-C(\d+)/i);
+  if (match) {
+    section = parseInt(match[1]);
+    row = parseInt(match[2]);
+    column = parseInt(match[3]);
+  }
+}
+
+console.log({ section, row, column });
   
   // check empty fields
   if (!prodName || !prodModel || !prodQuantity || !prodCategory ) {
@@ -1903,19 +1915,37 @@ createProdDataBtn.onclick=async()=>{
   prodQuantity,
   prodRate,
   prodCustRate,
-  prodPosition,
+  prodPosition: prodPosition || null,
+  section: section || null,
+  row: row || null,
+  column: column || null,
   author: localStorage.getItem('author') || 'None Author'
-}).then(()=>{
-  showNotice({title:'Success', body:'Product Added successful!', type:'success'})
-  location.hash='#inventory'
-   prodName.value=''
-   prodModel.value=''
-   prodQuantity.value=''
-   // prodCategory.value=''
-   prodRate.value=''
-   prodCustRate.value=''
-   prodPosition.value=''
-}).catch(err=>showNotice({title:'Error', body:err.message, type:'error'}));
+})
+.then(() => {
+  showNotice({
+    title: '✅ Success',
+    body: 'Product added successfully!',
+    type: 'success'
+  });
+
+  location.hash = '#inventory';
+
+  // Clear input fields
+  $('#prod_name').value = '';
+  $('#prod_model').value = '';
+  $('#prod_quantity').value = '';
+  // $('#prodCategory').value = '';
+  $('#prod_rate').value = '';
+  $('#prod_customer_rate').value = '';
+  $('#position').value = '';
+})
+.catch(err => {
+  showNotice({
+    title: '❌ Error',
+    body: err.message,
+    type: 'error'
+  });
+});
 }
 
 
@@ -1956,6 +1986,10 @@ const createInventoryCard = stock =>{
   
   card.onclick=()=>optionContainer.classList.add('show')
   inventoryCardContainer.appendChild(card)
+  optionContainer.onclick=(e)=>{
+    if(e.target.classList.contains('inventory_option_container')) optionContainer.classList.remove('show');
+    
+  }
 }
 
 // ================== Auto suggestion ==================== //
