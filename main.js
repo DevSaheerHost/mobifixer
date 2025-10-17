@@ -1917,6 +1917,7 @@ createProdDataBtn.onclick=async()=>{
       let snToUse = tx.snapshot.val();
       
       
+      $('.loader').classList.remove('hidden')
   // Add to db
   
   const newStockRef = ref(db, `shops/${shopName}/stock/${snToUse}`);
@@ -1938,7 +1939,7 @@ createProdDataBtn.onclick=async()=>{
     body: 'Product added successfully!',
     type: 'success'
   });
-
+$('.loader').classList.add('hidden')
   location.hash = '#inventory';
 
   // Clear input fields
@@ -1956,6 +1957,7 @@ createProdDataBtn.onclick=async()=>{
     body: err.message,
     type: 'error'
   });
+  $('.loader').classList.add('hidden')
 });
 }
 
@@ -2067,7 +2069,6 @@ const prodNameInput = $('#prod_name')
 const prod_name_suggest_container = $('#prod_name_suggest_container')
 
 prodNameInput.oninput=(e)=>{
-  console.log(stockData)
   const value = e.target.value.trim().toLowerCase();
   prod_name_suggest_container.innerHTML = '';
   if (!value || nameInput.value.length >=2) return;
@@ -2104,6 +2105,8 @@ prodNameInput.oninput=(e)=>{
     div.onclick = () => {
       prodNameInput.value = item.prodName;
       prod_model.value = item.prodModel;
+      $('#position').value = item.prodPosition || '';
+      $('#prod_customer_rate').value = item.prodCategory
       prod_name_suggest_container.innerHTML = '';
     };
 
@@ -2123,7 +2126,7 @@ const prodCategoryInput = $('#prod_category')
 const category_suggest_container = $('#category_suggest_container')
 
 prodCategoryInput.oninput=(e)=>{
-  console.log(stockData)
+  
   const value = e.target.value.trim().toLowerCase();
   category_suggest_container.innerHTML = '';
   if (!value || nameInput.value.length >=2) return;
@@ -2400,7 +2403,7 @@ const updateInventoryPouch = async (option, id, qtyElement) => {
   const snapshot = await get(itemRef);
 
   if (!snapshot.exists()) return;
-
+//$('.loader').classList.remove('hidden')
   const data = snapshot.val();
   let newQty = data.prodQuantity || 0;
 console.log(newQty)
@@ -2417,6 +2420,7 @@ console.log(newQty)
 const serviceRef = ref(db, `shops/${shopName}/stock`);
 
 onChildChanged(serviceRef, (snapshot) => {
+  //$('.loader').classList.add('hidden')
   const changedKey = snapshot.key;       // child node key (sn)
   const updatedProduct = snapshot.val(); // updated product object
 

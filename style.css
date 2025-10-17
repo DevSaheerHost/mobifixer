@@ -791,7 +791,7 @@ input[type="checkbox"]:checked::after {
     right: 0;
     background: var(--glass-bg);
     color: var(--text-color);
-    backdrop-filter: blur(--glass-blur);
+    backdrop-filter: blur(var(--glass-blur));
     text-shadow: 0 0 5px rgba(0, 0, 0, 0.29);
     z-index: 9;
     
