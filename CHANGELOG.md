@@ -7,6 +7,22 @@
 
 ---
 
+## [4.5.4] - 2025-10-17
+### ✨ Features
+- Implemented full functionality for the previously created Pouch Search page.
+- Added real-time inventory synchronization using Firebase listeners (onValue / onChildChanged).
+- Updated increase/decrease quantity buttons to instantly reflect changes in UI and database.
+- Search results now always display latest stock quantity without requiring page refresh.
+
+
+### ⚙️ Improvements
+- Optimized stockData handling for live updates.
+- Improved DOM update logic for smoother user experience in search results.
+
+
+### 🧩 Developer Notes
+- stockData now stays live-synced with Firebase.
+- Refactored search logic to prioritize updated data over cached copies.
 
 ## [4.5.0] - 2025-10-15
 ### Features

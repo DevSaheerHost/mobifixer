@@ -1177,10 +1177,21 @@ main.inventory-page{
 
 /*---------------------------------------*/
 
-.card_container{
+.card_container, .inventory_search_page .search_out{
     padding: 1.5rem;
 }
-.card_container .card{
+.inventory_search_page .btn_wrap{
+  display: flex;
+  gap: 1rem;
+}
+.inventory_search_page .btn_wrap button{
+  background: var(--card-bg);
+  color: var(--text-color);
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+}
+
+.card_container .card, .inventory_search_page .search_out .card{
     display: flex;
     align-items: center;
     justify-content: space-between; 
@@ -1196,12 +1207,12 @@ main.inventory-page{
   transition: 0.1s;
 }
 
-.card_container .card .img_container{
+.card_container .card .img_container, .inventory_search_page .card .img_container{
     width: 60px;
     color: var(--text-muted);
     font-size: 30px;
 }
-.card_container .card .middle_container{
+.card_container .card .middle_container, .inventory_search_page .card .middle_container{
     width: 100%;
 }
 .category_qty_container{
@@ -1569,6 +1580,34 @@ input[type=range]:focus::-ms-fill-upper {
 }
 
 /*########## THEME PAGE END ########## */
+
+
+/* ########## INVENTORY_SEARCH_PAGE ##########*/
+.inventory_search_page .input_container{
+  text-align: center;
+  padding: 1rem;
+}
+.inventory_search_page .input_container input{
+  width: 100%;
+}
+.inventory_search_page .box{
+  display: flex;
+  flex-flow: column;
+   font-size: 14px;
+font-weight: 500;
+color: var(--text-muted);
+}
+.inventory_search_page li h2{
+  color: var(--text-color);
+}
+.inventory_search_page .qty{
+  color: #00ECDD;
+  align-self: flex-end;
+  
+}
+.inventory_search_page .img_container{
+  width: 150px;
+}
 
 
 

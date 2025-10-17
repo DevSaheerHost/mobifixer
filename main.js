@@ -7,7 +7,7 @@ import { inventoryCard} from './inventoryCard.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 
 // Realtime Database import
-import { getDatabase, ref, onChildAdded, onChildChanged, update, query, limitToLast, orderByKey, remove }
+import { getDatabase, ref, onChildAdded, onChildChanged, update, query, limitToLast, orderByKey, remove , onValue}
 from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
 
@@ -573,7 +573,7 @@ window.visualViewport?.addEventListener('resize', () => {
 });
 
 window.addEventListener('scroll', () => {
-  // alert('scroll')
+  // 
   if (keyboardOpen) return; // prevent triggering while keyboard active
   
   const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
@@ -633,7 +633,8 @@ const routes = {
   '#settings' : '.settings_page',
   '#settings/profile':'.profile_page',
   '#settings/thememode': '.theme_page',
-  '#settings/sound': '.sound_page'
+  '#settings/sound': '.sound_page',
+  '#inventorySearch':'.inventory_search_page'
 };
 
 const router = () => {
@@ -686,6 +687,8 @@ $('#new_sn').textContent = Number(data[data.length - 1]?.sn) + 1 || 1;
 
 }
   }
+  
+  if(hash==='#inventorySearch') $('#search_pouch').focus()
   if(hash==='') shopSwitcher();
 if (hash === '#changelog') {
   // 🔹 1️⃣ CHANGELOG.md load ചെയ്യുക
@@ -1107,9 +1110,32 @@ search.addEventListener("focus", () => {
 });
 
 // click outside → hide
-document.addEventListener("click", (e) => {
+document.addEventListener("click", async (e) => {
   if (!search.contains(e.target) && !searchOut.contains(e.target)) {
     searchOut.classList.add("hidden");
+  }
+    // 🛒 decrease button
+  if (
+    e.target.classList.contains('decrease') ||
+    e.target.parentElement?.classList.contains('decrease')
+  ) {
+    const id = e.target.dataset.id || e.target.parentElement.dataset.id;
+    const card = e.target.closest('.middle_container');
+    const qtyElement = card.querySelector('.qty');
+
+    await updateInventoryPouch('decrease', id, qtyElement);
+  }
+
+  // 🏪 increase button
+  if (
+    e.target.classList.contains('increase') ||
+    e.target.parentElement?.classList.contains('increase')
+  ) {
+    const id = e.target.dataset.id || e.target.parentElement.dataset.id;
+    const card = e.target.closest('.middle_container');
+    const qtyElement = card.querySelector('.qty');
+
+    await updateInventoryPouch('increase', id, qtyElement);
   }
 });
 
@@ -1878,18 +1904,6 @@ createProdDataBtn.onclick=async()=>{
   const prodCustRate = $('#prod_customer_rate').value.trim() || 0;
   const prodPosition = $('#position').value.trim() || null;
 
-let section = null, row = null, column = null;
-
-if (prodPosition) {
-  const match = prodPosition.match(/S(\d+)-R(\d+)-C(\d+)/i);
-  if (match) {
-    section = parseInt(match[1]);
-    row = parseInt(match[2]);
-    column = parseInt(match[3]);
-  }
-}
-
-console.log({ section, row, column });
   
   // check empty fields
   if (!prodName || !prodModel || !prodQuantity || !prodCategory ) {
@@ -1916,9 +1930,6 @@ console.log({ section, row, column });
   prodRate,
   prodCustRate,
   prodPosition: prodPosition || null,
-  section: section || null,
-  row: row || null,
-  column: column || null,
   author: localStorage.getItem('author') || 'None Author'
 })
 .then(() => {
@@ -2324,7 +2335,106 @@ handleDeviceCountChange();
 
 
 
-//#########################//
+// ########## SEARCH_POUCH ########## //
+
+import { searchPouchCard } from './searchPouchCard.js';
+
+const searchPouchInput = $('#search_pouch');
+const pouchSearchOut = $('#search_out');
+
+// Listen to all stock changes to keep stockData always up-to-date
+//const stockRef = ref(db, `shops/${shopName}/stock`);
+onValue(stockRef, (snapshot) => {
+  stockData = [];
+  snapshot.forEach(childSnap => {
+    stockData.push({ sn: childSnap.key, ...childSnap.val() });
+  });
+});
+
+// Search input
+searchPouchInput.oninput = e => {
+  const value = e.target.value.trim().toLowerCase();
+  pouchSearchOut.innerHTML = '';
+
+  if (value.length < 2) return pouchSearchOut.classList.add('hidden');
+
+  pouchSearchOut.classList.remove('hidden');
+
+  // Use the latest stockData (kept updated by onValue)
+  const matches = stockData.filter(item =>
+    item.prodCategory?.toLowerCase().includes('pouch') &&
+    (item.prodName?.toLowerCase().includes(value) || item.prodPosition?.toLowerCase() === value)
+  );
+
+  const uniqueMatches = [];
+  const seenNames = new Set();
+
+  matches.forEach(item => {
+    const nameLower = item.prodName.toLowerCase();
+    if (!seenNames.has(nameLower)) {
+      seenNames.add(nameLower);
+      uniqueMatches.push(item);
+    }
+  });
+
+  uniqueMatches.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.innerHTML = searchPouchCard(item); // latest prodQuantity always
+    pouchSearchOut.appendChild(div);
+  });
+};
+
+// ######################### //
+
+document.addEventListener('click', async (e) => {
+
+});
+
+// ######################### //
+
+const updateInventoryPouch = async (option, id, qtyElement) => {
+  if (!option || !id) return;
+
+  const itemRef = ref(db, `shops/${shopName}/stock/${id}`);
+  const snapshot = await get(itemRef);
+
+  if (!snapshot.exists()) return;
+
+  const data = snapshot.val();
+  let newQty = data.prodQuantity || 0;
+console.log(newQty)
+  if (option === 'increase') newQty++;
+  else if (option === 'decrease') newQty = newQty > 0 ? newQty - 1 : 0;
+
+  // ✏️ UI update
+  qtyElement.textContent = `${newQty} PCS`;
+
+  // 💾 Firebase update
+  await update(itemRef, { prodQuantity: newQty });
+};
+
+const serviceRef = ref(db, `shops/${shopName}/stock`);
+
+onChildChanged(serviceRef, (snapshot) => {
+  const changedKey = snapshot.key;       // child node key (sn)
+  const updatedProduct = snapshot.val(); // updated product object
+
+  // 🔁 Update local stockData array
+  const index = stockData.findIndex(item => item.sn === changedKey);
+
+  if (index !== -1) {
+    // merge old object with updated values
+    stockData[index] = { ...stockData[index], ...updatedProduct };
+  } else {
+    // if not found, push new object
+    stockData.push(updatedProduct);
+  }
+
+  console.log(`🔄 StockData updated: ${changedKey}`, stockData[index] || updatedProduct);
+
+  
+});
 
 //  New buttons
 const showFirstAnim=()=>{
@@ -2370,7 +2480,7 @@ $$('.toggle_btn').forEach(btn => {
 //#####################################################################//
 
 // put it down 👇 
-const CURRENT_VERSION = '4.5.1';
+const CURRENT_VERSION = '4.5.4';
 const LAST_VERSION = localStorage.getItem('app_version') || null;
 
 if (LAST_VERSION !== CURRENT_VERSION) {

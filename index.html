@@ -201,6 +201,9 @@
       </div>
       <h3 class="title">Inventory</h3>
       <div class="add_btn">
+        
+        <i onclick="location.hash='#inventorySearch'" class="fa-solid fa-magnifying-glass"></i>
+        
         <a href="#addInventory">
             <i class="fa-solid fa-plus"></i>
         </a>
@@ -230,22 +233,6 @@
   </div>
   
   <div class="card_container" id="card_container">
-    <div class="card">
-      <div class="img_container">
-        <i class="fa-solid fa-volume-off"></i>
-      </div>
-      
-      <div class="middle_container">
-        <h4>Samsung A06 Ringer</h4>
-        <div class="category_qty_container">
-          <span>
-            <p>Ringer</p>
-            <p>Samsung</p>
-          </span>
-          <p class="qty">10 PCS</p>
-        </div>
-      </div>
-  </div>
     
     
     <div class="card">
@@ -291,6 +278,32 @@
 <!--   <button class="add-inventory add hidden">
   <a href="#addInventory">+</a>
 </button> -->
+</main>
+
+<main class="inventory_search_page hidden">
+  <div class="input_container">
+    <input type="search" name="search_pouch" id="search_pouch" placeholder="Type S_number or Model name">
+  </div>
+  
+  <div class="search_out" id="search_out">
+      <div class="card">
+    <div class="img_container">
+      <i class="fa-solid fa-mobile-button"></i>
+    </div>
+    
+    <div class="middle_container">
+      <h4>VIVO Y12 cilicon pouch</h4>
+      <div class="category_qty_container">
+        <span>
+          <p>pouch</p>
+          <p>VIVO</p>
+        </span>
+        <p class="qty">3 PCS</p>
+      </div>
+    </div>
+    
+  </div>
+  </div>
 </main>
 
 
