@@ -634,7 +634,8 @@ const routes = {
   '#settings/profile':'.profile_page',
   '#settings/thememode': '.theme_page',
   '#settings/sound': '.sound_page',
-  '#inventorySearch':'.inventory_search_page'
+  '#inventorySearch':'.inventory_search_page',
+  '#bacuprestore':'.bacup_restore_page'
 };
 
 const router = () => {
@@ -1554,7 +1555,7 @@ function refreshServiceData() {
         "pending";
       filterByStatus(activeStatus);
       $('.loader').classList.add('hidden')
-      showNotice({title: ' ✅', body:`Data refreshed successfully.`, type:'success'})
+      //showNotice({title: ' ✅', body:`Data refreshed successfully.`, type:'success'})
       console.log("✅ Data refreshed successfully.");
     } else {
       $('.list').innerHTML = `
@@ -1570,6 +1571,7 @@ function refreshServiceData() {
   }).catch(err => {
     console.error("❌ Error reloading data:", err)
    showNotice({title: ' ❌', body:`Error Reloading data: ${err.message}`, type:'error'})
+   $('.loader').classList.add('hidden')
   });
 }
 
@@ -1940,7 +1942,8 @@ createProdDataBtn.onclick=async()=>{
     type: 'success'
   });
 $('.loader').classList.add('hidden')
-  location.hash = '#inventory';
+  //location.hash = '#inventory';
+  window.history.back()
 
   // Clear input fields
   $('#prod_name').value = '';
@@ -2508,9 +2511,58 @@ window.addEventListener('beforeunload', () => {
 
  // location.hash='#settings'
  
+const connectedRef = ref(db, '.info/connected');
+onValue(connectedRef, (snap) => {
+  if (snap.val() === true) {
+    //alert('✅ Firebase is ONLINE now!');
+  } else {
+   // console.log('⚠️ Firebase went offline');
+  }
+});
  
- 
+ window.addEventListener('beforeunload', () => {
+  goOffline(db);
+});
+
+
+
+///// check after after effect 
+
+const infoRef = ref(db, '.info');
+onValue(infoRef, snap => {
+  console.log(snap.val());
+});
+
+///
+
+function localStorageSize() {
+  let total = 0;
+  for (let key in localStorage) {
+    if (localStorage.hasOwnProperty(key)) {
+      total += ((localStorage[key].length + key.length) * 2); // 2 bytes per char
+    }
+  }
+  return total; // size in bytes
+}
+
+console.log(`Approx localStorage used: ${localStorageSize()} bytes`);
+
+// 
+
+function logStorageStatus() {
+  const used = localStorageSize();
+  const max = 5 * 1024 * 1024;
+  const percent = ((used / max) * 100).toFixed(2);
+  console.log(`📦 localStorage used: ${used} bytes (${percent}%)`);
+  $('.percentage_count').textContent=`${percent}%`
+  $('.bacup_restore_page .prog_bar').style.width=`${percent}%`
+}
+logStorageStatus()
+
+
+
+// manually online === goOnline(db);
 if (navigator.hardwareConcurrency <= 4) {
-  alert('syatem slow')
+//  alert('syatem slow')
   console.log("Low-end device detected, enabling light mode...");
 }

@@ -1,11 +1,90 @@
 # 📌 Changelog
 
+<!-- 
+### New Features /Additions
+- Add, Create, Implement, Introduce, Integrate, Enable
+
+### Improvements /Enhancements
+- Improve, Enhance,
+
+Refine, Optimize,
+
+Update, Upgrade
+
+
+### Bug Fixes / Corrections
+- Fix, Correct, Resolve,
+
+Remove, Address, prevent 
+
+
+### Refactoring / Maintenance
+- Refactor, Clean, Reorganize, Simplify, Modularize
+
+
+### Experimental / WIP
+- Prototype, Test, Explore, Experiment, Draft
 
 
 
-##  🚧 [Unreleased]
+Create, Fix, Add, Implement
+
+
+ ⚠️ Before Committing- ⚠️ 
+ 
+ 🚦 Ensure that you Corrected The VERSION CODE on SCRIPT FILE 🚦
+-->
+
+
+## [Unreleased]
+### Added
+### Changed
+### Fixed
+### Removed
+
+
+## 🚧 [Unreleased]
+
+### TODO 📝
+- create tab setup for switch page between**Service page and credit page**
+- Create a page to display **yesterday’s credit information** at today’s app opening time (Reminder of Previous days Task )
+- Restructure the database schema to support *multiple users* and improve scalability
+- Create About Page
+- Enhance the Theme Page UI UX (Function also)
+- Add storage information (offline and onlide)
+- Make user authentication is strict for data leakage safety
+- Add data encryption for data safety
+
 
 ---
+
+
+### Added ✨ 
+- Created Backup & Restore Page (user can see storage usage)
+- Impliment the storage information (to monitor data)
+
+
+---
+
+
+### Enhancements 🚀
+- Enhance the **information page UX** for better readability
+- Implement new **Font family**  (Poppins)
+
+
+---
+
+
+
+### Bug fixes 
+- Removed unnecessary alerts
+
+
+
+
+
+---
+
 
 ## [4.5.4] - 2025-10-17
 ### ✨ Features
@@ -13,6 +92,8 @@
 - Added real-time inventory synchronization using Firebase listeners (onValue / onChildChanged).
 - Updated increase/decrease quantity buttons to instantly reflect changes in UI and database.
 - Search results now always display latest stock quantity without requiring page refresh.
+- UX optimization 
+- Minor bug fixes
 
 
 ### ⚙️ Improvements

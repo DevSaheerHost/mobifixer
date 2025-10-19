@@ -329,12 +329,12 @@
   </p>
   
   <div class="input-group">
-    <input type="text" name="prod_name" id="prod_name" placeholder="Product Name">
+    <input type="text" name="prod_name" id="prod_name" placeholder="Product Name" class="uppercase">
     <div class="universal_input_suggest_container" id="prod_name_suggest_container">
       
     </div>
     
-    <input type="text" name="prod_model" id="prod_model" placeholder="Product Model Name">
+    <input type="text" name="prod_model" id="prod_model" placeholder="Product Model Name" class="uppercase">
     <div class="universal_input_suggest_container" id="prod_model_suggest_container">
       
     </div>
@@ -345,7 +345,7 @@
     <div id="category_suggest_container" class="prod_cat_suggest_container hidden">
     </div>
     
-    <input type="text" name="position" id="position" placeholder="position">
+    <input type="text" name="position" id="position" placeholder="position" maxlength="3" class="uppercase">
     
     <input type="number" name="prod_rate" id="prod_rate" placeholder="Rate">
     <input type="number" name="prod_customer_rate" id="prod_customer_rate" placeholder="Customer Rate">
@@ -377,8 +377,8 @@
   <p class="title">Are you want to delete?</p>
   
   <div class="btn_wrap">
-    <button class="delete">DELETE</button>
-    <button class="cancel">Cancel</button>
+    <button class="delete">Yes, Delete!</button>
+    <button class="cancel">No, keep it.</button>
   </div>
   </div>
 </main>
@@ -465,7 +465,7 @@
 Records & Data</h4>
   
    <ul class="settings_list">
-    <li class="list-item">
+    <li class="list-item" onclick="location.hash='#bacuprestore'">
       <p>Backup & Restore Data</p>
       <i class="fa-solid fa-angle-right"></i>
     </li>
@@ -627,6 +627,25 @@ Records & Data</h4>
 </main>
 
 
+<!-- ########## BACUP_RESTORE_PAGE ######### -->
+<main class="bacup_restore_page">
+    <div class="page_header">
+    <div class="flex">
+      <i class="fa-solid fa-arrow-left" onclick="window.history.back()"></i>
+      <h3>
+         Backup & Restore</h3>
+    </div>
+  </div>
+  
+  <div class="card">
+    <h3>Storage Usage</h3>
+    <div class="prog_bar_container">
+      <div class="prog_bar"></div>
+    </div>
+    <p class="percentage_count">27%</p>
+  </div>
+</main>
+
 <!-- ########### THEME_PAGE ########## -->
 
 <main class="theme_page hidden">
@@ -738,6 +757,12 @@ Records & Data</h4>
     </li>
   </ul>
 
+</main>
+
+<main class="priority-view hidden">
+  <div class="card">
+    
+  </div>
 </main>
 
 

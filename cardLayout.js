@@ -23,15 +23,15 @@ export const cardLayout = ({
     deviceDetails = devices.map((d, i) => `
       <div class='device_box'>
         <div class='item_flex'>
-          <p class='key'><b>Device ${i + 1}</b></p>
+          <p class='key'>Device ${i + 1}</p>
           <p class='value'>${d.model || '<i>unknown</i>'}</p>
         </div>
         <div class='item_flex'>
-          <p class='key'><b>Complaints</b></p>
+          <p class='key'>Complaints</p>
           <p class='value complaints'>${d.complaints || '<i>none</i>'}</p>
         </div>
         <div class='item_flex'>
-          <p class='key'><b>Lock</b></p>
+          <p class='key'>Lock</p>
           <p class='value'>${d.lock || '<i>none</i>'}</p>
         </div>
       </div>
@@ -40,17 +40,17 @@ export const cardLayout = ({
     // 🧩 Fallback to old structure
     deviceDetails = `
       <div class='item_flex'>
-        <p class='key'><b>Model</b></p>
+        <p class='key'>Model</p>
         <p class='value'>${model || '<i>unknown</i>'}</p>
       </div>
 
       <div class='item_flex'>
-        <p class='key'><b>Complaints</b></p>
+        <p class='key'>Complaints</p>
         <p class='value complaints'>${complaints || '<i>none</i>'}</p>
       </div>
 
       <div class='item_flex'>
-        <p class='key'><b>Lock</b></p>
+        <p class='key'>Lock</p>
         <p class='value'>${lock || '<i>none</i>'}</p>
       </div>
     `;
@@ -60,12 +60,12 @@ export const cardLayout = ({
   <div class="box">
     
     <div class='item_flex'>
-      <p class='key'><b>Number</b></p>
+      <p class='key'>Number</p>
       <p class='value'>+91 ${number}</p>
     </div>
     ${altNumber?
       `    <div class='item_flex'>
-      <p class='key'><b>Alt Number</b></p>
+      <p class='key'>Alt Number</p>
       <p class='value'>+91 ${altNumber}</p>
     </div>`:''
       
@@ -74,24 +74,24 @@ export const cardLayout = ({
     ${deviceDetails}
 
     <div class='item_flex'>
-      <p class='key'><b>Date</b></p>
+      <p class='key'>Date</p>
       <p class='value'>${date || ''} ${time || ''}</p>
     </div>
 
     <div class='item_flex'>
-      <p class='key'><b>Approx Rate</b></p>
+      <p class='key'>Approx Rate</p>
       <p class='amount value'>₹${amount ? Number(amount).toLocaleString('en-IN') : ''}</p>
     </div>
 
     <div class='item_flex'>
-      <p class='key'><b>Advance</b></p>
+      <p class='key'>Advance</p>
       <p class='advance value'>₹${advance ? Number(advance).toLocaleString('en-IN') : ''}</p>
     </div>
     
     ${advance!=0?
       `
         <div class='item_flex'>
-      <p class='key'><b>Balance</b></p>
+      <p class='key'>Balance</p>
       <p class='complaints value'>₹${(Number(amount) - Number(advance)).toLocaleString('en-IN')}</p>
     </div>`:''
     }
