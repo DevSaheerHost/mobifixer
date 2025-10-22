@@ -331,6 +331,7 @@ nav.status-nav{
     max-width: 100%;
     
     transform: translateZ(0px);
+    
 }
 .list-item .complaints{
     color: var(--accent-color);
@@ -587,8 +588,18 @@ box-shadow: 0 0 10px rgba(0, 0, 0, 0.10);
 
 .call-btn{
     background: #00A267;
-    color: --var(--text-color);
+    background: var(--card-bg);
+    color: var(--success-color);
     font-weight: 600;
+    font-size: 18px;
+    flex: 1;
+    border: 1px solid var(--border-color);
+    border-radius: 100px;
+    padding: 0.4rem 1rem;
+}
+.call-btn:active{
+    background: var(--success-color);
+    color: var(--text-color);
 }
 
 
@@ -1694,6 +1705,30 @@ input[type=range]:focus::-ms-fill-upper {
   background: #ac51b5;
 }
 
+/* Colour Blocks */
+
+.theme_page .block_container{
+    display: flex;
+    gap: 1rem;
+}
+
+.theme_page .block{
+    width: 30px;
+    height: 30px;
+    background: red;
+    border: 1px solid var(--border-color);
+    display: block;
+}
+.theme_page .primary{
+    background: var(--primary);
+}
+.theme_page .secondary {
+    background: var(--bg-secondary);
+}
+.theme_page .accent{
+    background: var(--accent-color);
+}
+
 /*########## THEME PAGE END ########## */
 
 
@@ -1962,4 +1997,46 @@ input.uppercase{
     margin-top: 1rem;
     color: var(--text-muted);
     font-weight: 600;
+}
+
+
+
+.flex-center{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.list-item .status{
+    background: var(--glass-bg);
+    border-radius: 30px;
+    border-bottom: 1px solid #727272;
+}
+.status span{
+    background: var(--card-bg);
+    padding: 0.5rem 1rem;
+    border-radius: 100px;
+    border: 1px solid var(--border-color);
+    font-size: 10px;
+    flex: 1;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    text-align: center;
+    display: flex;align-items: center;justify-content: center;
+    color: var(--text-muted);
+}
+.status span input{
+    display: none;
+}
+.status span.active{
+    background: var(--accent-glass);
+    color: var(--text-color);
+}
+.collapse{
+    height: 10px;
+    border-radius: 10px;
+    transform: translateY(-10px) !important;
+    border-bottom-right-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+    border-bottom: 0 !important;
+    opacity: 0.5;
 }

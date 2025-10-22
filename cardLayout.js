@@ -103,41 +103,45 @@ export const cardLayout = ({
   </div>
 
   <div class="status">
-    <span>
+    <span class="${status==='pending'? 'active': ''}">
       <input type="radio" ${status === 'pending' ? 'checked' : ''} name="status-${sn}" id="pending-${sn}" />
       <label for="pending-${sn}">Pending</label>
     </span>
 
-    <span>
+    <span class="${status==='spare'? 'active': ''}">
       <input type="radio" ${status === 'spare' ? 'checked' : ''} name="status-${sn}" id="spare-${sn}" />
       <label for="spare-${sn}">Wait for Spare</label>
     </span>
 
-    <span>
+    <span class="${status==='progress'? 'active': ''}">
       <input type="radio" ${status === 'progress' ? 'checked' : ''} name="status-${sn}" id="progress-${sn}" />
       <label for="progress-${sn}">In Progress</label>
     </span>
 
-    <span>
+    <span class="${status==='done'? 'active': ''}">
       <input type="radio" ${status === 'done' ? 'checked' : ''} name="status-${sn}" id="done-${sn}" />
       <label for="done-${sn}">Done</label>
     </span>
 
-    <span>
+    <span class="${status==='collected'? 'active': ''}">
       <input type="radio" ${status === 'collected' ? 'checked' : ''} name="status-${sn}" id="collected-${sn}" />
       <label for="collected-${sn}">Collected</label>
     </span>
 
-    <span>
+    <span class="${status==='return'? 'active': ''}">
       <input type="radio" ${status === 'return' ? 'checked' : ''} name="status-${sn}" id="return-${sn}" />
       <label for="return-${sn}">Return</label>
     </span>
 
-    <button class='call-btn' data-num="+91${number}">
+      <button class='call-btn' data-num="+91${number}">
       <i class="fa-solid fa-phone"></i>
     </button>
+  </div>
+  
+  <div class='flex-center'>
+
 
     <p class='author_name'>${author || ''}</p>
-  </div>
+    </div>
   `;
 };

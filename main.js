@@ -1466,6 +1466,17 @@ document.addEventListener('scroll', () => {
 // });
 
 document.addEventListener('click', e => {
+  
+
+  //////////
+if (e.target.tagName.toLowerCase() === 'nav') {
+  const parent = e.target.closest('li');
+//  alert(parent)
+  if (parent) parent.classList.toggle('collapse');
+}
+  
+  
+  
   const btn = e.target.closest('.call-btn');
   if (!btn) return;
 
@@ -1486,6 +1497,8 @@ document.addEventListener('click', e => {
       }
     }
   }, 400);
+  
+  
   
   
  // speakText("Welcome back, Babu! The system is ready.");
@@ -2393,9 +2406,7 @@ searchPouchInput.oninput = e => {
 
 // ######################### //
 
-document.addEventListener('click', async (e) => {
 
-});
 
 // ######################### //
 
