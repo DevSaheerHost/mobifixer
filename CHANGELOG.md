@@ -52,12 +52,27 @@ Create, Fix, Add, Implement
 - Add data encryption for data safety
 
 
+
 ---
 
 
-### Added ✨ 
-- Created Backup & Restore Page (user can see storage usage)
-- Impliment the storage information (to monitor data)
+## [4.6.0] - 2025-10-17
+### ✨ New Feature
+- Added a Bottom Sheet UI component for contextual actions Includes smooth slide-up animation and blurred overlay background
+- Supports click-outside-to-close and “X” button for dismissing
+- Designed for mobile-first usability and consistent app-wide UX
+- Prepared structure for future drag-down gesture support
+
+
+---
+
+
+### 💄 UI / UX
+- Enhanced modal depth with shadow and blur overlay for better focus
+- Unified button styling (.add_customer) within bottom sheet
+- Improved accessibility with logical z-index layering and transitions
+
+
 
 
 ---
@@ -68,15 +83,20 @@ Create, Fix, Add, Implement
 - Implement new **Font family**  (Poppins)
 
 
+
+
 ---
 
+
+### Added ✨ 
+- Created Backup & Restore Page (user can see storage usage)
+- Impliment the storage information (to monitor data)
+
+---
 
 
 ### Bug fixes 
 - Removed unnecessary alerts
-
-
-
 
 
 ---

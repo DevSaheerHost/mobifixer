@@ -18,6 +18,7 @@ export const cardLayout = ({
   
   // ✅ Handle both old and new structures
   let deviceDetails = '';
+  const me = localStorage.getItem('author')
 
   if (Array.isArray(devices) && devices.length > 0) {
     deviceDetails = devices.map((d, i) => `
@@ -141,7 +142,11 @@ export const cardLayout = ({
   <div class='flex-center'>
 
 
-    <p class='author_name'>${author || ''}</p>
+<p class="author_name">
+  ${author === me 
+    ? '<span class="you"><i class="fa-solid fa-user"></i> You</span>' 
+    : `<span>${author || 'Unknown'}</span>`}
+</p>
     </div>
   `;
 };

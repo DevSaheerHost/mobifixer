@@ -177,7 +177,7 @@
 <i class="empty" id="staticText">Loading...</i>
     </ul>
   </section>
-    <button class="add"><a href="#add">Add Customer</a></button>
+    <button data-open-sheet class="add"><a>New</a></button>
     </main>
   
   
@@ -439,6 +439,30 @@
   <div class="card">
     <h3>Enter Your Name</h3>
     <input type="text" name="authorName" id="authorName" placeholder="Name">
+    <h3 class="mt-2">What's Your Role?</h3>
+    
+<div class="radio_container mt-1">
+      <span>
+      <input type="radio" name="role" id="shop_owner" value="Shop Owner" />
+      <label for="shop_owner">Shop Owner</label>
+    </span>
+    
+    <span>
+      <input type="radio" name="role" id="sales_manager" value="Sales Manager" />
+      <label for="sales_manager">Sales Manager</label>
+    </span>
+    
+    <span>
+      <input type="radio" name="role" id="technician" value="Technician"/>
+      <label for="technician">Technician</label>
+    </span>
+    
+    <span>
+      <input type="radio" name="role" id="trainee" value="Trainee Technician"/>
+      <label for="trainee">Trainee Technician</label>
+    </span>
+</div>
+    
     
     <div class="btn-wrap">
       <button class="cancel">Cancel</button>
@@ -839,10 +863,19 @@ Records & Data</h4>
 
 
 <!-- ########## BOTTOM SHEET ########## -->
-<div class="bottom-sheet">
-  <h3>Device Details</h3>
-  <p>Model: Redmi Note 12</p>
-  <button>Start Repair</button>
+<div class="bottom_sheet_overlay">
+  <div class="bottom-sheet">
+<div class="flex_between">
+  <h3>Take Action For</h3>
+  <i class="fa-solid fa-xmark close_sheet"></i>
+</div>
+
+<div class="flex_between mt-2">
+  <button class="add_customer" data-close-sheet ><a href="#add">New Entry</a></button>
+  <button class="add_customer" data-close-sheet ><a href="#addInventory">Add Product</a></button>
+  <button class="add_customer" data-close-sheet ><a href="#inventorySearch">Search Product</a></button>
+</div>
+</div>
 </div>
 
     

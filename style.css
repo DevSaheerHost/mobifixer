@@ -180,6 +180,9 @@ html, body {
 .mt-2{
     margin-top: 2rem;
 }
+.mt-1{
+    margin-top: 1rem;
+}
 
 .logo{
     width: 70px;
@@ -941,6 +944,37 @@ input[type="checkbox"]:checked::after {
     padding: 1rem;
     background: rgba(0, 0, 0, 0.15);
     border-radius: 10px;
+    max-width: 90vw;
+}
+.customInput .card{
+    background: var(--bg-color);
+    padding: 2rem;
+}
+.customInput .card:hover {
+    background: var(--bg-color);
+}
+
+.customInput .card .radio_container{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+.customInput .card .radio_container span{
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    border-radius: 100px;
+    border: 1px solid var(--border-color);
+    padding: 0.5rem;
+}
+.customInput .card .radio_container span input{
+    margin: auto;
+}
+.customInput .card .radio_container span input:checked{
+    border: 6px solid var(--accent-glass);
+    
 }
 
 .customInput input{
@@ -1095,11 +1129,20 @@ pre {
     font-size: 12px;
     font-weight: 500;
     margin: 0;
+    margin-top: 1rem;
 }
+.author_name .you{
+    color: var(--accent-color);
+    font-weight: 600;
+    font-style: normal;
+}
+
+
 #author_name_p{
     margin-top: 1rem;
     text-align: center;
 }
+
 
 
 .bulk-action {
@@ -2042,6 +2085,13 @@ input.uppercase{
 }
 
 
+.flex_between{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
 /*##########.BOTTOM SHEER #########*/
 
 .bottom-sheet {
@@ -2049,14 +2099,46 @@ input.uppercase{
   bottom: 0;
   left: 0;
   right: 0;
-  background: #fff;
+  background: var(--bg-color);
   border-top-left-radius: 20px;
   border-top-right-radius: 20px;
   box-shadow: 0 -2px 15px rgba(0,0,0,0.1);
   transition: transform 0.3s ease;
   transform: translateY(100%);
+  z-index: 9;
+  padding: 2rem;
+  border-top: 1px solid var(--border-color);
+  box-shadow: 0 0 10px rgba(60, 62, 74, 1);
+}
+.bottom-sheet .close_sheet{
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    color: var(--text-muted);
 }
 
 .bottom-sheet.active {
   transform: translateY(0);
+}
+
+.bottom-sheet button.add_customer{
+    background: var(--card-bg);
+    color: var(--text-muted);
+    border-top: 1px solid var(--border-color);
+}
+
+
+.bottom_sheet_overlay{
+    position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 10;
+}
+.bottom_sheet_overlay.active{
+    opacity: 1;
+pointer-events: all;
 }

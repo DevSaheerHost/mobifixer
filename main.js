@@ -1138,6 +1138,11 @@ document.addEventListener("click", async (e) => {
 
     await updateInventoryPouch('increase', id, qtyElement);
   }
+  
+  
+  
+  // add overlay and do click function.... 
+
 });
 
 
@@ -1443,11 +1448,11 @@ document.addEventListener('scroll', () => {
   if (currentScroll < lastScroll) {
     addBtn.classList.remove('smallAddBtn');
     addBtn.style.width = addBtnWidth
-    addBtn.innerHTML='<a href="#add">Add Customer</a>'
+    addBtn.innerHTML='<a>New</a>'
   } else {
     addBtn.classList.add('smallAddBtn');
     addBtn.style.width = '50px'
-    addBtn.innerHTML='<a href="#add">+</a>'
+    addBtn.innerHTML='<a>+</a>'
   }
 
   lastScroll = currentScroll;
@@ -1520,6 +1525,8 @@ window.ononline=()=> showNotice({title:'Online', body:'Device Connected.', type:
 
 
 
+
+
 $('.add').onclick=()=>{
   dataIsEdit=false
   $('#name').value = data.name || '';
@@ -1533,7 +1540,8 @@ $('.add').onclick=()=>{
       $('#status').value = data.status || 'pending';
       $('#sim').checked = false;
       $('.add-data').textContent = 'Add to List';
-  location.hash='#add'
+
+
 }
 
 
@@ -1600,7 +1608,11 @@ $('#saveAuthorName').onclick=()=>{
   const Name = $('#authorName').value
   if (Name.length>3) {
    
+ const getRole = () => $('input[name="role"]:checked')?.value || 'no-role';
+
+
    localStorage.setItem('author', Name)
+   localStorage.setItem('role',getRole())
    showNotice({title:'🫴', body: `Welcome ${Name} ;)`, type: 'info'})
    $('.customInput').classList.add('hidden')
   } else {
@@ -2495,10 +2507,73 @@ $$('.toggle_btn').forEach(btn => {
 });
 
 
+
+// ###### Bottom sheet Functions ###### //
+
+
+
+
+const sheetOverlay = document.querySelector('.bottom_sheet_overlay');
+const sheet = document.querySelector('.bottom-sheet');
+const closeBtn = document.querySelector('.close_sheet');
+
+// Show the bottom sheet
+const openSheet = () => {
+  sheet.classList.add('active');
+  sheetOverlay.classList.add('active');
+}
+
+// Hide the bottom sheet
+const closeSheet = () => {
+  sheet.classList.remove('active');
+  sheetOverlay.classList.remove('active');
+}
+
+// Close button click
+closeBtn.addEventListener('click', closeSheet);
+
+// Overlay click (outside area)
+sheetOverlay.addEventListener('click', (e) => {
+  // prevent closing if clicking inside the sheet
+  if (!sheet.contains(e.target)) {
+    closeSheet();
+  }
+});
+
+// Example trigger (you can call openSheet() from anywhere)
+$$('[data-open-sheet]').forEach(btn => {
+  btn.addEventListener('click', openSheet);
+});
+
+$$('[data-close-sheet]').forEach(btn => {
+  btn.addEventListener('click', closeSheet);
+});
+
+// ###### Bottom sheet Functions END ###### //
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //#####################################################################//
 
 // put it down 👇 
-const CURRENT_VERSION = '4.5.4';
+const CURRENT_VERSION = '4.6.0';
 const LAST_VERSION = localStorage.getItem('app_version') || null;
 
 if (LAST_VERSION !== CURRENT_VERSION) {
@@ -2577,3 +2652,8 @@ if (navigator.hardwareConcurrency <= 4) {
 //  alert('syatem slow')
   console.log("Low-end device detected, enabling light mode...");
 }
+
+
+
+//
+
