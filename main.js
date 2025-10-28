@@ -2614,8 +2614,124 @@ $$('[data-close-sheet]').forEach(btn => {
 // ###### Bottom sheet Functions END ###### //
 
 
+// stafref for each data show //
 
 
+const getStaff = async () => {
+  const stafRef = ref(db, `shops/${shopName}/staff`);
+  const snapshot = await get(stafRef);
+
+  if (!snapshot.exists()) return;
+
+  const data = snapshot.val();
+  // console.log(data);
+
+  const staffList = $('.staff_list'); // for example <div id="staff-list"></div>
+  staffList.innerHTML = ''; // clear old data
+
+  Object.entries(data).forEach(([id, staff]) => {
+    const el = document.createElement('li');
+    el.className = 'list-item'; // use your CSS class
+
+    el.innerHTML = `
+      <p>${staff.name} (${staff.role})</p>
+    <i class="fa-solid fa-angle-right"></i>
+    
+    `;
+
+    staffList.appendChild(el);
+  });
+};
+
+getStaff()
+
+
+/////////
+//if author 
+
+const owner = async ()=>{
+  const ownerRef = ref(db, `shops/${shopName}/owner`);
+  const snapshot = await get(ownerRef);
+
+  if (!snapshot.exists()) return;
+
+  const owner = snapshot.val();
+  
+  $('#owner-name').textContent=owner.name
+  
+  if (localStorage.getItem('author') !== owner.name) {
+  $('.staff_list').innerHTML = `
+    <p class='pd-1'><i>You can’t add or manage staff. Please contact <b>${owner.name}</b> for more information.</i></p>
+  `;
+}
+}
+
+owner()
+
+
+// download data
+
+const downloadData = async format => {
+  const shopRef = ref(db, `shops/${shopName}`);
+  const snapshot = await get(shopRef);
+
+  if (!snapshot.exists()) {
+    alert('No data found for this shop.');
+    return;
+  }
+
+  const data = snapshot.val();
+
+  if (format === 'json') {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    triggerDownload(blob, `${shopName}.json`);
+  } 
+  
+  else if (format === 'excel') {
+  const XLSXLib = window.XLSX;
+  if (!XLSXLib) {
+    alert('❌ XLSX not available. Check script import.');
+    return;
+  }
+
+  const rows = Object.keys(data).map(id => ({
+    id,
+    ...data[id]
+  }));
+
+  const ws = XLSXLib.utils.json_to_sheet(rows);
+  const wb = XLSXLib.utils.book_new();
+  XLSXLib.utils.book_append_sheet(wb, ws, 'ShopData');
+  XLSXLib.writeFile(wb, `${shopName}.xlsx`);
+}
+  
+  else if (format === 'pdf') {
+  const { jsPDF } = window.jspdf; // 👈 this is important
+  const doc = new jsPDF();
+  doc.setFontSize(12);
+  doc.text(`Shop Data: ${shopName}`, 10, 10);
+
+  // Convert object to string safely
+  const text = JSON.stringify(data, null, 2);
+  const splitText = doc.splitTextToSize(text, 180);
+  doc.text(splitText, 10, 20);
+
+  doc.save(`${shopName}.pdf`);
+}
+};
+
+const triggerDownload = (blob, filename)=> {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+
+
+//downloadData('json')
 
 
 

@@ -184,6 +184,10 @@ html, body {
     margin-top: 1rem;
 }
 
+.pd-1{
+    padding: 1rem;
+}
+
 .logo{
     width: 70px;
 }
