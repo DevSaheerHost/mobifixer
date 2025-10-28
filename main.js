@@ -6,6 +6,7 @@ import { inventoryCard} from './inventoryCard.js';
 // Firebase core import
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 
+import { onAuthStateChanged, getAuth } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 // Realtime Database import
 import { getDatabase, ref, onChildAdded, onChildChanged, update, query, limitToLast, orderByKey, remove , onValue}
 from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
@@ -26,6 +27,7 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const auth = getAuth(app);
 
 const shopName = localStorage.getItem('shopName')
 if(!shopName) location='./auth/index.html'
@@ -831,37 +833,30 @@ $('.add-data').onclick = async () => {
       $('#new_sn').textContent = snToUse;
     }
 
-    const date = new Date();
-    const time = getCurrentTime();
-    const options = { day: "2-digit", month: "short", year: "numeric" };
-    const formatted = date.toLocaleDateString("en-GB", options).toUpperCase().replace(/ /g, "-");
+    const itemRef = ref(db, `shops/${shopName}/service/${snToUse}`);
 
-    // 🔹 Collect dynamic devices (Device 2 onwards)
+    // 🧠 Get old record if editing (to preserve date/time)
+    let oldData = {};
+    if (dataIsEdit) {
+      const snap = await get(itemRef);
+      if (snap.exists()) oldData = snap.val();
+    }
+
+    // 🔹 Collect devices
     const devices = [];
     const deviceSets = $$('#more_device_input_container .device-set');
-    deviceSets.forEach((set, index) => {
+    deviceSets.forEach((set) => {
       const nameInput = set.querySelector('.name-input')?.value.trim();
       const complaintInput = set.querySelector('.complaint-input')?.value.trim();
       const lockInput = set.querySelector('.lock-input')?.value.trim();
       if (nameInput || complaintInput || lockInput) {
-        devices.push({
-          model: nameInput || '',
-          complaints: complaintInput || '',
-          lock: lockInput || ''
-        });
+        devices.push({ model: nameInput || '', complaints: complaintInput || '', lock: lockInput || '' });
       }
     });
+    devices.unshift({ model, complaints, lock });
 
-    // 🔹 Include main (first) device
-    devices.unshift({
-      model,
-      complaints,
-      lock
-    });
-
-    // 🔹 Save to Firebase
-    const itemRef = ref(db, `shops/${shopName}/service/${snToUse}`);
-    await set(itemRef, {
+    // 🧩 Construct new data
+    const newData = {
       sn: snToUse,
       name,
       number,
@@ -870,11 +865,15 @@ $('.add-data').onclick = async () => {
       notes,
       amount,
       advance,
-      date: formatted,
-      time,
       author: localStorage.getItem('author'),
-      devices // ✅ all devices with model, complaints, lock
-    });
+      devices,
+      // 🧷 Preserve old date/time if editing
+      date: dataIsEdit ? oldData.date : new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase().replace(/ /g, "-"),
+      time: dataIsEdit ? oldData.time : getCurrentTime(),
+    };
+
+    // ✅ Save
+    await set(itemRef, newData);
 
     $('.loader').classList.add('hidden');
     $('.add-data').disabled = false;
@@ -883,25 +882,26 @@ $('.add-data').onclick = async () => {
     showNotice({
       title: snToUse,
       body: dataIsEdit
-        ? 'Data updated successfully ✅'
+        ? 'Data updated successfully'
         : `Data added successfully (${Math.floor(performance.now() - dataAddingTime)}ms)`,
       type: 'success',
       delay: 30
     });
 
-    // 🔹 Reset form
-    $('#name').value = '';
-    $('#number').value = '';
-    $('#alt_number').value='';
-    $('#complaint').value = '';
-    $('#model').value = '';
-    $('#lock').value = '';
-    $('#advance').value = '';
-    $('#amount').value = '';
-    $('#notes').value = '';
-    $('#sim').checked = false;
-    $('#total_device_count').value = 1;
-    $('#more_device_input_container').innerHTML = '';
+    if (!dataIsEdit) {
+      $('#name').value = '';
+      $('#number').value = '';
+      $('#alt_number').value = '';
+      $('#complaint').value = '';
+      $('#model').value = '';
+      $('#lock').value = '';
+      $('#advance').value = '';
+      $('#amount').value = '';
+      $('#notes').value = '';
+      $('#sim').checked = false;
+      $('#total_device_count').value = 1;
+      $('#more_device_input_container').innerHTML = '';
+    }
 
     dataIsEdit = false;
     editDataSn = 0;
@@ -1604,22 +1604,84 @@ if ('serviceWorker' in navigator) {
 
 
 
-$('#saveAuthorName').onclick=()=>{
-  const Name = $('#authorName').value
-  if (Name.length>3) {
-   
- const getRole = () => $('input[name="role"]:checked')?.value || 'no-role';
-
-
-   localStorage.setItem('author', Name)
-   localStorage.setItem('role',getRole())
-   showNotice({title:'🫴', body: `Welcome ${Name} ;)`, type: 'info'})
-   $('.customInput').classList.add('hidden')
-  } else {
+$('#saveAuthorName').onclick = async () => {
+  const Name = $('#authorName').value.trim();
+  const getRole = () => $('input[name="role"]:checked')?.value || 'no-role';
+  const staffRef = ref(db, `shops/${shopName}/staff`);
+  
+  if (Name.length > 3) {
+    try {
+      const snapshot = await get(staffRef);
+      
+      if (snapshot.exists()) {
+        const staffData = snapshot.val();
+        
+        // 🔍 key + value so -> bject.entries()
+        let foundKey = null;
+        let foundStaff = null;
+        
+        for (const [key, value] of Object.entries(staffData)) {
+          if (value.name?.toLowerCase() === Name.toLowerCase()) {
+            foundKey = key;
+            foundStaff = value;
+            break;
+          }
+        }
+      //  console.log(foundKey, foundStaff);
+        
+        if (foundStaff && foundKey) {
+          // ✅ Staff found → update lastLogin & role
+          const MyRole = getRole();
+          await update(ref(db, `shops/${shopName}/staff/${foundKey}`), {
+            lastLogin: new Date().toISOString(),
+            role: MyRole
+          });
+          
+          // ✅ LocalStorage save
+          localStorage.setItem('author', Name);
+          localStorage.setItem('role', MyRole);
+          
+          showNotice({
+            title: '🫴',
+            body: `Welcome ${Name} ;)`,
+            type: 'info'
+          });
+          $('.customInput').classList.add('hidden');
+        } else {
+          // ❌ Staff not found
+          showNotice({
+            title: 'Access Denied',
+            body: 'Please request access from the shop owner 🙏',
+            type: 'error'
+          });
+        }
+        
+      } else {
+        showNotice({
+          title: 'Error',
+          body: 'Staff list not found in database ⚠️',
+          type: 'error'
+        });
+      }
+      
+    } catch (error) {
+      console.error(error);
+      showNotice({
+        title: 'Error',
+        body: 'Something went wrong 😔',
+        type: 'error'
+      });
+    }
     
-    showNotice({title: 'Validation Error', body:'Name include minimum 3 charector', type:'error'})
+  } else {
+    showNotice({
+      title: 'Validation Error',
+      body: 'Name must include minimum 3 characters',
+      type: 'error'
+    });
   }
-}
+};
+
 $('.customInput .cancel').onclick=()=> $('.customInput').classList.add('hidden')
 
 
@@ -2573,7 +2635,7 @@ $$('[data-close-sheet]').forEach(btn => {
 //#####################################################################//
 
 // put it down 👇 
-const CURRENT_VERSION = '4.6.0';
+const CURRENT_VERSION = '4.7.0';
 const LAST_VERSION = localStorage.getItem('app_version') || null;
 
 if (LAST_VERSION !== CURRENT_VERSION) {
@@ -2655,5 +2717,16 @@ if (navigator.hardwareConcurrency <= 4) {
 
 
 
+
+
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    console.log("✅ Logged in as:", user.email);
+  } else {
+    console.log("🚪 Logged out");
+    location='./auth/index.html'
+  }
+});
 //
 

@@ -42,6 +42,8 @@ Create, Fix, Add, Implement
 ## 🚧 [Unreleased]
 
 ### TODO 📝
+- ROLE BASED ACCES 
+- LOGIN INCLUDED USER NAME ALSE FOR CHECK AUTHOR OR STAFF FOR ROLES 
 - create tab setup for switch page between**Service page and credit page**
 - Create a page to display **yesterday’s credit information** at today’s app opening time (Reminder of Previous days Task )
 - Restructure the database schema to support *multiple users* and improve scalability
@@ -54,6 +56,49 @@ Create, Fix, Add, Implement
 
 
 ---
+
+
+## [4.7.0] - 2025-10-28
+### 🔐 Authentication
+- ✨ Added Firebase Email/Password Authentication for secure user login.
+- 🧠 Integrated createUserWithEmailAndPassword() for registration flow.
+- 🔁 Linked newly created Firebase user UID to corresponding shop data node.
+- 🧹 Automatically removed plaintext password from stored data after registration.
+- ⚠️ Added validation to prevent duplicate email registration attempts.
+- 🚫 Added fallback alert when an existing email tries to sign up again.
+- 👋 Added personalized welcome notice on successful login.
+
+
+
+---
+
+
+
+### 🧩 Data Management
+- 🧭 Synced Firebase Auth UID with shops/{shopName}/staff node.
+- 📅 Planned support for tracking last login date for staff users (next build).
+
+
+
+---
+
+
+### 💅 UI/UX
+- 🔔 Added dynamic toast notifications (showNotice) for login feedback.
+- 🎨 Improved name input validation and role selection UX.
+
+
+---
+
+### fix(service-edit): preserve original date/time when editing
+- Prevented loss of timestamps on data edit
+- Added snapshot fetch to keep immutable fields
+- Improved UX feedback for edit operation
+
+
+
+---
+
 
 
 ## [4.6.0] - 2025-10-17
