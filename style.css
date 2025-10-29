@@ -178,10 +178,13 @@ html, body {
 }
 
 .mt-2{
-    margin-top: 2rem;
+    margin-top: 2rem !important;
 }
 .mt-1{
-    margin-top: 1rem;
+    margin-top: 1rem !important;
+}
+.mt-05{
+    margin-top: 0.5rem;
 }
 
 .pd-1{
@@ -321,6 +324,9 @@ nav.status-nav{
     grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
     gap: 2rem;
 }
+.list-section .list-item{
+    box-shadow: 0 0 10px rgba(60, 62, 74, 1) !important;
+}
 
 .list .list-item{
     border-radius: 10px;
@@ -367,6 +373,19 @@ li nav{
     top: 0;
     left: 0;
     right: 0;
+}
+h3 .circle{
+    background: var(--accent-glass);
+    color: var(--text-color);
+    padding: 0.5rem;
+    border-radius: 1000px;
+    font-size: 13px;
+    height: 30px;
+    width: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.5rem;
 }
 li nav .flex_center{ 
     display: flex;
@@ -415,7 +434,7 @@ li nav span i{
     resize: none;
     line-height: 1.4;
     min-height: 40px;
-    max-width: 90%;
+    max-width: 100%;
 }
 
 .list-item button.add-note-btn{
@@ -2145,4 +2164,21 @@ input.uppercase{
 .bottom_sheet_overlay.active{
     opacity: 1;
 pointer-events: all;
+}
+
+/*/////////*/
+
+.device_box, .amount_box{
+    background: var(--glass-bg);
+    margin-bottom: 0.5rem;
+    padding: 0.5rem;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+}
+
+button:active, 
+div.status span:active, 
+.status-nav a:active{
+    scale: 0.9;
+    background: var(--accent-color);
 }

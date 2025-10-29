@@ -58,6 +58,28 @@ Create, Fix, Add, Implement
 ---
 
 
+## [4.7.5] - 2025-10-29
+### ✨ UI Enhancements
+- Improved card visual hierarchy (device info → payment info → notes → actions).
+- Add avatar or initials for each customer entry.
+
+
+### 🧠 UX Improvements
+- Introduced logical grouping of financial data for clear readability.
+
+
+### ⚡ Performance & Readability
+- Optimized rendering of service cards for smoother scrolling.
+- Fine-tuned padding and shadow depth for clarity on dark background.
+- search filter improved with model name in inventory management 
+
+
+### 🪲 Bug fixes 
+- App close and open reload fixed
+---
+
+
+
 ## [4.7.0] - 2025-10-28
 ### 🔐 Authentication
 - ✨ Added Firebase Email/Password Authentication for secure user login.

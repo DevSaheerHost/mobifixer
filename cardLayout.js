@@ -16,13 +16,15 @@ export const cardLayout = ({
   devices
 }) => {
   
+
+  
   // ✅ Handle both old and new structures
   let deviceDetails = '';
   const me = localStorage.getItem('author')
 
   if (Array.isArray(devices) && devices.length > 0) {
     deviceDetails = devices.map((d, i) => `
-      <div class='device_box'>
+      <div class='device_box mt-05'>
         <div class='item_flex'>
           <p class='key'>Device ${i + 1}</p>
           <p class='value'>${d.model || '<i>unknown</i>'}</p>
@@ -31,10 +33,11 @@ export const cardLayout = ({
           <p class='key'>Complaints</p>
           <p class='value complaints'>${d.complaints || '<i>none</i>'}</p>
         </div>
-        <div class='item_flex'>
-          <p class='key'>Lock</p>
-          <p class='value'>${d.lock || '<i>none</i>'}</p>
-        </div>
+
+  ${d.lock?`<div class='item_flex end'>
+    <p class='key'>Lock</p>
+    <p class='value'>${d.lock || 'none'}</p>
+  </div>`:''}
       </div>
     `).join('');
   } else {
@@ -51,7 +54,7 @@ export const cardLayout = ({
       </div>
 
       <div class='item_flex'>
-        <p class='key'>Lock</p>
+        <p class='key'>${lock? 'Lock':''}</p>
         <p class='value'>${lock || '<i>none</i>'}</p>
       </div>
     `;
@@ -61,8 +64,8 @@ export const cardLayout = ({
   <div class="box">
     
     <div class='item_flex'>
-      <p class='key'>Number</p>
-      <p class='value'>+91 ${number}</p>
+      <p class='key'>${number}</p>
+      <p class='value'>${date || ''} ${time || ''}</p>
     </div>
     ${altNumber?
       `    <div class='item_flex'>
@@ -74,13 +77,13 @@ export const cardLayout = ({
 
     ${deviceDetails}
 
-    <div class='item_flex'>
-      <p class='key'>Date</p>
-      <p class='value'>${date || ''} ${time || ''}</p>
-    </div>
+
+
+    
+<div class='amount_box'>
 
     <div class='item_flex'>
-      <p class='key'>Approx Rate</p>
+      <p class='key'>Around</p>
       <p class='amount value'>₹${amount ? Number(amount).toLocaleString('en-IN') : ''}</p>
     </div>
 
@@ -96,6 +99,7 @@ export const cardLayout = ({
       <p class='complaints value'>₹${(Number(amount) - Number(advance)).toLocaleString('en-IN')}</p>
     </div>`:''
     }
+    </div>
   </div>
 
   <div class='note-input-wrap'>

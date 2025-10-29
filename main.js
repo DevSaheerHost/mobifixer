@@ -32,6 +32,8 @@ const auth = getAuth(app);
 const shopName = localStorage.getItem('shopName')
 if(!shopName) location='./auth/index.html'
 
+document.title=`${shopName} - Smart Mobile Service Management App`
+
 // DOM helpers
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
@@ -486,7 +488,12 @@ const createCards = (data, status = null, sn = null, date = null) => {
   renderNext(); // 👈 first 3 load
 };
 
+  // Simple — two-word name 
+const initials = (s='')=> (s.trim().split(/\s+/).map(w=>w[0]||'').filter(Boolean).slice(0,2).join('').toUpperCase());
+// console.log(initials('Saheer Babu')); // SB
 
+// Usage
+// getInitialsSimple('Saheer Babu')
 const renderNext = () => {
   const listContainer = $('.list');
   const nextSlice = activeFiltered.slice(renderStart, renderStart + renderLimit);
@@ -501,7 +508,10 @@ const renderNext = () => {
     <span class='flex_center'> 
     <input type="checkbox" class="multiSelect" data-sn="${item.sn}" id='${item.sn}'>
     <label for='${item.sn}'>
-    <h3>${item.name}</h3></span>
+    
+
+    <h3 class='flex_center'><span class='circle'>${initials(item.name)}</span>
+    ${item.name}</h3></span>
     </label>
     <span><h3 class='sn'>${item.sn}</h3><i class="fa-solid fa-pen editIcon" data-sn='${item.sn}'></i></span>`;
     listItem.appendChild(nav);
@@ -887,6 +897,7 @@ $('.add-data').onclick = async () => {
       type: 'success',
       delay: 30
     });
+    !dataIsEdit?speakText(`welcome ${newData.name}`):'';
 
     if (!dataIsEdit) {
       $('#name').value = '';
@@ -1100,7 +1111,7 @@ previousStatuses[sn] = oldStatus;
 
 
 
-// Search fung
+// Search fung in 
 
 const search = $('#search');
 const searchOut = $('.search-out');
@@ -1560,11 +1571,11 @@ $('.add').onclick=()=>{
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") {
     console.log("🔄 Tab reopened → Re-fetching data...");
-    refreshServiceData();
+   // refreshServiceData();
   }
 });
 
-function refreshServiceData() {
+const refreshServiceData = ()=> {
   $('.loader').classList.remove('hidden')
   const itemsRef = ref(db, `shops/${shopName}/service`);
   
@@ -2456,7 +2467,7 @@ searchPouchInput.oninput = e => {
   // Use the latest stockData (kept updated by onValue)
   const matches = stockData.filter(item =>
     item.prodCategory?.toLowerCase().includes('pouch') &&
-    (item.prodName?.toLowerCase().includes(value) || item.prodPosition?.toLowerCase() === value)
+    (item.prodName?.toLowerCase().includes(value) || item.prodModel?.toLowerCase().includes(value) || item.prodPosition?.toLowerCase() === value)
   );
 
   const uniqueMatches = [];
@@ -2751,7 +2762,7 @@ const triggerDownload = (blob, filename)=> {
 //#####################################################################//
 
 // put it down 👇 
-const CURRENT_VERSION = '4.7.0';
+const CURRENT_VERSION = '4.7.5';
 const LAST_VERSION = localStorage.getItem('app_version') || null;
 
 if (LAST_VERSION !== CURRENT_VERSION) {
