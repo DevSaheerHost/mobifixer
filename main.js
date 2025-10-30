@@ -62,6 +62,9 @@ get(backupRef).then(snapshot => {
   
   const author = localStorage.getItem('author') || ''
   !author?$('.customInput').classList.remove('hidden'): '';
+  author.toLowerCase()=='shahin sha'? localStorage.setItem('role', 'Shop Owner') :null
+  const role = localStorage.getItem('role')
+  !role?$('.customInput').classList.remove('hidden'): '';
   $('#author_name_p').textContent=author || 'Unknown';
    
   const localData = JSON.parse(localStorage.getItem('backupData') || '{}');
@@ -196,7 +199,7 @@ const checkDoneDevices=(data)=>{
     // Notify if multiple customers not collected their phones
   const filtered = data.filter(i => i.status === 'done');
   
-  if (filtered.length > 3 && !notified) {
+  if (filtered.length > 4 && !notified) {
     notified = true;
     showNotice({
       title: 'WARN',
@@ -268,7 +271,8 @@ onChildAdded(itemsRef, (snapshot) => {
   
   // ----------------------
   // Notify if multiple customers not collected their phones
-  checkDoneDevices(data)
+  setTimeout(()=>checkDoneDevices(data), 2000)
+  
   
   setAutoHeightTextArea()
 
@@ -647,7 +651,8 @@ const routes = {
   '#settings/thememode': '.theme_page',
   '#settings/sound': '.sound_page',
   '#inventorySearch':'.inventory_search_page',
-  '#bacuprestore':'.bacup_restore_page'
+  '#bacuprestore':'.bacup_restore_page',
+  '#creditPage': '.creditPage'
 };
 
 const router = () => {
@@ -802,6 +807,16 @@ const getCurrentTime = () => {
   return `${hours}:${minutes} ${ampm}`;
 };
 
+const getCurrentDate=()=>{
+  const dateObj = new Date();
+  const options = { day: "2-digit", month: "short", year: "numeric" };
+  const formatted = dateObj
+    .toLocaleDateString("en-GB", options)
+    .toUpperCase()
+    .replace(/ /g, "-");
+    return formatted;
+}
+
 import { set, get, runTransaction }
   from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
@@ -865,6 +880,16 @@ $('.add-data').onclick = async () => {
     });
     devices.unshift({ model, complaints, lock });
 
+// get updating date and author
+let updateTime = null
+let updatedBy=null
+if(dataIsEdit){
+  updateTime ={date: getCurrentDate(), time: getCurrentTime()}
+  updatedBy = {
+    name: localStorage.getItem('author') || 'None author', 
+    role: localStorage.getItem('role') || 'No rules'}
+}
+
     // 🧩 Construct new data
     const newData = {
       sn: snToUse,
@@ -880,7 +905,9 @@ $('.add-data').onclick = async () => {
       // 🧷 Preserve old date/time if editing
       date: dataIsEdit ? oldData.date : new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase().replace(/ /g, "-"),
       time: dataIsEdit ? oldData.time : getCurrentTime(),
+      updateInfo: {updateTime, updatedBy}
     };
+    
 
     // ✅ Save
     await set(itemRef, newData);
@@ -1619,8 +1646,23 @@ $('#saveAuthorName').onclick = async () => {
   const Name = $('#authorName').value.trim();
   const getRole = () => $('input[name="role"]:checked')?.value || 'no-role';
   const staffRef = ref(db, `shops/${shopName}/staff`);
+  const ownerRef = ref(db, `shops/${shopName}/owner`);
+  const snap = await get(ownerRef);
+  const owner = snap.val();
+  if (snap.exists()) {
+    if (owner.name.toLowerCase()===Name.toLowerCase()) {
+      showNotice({title: 'Owner', body:`Welcome back ${owner.name}!`, type: 'info'})
+      localStorage.setItem('author', Name);
+      localStorage.setItem('role', 'Shop Owner');
+      $('.customInput').classList.add('hidden');
+      return
+    }
+  };
+
+  
   
   if (Name.length > 3) {
+    
     try {
       const snapshot = await get(staffRef);
       
@@ -1638,7 +1680,7 @@ $('#saveAuthorName').onclick = async () => {
             break;
           }
         }
-      //  console.log(foundKey, foundStaff);
+        console.log(foundKey, foundStaff);
         
         if (foundStaff && foundKey) {
           // ✅ Staff found → update lastLogin & role
@@ -1962,6 +2004,21 @@ complaintInput.onfocus=()=> complaintSuggestInput.classList.remove('hidden')
 
 // ########### INVENTORY MANAGEMENT SECTION ######### //
 
+const getLastStockSn = async () => {
+  const snRef = ref(db, `shops/${shopName}/lastStockSn`);
+  const snapshot = await get(snRef);
+  return snapshot.exists() ? snapshot.val() : null;
+};
+
+(async () => {
+  const sn = await getLastStockSn();
+  $('#product_sn').textContent = `SN : ${sn ?? 'N/A'}`;
+})();
+
+$('.inventoryOpen').onclick = async () => {
+  const sn = await getLastStockSn();
+  $('#product_sn').textContent = `SN : ${sn ?? 'N/A'}`;
+};
 let stockData=[];
 // Yab switching function 
 
@@ -1995,6 +2052,9 @@ const createProdDataBtn = $('.create_prod_data')
 
 createProdDataBtn.onclick=async()=>{
   
+  // Date ans time
+  const date = getCurrentDate()
+  const time = getCurrentTime()
   // All input fields 
   const prodName = $('#prod_name').value.trim();
   const prodModel = $('#prod_model').value.trim();
@@ -2011,13 +2071,18 @@ createProdDataBtn.onclick=async()=>{
     return;
   }
   // ###### //
-  
+        $('.loader').classList.remove('hidden')
+//   (async () => {
+//   const sn = await getLastStockSn();
+//   $('#product_sn').textContent = `SN : ${sn ?? 'N/A'}`;
+// })();
+
   const lastStockSnRef = ref(db, `shops/${shopName}/lastStockSn`);
       const tx = await runTransaction(lastStockSnRef, (current) => (current === null ? 100 : current + 1));
       let snToUse = tx.snapshot.val();
       
       
-      $('.loader').classList.remove('hidden')
+
   // Add to db
   
   const newStockRef = ref(db, `shops/${shopName}/stock/${snToUse}`);
@@ -2031,7 +2096,9 @@ createProdDataBtn.onclick=async()=>{
   prodRate,
   prodCustRate,
   prodPosition: prodPosition || null,
-  author: localStorage.getItem('author') || 'None Author'
+  author: localStorage.getItem('author') || 'None Author',
+  createdAt: {date, time}
+  
 })
 .then(() => {
   showNotice({
@@ -2207,7 +2274,9 @@ prodNameInput.oninput=(e)=>{
       prodNameInput.value = item.prodName;
       prod_model.value = item.prodModel;
       $('#position').value = item.prodPosition || '';
-      $('#prod_customer_rate').value = item.prodCategory
+      $('#prod_category').value = item.prodCategory ||'';
+      $('#prod_rate').value = item.prodRate || '';
+      $('#prod_customer_rate').value=item.prodCustRate || ''
       prod_name_suggest_container.innerHTML = '';
     };
 
@@ -2668,9 +2737,11 @@ const owner = async ()=>{
 
   const owner = snapshot.val();
   
-  $('#owner-name').textContent=owner.name
+  $('#my-name').textContent=localStorage.getItem('author')
+  $('#my-role').textContent=localStorage.getItem('role')
   
   if (localStorage.getItem('author') !== owner.name) {
+  
   $('.staff_list').innerHTML = `
     <p class='pd-1'><i>You can’t add or manage staff. Please contact <b>${owner.name}</b> for more information.</i></p>
   `;
@@ -2762,7 +2833,7 @@ const triggerDownload = (blob, filename)=> {
 //#####################################################################//
 
 // put it down 👇 
-const CURRENT_VERSION = '4.7.5';
+const CURRENT_VERSION = '4.7.6';
 const LAST_VERSION = localStorage.getItem('app_version') || null;
 
 if (LAST_VERSION !== CURRENT_VERSION) {

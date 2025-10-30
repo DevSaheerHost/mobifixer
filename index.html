@@ -400,10 +400,12 @@
 
 
 <main class="inventory-create-page hidden">
-  <p class="tips hidden">
-    Add new inventory items and keep your stock organized.  
-    (Feature under development)
-  </p>
+<!--   <p class="tips hidden">
+  Add new inventory items and keep your stock organized.  
+  (Feature under development)
+</p> -->
+
+<h3 id="product_sn">SN: </h3>
   
   <div class="input-group">
     <input type="text" name="prod_name" id="prod_name" placeholder="Product Name" class="uppercase">
@@ -487,6 +489,11 @@
 
 
 <main class="changelog-page hidden">
+  <p><i>App Designed and developed by 
+  <b>
+    <a href="https://github.com/DevSaheerHost" target="_blank" style="color: #09a0ff;">SAHEER BABU</a>
+    </b>
+    </i></p>
   <pre id="changelog">
     loading 
   </pre>
@@ -699,10 +706,10 @@ Records & Data</h4>
   
   <ul class="list">
     <li class="list-item">
-    <p id="owner-name"></p>
+    <p id="my-name"></p>
   </li>  
   <li class="list-item">
-    <p>Owner</p>
+    <p id="my-role"></p>
   </li>
   </ul>
   
@@ -864,6 +871,76 @@ Records & Data</h4>
   </div>
 </main>
 
+<main class="creditPage">
+  <header>
+    <h3>MobiFixer</h3>
+    
+    <div class="flex mt-1">
+      <p class="active">CUSTOMERS</p>
+      <p>SUPPLIERS</p>
+    </div>
+    
+    <div class="inoutamount_card flex_around mt-05">
+      <span>
+        <p>You will give</p>
+        <h3 class="amount">₹1,840</h3>
+      </span>
+      
+      <span>
+        <p>You will get</p>
+        <h3 class="amount">₹10,398</h3>
+      </span>
+    </div>
+  </header>
+  
+  
+  <div class="search_customer">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <input type="search" placeholder="Search Customer" id="searchCustomer">
+    
+    <span>
+      <i class="fa-solid fa-filter"></i>
+      <p>Filters</p>
+    </span>
+  </div>
+  
+  <ul class="list">
+    <li class="list-item">
+      <span class="circle"><h3>S</h3></span>
+      <div class="">
+        <p class="name">Sharath</p>
+        <p class="date">7 Days ago</p>
+      </div>
+      <span>
+        <h3>₹ 2,499</h3>
+        <p class="call">CALL ></p>
+      </span>
+    </li>
+    <li class="list-item">
+      <span class="circle"><h3>S</h3></span>
+      <div class="">
+        <p class="name">Sharath</p>
+        <p class="date">7 Days ago</p>
+      </div>
+      <span>
+        <h3>₹ 2,499</h3>
+        <p class="call">CALL ></p>
+      </span>
+    </li>
+        <li class="list-item">
+      <span class="circle"><h3>S</h3></span>
+      <div class="">
+        <p class="name">Sharath</p>
+        <p class="date">7 Days ago</p>
+      </div>
+      <span>
+        <h3>₹ 2,499</h3>
+        <p class="call">CALL ></p>
+      </span>
+    </li>
+<p><i style="color: darkgray;">STILL UNDER DEVELOPMENT... 💻</i></p>
+  </ul>
+</main>
 
 
 <!-- ########## BOTTOM SHEET ########## -->
@@ -876,8 +953,14 @@ Records & Data</h4>
 
 <div class="flex_between mt-2">
   <button class="add_customer" data-close-sheet ><a href="#add">New Entry</a></button>
-  <button class="add_customer" data-close-sheet ><a href="#addInventory">Add Product</a></button>
+  <button class="add_customer inventoryOpen" data-close-sheet ><a href="#addInventory">Add Product</a></button>
   <button class="add_customer" data-close-sheet ><a href="#inventorySearch">Search Product</a></button>
+</div>
+
+<div class="flex_between mt-1">
+  <button class="add_customer" data-close-sheet>
+    <a href="#creditPage">Credits</a>
+  </button>
 </div>
 </div>
 </div>

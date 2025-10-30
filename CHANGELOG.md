@@ -54,7 +54,14 @@ Create, Fix, Add, Implement
 - Add data encryption for data safety
 
 
+---
 
+
+## [4.7.6] - 2025-10-31
+- Enhanced customer card for better readability.
+- bug fixes
+- security improvement.
+- stability improvement 
 ---
 
 

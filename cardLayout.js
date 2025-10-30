@@ -24,7 +24,7 @@ export const cardLayout = ({
 
   if (Array.isArray(devices) && devices.length > 0) {
     deviceDetails = devices.map((d, i) => `
-      <div class='device_box mt-05'>
+      <div class='device_box mt-2'>
         <div class='item_flex'>
           <p class='key'>Device ${i + 1}</p>
           <p class='value'>${d.model || '<i>unknown</i>'}</p>
@@ -63,17 +63,9 @@ export const cardLayout = ({
   return `
   <div class="box">
     
-    <div class='item_flex'>
-      <p class='key'>${number}</p>
-      <p class='value'>${date || ''} ${time || ''}</p>
-    </div>
-    ${altNumber?
-      `    <div class='item_flex'>
-      <p class='key'>Alt Number</p>
-      <p class='value'>+91 ${altNumber}</p>
-    </div>`:''
+  
       
-    }
+    
 
     ${deviceDetails}
 
@@ -100,6 +92,17 @@ export const cardLayout = ({
     </div>`:''
     }
     </div>
+    
+    
+      <div class='item_flex'>
+      <p class='key'>${number}</p>
+      <p class='value'>${date || ''} ${time || ''}</p>
+    </div>
+    ${altNumber?
+      `    <div class='item_flex'>
+      <p class='key'>Alt Number</p>
+      <p class='value'>+91 ${altNumber}</p>
+    </div>`:''}
   </div>
 
   <div class='note-input-wrap'>

@@ -374,7 +374,7 @@ li nav{
     left: 0;
     right: 0;
 }
-h3 .circle{
+.circle{
     background: var(--accent-glass);
     color: var(--text-color);
     padding: 0.5rem;
@@ -2181,4 +2181,98 @@ div.status span:active,
 .status-nav a:active{
     scale: 0.9;
     background: var(--accent-color);
+}
+
+.flex{
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.flex_around{
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+}
+/*######### CREDIT PAGE ########*/
+
+main.creditPage{
+    background: var(--text-color);
+    height: 100vh;
+}
+main.creditPage header{
+    padding-top: 1rem;
+    background: var(--accent-hover) !important;
+    text-align: start;
+}
+.creditPage .flex p{
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 600;
+}
+.creditPage .flex p.active{
+    color: var(--text-color);
+    border-bottom: 2px solid var(--text-color);
+}
+.creditPage .inoutamount_card{
+    background: var(--text-color);
+    padding: 1rem;
+    --text-muted: #6F6F6F;
+    color: var(--text-muted);
+    text-align: center;
+    border-radius: 10px;
+    box-shadow: 0 -3px 5px var(--shadow-color);
+}
+.creditPage .inoutamount_card p{
+    font-size: 13px;
+}
+.creditPage h3{
+    font-weight: 600;
+    font-size: 17px;
+}
+
+.creditPage .search_customer{
+    display: flex;
+    align-items: center;justify-content: space-between;
+    color: var(--text-black);
+    margin-top: 5rem;
+    background: var(--text-color);
+    border-radius: 7px;
+    margin: 1rem;
+    padding: 1rem;
+    gap: 1rem;
+}
+.creditPage .search_customer input{
+    background: transparent;
+    width: auto;
+}
+.creditPage .search_customer i{
+    color: var(--accent-hover);
+    font-size: 26px;
+}
+.creditPage .search_customer span p{
+    color: var(--accent-color);
+    font-size: 13px;
+}
+
+
+.creditPage .list .list-item{
+    border-bottom: 1px solid #C2C2C2;
+    color: var(--text-black);
+    border-radius: 0;
+}
+.creditPage .list-item .circle{
+    background: #E4E4E4;
+    color: var(--text-black);
+}
+.creditPage .list .list-item .name{
+    font-size: var(--font-size-base);
+    font-weight: 600;
+}
+.creditPage .list .list-item .date{
+    color: var(--text-muted);
+    font-size: 13px;
+}
+.creditPage .list .list-item .call{
+    font-size: 10px;
+    color: var(--accent-color);
+    font-weight: 600;
 }
