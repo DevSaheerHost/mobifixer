@@ -176,7 +176,8 @@ if(shopName && shopName.toLowerCase()==='mobifixer') {
 const timerElement = $('#timerElement')
 $('.settings_page .profile_container .name').textContent=shopName;
 $('.profile_page .profile_container .name').textContent=shopName;
-console.log(backupRef)
+
+//console.log(backupRef)
 // in the card section nots textarea size
 const setAutoHeightTextArea=  ()=>{
   document.querySelectorAll(".add-note-input").forEach(area => {
@@ -203,7 +204,7 @@ const checkDoneDevices=(data)=>{
     notified = true;
     showNotice({
       title: 'WARN',
-      body: `${filtered.length} or More Customers have not collected their phones`,
+      body: `${filtered.length} Customers have not collected their phones`,
       type: 'warn',
       delay: 8
     });
@@ -263,7 +264,7 @@ onChildAdded(itemsRef, (snapshot) => {
   const audio = document.getElementById("newSound");
   if (audio) {
     audio.currentTime = 0;
-    audio.play().catch(err => console.log("Audio play blocked:", err));
+    //audio.play().catch(err => console.log("Audio play blocked:", err));
   }
   
   // update last SN
@@ -324,7 +325,7 @@ onChildChanged(itemsRef, (snapshot) => {
   const audio = document.getElementById("update");
   if (audio) {
     audio.currentTime = 0;
-    audio.play().catch(err => console.log("Audio play blocked:", err));
+   // audio.play().catch(err => console.log("Audio play blocked:", err));
   }
 
   //  unseen badge update
@@ -419,7 +420,7 @@ const createCardsyyyy = (data, status, sn) => {
     listItem.appendChild(nav)
     listItem.innerHTML += cardLayout(item);
     listContainer.appendChild(listItem);
-console.log(filtered[i])
+// console.log(filtered[i])
   });
     return
   }
@@ -441,7 +442,7 @@ console.log('card created Line: 250')
   let limit = 50;
 let rendered = 0
 filtered.forEach(item => {
-  console.log(rendered)
+  // console.log(rendered)
   if (rendered >= limit) return;
   rendered++
   const listItem = document.createElement('li');
@@ -1269,7 +1270,7 @@ searchOut.addEventListener("scroll", () => {
 // not calling yet. (this is the notification function )
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js").then(reg => {
-    console.log("Service Worker registered:", reg);
+    // console.log("Service Worker registered:", reg);
     
     notification =(msg) => {
       Notification.requestPermission().then(permission => {
@@ -1555,7 +1556,7 @@ window.onoffline=()=>{
   const audio = document.getElementById("disconnect");
   if (audio) {
     audio.currentTime = 0;
-    audio.play().catch(err => console.log("Audio play blocked:", err));
+ //   audio.play().catch(err => console.log("Audio play blocked:", err));
   }
   location.reload()
 }
@@ -1655,6 +1656,7 @@ $('#saveAuthorName').onclick = async () => {
       localStorage.setItem('author', Name);
       localStorage.setItem('role', 'Shop Owner');
       $('.customInput').classList.add('hidden');
+      location.reload()
       return
     }
   };
@@ -1680,7 +1682,7 @@ $('#saveAuthorName').onclick = async () => {
             break;
           }
         }
-        console.log(foundKey, foundStaff);
+        //console.log(foundKey, foundStaff);
         
         if (foundStaff && foundKey) {
           // ✅ Staff found → update lastLogin & role
@@ -1700,6 +1702,7 @@ $('#saveAuthorName').onclick = async () => {
             type: 'info'
           });
           $('.customInput').classList.add('hidden');
+          location.reload()
         } else {
           // ❌ Staff not found
           showNotice({
@@ -2139,6 +2142,7 @@ inventoryCardContainer.innerHTML=''
 onChildAdded(stockRef, (snapshot) => {
   $('.loader').classList.add('hidden')
   const product = snapshot.val();
+  // console.log(product)
   createInventoryCard(product)
   stockData.push(product)
   
@@ -2181,7 +2185,7 @@ const prod_model = $('#prod_model')
 const prod_model_suggest_container = $('#prod_model_suggest_container')
 
 prod_model.oninput=(e)=>{
-  console.log(stockData)
+  //console.log(stockData)
   const value = e.target.value.trim().toLowerCase();
   prod_model_suggest_container.innerHTML = '';
   if (!value || nameInput.value.length >=2) return;
@@ -2574,7 +2578,7 @@ const updateInventoryPouch = async (option, id, qtyElement) => {
 //$('.loader').classList.remove('hidden')
   const data = snapshot.val();
   let newQty = data.prodQuantity || 0;
-console.log(newQty)
+// console.log(newQty)
   if (option === 'increase') newQty++;
   else if (option === 'decrease') newQty = newQty > 0 ? newQty - 1 : 0;
 
@@ -2740,10 +2744,13 @@ const owner = async ()=>{
   $('#my-name').textContent=localStorage.getItem('author')
   $('#my-role').textContent=localStorage.getItem('role')
   
-  if (localStorage.getItem('author') !== owner.name) {
+$('.settings_page .profile_container .mail').textContent=owner.email || '(null)';
+$('.profile_page .profile_container .mail').textContent=owner.email || '(null)';
+  
+  if (localStorage.getItem('author').toLowerCase() !== owner.name.toLowerCase()) {
   
   $('.staff_list').innerHTML = `
-    <p class='pd-1'><i>You can’t add or manage staff. Please contact <b>${owner.name}</b> for more information.</i></p>
+    <p class='pd-1' style='color: var(--text-muted)'><i>You can’t add or manage staff. Please contact <b>${owner.name}</b> for more information.</i></p>
   `;
 }
 }
@@ -2876,7 +2883,7 @@ onValue(connectedRef, (snap) => {
 
 const infoRef = ref(db, '.info');
 onValue(infoRef, snap => {
-  console.log(snap.val());
+//  console.log(snap.val());
 });
 
 ///
@@ -2899,12 +2906,20 @@ function logStorageStatus() {
   const used = localStorageSize();
   const max = 5 * 1024 * 1024;
   const percent = ((used / max) * 100).toFixed(2);
+  
   console.log(`📦 localStorage used: ${used} bytes (${percent}%)`);
-  $('.percentage_count').textContent=`${percent}%`
-  $('.bacup_restore_page .prog_bar').style.width=`${percent}%`
+const backupData = JSON.parse(localStorage.getItem('backupData') || '{}');
+
+const serviceCount = backupData.service ? Object.keys(backupData.service).length : 0;
+const stockCount = backupData.stock ? backupData.stock.length : 0;
+
+$('.percentage_count').textContent =`${percent}%`;
+  $('.bacup_restore_page .prog_bar').style.width=`${percent}%`;
+//  console.log(backupData)
+$('#customers').textContent=`${serviceCount ||'No'} Clients`;
+$('#stocks').textContent=`${stockCount || 'No'} Items`;
 }
 logStorageStatus()
-
 
 
 // manually online === goOnline(db);
