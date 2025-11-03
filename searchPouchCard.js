@@ -10,6 +10,7 @@ export const searchPouchCard =({prodPosition, prodName, prodCategory, prodModel,
         <span>
           <p>${prodCategory}</p>
           <p>${prodModel}</p>
+          <p>ID: ${sn}</p>
         </span>
         <p class="qty">${prodQuantity} PCS</p>
       </div>

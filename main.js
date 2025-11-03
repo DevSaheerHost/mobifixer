@@ -2747,7 +2747,7 @@ const owner = async ()=>{
 $('.settings_page .profile_container .mail').textContent=owner.email || '(null)';
 $('.profile_page .profile_container .mail').textContent=owner.email || '(null)';
   
-  if (localStorage.getItem('author').toLowerCase() !== owner.name.toLowerCase()) {
+  if (localStorage.getItem('author')?.toLowerCase() !== owner.name.toLowerCase()) {
   
   $('.staff_list').innerHTML = `
     <p class='pd-1' style='color: var(--text-muted)'><i>You can’t add or manage staff. Please contact <b>${owner.name}</b> for more information.</i></p>
@@ -2917,7 +2917,7 @@ $('.percentage_count').textContent =`${percent}%`;
   $('.bacup_restore_page .prog_bar').style.width=`${percent}%`;
 //  console.log(backupData)
 $('#customers').textContent=`${serviceCount ||'No'} Clients`;
-$('#stocks').textContent=`${stockCount || 'No'} Items`;
+$('#stocks').textContent=`${stockCount || 'No'} Stocks`;
 }
 logStorageStatus()
 
