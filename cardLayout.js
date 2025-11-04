@@ -111,12 +111,12 @@ export const cardLayout = ({
   </div>
 
   <div class="status">
-    <span class="${status==='pending'? 'active': ''}">
+    <span class="${status==='pending'? 'active': ''} bt_glass">
       <input type="radio" ${status === 'pending' ? 'checked' : ''} name="status-${sn}" id="pending-${sn}" />
       <label for="pending-${sn}">Pending</label>
     </span>
 
-    <span class="${status==='spare'? 'active': ''}">
+    <span class="${status==='spare'? 'active': ''} bt_glass">
       <input type="radio" ${status === 'spare' ? 'checked' : ''} name="status-${sn}" id="spare-${sn}" />
       <label for="spare-${sn}">Wait for Spare</label>
     </span>
@@ -136,12 +136,12 @@ export const cardLayout = ({
       <label for="collected-${sn}">Collected</label>
     </span>
 
-    <span class="${status==='return'? 'active': ''}">
+    <span class="${status==='return'? 'active': ''} bb_glass">
       <input type="radio" ${status === 'return' ? 'checked' : ''} name="status-${sn}" id="return-${sn}" />
       <label for="return-${sn}">Return</label>
     </span>
 
-      <button class='call-btn' data-num="+91${number}">
+      <button class='call-btn bb_glass' data-num="+91${number}">
       <i class="fa-solid fa-phone"></i>
     </button>
   </div>

@@ -11,7 +11,23 @@ import { onAuthStateChanged, getAuth } from "https://www.gstatic.com/firebasejs/
 import { getDatabase, ref, onChildAdded, onChildChanged, update, query, limitToLast, orderByKey, remove , onValue}
 from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
+const getDateLabel=(dateString) =>{
+  const date = new Date(dateString);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
 
+  const sameDay = (d1, d2) =>
+    d1.getDate() === d2.getDate() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getFullYear() === d2.getFullYear();
+
+  if (sameDay(date, today)) return "Today";
+  if (sameDay(date, yesterday)) return "Yesterday";
+
+  const options = { day: "2-digit", month: "short", year: "numeric" };
+  return date.toLocaleDateString("en-GB", options);
+}
 
 const firebaseConfig = {
   apiKey: "AIzaSyAWQP1HENutTN4cPyMM86norOGMSXDnc2g",
@@ -52,6 +68,10 @@ get(backupRef).then(snapshot => {
     const userName = Main.username || null;
     console.log(email, userName);
   }
+  
+  
+  
+
   
   
   
@@ -502,39 +522,69 @@ const initials = (s='')=> (s.trim().split(/\s+/).map(w=>w[0]||'').filter(Boolean
 const renderNext = () => {
   const listContainer = $('.list');
   const nextSlice = activeFiltered.slice(renderStart, renderStart + renderLimit);
-
+  
+  let lastDateLabel = "";
+  let dateGroups = {}; // 🔹 To count entries per dateLabel
+  
   nextSlice.forEach(item => {
-    const listItem = document.createElement('li');
-    listItem.classList.add('list-item');
-    listItem.setAttribute("data-sn", item.sn);
-
-    const nav = document.createElement('nav');
-    nav.innerHTML = `
-    <span class='flex_center'> 
-    <input type="checkbox" class="multiSelect" data-sn="${item.sn}" id='${item.sn}'>
-    <label for='${item.sn}'>
+    const dateLabel = getDateLabel(item.date);
     
-
-    <h3 class='flex_center'><span class='circle'>${initials(item.name)}</span>
-    ${item.name}</h3></span>
-    </label>
-    <span><h3 class='sn'>${item.sn}</h3><i class="fa-solid fa-pen editIcon" data-sn='${item.sn}'></i></span>`;
+    // Count each date’s entries
+    dateGroups[dateLabel] = (dateGroups[dateLabel] || 0) + 1;
+    
+    // Create new divider if date changes
+    if (dateLabel !== lastDateLabel) {
+      const dateDivider = document.createElement("div");
+      dateDivider.className = "date-divider";
+      dateDivider.dataset.date = dateLabel; // store raw label
+      listContainer.appendChild(dateDivider);
+      lastDateLabel = dateLabel;
+    }
+    
+    // Create list item
+    const listItem = document.createElement("li");
+    listItem.classList.add("list-item");
+    listItem.setAttribute("data-sn", item.sn);
+    
+    const nav = document.createElement("nav");
+    nav.innerHTML = `
+      <span class='flex_center'> 
+        <input type="checkbox" class="multiSelect" data-sn="${item.sn}" id='${item.sn}'>
+        <label for='${item.sn}'>
+          <h3 class='flex_center'><span class='circle'>${initials(item.name)}</span>
+          ${item.name}</h3>
+        </label>
+      </span>
+      <span>
+        <h3 class='sn'>${item.sn}</h3>
+        <i class="fa-solid fa-pen editIcon" data-sn='${item.sn}'></i>
+      </span>
+    `;
     listItem.appendChild(nav);
     listItem.innerHTML += cardLayout(item);
     
-    // delete function 
     listItem.oncontextmenu = (e) => {
-  e.preventDefault();
-  $('.delete_page').classList.remove('hidden');
-  $('.delete_page').dataset.sn = item.sn;
+      e.preventDefault();
+      $(".delete_page").classList.remove("hidden");
+      $(".delete_page").dataset.sn = item.sn;
+    };
+    
+    listContainer.appendChild(listItem);
+  });
+  
+  // 🧮 Update text like "Today, 3 entries"
+  updateDateDividerCounts(listContainer, dateGroups);
+  
+  renderStart += renderLimit;
 };
 
 
-
-    listContainer.appendChild(listItem);
+const updateDateDividerCounts = (container, groups) =>{
+  container.querySelectorAll('.date-divider').forEach(divider => {
+    const date = divider.dataset.date;
+    const count = groups[date] || 0;
+    divider.innerHTML = `<p>${date}, ${count} entries</p>`;
   });
-
-  renderStart += renderLimit;
 }
 $('.delete_page').onclick=e=>{
   if(e.target.matches('main')) e.target.classList.add('hidden')
