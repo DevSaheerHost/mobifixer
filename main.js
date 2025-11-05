@@ -887,10 +887,10 @@ $('.add-data').onclick = async () => {
   const amount = $('#amount').value.trim() || 0;
   const advance = $('#advance').value.trim() || 0;
 
-  if (!$('#sim').checked) {
-    showNotice({ title: 'WARN', body: "Please check the 'SIM and accessories' box before submitting!", type: 'error' });
-    return;
-  }
+  // if (!$('#sim').checked) {
+  //   showNotice({ title: 'WARN', body: "Please check the 'SIM and accessories' box before submitting!", type: 'error' });
+  //   return;
+  // }
   if (!name || !number || !complaints || !model || !status) {
     showNotice({ title: 'Validation Error', body: 'All fields are required!', type: 'error', delay: 10 });
     return;
@@ -975,7 +975,7 @@ if(dataIsEdit){
       type: 'success',
       delay: 30
     });
-    !dataIsEdit?speakText(`welcome ${newData.name}`):'';
+    !dataIsEdit?createAlert():'';
 
     if (!dataIsEdit) {
       $('#name').value = '';
@@ -2947,6 +2947,50 @@ function localStorageSize() {
   }
   return total; // size in bytes
 }
+
+
+
+
+////#######₹####### ALERT PAGE #############
+let scrollY=0
+const createAlert=()=>{
+  const main = document.createElement('main')
+  main.className='alert_page'
+  main.innerHTML=`
+  <div class='card'>
+  <span>
+    <i class="fa-solid fa-sim-card"></i>
+    <h4>SIM CARD </h4>
+  </span>
+  
+  <p>Don’t forget to return the <b>SIM card</b> to the customer</p>
+  <button>Ok</button>
+  </div>
+  `
+  document.body.appendChild(main)
+  
+  $('.alert_page button').onclick=()=>closeAlert()
+  
+  scrollY = window.scrollY;
+  document.body.style.position = 'fixed';
+  document.body.style.top = `-${scrollY}px`;
+  document.body.style.width = '100%';
+} 
+
+createAlert()
+const closeAlert=()=> {
+  document.body.style.position = '';
+  document.body.style.top = '';
+  window.scrollTo(0, scrollY);
+  $('.alert_page').style.opacity=0
+ setTimeout(()=>$('.alert_page').remove(), 700)
+}
+///-----------///
+
+
+
+
+
 
 console.log(`Approx localStorage used: ${localStorageSize()} bytes`);
 
