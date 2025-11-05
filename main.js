@@ -2977,7 +2977,7 @@ const createAlert=()=>{
   document.body.style.width = '100%';
 } 
 
-createAlert()
+//createAlert()
 const closeAlert=()=> {
   document.body.style.position = '';
   document.body.style.top = '';
