@@ -2930,7 +2930,7 @@ const triggerDownload = (blob, filename)=> {
 //#####################################################################//
 
 // put it down 👇 
-const CURRENT_VERSION = '4.7.7';
+const CURRENT_VERSION = '4.8.0';
 const LAST_VERSION = localStorage.getItem('app_version') || null;
 
 if (LAST_VERSION !== CURRENT_VERSION) {
