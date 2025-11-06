@@ -131,6 +131,8 @@ get(backupRef).then(snapshot => {
     type: 'error'
   });
 });
+
+
 const itemsRef = ref(db, `shops/${shopName}/service`)
 
 // first check if folder exists
@@ -514,6 +516,42 @@ const createCards = (data, status = null, sn = null, date = null) => {
 
   renderNext(); // 👈 first 3 load
 };
+
+
+// 🔹 Fetch local data and render immediately
+const loadLocalData = () => {
+  $('.loader').classList.add('hidden');
+
+  // Step 1: Read localStorage
+  const localData = JSON.parse(localStorage.getItem('backupData') || '{}');
+
+  // Step 2: Safely extract array
+  let serviceData = [];
+  if (Array.isArray(localData.service)) {
+    serviceData = localData.service;
+  } else if (localData && typeof localData === 'object') {
+    // If old format saved as object, convert values to array
+    serviceData = Object.values(localData.service || {});
+  }
+
+  // Step 3: Filter valid objects only
+  serviceData = serviceData.filter(
+    item => item && typeof item === "object" && "sn" in item
+  );
+
+  // Step 4: Render
+  if (serviceData.length > 0) {
+   // console.log(`📦 Loaded ${serviceData.length} valid items from localStorage`);
+    createCards(serviceData, 'pending'); // ✅ your existing untouched creator
+  } else {
+    console.log("⚠️ No valid local data found");
+    $(".list").innerHTML = `<li class="empty">No local data found</li>`;
+  }
+};
+
+
+// 🔹 Call it on page load
+document.addEventListener("DOMContentLoaded", loadLocalData);
 
   // Simple — two-word name 
 const initials = (s='')=> (s.trim().split(/\s+/).map(w=>w[0]||'').filter(Boolean).slice(0,2).join('').toUpperCase());

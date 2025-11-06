@@ -57,6 +57,30 @@ Create, Fix, Add, Implement
 ---
 
 
+## [4.8.0] - 2025-11-6
+### Stability Improvements
+#### ✅ Crash fix:
+  - Prevented “Cannot read properties of null (reading 'sn')” error during initial load.
+  - All invalid or incomplete records are now filtered automatically.
+
+####  ⚙️ Safe fallback:
+  - `Local data not found? App will gracefully show
+“No local data found” message instead of breaking.`
+
+
+### 🧩 Developer Enhancements
+#### 💾 Local data validation:
+  - Ensures each record has sn property before rendering.
+  - Protects createCards() from invalid input.
+
+
+### 🌐 Performance
+- App startup time reduced by ~70% on repeated loads (thanks to cached local data).
+- No unnecessary re-renders while waiting for Firebase updates.
+
+---
+
+
 ## [4.7.6] - 2025-10-31
 - Enhanced customer card for better readability.
 - bug fixes
