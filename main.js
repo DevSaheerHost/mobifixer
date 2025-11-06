@@ -3077,3 +3077,41 @@ onAuthStateChanged(auth, (user) => {
 });
 //
 
+
+
+function downloadServiceData() {
+  // 1️⃣ Read from localStorage
+  const localData = JSON.parse(localStorage.getItem("backupData") || "{}");
+
+  // 2️⃣ Extract service array
+  const serviceData = Array.isArray(localData.stock)
+    ? localData.stock
+    : Object.values(localData.stock || {});
+
+  if (!serviceData.length) {
+    alert("⚠️ No service data found in localStorage!");
+    return;
+  }
+
+  // 3️⃣ Prepare JSON content
+  const jsonString = JSON.stringify(serviceData, null, 2); // pretty format
+
+  // 4️⃣ Create a downloadable blob
+  const blob = new Blob([jsonString], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+
+  // 5️⃣ Create and trigger hidden link
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `service_backup_${new Date().toISOString().split("T")[0]}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  // 6️⃣ Clean up
+  URL.revokeObjectURL(url);
+
+  console.log("📦 Service data exported successfully!");
+}
+
+// downloadServiceData()
