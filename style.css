@@ -1827,6 +1827,9 @@ color: var(--text-muted);
   align-self: flex-end;
   
 }
+.low{
+    color: var(--danger-color) !important;
+}
 .inventory_search_page .img_container{
   width: 150px;
 }

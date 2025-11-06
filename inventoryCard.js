@@ -16,13 +16,13 @@ export const inventoryCard = ({ prodName, prodModel, prodCategory, prodQuantity 
     </div>
 
     <div class="middle_container">
-      <h4>${prodName}</h4>
+      <h4 class='${prodQuantity<=2?"low":""}'>${prodName}</h4>
       <div class="category_qty_container">
         <span>
           <p>${prodCategory}</p>
           <p>${prodModel}</p>
         </span>
-        <p class="qty">${prodQuantity} PCS</p>
+        <p class="qty ${prodQuantity<=2?"low":""}">${prodQuantity} PCS</p>
       </div>
     </div>
   `;

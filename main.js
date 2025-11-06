@@ -257,6 +257,8 @@ $('#todayEntry').onclick=()=>{
   filterByDate(data, new Date());
 }
 
+
+
 onChildAdded(itemsRef, (snapshot) => {
   $('.loader').classList.add('hidden')
   const item = snapshot.val();
