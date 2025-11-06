@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MobiFixer SPA</title>
+  <link rel="stylesheet" href="./styles/main.css" />
+  <link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+/>
+</head>
+<body>
+  <div id="app">NO INTERNET 🛜</div>
+
+  <!-- JS entry (module mode must) -->
+  
+  <script type="module">
+  
+    import App from "./src/app.js";
+    window.addEventListener("hashchange", App);
+    window.addEventListener("load", App);
+    
+  </script>
+</body>
+</html>
