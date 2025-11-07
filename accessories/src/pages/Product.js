@@ -5,7 +5,9 @@ import Card from "../components/Card.js";
 import Button from "../ui/Button.js";
 
 export default async function Product() {
+
   const $=s=>document.querySelector(s)
+    $('header .add-product').onclick=()=> Storage.remove("editProduct");
   let products = Storage.get("/", []);
   
   // 🧩 Convert object → array if needed
@@ -109,7 +111,7 @@ populateCategories(products);
             <button class="inc-btn" data-id="${p.sn}">➕</button>
           </div>
 
-          <button class="edit-btn btn mt-2" data-id="${p.sn}">Edit ${p.sn}</button>
+          <button class="edit-btn btn mt-2" data-id="${p.sn}">Edit </button>
         `,
       });
 

@@ -7,7 +7,7 @@ export default function Header() {
       <a href="#home">Home</a>
       <a href="#about">About</a>
       <a href="#product">Product</a>
-      <a href="#add-product">Add Product</a>
+      <a class='add-product' href="#add-product">Add Product</a>
     </nav>
   `;
   return header;

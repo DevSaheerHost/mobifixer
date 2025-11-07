@@ -54,7 +54,9 @@ export default function AddProduct() {
   const cancelBtn = document.createElement("button");
 cancelBtn.textContent = isEditMode?'Cancel Update':'Cancel';
 cancelBtn.className = "cancel-btn";
+cancelBtn.type='button'
 cancelBtn.addEventListener("click", () => {
+  //alert('c')
   Storage.remove("editProduct");
   window.location.hash = "#/products";
 });
