@@ -25,7 +25,27 @@ and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ---
 
 
+## [4.8.9] - 2025-10-7
+### 🧩 Fixes
+- 🧮 Numeric Conversion: Fixed an issue where product quantity (prodQuantity) was treated as a string, causing incorrect increments like “1 → 11”.
+- ✅ Added explicit conversion using Number(p.prodQuantity) to ensure proper arithmetic behavior.
+- 🔒 Prevented negative values with Math.max(0, …) safeguard.
 
+
+### ⚙️ Code Improvement
+- Refined quantity update logic for cleaner, more predictable updates across both local storage and Firebase.
+- Improved data consistency by ensuring all quantity values are stored as numbers.
+
+
+
+### 🧠 Result
+- Increment/decrement buttons now work flawlessly.
+- Quantities remain consistent across UI, local cache, and remote sync.
+- Zero or negative values are safely handled.
+
+
+
+---
 
 
 ## [4.8.7] - 2025-11-07

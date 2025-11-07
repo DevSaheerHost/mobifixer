@@ -104,12 +104,12 @@ populateCategories(products);
           <p>📍 <b>Position:</b> ${p.prodPosition || "-"}</p>
 
           <div class="qty-control">
-            <button class="dec-btn" data-index="${i}">➖</button>
+            <button class="dec-btn" data-id="${p.sn}">➖</button>
             <span class="qty-value">${p.prodQuantity ?? 0}</span>
-            <button class="inc-btn" data-index="${i}">➕</button>
+            <button class="inc-btn" data-id="${p.sn}">➕</button>
           </div>
 
-          <button class="edit-btn btn mt-2" data-index="${i}">Edit</button>
+          <button class="edit-btn btn mt-2" data-id="${p.sn}">Edit ${p.sn}</button>
         `,
       });
 
@@ -138,35 +138,44 @@ populateCategories(products);
 
   // ✏️ Edit Product
   function editProduct(e) {
-    const index = e.target.dataset.index;
-    const selected = products[index];
-    if (!selected) return showToast("Product not found!", "error");
-    Storage.set("editProduct", selected);
-    window.location.hash = "#add-product";
-  }
+  const id = e.target.dataset.id;
+  const selected = products.find(p => p.sn == id);
+  if (!selected) return showToast("Product not found!", "error");
+  Storage.set("editProduct", selected);
+  window.location.hash = "#add-product";
+}
 
   // ➕➖ Update Quantity
-  async function updateQuantity(e, delta) {
-  const index = e.target.dataset.index;
-  const p = products[index];
+async function updateQuantity(e, delta) {
+  const id = e.target.dataset.id; // <-- change index → id
+  const p = products.find(p => p.id == id || p.sn == id);
+
   if (!p) return showToast("Product not found", "error");
 
-  p.prodQuantity = Math.max(0, (p.prodQuantity || 0) + delta);
+  p.prodQuantity = Math.max(0, (Number(p.prodQuantity) || 0) + delta);
   Storage.set("/", products);
 
   try {
-    // ✅ Use the numeric key (like "100") if exists, otherwise skip
-    const id = p.sn || Object.keys(FBDB.cache || {}).find(k => FBDB.cache[k] === p) || null;
-    const path = id ? `/${id}` : `/${index}`;
-
+    const path = `/${p.id || p.sn}`; // ✅ use id or sn as path key
     await FBDB.update(path, { prodQuantity: p.prodQuantity });
+
     showToast(`${p.prodName} → Qty: ${p.prodQuantity}`, "success");
   } catch (err) {
     console.error(err);
     showToast("Failed to sync with Firebase ⚠️", "warning");
   }
 
-  renderProducts(products);
+
+const query = $("#searchInput").value.toLowerCase();
+    const selectedCat = $("#categorySelect").value;
+    const filtered = products.filter((p) => {
+      const nameMatch =
+        (p.prodName?.toLowerCase().includes(query) ||
+          p.prodModel?.toLowerCase().includes(query)) ?? false;
+      const catMatch = selectedCat ? p.prodCategory === selectedCat : true;
+      return nameMatch && catMatch;
+    });
+  renderProducts(filtered);
 }
 
   // 🗂️ Category dropdown
