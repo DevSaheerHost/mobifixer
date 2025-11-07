@@ -100,11 +100,104 @@
 <link rel="stylesheet" href="./styles/main.css">
 </head>
 <body>
-  <div id="app">NO INTERNET 🛜
-  
-  <a href="mobifixer.vercel.app/accessories">GO to HOME page</a>
-  
+  <div id="app">
+  <div class="home">
+  <header class="home-header">
+    <div class="brand">
+      <div class="logo">A</div>
+      <div class="title-group">
+        <h1>Accessories Management</h1>
+        <p class="subtitle">Standalone accessories management app with Firebase realtime sync and simplified inventory control.</p>
+      </div>
+    </div>
+    <nav>
+      <a href="./CHANGELOG.md">View Changelog</a>
+    </nav>
+  </header>  <main class="home-grid">
+    <section class="home-card intro">
+      <h2>Overview</h2>
+      <p>The Accessories Management app allows independent control of accessory inventory, product updates, and stock tracking in a simple and responsive interface.</p><div class="features">
+    <div class="feature">
+      <h4>Realtime Database</h4>
+      <p>Automatic updates across all connected devices using Firebase Realtime Database.</p>
+    </div>
+    <div class="feature">
+      <h4>Inventory Tracking</h4>
+      <p>Manage stock, check low inventory alerts, and perform quick product lookups.</p>
+    </div>
+    <div class="feature">
+      <h4>Smart Operations</h4>
+      <p>Seamless add, edit, and delete functions with fast, modern UI elements.</p>
+    </div>
+    <div class="feature">
+      <h4>Unified Login</h4>
+      <p>Shared authentication with Mobifixer for cross-app access and management.</p>
+    </div>
   </div>
+
+  <div class="actions">
+    <button class="btn primary" onclick="location.href='#products'">Manage Products</button>
+    <button class="btn ghost" onclick="speakPending()">Pending Collections (TTS)</button>
+  </div>
+
+  <h3>Latest Accessories</h3>
+  <table id="products">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Category</th>
+        <th>Stock</th>
+        <th>Price</th>
+      </tr>
+    </thead>
+    <tbody id="productsTbody">
+      <tr><td>USB-C Cable</td><td>Cable</td><td>56</td><td>₹199</td></tr>
+      <tr><td>Bluetooth Headset</td><td>Audio</td><td>34</td><td>₹1499</td></tr>
+      <tr><td>Screen Protector</td><td>Screen</td><td>18</td><td>₹99</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<aside class="home-card status">
+  <div class="status-item">
+    <div>
+      <div class="label">Uncollected Phones</div>
+      <div class="num" id="uncollected">0</div>
+    </div>
+    <span class="meta">Updated now</span>
+  </div>
+
+  <div class="status-item">
+    <div>
+      <div class="label">Total Accessories</div>
+      <div class="num" id="totalAccessories">90</div>
+    </div>
+    <span class="meta">Inventory</span>
+  </div>
+
+  <div class="status-item">
+    <div>
+      <div class="label">Connected Users</div>
+      <div class="num" id="connectedUsers">3</div>
+    </div>
+    <span class="meta">Realtime</span>
+  </div>
+
+  <div class="quick-actions">
+    <button class="btn primary" onclick="location.href='#add'">Add Item</button>
+    <button class="btn ghost" onclick="location.href='#reports'">Reports</button>
+  </div>
+
+  <footer class="footer">
+    Version <strong>4.8.7</strong><br />
+    <a href="./CHANGELOG.md">View changelog</a>
+  </footer>
+</aside>
+
+  </main>
+  </div>
+  </div>
+  
 
   <!-- JS entry (module mode must) -->
   
@@ -117,3 +210,9 @@
   </script>
 </body>
 </html>
+
+
+
+
+
+
