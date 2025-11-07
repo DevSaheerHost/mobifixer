@@ -39,5 +39,3 @@ It provides a simple CRUD (Create, Read, Update, Delete) system for all customer
 
 ---
 
-## Current Version
-**v3.0.0** – Auth added
