@@ -1,42 +1,10 @@
-# 📌 Changelog
+# 📘 Changelog
 
-<!-- 
-### New Features /Additions
-- Add, Create, Implement, Introduce, Integrate, Enable
+All notable changes to this project will be documented in this file.  
+This changelog follows the [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format,  
+and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-### Improvements /Enhancements
-- Improve, Enhance,
-
-Refine, Optimize,
-
-Update, Upgrade
-
-
-### Bug Fixes / Corrections
-- Fix, Correct, Resolve,
-
-Remove, Address, prevent 
-
-
-### Refactoring / Maintenance
-- Refactor, Clean, Reorganize, Simplify, Modularize
-
-
-### Experimental / WIP
-- Prototype, Test, Explore, Experiment, Draft
-
-
-
-Create, Fix, Add, Implement
-
-
- ⚠️ Before Committing- ⚠️ 
- 
- 🚦 Ensure that you Corrected The VERSION CODE on SCRIPT FILE 🚦
--->
-
-
-
+---
 
 
 ## 🚧 [Unreleased]
@@ -55,6 +23,34 @@ Create, Fix, Add, Implement
 
 
 ---
+
+
+
+
+
+## [4.8.7] - 2025-11-07
+### 🚀 New Features
+#### 📱 Separate Accessories App
+- Created a standalone Accessories management app for smoother operation and independent handling.  
+- Full product management: add, edit, delete, and view accessories inventory.  
+- Integrated Firebase support for real-time sync with main system.  
+
+### 🧩 Improvements
+- Streamlined codebase by splitting accessories-related logic from the main Mobifixer app.  
+- Enhanced modularity — easier maintenance and feature expansion in future updates.  
+- UI components restructured for consistent design across both apps.  
+
+### 🐞 Fixes
+- Fixed minor database reference conflicts during app split.  
+- Resolved caching issue where accessories data appeared under main product list.  
+
+### 📦 Notes
+- **Mobifixer** and **Accessories** apps now operate as two distinct modules under the same ecosystem.  
+- Sync and user authentication remain unified for both apps.  
+
+
+----
+
 
 
 ## [4.8.0] - 2025-11-6

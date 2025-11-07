@@ -68,7 +68,7 @@ populateCategories(products);
 
     renderProducts(cleaned);
     populateCategories(cleaned);
-    showToast("✅ Synced with Firebase", "success");
+   // showToast("Synced with Firebase", "success");
   })
   .catch(() => showToast("Offline mode ⚠️", "warning"));
 

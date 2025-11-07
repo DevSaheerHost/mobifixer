@@ -1052,6 +1052,11 @@ pre {
     overflow-x: auto;
   }
   
+  pre a{
+      color: #09a0ff;
+      text-decoration: underline;
+      font-weight: 500;
+  }
   
   #category_search_out{
       padding: 1rem;

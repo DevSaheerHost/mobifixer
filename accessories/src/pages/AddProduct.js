@@ -93,13 +93,13 @@ form.appendChild(cancelBtn);
           product.sn = editData.sn;
           products[index] = product;
         }
-        showToast("✅ Product updated successfully", "success");
+        showToast("Product updated successfully", "success");
       } else {
         // Add mode: new id
         const newId = products.length ? products.length : 0;
         product.sn = newId;
         products.push(product);
-        showToast("✅ Product added successfully", "success");
+        showToast("Product added successfully", "success");
       }
 
       // 💾 Save locally

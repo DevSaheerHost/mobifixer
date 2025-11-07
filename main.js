@@ -226,7 +226,7 @@ const checkDoneDevices=(data)=>{
     notified = true;
     showNotice({
       title: 'WARN',
-      body: `${filtered.length} Customers have not collected their phones`,
+      body: `${filtered.length} customers have not collected their phones.`,
       type: 'warn',
       delay: 8
     });
@@ -2930,7 +2930,7 @@ const triggerDownload = (blob, filename)=> {
 //#####################################################################//
 
 // put it down 👇 
-const CURRENT_VERSION = '4.8.0';
+const CURRENT_VERSION = '4.8.7';
 const LAST_VERSION = localStorage.getItem('app_version') || null;
 
 if (LAST_VERSION !== CURRENT_VERSION) {

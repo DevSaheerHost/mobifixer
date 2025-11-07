@@ -7,6 +7,8 @@ It provides a simple CRUD (Create, Read, Update, Delete) system for all customer
 ---
 
 
+> 📢 **New version information** is available in [CHANGELOG.md](./CHANGELOG.md)
+
 ## Features in v1.3.0
 - Redesigned "Add Customer" button on Home screen
 - Button animates while scrolling

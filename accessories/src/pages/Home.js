@@ -5,7 +5,7 @@ export default function Home() {
   page.className = "home";
 
   const title = document.createElement("h2");
-  title.textContent = "Welcome to Home Page 🏠";
+  title.textContent = "Home";
   page.append(title);
 
   const cards = [
