@@ -27,7 +27,7 @@ export default function AddProduct() {
       <input type="text" name="prodCategory" value="${editData?.prodCategory || ""}" required>
 
       <label>Position</label>
-      <input type="text" name="prodPsition" value="${editData?.prodPsition || ""}">
+      <input type="text" name="prodPosition" value="${editData?.prodPosition || ""}">
 
       <label>Product Price (₹)</label>
       <input type="number" name="prodRate" value="${editData?.prodRate || ""}" required>
