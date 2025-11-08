@@ -1,0 +1,177 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+  <title>Mobifixer Cashbook</title>
+
+  <meta name="title" content="Mobifixer Cashbook — Smart Daily Cash & GPay Tracker for Mobile Service Shops">
+<meta name="description" content="Mobifixer Cashbook helps mobile service shops manage daily income, expenses, and GPay transactions with automatic date-time logs, daily summaries, and live dashboard 📈📉.">
+<meta name="keywords" content="Mobifixer, Cashbook, Mobile Service Shop, Daily Accounts, Cash In, Cash Out, GPay Tracker, Expense Manager, Income Tracker, Shop Management, Firebase App, Malayalam, Kerala, Phone Repair Shop, Business Ledger, Sales Record, Daily Summary, Dashboard">
+
+
+<!-- 🧭 Meta Information -->
+<meta name="author" content="Saheer Babu">
+<meta name="robots" content="index, follow">
+<meta name="revisit-after" content="7 days">
+<meta name="language" content="en">
+<meta name="distribution" content="global">
+<meta name="theme-color" content="#0BA2FF">
+
+
+
+
+<!-- 📱 Mobile Meta -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mobifixer Cashbook">
+<meta name="application-name" content="Mobifixer Cashbook">
+<meta name="format-detection" content="telephone=no">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+<!-- 🧑‍💻 Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://mobifixer.vercel.app/cashbook">
+<meta property="og:title" content="Mobifixer Cashbook — Smart Daily Cash & GPay Tracker for Mobile Service Shops">
+<meta property="og:description" content="A modern web-based cash management system for mobile service shops. Record income, expenses, and GPay with auto date, time & live dashboard.">
+<meta property="og:image" content="https://mobifixer.vercel.app/assets/og-banner.png">
+<meta property="og:site_name" content="Mobifixer Cashbook">
+<meta property="og:locale" content="en_IN">
+
+<!-- 🕊️ Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:url" content="https://mobifixer.vercel.app/">
+<meta name="twitter:title" content="Mobifixer Cashbook — Smart Daily Cash & GPay Tracker">
+<meta name="twitter:description" content="Track cash flow & GPay transactions easily with real-time dashboard and Firebase backup.">
+<meta name="twitter:image" content="https://mobifixer.vercel.app/assets/og-banner.png">
+
+<!-- 🧩 Canonical URL -->
+<link rel="canonical" href="https://mobifixer.vercel.app">
+
+<!-- ⚙️ Favicons -->
+<link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/icon.png">
+<link rel="icon" type="image/png" sizes="16x16" href="./assets/icons/icon.png">
+
+<!-- 🧾 App Schema (SoftwareApplication) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Mobifixer Cashbook",
+  "alternateName": "Mobifixer Shop Cashbook",
+  "operatingSystem": "Web, Android",
+  "applicationCategory": "BusinessApplication, FinanceApplication",
+  "applicationSubCategory": "Cash Management, Expense Tracker",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "INR"
+  },
+  "description": "Mobifixer Cashbook helps mobile service shops manage daily income, expenses, and GPay transactions with auto date-time entry, real-time dashboard, and Firebase backup.",
+  "url": "https://mobifixercashbook.web.app/",
+  "creator": {
+    "@type": "Person",
+    "name": "Saheer Babu",
+    "jobTitle": "Mobile Technician & Web Developer",
+    "url": "https://saheerbabu.vercel.app/"
+  },
+  "screenshot": "https://mobifixer.vercel.app/assets/preview.png",
+  "featureList": [
+    "Daily cash in/out record with auto date & time",
+    "GPay linked transaction tracking",
+    "Opening & closing balance calculation",
+    "Dashboard analytics 📈📉",
+    "Firebase secure backup and sync",
+    "Login via Email authentication"
+  ],
+  "softwareVersion": "1.0.0",
+  "keywords": "Mobifixer Cashbook, mobile service shop cashbook, GPay tracker, shop expense manager, daily income record, Firebase business app, Kerala tech project, Mobifixer, Saheer Babu"
+}
+</script>
+
+<!-- ⚡ Progressive Web App (Optional) -->
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./assets/icons/icon.png">
+
+  
+  <link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+/>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div class="nav">
+    <div class="brand">Mobifixer Cash Book</div>
+    <div id="userArea"></div>
+  </div>  <div class="container" id="app">
+    <!-- login view -->
+    <div id="authView" class="card login-box" style="display:none">
+      <h3>Sign in — Email</h3>
+      <p class="small">Use email to sign-in (new users will be created).</p>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input id="email" placeholder="Email" />
+        <input id="password" placeholder="Password" type="password" />
+        <button id="signInBtn">Sign in</button>
+      </div>
+      <p class="small" style="margin-top:10px">Don't want to create account? Use single-device mode by leaving login and use local save (future).</p>
+    </div><!-- main app -->
+<div id="mainView" style="display:none">
+  <div class="grid">
+    <div>
+      <div class="card">
+        <h3>New entry</h3>
+        <form id="entryForm" class="row">
+          <select id="ioType"><option value="in">IN (Cash In)</option><option value="out">OUT (Cash Out)</option></select>
+          <input id="desc" placeholder="Name: e.g. iPhone 6s battery replacement" style="flex:1" />
+          <input id="amount" placeholder="Amount" type="number" />
+          <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="isGpay" /> GPay</label>
+          <button type="submit">Add</button>
+        </form>
+        <div style="margin-top:10px" class="small muted">Auto date/time recorded. Serial number auto increments per-day.</div>
+      </div>
+
+      <div style="margin-top:12px" class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h3>Entries — <span id="currentDateLabel"></span></h3>
+          <div class="filter">
+            <input type="date" id="selectDate" />
+            <button id="reloadBtn" class="link">Reload</button>
+          </div>
+        </div>
+
+        <div class="entries" id="entriesList" style="margin-top:12px">
+          <!-- entry cards -->
+        </div>
+      </div>
+    </div>
+
+    <aside>
+      <div class="card">
+        <h3>Today summary</h3>
+        <div class="totals">
+          <div class="tot-row"><div class="small">Total IN</div><div id="totalIn">₹0</div></div>
+          <div class="tot-row"><div class="small">Total OUT</div><div id="totalOut">₹0</div></div>
+          <div class="tot-row"><div class="small">Total GPay (IN)</div><div id="totalGpay">₹0</div></div>
+          <div class="tot-row"><div class="small">Net (IN - OUT - GPay)</div><div id="netBal">₹0</div></div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button id="exportCSV">Export CSV</button>
+          <button id="clearDay">Clear Day</button>
+        </div>
+      </div>
+
+      <div style="margin-top:12px" class="card">
+        <h3>Shop-level tools</h3>
+        <div class="small">Filter by date above. This structure stores entries per-day in the DB, easy to aggregate for reports.</div>
+        <div style="margin-top:8px;display:flex;gap:8px">
+          <button id="downloadAll">Download Day CSV</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+  </div>  <!-- Firebase SDKs (use your project config) -->  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>  <script src="./main.js"></script></body>
+</html>

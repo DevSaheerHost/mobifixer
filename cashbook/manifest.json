@@ -1,0 +1,20 @@
+{
+  "name": "Cashbook",
+  "short_name": "Cashbook",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#000",
+  "theme_color": "#0BA2FF",
+  "icons": [
+    {
+      "src": "./assets/icons/icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./assets/icons/icon_home.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

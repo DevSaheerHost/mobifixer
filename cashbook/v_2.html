@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+<!doctype html>
+
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -8,9 +9,9 @@
   <!-- !!!!!!!!!!!!! -->
   
   <!-- 🔰 Primary Meta Tags -->
-<title>Mobifixer – Smart Mobile Service Management App</title>
+  <title>Mobifixer — Shop Cash Book</title>
 <meta name="title" content="Mobifixer – Smart Mobile Service Management App">
-<meta name="description" content="Mobifixer helps mobile repair shops manage customers, track inventory, monitor jobs, and organize expenses — all in one powerful app. Simplify your service business with real-time insights.">
+<meta name="description" content="Mobifixer Cashbook is a smart and modern web-based daily cash tracking system for mobile service shops. Record all cash in, cash out, and GPay transactions automatically with date, time, and running balance. Includes real-time dashboard 📈📉, daily summaries, and professional Firebase backup.">
 
 <!-- 🧭 Meta Information -->
 <meta name="author" content="Saheer Babu">
@@ -67,12 +68,10 @@
     },
     "description": "Maintain inventory, and record expenses efficiently.",
     "url": "https://mobifixer.vercel.app/accessories/",
-"creator": {
-  "@type": "Person",
-  "name": "Saheer Babu",
-  "jobTitle": "Mobile Technician & Web Developer",
-  "url": "https://saheerbabu.vercel.app/"
-},
+    "creator": {
+      "@type": "Person",
+      "name": "Saheer Babu"
+    },
     "screenshot": "https://mobifixer.vercel.app/accessories/preview/screenshort.png",
     "featureList": [
       "Customer management",
@@ -99,123 +98,80 @@
   rel="stylesheet"
   href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
 />
-<link rel="stylesheet" href="./styles/main.css">
+
+  <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-  <div id="app">
-  <div class="home">
-  <header class="home-header">
-    <div class="brand">
-      <div class="logo"></div>
-      <div class="title-group">
-        <h1>Accessories Management</h1>
-        <p class="subtitle">Standalone accessories management app with Realtime sync and simplified inventory control.</p>
+  <div class="nav">
+    <div class="brand">Mobifixer Cash Book</div>
+    <div id="userArea"></div>
+  </div>  <div class="container" id="app">
+    <!-- login view -->
+    <div id="authView" class="card login-box" style="display:none">
+      <h3>Sign in — Email</h3>
+      <p class="small">Use email to sign-in (new users will be created).</p>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input id="email" placeholder="Email" />
+        <input id="password" placeholder="Password" type="password" />
+        <button id="signInBtn">Sign in</button>
+      </div>
+      <p class="small" style="margin-top:10px">Don't want to create account? Use single-device mode by leaving login and use local save (future).</p>
+    </div><!-- main app -->
+<div id="mainView" style="display:none">
+  <div class="grid">
+    <div>
+      <div class="card">
+        <h3>New entry</h3>
+        <form id="entryForm" class="row">
+          <select id="ioType"><option value="in">IN (Cash In)</option><option value="out">OUT (Cash Out)</option></select>
+          <input id="desc" placeholder="Name: e.g. iPhone 6s battery replacement" style="flex:1" />
+          <input id="amount" placeholder="Amount" type="number" />
+          <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="isGpay" /> GPay</label>
+          <button type="submit">Add</button>
+        </form>
+        <div style="margin-top:10px" class="small muted">Auto date/time recorded. Serial number auto increments per-day.</div>
+      </div>
+
+      <div style="margin-top:12px" class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h3>Entries — <span id="currentDateLabel"></span></h3>
+          <div class="filter">
+            <input type="date" id="selectDate" />
+            <button id="reloadBtn" class="link">Reload</button>
+          </div>
+        </div>
+
+        <div class="entries" id="entriesList" style="margin-top:12px">
+          <!-- entry cards -->
+        </div>
       </div>
     </div>
-    <nav>
-      <a href="../CHANGELOG.md">View Changelog</a>
-    </nav>
-  </header>  <main class="home-grid">
-    <section class="home-card intro">
-      <h2>Overview</h2>
-      <p>The Accessories Management app allows independent control of accessory inventory, product updates, and stock tracking in a simple and responsive interface.</p><div class="features">
-    <div class="feature">
-      <h4>Realtime Database</h4>
-      <p>Automatic updates across all connected devices using Firebase Realtime Database.</p>
-    </div>
-    <div class="feature">
-      <h4>Inventory Tracking</h4>
-      <p>Manage stock, check low inventory alerts, and perform quick product lookups.</p>
-    </div>
-    <div class="feature">
-      <h4>Smart Operations</h4>
-      <p>Seamless add, edit, and delete functions with fast, modern UI elements.</p>
-    </div>
-    <div class="feature">
-      <h4>Unified Login</h4>
-      <p>Shared authentication with Mobifixer for cross-app access and management.</p>
-    </div>
+
+    <aside>
+      <div class="card">
+        <h3>Today summary</h3>
+        <div class="totals">
+          <div class="tot-row"><div class="small">Total IN</div><div id="totalIn">₹0</div></div>
+          <div class="tot-row"><div class="small">Total OUT</div><div id="totalOut">₹0</div></div>
+          <div class="tot-row"><div class="small">Total GPay (IN)</div><div id="totalGpay">₹0</div></div>
+          <div class="tot-row"><div class="small">Net (IN - OUT - GPay)</div><div id="netBal">₹0</div></div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button id="exportCSV">Export CSV</button>
+          <button id="clearDay">Clear Day</button>
+        </div>
+      </div>
+
+      <div style="margin-top:12px" class="card">
+        <h3>Shop-level tools</h3>
+        <div class="small">Filter by date above. This structure stores entries per-day in the DB, easy to aggregate for reports.</div>
+        <div style="margin-top:8px;display:flex;gap:8px">
+          <button id="downloadAll">Download Day CSV</button>
+        </div>
+      </div>
+    </aside>
   </div>
+</div>
 
-  <div class="actions">
-    <button class="btn primary" onclick="location.href='#products'">Manage Products</button>
-    
-  </div>
-
-  <h3>Latest Accessories</h3>
-  <table id="products">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Category</th>
-        <th>Stock</th>
-        <th>Price</th>
-      </tr>
-    </thead>
-    <tbody id="productsTbody">
-      <tr><td>USB-C Cable</td><td>Cable</td><td>56</td><td>₹199</td></tr>
-      <tr><td>Bluetooth Headset</td><td>Audio</td><td>34</td><td>₹1499</td></tr>
-      <tr><td>Screen Protector</td><td>Screen</td><td>18</td><td>₹99</td></tr>
-    </tbody>
-  </table>
-</section>
-
-<aside class="home-card status">
-  <div class="status-item">
-    <div>
-      <div class="label">Uncollected Phones</div>
-      <div class="num" id="uncollected">0</div>
-    </div>
-    <span class="meta">Updated now</span>
-  </div>
-
-  <div class="status-item">
-    <div>
-      <div class="label">Total Accessories</div>
-      <div class="num" id="totalAccessories">90</div>
-    </div>
-    <span class="meta">Inventory</span>
-  </div>
-
-  <div class="status-item">
-    <div>
-      <div class="label">Connected Users</div>
-      <div class="num" id="connectedUsers">3</div>
-    </div>
-    <span class="meta">Realtime</span>
-  </div>
-
-  <div class="quick-actions">
-    <button class="btn primary" onclick="location.href='#add'">Add Item</button>
-    <button class="btn ghost" onclick="location.href='#reports'">Reports</button>
-  </div>
-
-
-</aside>
-
-  </main>
-    <footer class="footer" style="margin-top: 1rem;">
-    Version <strong>4.8.7</strong><br />
-    <a href="../CHANGELOG.md">View changelog</a>
-  </footer>
-  </div>
-  </div>
-  
-
-  <!-- JS entry (module mode must) -->
-  
-  <script type="module">
-  
-    import App from "./src/app.js";
-    window.addEventListener("hashchange", App);
-    window.addEventListener("load", App);
-    
-  </script>
-</body>
+  </div>  <!-- Firebase SDKs (use your project config) -->  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>  <script src="./main.js"></script></body>
 </html>
-
-
-
-
-
-

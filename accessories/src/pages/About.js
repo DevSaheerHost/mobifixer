@@ -18,7 +18,7 @@ export default function About() {
 
   const btn = Button({
     label: "Contact Us",
-    onClick: () => showToast("📞 Call us at +91 98765 43210!", "success"),
+    onClick: () => showToast("📞 Call us at +91 75929 49476!", "success"),
   });
   
   

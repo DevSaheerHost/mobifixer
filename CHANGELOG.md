@@ -25,7 +25,9 @@ and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ---
 
 
-## [4.8.9] - 2025-10-7
+# CREATED CASHBOOK APP [2025-11-8]
+
+## [4.8.9] - 2025-11-7
 ### 🧩 Fixes
 - 🧮 Numeric Conversion: Fixed an issue where product quantity (prodQuantity) was treated as a string, causing incorrect increments like “1 → 11”.
 - ✅ Added explicit conversion using Number(p.prodQuantity) to ensure proper arithmetic behavior.

@@ -1,0 +1,83 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mobifixer — Shop Cash Book</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div class="nav">
+    <div class="brand">Mobifixer Cash Book</div>
+    <div id="userArea"></div>
+  </div>  <div class="container" id="app">
+    <!-- login view -->
+    <div id="authView" class="card login-box" style="display:none">
+      <h3>Sign in — Email</h3>
+      <p class="small">Use email to sign-in (new users will be created).</p>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input id="email" placeholder="Email" />
+        <input id="password" placeholder="Password" type="password" />
+        <button id="signInBtn">Sign in</button>
+      </div>
+      <p class="small" style="margin-top:10px">Don't want to create account? Use single-device mode by leaving login and use local save (future).</p>
+    </div><!-- main app -->
+<div id="mainView" style="display:none">
+  <div class="grid">
+    <div>
+      <div class="card">
+        <h3>New entry</h3>
+        <form id="entryForm" class="row">
+          <select id="ioType"><option value="in">IN (Cash In)</option><option value="out">OUT (Cash Out)</option></select>
+          <input id="desc" placeholder="Name: e.g. iPhone 6s battery replacement" style="flex:1" />
+          <input id="amount" placeholder="Amount" type="number" />
+          <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="isGpay" /> GPay</label>
+          <button type="submit">Add</button>
+        </form>
+        <div style="margin-top:10px" class="small muted">Auto date/time recorded. Serial number auto increments per-day.</div>
+      </div>
+
+      <div style="margin-top:12px" class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h3>Entries — <span id="currentDateLabel"></span></h3>
+          <div class="filter">
+            <input type="date" id="selectDate" />
+            <button id="reloadBtn" class="link">Reload</button>
+          </div>
+        </div>
+
+        <div class="entries" id="entriesList" style="margin-top:12px">
+          <!-- entry cards -->
+        </div>
+      </div>
+    </div>
+
+    <aside>
+      <div class="card">
+        <h3>Today summary</h3>
+        <div class="totals">
+          <div class="tot-row"><div class="small">Total IN</div><div id="totalIn">₹0</div></div>
+          <div class="tot-row"><div class="small">Total OUT</div><div id="totalOut">₹0</div></div>
+          <div class="tot-row"><div class="small">Total GPay (IN)</div><div id="totalGpay">₹0</div></div>
+          <div class="tot-row"><div class="small">Net (IN - OUT - GPay)</div><div id="netBal">₹0</div></div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button id="exportCSV">Export CSV</button>
+          <button id="clearDay">Clear Day</button>
+        </div>
+      </div>
+
+      <div style="margin-top:12px" class="card">
+        <h3>Shop-level tools</h3>
+        <div class="small">Filter by date above. This structure stores entries per-day in the DB, easy to aggregate for reports.</div>
+        <div style="margin-top:8px;display:flex;gap:8px">
+          <button id="downloadAll">Download Day CSV</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+  </div>  <!-- Firebase SDKs (project config) -->  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>  <script src="./main.js"></script></body>
+</html>
