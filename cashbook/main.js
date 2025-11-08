@@ -283,7 +283,7 @@ function drawSparkline(container, values, labels){
 (function addDashboardUI(){
   const container = document.querySelector('.container');
   const dashCard = document.createElement('div');
-  dashCard.className = 'card';
+  dashCard.className = 'card dboard';
   dashCard.style.marginBottom='12px';
   dashCard.innerHTML = `
     <h3>Dashboard</h3>
