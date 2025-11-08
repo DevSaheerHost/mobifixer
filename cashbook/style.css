@@ -29,3 +29,18 @@
     .entry.in { border-left: 4px solid #4CAF50; }   /* 💰 cash in - green */
 .entry.out { border-left: 4px solid #F44336; }  /* 💸 cash out - red */
 .entry.gp { background-color: #FFF9C4; border-left-color: #FFD54F; } /* 🟡 gpay */
+
+
+
+*{
+    max-width: 100%;
+}
+
+#signOut.link{
+    color: #2f9cff;
+    background: #fff;
+}
+div.card div{
+    display: flex;
+    flex-wrap: wrap;
+}
