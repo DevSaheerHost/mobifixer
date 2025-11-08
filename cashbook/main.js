@@ -145,6 +145,7 @@
     }
 
     entryForm.addEventListener('submit', async (e)=>{
+      document.querySelector('#addBtn').textContent='Loading...'
       e.preventDefault();
       const t = ioType.value;
       const name = desc.value.trim();
@@ -163,12 +164,15 @@
         userEmail: auth.currentUser ? auth.currentUser.email : 'local'
       });
       // clear
+      document.querySelector('#addBtn').textContent='Add'
       desc.value=''; amount.value=''; isGpay.checked=false;
       loadForDate(dateISO);
     });
 
     selectDate.addEventListener('change', ()=> loadForDate(selectDate.value));
     reloadBtn.addEventListener('click', ()=> loadForDate(selectDate.value));
+
+
 
     // Export CSV for current date
     exportCSV.addEventListener('click', async ()=>{
@@ -318,3 +322,17 @@ function drawSparkline(container, values, labels){
 })();
 
 // ------------------------ END DASHBOARD ------------------------
+
+
+import { ref, onChildAdded } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+
+
+const dataRef = ref(db, "/");
+
+// on child added → reload page
+onChildAdded(dataRef, () => {
+  loadForDate(selectDate.value)
+  document.getElementById('dashThisMonth').click()
+});
+
+document.getElementById('dashThisMonth').click()
