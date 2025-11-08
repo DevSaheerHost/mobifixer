@@ -104,6 +104,7 @@ populateCategories(products);
           <p>🏷️ <b>Sell:</b> ₹${p.prodCustRate ?? 0}</p>
           <p>📁 <b>Category:</b> ${p.prodCategory || "-"}</p>
           <p>📍 <b>Position:</b> ${p.prodPosition || "-"}</p>
+          <p> 🪪<b>ID:</b> ${p.sn || '-'}</p>
 
           <div class="qty-control">
             <button class="dec-btn" data-id="${p.sn}">➖</button>
