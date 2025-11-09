@@ -286,6 +286,7 @@ function drawSparkline(container, values, labels){
   const dashCard = document.createElement('div');
   dashCard.className = 'card dboard';
   dashCard.style.marginBottom='12px';
+  dashCard.style.marginTop='12px'
   dashCard.innerHTML = `
     <h3>Dashboard</h3>
     <div style='display:flex;gap:8px;align-items:center;margin-bottom:8px'>
