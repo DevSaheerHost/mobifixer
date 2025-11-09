@@ -165,6 +165,7 @@
       });
       // clear
       document.querySelector('#addBtn').textContent='Add'
+      document.getElementById('dashThisMonth').click()
       desc.value=''; amount.value=''; isGpay.checked=false;
       loadForDate(dateISO);
     });
@@ -250,7 +251,7 @@ function renderDashboard(dayTotals, aggs){
   `;
 
   // prepare points for line chart (net per day)
-  const nets = dayTotals.map(d=> (d.in - d.out - d.gpay));
+  const nets = dayTotals.map(d=> (d.in - d.out));
   const labels = dayTotals.map(d=>d.date.slice(5)); // MM-DD
   drawSparkline(dashChart, nets, labels);
 }
