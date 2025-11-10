@@ -289,7 +289,7 @@ if (dayTotals.length > 1) {
 // Draw a simple SVG sparkline inside container
 // Draw a dual-line SVG sparkline (Income + Expense)
 function drawSparkline(container, valuesIn, valuesOut, labels){
-const rect = container.getBoundingClientRect();
+  const rect = container.getBoundingClientRect();
   const w = rect.width, pad = 10;
   const h = rect.width * 0.4; // 40%
   const allValues = [...valuesIn, ...valuesOut];
@@ -308,7 +308,6 @@ const rect = container.getBoundingClientRect();
   const gridLines = [];
   const gridH = 4; // horizontal lines
 
-  // horizontal
   for(let i=0;i<=gridH;i++){
     const y = pad + (i * (h - 2*pad) / gridH);
     gridLines.push(`<line x1='${pad}' y1='${y}' x2='${w - pad}' y2='${y}'
@@ -323,14 +322,23 @@ const rect = container.getBoundingClientRect();
   }
 
   // 🔹 SVG BUILD
-  const svg = `
+  let svg = `
   <svg width='${w}' height='${h}' viewBox='0 0 ${w} ${h}' xmlns='http://www.w3.org/2000/svg'>
     <rect x='0' y='0' width='100%' height='100%' fill='transparent'/>
     ${gridLines.join('\n')}
     <path d='${pathIn}' fill='none' stroke='#0BA2FF' stroke-width='2.2' stroke-linejoin='round' stroke-linecap='round'/>
     <path d='${pathOut}' fill='none' stroke='#FF4D4D' stroke-width='2.2' stroke-linejoin='round' stroke-linecap='round'/>
-  </svg>`;
+  `;
 
+  // 🔹 Dots per day (blue for in, red for out)
+  valuesIn.forEach((v,i)=>{
+    svg += `<circle cx='${scaleX(i)}' cy='${scaleY(v)}' r='3' fill='#0BA2FF' />`;
+  });
+  valuesOut.forEach((v,i)=>{
+    svg += `<circle cx='${scaleX(i)}' cy='${scaleY(v)}' r='3' fill='#FF4D4D' />`;
+  });
+
+  svg += `</svg>`;
   container.innerHTML = svg;
 }
 
