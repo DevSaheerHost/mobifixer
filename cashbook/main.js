@@ -288,57 +288,61 @@ if (dayTotals.length > 1) {
 
 // Draw a simple SVG sparkline inside container
 // Draw a dual-line SVG sparkline (Income + Expense)
-function drawSparkline(container, valuesIn, valuesOut, labels){
+function drawSparkline(container, valuesIn, valuesOut, labels) {
+  if (!valuesIn?.length && !valuesOut?.length) return;
+  
+  const len = Math.max(valuesIn.length, valuesOut.length);
+  // ensure same length
+  const safeIn = Array.from({length: len}, (_, i) => valuesIn[i] ?? 0);
+  const safeOut = Array.from({length: len}, (_, i) => valuesOut[i] ?? 0);
+
   const rect = container.getBoundingClientRect();
   const w = rect.width, pad = 10;
   const h = rect.width * 0.4; // 40%
-  const allValues = [...valuesIn, ...valuesOut];
+  const allValues = [...safeIn, ...safeOut];
   const max = Math.max(...allValues, 1);
   const min = Math.min(...allValues, 0);
 
   const scaleY = v => pad + (1 - (v - min)/(max - min || 1))*(h - 2*pad);
-  const scaleX = i => pad + (i * (w - 2*pad) / (valuesIn.length - 1 || 1));
+  const scaleX = i => pad + (i * (w - 2*pad) / (len - 1 || 1));
 
   const makePath = vals => vals.map((v,i)=>`${i===0?'M':'L'} ${scaleX(i)} ${scaleY(v)}`).join(' ');
 
-  const pathIn = makePath(valuesIn);
-  const pathOut = makePath(valuesOut);
+  const pathIn = makePath(safeIn);
+  const pathOut = makePath(safeOut);
 
-  // 🔹 GRID LINES
+  // GRID lines
   const gridLines = [];
-  const gridH = 4; // horizontal lines
-
+  const gridH = 4;
   for(let i=0;i<=gridH;i++){
     const y = pad + (i * (h - 2*pad) / gridH);
     gridLines.push(`<line x1='${pad}' y1='${y}' x2='${w - pad}' y2='${y}'
       stroke='#ccc' stroke-width='1' stroke-dasharray='3,3' />`);
   }
-
-  // vertical — one per day
-  for(let i=0;i<valuesIn.length;i++){
+  for(let i=0;i<len;i++){
     const x = scaleX(i);
     gridLines.push(`<line x1='${x}' y1='${pad}' x2='${x}' y2='${h - pad}'
       stroke='#ddd' stroke-width='1' stroke-dasharray='3,3' />`);
   }
 
-  // 🔹 SVG BUILD
-  let svg = `
+  // dots for each value
+  const dots = [];
+  safeIn.forEach((v,i)=>{
+    dots.push(`<circle cx='${scaleX(i)}' cy='${scaleY(v)}' r='2.8' fill='#0BA2FF'/>`);
+  });
+  safeOut.forEach((v,i)=>{
+    dots.push(`<circle cx='${scaleX(i)}' cy='${scaleY(v)}' r='2.8' fill='#FF4D4D'/>`);
+  });
+
+  const svg = `
   <svg width='${w}' height='${h}' viewBox='0 0 ${w} ${h}' xmlns='http://www.w3.org/2000/svg'>
     <rect x='0' y='0' width='100%' height='100%' fill='transparent'/>
     ${gridLines.join('\n')}
     <path d='${pathIn}' fill='none' stroke='#0BA2FF' stroke-width='2.2' stroke-linejoin='round' stroke-linecap='round'/>
     <path d='${pathOut}' fill='none' stroke='#FF4D4D' stroke-width='2.2' stroke-linejoin='round' stroke-linecap='round'/>
-  `;
+    ${dots.join('\n')}
+  </svg>`;
 
-  // 🔹 Dots per day (blue for in, red for out)
-  valuesIn.forEach((v,i)=>{
-    svg += `<circle cx='${scaleX(i)}' cy='${scaleY(v)}' r='3' fill='#0BA2FF' />`;
-  });
-  valuesOut.forEach((v,i)=>{
-    svg += `<circle cx='${scaleX(i)}' cy='${scaleY(v)}' r='3' fill='#FF4D4D' />`;
-  });
-
-  svg += `</svg>`;
   container.innerHTML = svg;
 }
 

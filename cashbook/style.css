@@ -11,7 +11,13 @@
     input,select{padding:10px;border-radius:8px;border:1px solid #e6e9ef;min-width:0}
     button{background:var(--accent);color:#fff;border:none;padding:10px 12px;border-radius:8px;cursor:pointer}
     .entries{display:flex;flex-direction:column;gap:10px;max-height:58vh;overflow:auto;padding-right:4px}
-    .entry{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:8px;border-left:6px solid transparent}
+    .entry{
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        padding:10px;
+        border-radius:8px 0 8px 0px;
+        border-left:6px solid transparent}
     .entry.in{border-left-color:#10b981}
     .entry.out{border-left-color:#ef4444}
     .meta{display:flex;gap:8px;flex-direction:column}
@@ -32,9 +38,11 @@
     }
     
     
-    .entry.in { border-left: 4px solid #4CAF50; }   /* 💰 cash in - green */
-.entry.out { border-left: 4px solid #F44336; }  /* 💸 cash out - red */
-.entry.gp { background-color: #FFF9C4; border-left-color: #FFD54F; } /* 🟡 gpay */
+    .entry.in { border-left: 4px solid #4CAF50;
+    border-top: 1px solid #4CAF50;
+    }   /* 💰 cash in - green */
+.entry.out { border-left: 4px solid #F44336; border-top: 1px solid #F44336;}  /* 💸 cash out - red */
+.entry.gp { background-color: #FFF9C4; border-left-color: #FFD54F; border-top: 1px solid #FFD54F;} /* 🟡 gpay */
 
 
 
