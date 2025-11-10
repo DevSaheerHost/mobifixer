@@ -235,6 +235,7 @@ async function fetchRangeTotals(startISO, endISO){
   renderDashboard(dayTotals, {aggIn, aggOut, aggG});
 }
 
+
 // Render small stats and mini SVG chart
 function renderDashboard(dayTotals, aggs){
   const dashSummary = document.getElementById('dashSummary');
@@ -254,29 +255,65 @@ function renderDashboard(dayTotals, aggs){
   const nets = dayTotals.map(d=> (d.in - d.out));
   const labels = dayTotals.map(d=>d.date.slice(5)); // MM-DD
   drawSparkline(dashChart, nets, labels);
+  
+  const chartEl = document.querySelector('#dashChart');
+if (dayTotals.length > 1) {
+  drawSparkline(
+    chartEl,
+    dayTotals.map(d => d.in), // blue = income
+    dayTotals.map(d => d.out), // red = expense
+    dayTotals.map(d => d.date)
+  );
+} else {
+  chartEl.innerHTML = "<p style='text-align:center;color:#999;'>Not enough data to plot chart</p>";
+}
 }
 
 // Draw a simple SVG sparkline inside container
-function drawSparkline(container, values, labels){
-  const w = 420, h = 120, pad = 10;
-  let max = Math.max(...values, 1);
-  let min = Math.min(...values, 0);
-  // normalize
-  const pts = values.map((v,i)=>{
-    const x = pad + (i*(w-2*pad)/(values.length-1 || 1));
-    const y = pad + (1 - (v - min)/(max - min || 1))*(h-2*pad);
-    return [x,y];
-  });
-  let path = '';
-  pts.forEach((p,i)=> path += (i===0?`M ${p[0]} ${p[1]}`:` L ${p[0]} ${p[1]}`));
-  // build svg
-  let svg = `<svg width='${w}' height='${h}' viewBox='0 0 ${w} ${h}' xmlns='http://www.w3.org/2000/svg'>
-    <rect x='0' y='0' width='100%' height='100%' fill='transparent' />
-    <path d='${path}' fill='none' stroke='#0BA2FF' stroke-width='2' stroke-linejoin='round' stroke-linecap='round' />
-  `;
-  // points
-  pts.forEach(p=> svg += `<circle cx='${p[0]}' cy='${p[1]}' r='3' />`);
-  svg += `</svg>`;
+// Draw a dual-line SVG sparkline (Income + Expense)
+function drawSparkline(container, valuesIn, valuesOut, labels){
+const rect = container.getBoundingClientRect();
+  const w = rect.width, pad = 10;
+  const h = rect.width * 0.4; // 40%
+  const allValues = [...valuesIn, ...valuesOut];
+  const max = Math.max(...allValues, 1);
+  const min = Math.min(...allValues, 0);
+
+  const scaleY = v => pad + (1 - (v - min)/(max - min || 1))*(h - 2*pad);
+  const scaleX = i => pad + (i * (w - 2*pad) / (valuesIn.length - 1 || 1));
+
+  const makePath = vals => vals.map((v,i)=>`${i===0?'M':'L'} ${scaleX(i)} ${scaleY(v)}`).join(' ');
+
+  const pathIn = makePath(valuesIn);
+  const pathOut = makePath(valuesOut);
+
+  // 🔹 GRID LINES
+  const gridLines = [];
+  const gridH = 4; // horizontal lines
+
+  // horizontal
+  for(let i=0;i<=gridH;i++){
+    const y = pad + (i * (h - 2*pad) / gridH);
+    gridLines.push(`<line x1='${pad}' y1='${y}' x2='${w - pad}' y2='${y}'
+      stroke='#ccc' stroke-width='1' stroke-dasharray='3,3' />`);
+  }
+
+  // vertical — one per day
+  for(let i=0;i<valuesIn.length;i++){
+    const x = scaleX(i);
+    gridLines.push(`<line x1='${x}' y1='${pad}' x2='${x}' y2='${h - pad}'
+      stroke='#ddd' stroke-width='1' stroke-dasharray='3,3' />`);
+  }
+
+  // 🔹 SVG BUILD
+  const svg = `
+  <svg width='${w}' height='${h}' viewBox='0 0 ${w} ${h}' xmlns='http://www.w3.org/2000/svg'>
+    <rect x='0' y='0' width='100%' height='100%' fill='transparent'/>
+    ${gridLines.join('\n')}
+    <path d='${pathIn}' fill='none' stroke='#0BA2FF' stroke-width='2.2' stroke-linejoin='round' stroke-linecap='round'/>
+    <path d='${pathOut}' fill='none' stroke='#FF4D4D' stroke-width='2.2' stroke-linejoin='round' stroke-linecap='round'/>
+  </svg>`;
+
   container.innerHTML = svg;
 }
 

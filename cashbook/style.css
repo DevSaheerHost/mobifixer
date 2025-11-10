@@ -23,7 +23,13 @@
     .link{background:transparent;border:1px solid rgba(255,255,255,0.12);padding:6px 10px;border-radius:8px;color:#2f9cff}
     .card .actions{display:flex;gap:6px}
     .muted{color:var(--muted)}
-    @media(max-width:900px){.grid{grid-template-columns:1fr;}.container{padding:12px}}
+    @media(max-width:900px){
+        .grid{grid-template-columns:1fr;}.container{padding:12px}
+        
+        .card svg{
+    margin-top: -1.5rem;
+}
+    }
     
     
     .entry.in { border-left: 4px solid #4CAF50; }   /* 💰 cash in - green */
@@ -43,4 +49,11 @@
 div.card.dboard div{
     display: flex;
     flex-wrap: wrap;
+}
+
+
+svg {
+  width: 100%;
+  
+  user-select: none;
 }
