@@ -96,45 +96,62 @@
     }
 
     function renderEntries(data){
-      entriesList.innerHTML='';
-      // combine in and out into single array with type and serial
-      const rows = [];
-      ['in','out'].forEach(type=>{
-        const group = data[type] || {};
-        Object.keys(group).forEach(key=>{
-          rows.push({...group[key], _type:type, _key:key});
-        });
-      });
-      // sort by serial number
-      rows.sort((a,b)=> (a.serial||0)-(b.serial||0));
+  entriesList.innerHTML='';
+  const rows = [];
+  ['in','out'].forEach(type=>{
+    const group = data[type] || {};
+    Object.keys(group).forEach(key=>{
+      rows.push({...group[key], _type:type, _key:key});
+    });
+  });
 
-      let totalIn=0,totalOut=0,totalGpay=0;
-      if(rows.length===0){ entriesList.innerHTML='<div class="small muted">No entries for this day.</div>'; }
+  // 🔁 sort by timestamp (latest first)
+  rows.sort((a,b)=> b.ts - a.ts);
 
-      rows.forEach(r=>{
-        const el = document.createElement('div');
-        el.className = `entry ${r._type === 'in' ? 'in' : 'out'}${r.gpay ? ' gp' : ''}`;
-        el.innerHTML = `<div class="meta"><div><strong>#${r.serial} — ${r.name}</strong></div><div class="small">${formatDT(r.ts)} • ${r.userEmail||''}</div></div><div style="text-align:right"><div><strong>₹${Number(r.amount).toLocaleString()}</strong></div><div class="actions small">${r.gpay?'<span>GPay</span>':''} <button data-key='${r._key}' class='deleteBtn'>Delete</button></div></div>`;
-        entriesList.appendChild(el);
-        if(r._type==='in') totalIn += Number(r.amount||0);
-        else totalOut += Number(r.amount||0);
-        if(r.gpay) totalGpay += Number(r.amount||0);
-      });
+  let totalIn=0,totalOut=0,totalGpay=0;
+  if(rows.length===0){ 
+    entriesList.innerHTML='<div class="small muted">No entries for this day.</div>'; 
+    return;
+  }
 
-      totalInEl.textContent = `₹${totalIn.toLocaleString()}`;
-      totalOutEl.textContent = `₹${totalOut.toLocaleString()}`;
-      totalGpayEl.textContent = `₹${totalGpay.toLocaleString()}`;
-      const net = totalIn - totalOut - totalGpay;
-      netBalEl.textContent = `₹${net.toLocaleString()}`;
+  rows.forEach(r=>{
+    const el = document.createElement('div');
+    el.className = `entry ${r._type === 'in' ? 'in' : 'out'}${r.gpay ? ' gp' : ''}`;
+    el.innerHTML = `
+      <div class="meta">
+        <div><strong>${r._type.toUpperCase()} — ${r.name}</strong></div>
+        <div class="small">${formatDT(r.ts)} • ${r.userEmail||''}</div>
+      </div>
+      <div style="text-align:right">
+        <div><strong>₹${Number(r.amount).toLocaleString()}</strong></div>
+        <div class="actions small">
+          ${r.gpay?'<span>GPay</span>':''} 
+          <button data-key='${r._key}' class='deleteBtn'>Delete</button>
+        </div>
+      </div>`;
+    entriesList.appendChild(el);
 
-      // attach delete handlers
-      document.querySelectorAll('.deleteBtn').forEach(btn=>btn.addEventListener('click', async (e)=>{
-        const key = e.target.dataset.key; const type = (await db.ref(dayRoot(currentDate)+`/in/${key}`).get()).exists()? 'in':'out';
-        if(!confirm('Delete entry?')) return;
-        await db.ref(dayRoot(currentDate)+`/${type}/${key}`).remove();
-        loadForDate(currentDate);
-      }));
-    }
+    if(r._type==='in') totalIn += Number(r.amount||0);
+    else totalOut += Number(r.amount||0);
+    if(r.gpay) totalGpay += Number(r.amount||0);
+  });
+
+  totalInEl.textContent = `₹${totalIn.toLocaleString()}`;
+  totalOutEl.textContent = `₹${totalOut.toLocaleString()}`;
+  totalGpayEl.textContent = `₹${totalGpay.toLocaleString()}`;
+  const net = totalIn - totalOut - totalGpay;
+  netBalEl.textContent = `₹${net.toLocaleString()}`;
+
+  document.querySelectorAll('.deleteBtn').forEach(btn=>
+    btn.addEventListener('click', async (e)=>{
+      const key = e.target.dataset.key;
+      const type = (await db.ref(dayRoot(currentDate)+`/in/${key}`).get()).exists()? 'in':'out';
+      if(!confirm('Delete entry?')) return;
+      await db.ref(dayRoot(currentDate)+`/${type}/${key}`).remove();
+      loadForDate(currentDate);
+    })
+  );
+}
 
     // Create serial number (count existing children +1)
     async function nextSerial(dateISO,type){
