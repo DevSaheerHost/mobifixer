@@ -72,32 +72,58 @@ svg {
 
 
 
+
+
+
+
+
+
+
 .chartViewContainer {
   position: fixed;
   inset: 0;
   background: #fff;
-  overflow: auto;
-  z-index: 999;
+  z-index: 9999;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.chartViewContainer h2 {
-  text-align: center;
-  margin: 16px 0;
-  font-size: 20px;
+#chartScrollWrapper {
+  width: 100vw;
+  height: 100vh;
+  transform: rotate(90deg) translateY(-100vh);
+  transform-origin: top left;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 #fullChart {
-  width: 1800px;   /* Big screen width */
-  height: 600px;   /* Big chart height */
-  margin: 0 auto;
-}
-
-.chartScrollWrapper {
-  overflow-x: auto;
-  overflow-y: hidden;
-  width: 100%;
+  width: 100vh;
+  height: 100vw;
+  background: #fff;
+  transform: rotate(90deg) scale(1.8) translateY(5rem) translateX(-1rem);
+  transform-origin: center;
+  margin-top: 7rem;
 }
 
 
+.chartBackBtn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #0BA2FF;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  font-size: 26px;
+  font-weight: bold;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  z-index: 10000;
+}
 
 

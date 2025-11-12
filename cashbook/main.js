@@ -385,12 +385,14 @@ safeOut.forEach((v,i)=>{
   `);
 });
 
-  const svg = `
+  const strokeWidth = Math.max(1, Math.min(window.innerWidth / 200, 10)); // responsive range (1px–3px)
+
+const svg = `
   <svg width='${w}' height='${h}' viewBox='0 0 ${w} ${h}' xmlns='http://www.w3.org/2000/svg'>
     <rect x='0' y='0' width='100%' height='100%' fill='transparent'/>
     ${gridLines.join('\n')}
-    <path d='${pathIn}' fill='none' stroke='#0BA2FF' stroke-width='2.2' stroke-linejoin='round' stroke-linecap='round'/>
-    <path d='${pathOut}' fill='none' stroke='#FF4D4D' stroke-width='2.2' stroke-linejoin='round' stroke-linecap='round'/>
+    <path d='${pathIn}' fill='none' stroke='#0BA2FF' stroke-width='${strokeWidth}' stroke-linejoin='round' stroke-linecap='round'/>
+    <path d='${pathOut}' fill='none' stroke='#FF4D4D' stroke-width='${strokeWidth}' stroke-linejoin='round' stroke-linecap='round'/>
     ${dots.join('\n')}
   </svg>`;
 
@@ -400,66 +402,60 @@ safeOut.forEach((v,i)=>{
 
 function drawSparklineFullscreen(container, valuesIn, valuesOut, labels) {
   if (!valuesIn?.length && !valuesOut?.length) return;
-  
-  const len = Math.max(valuesIn.length, valuesOut.length);
-  // ensure same length
-  const safeIn = Array.from({length: len}, (_, i) => valuesIn[i] ?? 0);
-  const safeOut = Array.from({length: len}, (_, i) => valuesOut[i] ?? 0);
 
-  const rect = container.getBoundingClientRect();
-  const w = rect.width, pad = 10;
-  const h = rect.width * 0.4; // 40%
+  const len = Math.max(valuesIn.length, valuesOut.length);
+  const safeIn = Array.from({ length: len }, (_, i) => valuesIn[i] ?? 0);
+  const safeOut = Array.from({ length: len }, (_, i) => valuesOut[i] ?? 0);
+
+  const svgW = window.innerHeight * 1.8; // landscape width
+  const svgH = window.innerWidth * 0.9;  // proportional height
+  const pad = 40;
+
   const allValues = [...safeIn, ...safeOut];
   const max = Math.max(...allValues, 1);
   const min = Math.min(...allValues, 0);
 
-  const scaleY = v => pad + (1 - (v - min)/(max - min || 1))*(h - 2*pad);
-  const scaleX = i => pad + (i * (w - 2*pad) / (len - 1 || 1));
+  const scaleY = v => pad + (1 - (v - min) / (max - min || 1)) * (svgH - 2 * pad);
+  const scaleX = i => pad + (i * (svgW - 2 * pad) / (len - 1 || 1));
 
-  const makePath = vals => vals.map((v,i)=>`${i===0?'M':'L'} ${scaleX(i)} ${scaleY(v)}`).join(' ');
+  const makePath = vals => vals.map((v, i) => `${i === 0 ? 'M' : 'L'} ${scaleX(i)} ${scaleY(v)}`).join(' ');
 
   const pathIn = makePath(safeIn);
   const pathOut = makePath(safeOut);
 
-  // GRID lines
+  // grid lines
   const gridLines = [];
-  const gridH = 4;
-  for(let i=0;i<=gridH;i++){
-    const y = pad + (i * (h - 2*pad) / gridH);
-    gridLines.push(`<line x1='${pad}' y1='${y}' x2='${w - pad}' y2='${y}'
-      stroke='#ccc' stroke-width='1' stroke-dasharray='3,3' />`);
-  }
-  for(let i=0;i<len;i++){
-    const x = scaleX(i);
-    gridLines.push(`<line x1='${x}' y1='${pad}' x2='${x}' y2='${h - pad}'
-      stroke='#ddd' stroke-width='1' stroke-dasharray='3,3' />`);
+  for (let i = 0; i <= 4; i++) {
+    const y = pad + (i * (svgH - 2 * pad) / 4);
+    gridLines.push(`<line x1='${pad}' y1='${y}' x2='${svgW - pad}' y2='${y}' stroke='#ddd' stroke-dasharray='4,4' />`);
   }
 
-  // dots for each value
+  // dots with values
   const dots = [];
-  safeIn.forEach((v,i)=>{
-  const x = scaleX(i), y = scaleY(v);
-  dots.push(`
-    <circle cx='${x}' cy='${y}' r='3' fill='#0BA2FF'/>
-    <text x='${x}' y='${y - 6}' font-size='10' text-anchor='middle' fill='#0BA2FF'>${v}</text>
-  `);
-});
-safeOut.forEach((v,i)=>{
-  const x = scaleX(i), y = scaleY(v);
-  dots.push(`
-    <circle cx='${x}' cy='${y}' r='3' fill='#FF4D4D'/>
-    <text x='${x}' y='${y - 6}' font-size='10' text-anchor='middle' fill='#FF4D4D'>${v}</text>
-  `);
-});
+  safeIn.forEach((v, i) => {
+    const x = scaleX(i), y = scaleY(v);
+    dots.push(`
+      <circle cx='${x}' cy='${y}' r='6' fill='#0BA2FF'/>
+      <text x='${x}' y='${y - 10}' font-size='24' text-anchor='middle' fill='#0BA2FF' font-weight='bold'>${v}</text>
+    `);
+  });
+  safeOut.forEach((v, i) => {
+    const x = scaleX(i), y = scaleY(v);
+    dots.push(`
+      <circle cx='${x}' cy='${y}' r='6' fill='#FF4D4D'/>
+      <text x='${x}' y='${y - 10}' font-size='24' text-anchor='middle' fill='#FF4D4D' font-weight='bold'>${v}</text>
+    `);
+  });
 
   const svg = `
-  <svg width='${w}' height='${h}' viewBox='0 0 ${w} ${h}' xmlns='http://www.w3.org/2000/svg'>
-    <rect x='0' y='0' width='100%' height='100%' fill='transparent'/>
-    ${gridLines.join('\n')}
-    <path d='${pathIn}' fill='none' stroke='#0BA2FF' stroke-width='2.2' stroke-linejoin='round' stroke-linecap='round'/>
-    <path d='${pathOut}' fill='none' stroke='#FF4D4D' stroke-width='2.2' stroke-linejoin='round' stroke-linecap='round'/>
-    ${dots.join('\n')}
-  </svg>`;
+    <svg width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="0" width="${svgW}" height="${svgH}" fill="transparent"/>
+      ${gridLines.join('\n')}
+      <path d="${pathIn}" fill="none" stroke="#0BA2FF" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="${pathOut}" fill="none" stroke="#FF4D4D" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+      ${dots.join('\n')}
+    </svg>
+  `;
 
   container.innerHTML = svg;
 }
@@ -524,3 +520,15 @@ onChildAdded(dataRef, () => {
 });
 
 document.getElementById('dashThisMonth').click()
+
+
+const chartEl = document.querySelector('#fullChart');
+let zoomLevel = 1;
+
+document.addEventListener('wheel', e => {
+  if (!e.ctrlKey) return; // pinch zoom only
+  e.preventDefault();
+  zoomLevel += e.deltaY * -0.001;
+  zoomLevel = Math.min(Math.max(zoomLevel, 0.5), 3);
+  chartEl.style.transform = `scale(${zoomLevel})`;
+}, { passive: false });
