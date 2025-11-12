@@ -284,6 +284,8 @@ drawSparklineFullscreen(fullscreenChart, nets, labels)
   
     mainView.style.display='none';
     chartView.style.display='block';
+    document.querySelector('.card.dboard').style.display='none';
+    showFullChart(dayTotals)
   }
 if (dayTotals.length > 1) {
   drawSparkline(
@@ -296,6 +298,36 @@ if (dayTotals.length > 1) {
   chartEl.innerHTML = "<p style='text-align:center;color:#999;'>Not enough data to plot chart</p>";
 }
 }
+
+
+// BACK button handler
+document.getElementById('backToMain').addEventListener('click', ()=>{
+  chartView.style.display='none';
+  mainView.style.display='block';
+  document.querySelector('.card.dboard').style.display='block';
+});
+
+// When dashboard chart clicked → open full chart view with same data
+function showFullChart(dayTotals){
+  document.getElementById('chartView').style.display='block';
+  mainView.style.display='none';
+  
+  const fullContainer = document.getElementById('fullChart');
+  fullContainer.innerHTML = "<div>Loading chart...</div>";
+
+  setTimeout(()=>{
+    drawSparkline(fullContainer,
+      dayTotals.map(d=>d.in),
+      dayTotals.map(d=>d.out),
+      dayTotals.map(d=>d.date)
+    );
+  },100);
+}
+
+document.getElementById('backToMain').onclick=()=>{
+  document.getElementById('chartView').style.display='none';
+  mainView.style.display='block';
+};
 
 // Draw a simple SVG sparkline inside container
 // Draw a dual-line SVG sparkline (Income + Expense)

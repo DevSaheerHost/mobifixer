@@ -65,3 +65,39 @@ svg {
   
   user-select: none;
 }
+
+
+
+
+
+
+
+.chartViewContainer {
+  position: fixed;
+  inset: 0;
+  background: #fff;
+  overflow: auto;
+  z-index: 999;
+}
+
+.chartViewContainer h2 {
+  text-align: center;
+  margin: 16px 0;
+  font-size: 20px;
+}
+
+#fullChart {
+  width: 1800px;   /* Big screen width */
+  height: 600px;   /* Big chart height */
+  margin: 0 auto;
+}
+
+.chartScrollWrapper {
+  overflow-x: auto;
+  overflow-y: hidden;
+  width: 100%;
+}
+
+
+
+
