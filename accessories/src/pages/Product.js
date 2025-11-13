@@ -114,6 +114,11 @@ populateCategories(products);
 
           <button class="edit-btn btn mt-2" data-id="${p.sn}">Edit </button>
         `,
+        button:null
+        ,
+        
+        classN:p.prodCategory.toLowerCase()==='pouch'?'pouch':null
+        
       });
 
       if (p.imageUrl) {

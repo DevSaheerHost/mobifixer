@@ -238,3 +238,9 @@ nav a:hover {
 @keyframes fadeOut {
   to { opacity: 0; transform: translateX(30px); }
 }
+
+
+.card.pouch{
+  border: 1px solid #34A853;
+  background: #F7FFF9;
+}

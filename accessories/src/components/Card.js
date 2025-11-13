@@ -2,9 +2,10 @@
 
 import Button from "../ui/Button.js";
 
-export default function Card({ title, content, button }) {
+export default function Card({ title, content, button, classN }) {
   const div = document.createElement("div");
   div.className = "card";
+  classN?div.classList.add(classN):null
 
   const h3 = document.createElement("h3");
   h3.textContent = title;
@@ -19,4 +20,4 @@ export default function Card({ title, content, button }) {
   }
 
   return div;
-}
+} 
