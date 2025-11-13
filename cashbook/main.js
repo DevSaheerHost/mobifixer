@@ -25,6 +25,7 @@
     const signInBtn = document.getElementById('signInBtn');
 
     const entryForm = document.getElementById('entryForm');
+    const entryFormOut = document.getElementById('entryFormOut');
     const ioType = document.getElementById('ioType');
     const desc = document.getElementById('desc');
     const amount = document.getElementById('amount');
