@@ -127,3 +127,6 @@ svg {
 }
 
 
+#clearDay, .deleteBtn{
+    background: #ef4444;
+}
