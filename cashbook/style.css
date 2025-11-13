@@ -127,6 +127,21 @@ svg {
 }
 
 
-#clearDay, .deleteBtn{
+#clearDay{
     background: #ef4444;
+}
+
+.deleteBtn{
+    background: #fff;
+    color: #ef4444;
+    border: 1px solid #ffcdd2;
+    font-weight: 600;
+}
+
+.gpay{
+    font-size: 20px;
+}
+.gpay.big{
+    font-size: 40px;
+    color: #34A853;
 }

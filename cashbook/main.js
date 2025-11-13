@@ -24,9 +24,9 @@
     const passInput = document.getElementById('password');
     const signInBtn = document.getElementById('signInBtn');
 
-    const entryForm = document.getElementById('entryForm');
+    const entryForm = document.getElementById('entryFormIn');
     const entryFormOut = document.getElementById('entryFormOut');
-    const ioType = document.getElementById('ioType');
+    const ioType = 'h'
     const desc = document.getElementById('desc');
     const amount = document.getElementById('amount');
     const isGpay = document.getElementById('isGpay');
@@ -126,8 +126,8 @@
       </div>
       <div style="text-align:right">
         <div><strong>₹${Number(r.amount).toLocaleString()}</strong></div>
-        <div class="actions small">
-          ${r.gpay?'<span>GPay</span>':''} 
+        <div class="actions gpay">
+          ${r.gpay?'<span><i class="fa-brands fa-google-pay"></i></span>':''} 
           <button data-key='${r._key}' class='deleteBtn'>Delete</button>
         </div>
       </div>`;
@@ -166,8 +166,9 @@
     entryForm.addEventListener('submit', async (e)=>{
       document.querySelector('#addBtn').textContent='Loading...'
       e.preventDefault();
-      const t = ioType.value;
-      const name = desc.value.trim();
+      const t = 'in';
+      const name = entryForm.querySelector('#desc').value.trim();
+      const amount = entryForm.querySelector('#amount');
       const amt = Number(amount.value);
       const g = isGpay.checked;
       if(!name || !amt) return alert('Name and amount required');
@@ -184,6 +185,35 @@
       });
       // clear
       document.querySelector('#addBtn').textContent='Add'
+      document.getElementById('dashThisMonth').click()
+      desc.value=''; amount.value=''; isGpay.checked=false;
+      loadForDate(dateISO);
+    });
+    
+    
+    entryFormOut.addEventListener('submit', async (e)=>{
+      entryFormOut.querySelector('#addBtn').textContent='Loading...'
+      e.preventDefault();
+      const desc = entryFormOut.querySelector('#desc')
+      const amount = entryFormOut.querySelector('#amount');
+      const t = 'out';
+      const name = desc.value.trim();
+      const amt = Number(amount.value);
+      const g = false;
+      if(!name || !amt) return alert('Name and amount required');
+      const dateISO = selectDate.value || isoDate(new Date());
+      const s = await nextSerial(dateISO,t);
+      const nodeRef = db.ref(dayRoot(dateISO)+`/${t}`).push();
+      await nodeRef.set({
+        serial: s,
+        name,
+        amount: amt,
+        gpay: g,
+        ts: Date.now(),
+        userEmail: auth.currentUser ? auth.currentUser.email : 'local'
+      });
+      // clear
+      entryFormOut.querySelector('#addBtn').textContent='Add'
       document.getElementById('dashThisMonth').click()
       desc.value=''; amount.value=''; isGpay.checked=false;
       loadForDate(dateISO);

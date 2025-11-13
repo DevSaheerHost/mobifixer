@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
   <title>Mobifixer Cashbook</title>
-
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <meta name="title" content="Mobifixer Cashbook — Smart Daily Cash & GPay Tracker for Mobile Service Shops">
 <meta name="description" content="Mobifixer Cashbook helps mobile service shops manage daily income, expenses, and GPay transactions with automatic date-time logs, daily summaries, and live dashboard 📈📉.">
 <meta name="keywords" content="Mobifixer, Cashbook, Mobile Service Shop, Daily Accounts, Cash In, Cash Out, GPay Tracker, Expense Manager, Income Tracker, Shop Management, Firebase App, Malayalam, Kerala, Phone Repair Shop, Business Ledger, Sales Record, Daily Summary, Dashboard">
@@ -127,19 +127,21 @@
   <div class="grid">
     <div>
       <div class="card" style="border: 2px solid #4CAF50; background: #FCFFFC;">
-        <h3 style="color: #4CAF50;">Add income</h3>
-        <form id="entryForm" class="row">
-          <select id="ioType"><option value="in">IN (Cash In)</option><option value="out">OUT (Cash Out)</option></select>
-          <input id="desc" placeholder="Name: e.g. iPhone 6s battery replacement" style="flex:1" />
-          <input id="amount" placeholder="Amount" type="number" />
-          <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="isGpay" /> GPay</label>
+        <h3 style="color: #4CAF50;">Add Income</h3>
+        <form id="entryFormIn" class="row">
+
+          <input id="desc" placeholder="Name: e.g. iPhone 6s battery replacement" style="flex:1; min-width: 30%;"  />
+          <input id="amount" placeholder="Amount" type="number"  />
+          <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="isGpay" /> 
+          <i class="fa-brands fa-google-pay gpay big"></i>
+          </label>
           <button type="submit" id="addBtn">Add</button>
         </form>
         <div style="margin-top:10px" class="small muted">Auto date/time recorded. Serial number auto increments per-day.</div>
       </div>
       
       
-            <div class="card" style="margin-top:12px; border: 2px solid #F44336;;" >
+            <div class="card" style="margin-top:12px; border: 2px solid #F44336;" >
         <h3 style="color: #F44336;">Add Expense</h3>
         <form id="entryFormOut" class="row">
 
