@@ -86,23 +86,27 @@ form.appendChild(cancelBtn);
 
       // 🔢 Load existing products
       let products = Storage.get("/", []);
+
       if (!Array.isArray(products)) products = Object.values(products || {});
 
-      if (isEditMode) {
-        // Edit mode: retain same id
-        const index = products.findIndex((p) => p.sn === editData.sn);
-        if (index >= 0) {
-          product.sn = editData.sn;
-          products[index] = product;
-        }
-        showToast("Product updated successfully", "success");
-      } else {
-        // Add mode: new id
-        const newId = products.length ? products.length : 0;
-        product.sn = newId;
-        products.push(product);
-        showToast("Product added successfully", "success");
-      }
+if (isEditMode) {
+  // Edit mode: retain same id
+  const index = products.findIndex((p) => p.sn === editData.sn);
+  if (index >= 0) {
+    product.sn = editData.sn;
+    products[index] = product;
+  }
+  showToast("Product updated successfully", "success");
+} else {
+  // Add mode: generate unique incremental ID
+  const maxId = products.length
+    ? Math.max(...products.map((p) => Number(p.sn) || 0))
+    : 0;
+  const newId = maxId + 1;
+  product.sn = newId;
+  products.push(product);
+  showToast("Product added successfully", "success");
+}
 
       // 💾 Save locally
       Storage.set("/", products);
