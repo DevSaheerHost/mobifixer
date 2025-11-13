@@ -164,7 +164,6 @@
     }
 
     entryForm.addEventListener('submit', async (e)=>{
-      document.querySelector('#addBtn').textContent='Loading...'
       e.preventDefault();
       const t = 'in';
       const name = entryForm.querySelector('#desc').value.trim();
@@ -172,6 +171,7 @@
       const amt = Number(amount.value);
       const g = isGpay.checked;
       if(!name || !amt) return alert('Name and amount required');
+      document.querySelector('#addBtn').textContent='Loading...'
       const dateISO = selectDate.value || isoDate(new Date());
       const s = await nextSerial(dateISO,t);
       const nodeRef = db.ref(dayRoot(dateISO)+`/${t}`).push();
@@ -192,7 +192,7 @@
     
     
     entryFormOut.addEventListener('submit', async (e)=>{
-      entryFormOut.querySelector('#addBtn').textContent='Loading...'
+      
       e.preventDefault();
       const desc = entryFormOut.querySelector('#desc')
       const amount = entryFormOut.querySelector('#amount');
@@ -201,6 +201,7 @@
       const amt = Number(amount.value);
       const g = false;
       if(!name || !amt) return alert('Name and amount required');
+      entryFormOut.querySelector('#addBtn').textContent='Loading...'
       const dateISO = selectDate.value || isoDate(new Date());
       const s = await nextSerial(dateISO,t);
       const nodeRef = db.ref(dayRoot(dateISO)+`/${t}`).push();
@@ -539,27 +540,48 @@ function drawSparklineFullscreen(container, valuesIn, valuesOut, labels) {
 // ------------------------ END DASHBOARD ------------------------
 
 
-import { ref, onChildAdded } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
-
+import { ref, onChildAdded, onChildChanged, onChildRemoved } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
 const dataRef = ref(db, "/");
 
-// on child added → reload page
-onChildAdded(dataRef, () => {
-  loadForDate(selectDate.value)
-  document.getElementById('dashThisMonth').click()
-});
+// simple toast function
+function showToast(msg) {
+  let toast = document.createElement("div");
+  toast.textContent = msg;
+  toast.style.position = "fixed";
+  toast.style.bottom = "2rem";
+  toast.style.left = "50%";
+  toast.style.transform = "translateX(-50%)";
+  toast.style.background = "#fff";
+  toast.style.color = "#34A853";
+  toast.style.padding = "0.8rem 1.6rem";
+  toast.style.borderRadius = "2rem";
+  toast.style.boxShadow = "0 4px 20px rgba(0,0,0,0.2)";
+  toast.style.fontWeight = "500";
+  toast.style.fontSize='13px';
+  toast.style.zIndex = "9999";
+  toast.style.opacity = "0";
+  toast.style.transition = "opacity 0.3s ease";
+  document.body.appendChild(toast);
 
-document.getElementById('dashThisMonth').click()
+  requestAnimationFrame(() => {
+    toast.style.opacity = "1";
+  });
 
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
 
-const chartEl = document.querySelector('#fullChart');
-let zoomLevel = 1;
+// reload + toast
+function refreshDashboard(type) {
+  loadForDate(selectDate.value);
+  document.getElementById("dashThisMonth").click();
+  showToast(`${type}`);
+}
 
-document.addEventListener('wheel', e => {
-  if (!e.ctrlKey) return; // pinch zoom only
-  e.preventDefault();
-  zoomLevel += e.deltaY * -0.001;
-  zoomLevel = Math.min(Math.max(zoomLevel, 0.5), 3);
-  chartEl.style.transform = `scale(${zoomLevel})`;
-}, { passive: false });
+// realtime watchers
+onChildAdded(dataRef, () => refreshDashboard("New entry Added"));
+onChildChanged(dataRef, () => refreshDashboard("Updated"));
+onChildRemoved(dataRef, () => refreshDashboard("Deletion"));

@@ -140,8 +140,9 @@ svg {
 
 .gpay{
     font-size: 20px;
+    color: #34A853;
 }
 .gpay.big{
     font-size: 40px;
-    color: #34A853;
+    
 }
