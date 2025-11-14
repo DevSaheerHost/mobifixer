@@ -168,7 +168,7 @@ function linePath(values) {
       path.style.strokeDashoffset = len;
       // force reflow
       path.getBoundingClientRect();
-      path.style.transition = "stroke-dashoffset 900ms cubic-bezier(.2,.8,.2,1)";
+      path.style.transition = "stroke-dashoffset 3000ms cubic-bezier(.2,.8,.2,1)";
       path.style.strokeDashoffset = "0";
     } catch (err) {
       // some browsers might fail; ignore
@@ -374,3 +374,34 @@ function enableZoom(svg, opts = {}) {
     };
   }
 }
+
+
+
+// Auto set
+
+function setDefaultDates() {
+  const startInput = document.getElementById("startDate");
+  const endInput = document.getElementById("endDate");
+
+  const today = new Date();
+
+  // Start date = first day of current month
+  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+
+  // End date = today + 1 day
+  const nextDay = new Date(today);
+  nextDay.setDate(nextDay.getDate() + 1);
+
+  // Convert to yyyy-mm-dd
+  const toInputFormat = (d) => d.toISOString().split("T")[0];
+
+  startInput.value = toInputFormat(firstDay);
+  endInput.value = toInputFormat(nextDay);
+  
+  document.getElementById("loadBtn").onclick()
+}
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  setDefaultDates();
+});
