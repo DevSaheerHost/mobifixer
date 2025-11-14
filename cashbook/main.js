@@ -400,13 +400,41 @@ function drawSparkline(container, valuesIn, valuesOut, labels) {
       stroke='#ddd' stroke-width='1' stroke-dasharray='3,3' />`);
   }
 
-  // dots for each value
-  const dots = [];
-  safeIn.forEach((v,i)=>{
+// dots for each value
+const dots = [];
+safeIn.forEach((v, i) => {
   const x = scaleX(i), y = scaleY(v);
+
+  const textWidth = String(v).length * 6;   // auto width
+  const rectX = x - textWidth / 2 - 4;      // padding
+  const rectY = y - 17;                     // top pos
+  const rectW = textWidth + 8;              // padding left+right
+  const rectH = 14;                         // height
+
   dots.push(`
+    <!-- background -->
+    <rect 
+      x='${rectX}' 
+      y='${rectY}' 
+      width='${rectW}' 
+      height='${rectH}' 
+      fill='#E8EAFF'
+      rx='3'
+    />
+
+    <!-- dot -->
     <circle cx='${x}' cy='${y}' r='3' fill='#0BA2FF'/>
-    <text x='${x}' y='${y - 6}' font-size='10' text-anchor='middle' fill='#0BA2FF'>${v}</text>
+
+    <!-- text -->
+    <text 
+      x='${x}' 
+      y='${y - 6}' 
+      font-size='10' 
+      text-anchor='middle' 
+      fill='#0BA2FF'
+    >
+      ${v}
+    </text>
   `);
 });
 safeOut.forEach((v,i)=>{
@@ -585,3 +613,13 @@ function refreshDashboard(type) {
 onChildAdded(dataRef, () => refreshDashboard("New entry Added"));
 onChildChanged(dataRef, () => refreshDashboard("Updated"));
 onChildRemoved(dataRef, () => refreshDashboard("Deletion"));
+
+
+// Auto add common items
+
+const outDesc = entryFormOut.querySelector('#desc')
+outDesc.oninput=e=>{
+  if (outDesc.value.trim('').toLowerCase()==='kuri') {
+    entryFormOut.querySelector('#amount').value = 200;
+  }else entryFormOut.querySelector('#amount').value = '';
+}
