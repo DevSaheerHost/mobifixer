@@ -82,6 +82,7 @@ svg {
 .chartViewContainer {
   position: fixed;
   inset: 0;
+  
   background: #fff;
   z-index: 9999;
   overflow: hidden;
@@ -118,7 +119,7 @@ svg {
   color: white;
   border: none;
   border-radius: 50%;
-  width: 60px;
+  width: fit-content;
   height: 60px;
   font-size: 26px;
   font-weight: bold;

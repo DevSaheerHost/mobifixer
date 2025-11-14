@@ -1,0 +1,51 @@
+body {
+  background: #E8EAFF;
+  padding: 20px;
+  margin: 0;
+  font-family: system-ui, sans-serif;
+}
+
+.dash-container {
+  max-width: 900px;
+  margin: auto;
+}
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.picker {
+  display: flex;
+  gap: 10px;
+}
+
+button {
+  background: #0BA2FF;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 15px;
+}
+
+.chart-card {
+  background: white;
+  padding: 20px;
+  border-radius: 18px;
+  box-shadow: 0 5px 20px #0001;
+}
+
+#chartBox {
+  margin-top: 20px;
+  overflow-x: auto;
+  cursor: grab;
+}
+
+svg {
+  border-radius: 8px;
+  user-select: none;
+  background: white;
+}
