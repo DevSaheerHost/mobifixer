@@ -148,14 +148,78 @@ function linePath(values) {
   svg += `<path d="${pathOut}" fill="none" stroke="#FF4D4D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="line-path out-line"/>`;
 
   // dots & small labels
-  income.forEach((v, i) => {
-    const x = scaleX(i), y = scaleY(v);
-    svg += `<circle cx="${x}" cy="${y}" r="4" fill="#0BA2FF"/><text x="${x}" y="${y - 10}" font-size="11" text-anchor="middle" fill="#0BA2FF">${v}</text>`;
-  });
-  expense.forEach((v, i) => {
-    const x = scaleX(i), y = scaleY(v);
-    svg += `<circle cx="${x}" cy="${y}" r="4" fill="#FF4D4D"/><text x="${x}" y="${y - 10}" font-size="11" text-anchor="middle" fill="#FF4D4D">${v}</text>`;
-  });
+  // ---------- income labels with background ----------
+income.forEach((v, i) => {
+  const x = scaleX(i), y = scaleY(v);
+
+  const label = String(v);
+  const paddingX = 6;
+  const paddingY = 3;
+
+  // approximate width by characters × 7px
+  const textWidth = label.length * 7;
+  const boxX = x - textWidth/2 - paddingX;
+  const boxY = y - 22;
+
+  svg += `
+    <rect 
+      x="${boxX}" 
+      y="${boxY}" 
+      width="${textWidth + paddingX*2}" 
+      height="18" 
+      rx="4" ry="4" 
+      fill="rgba(11,162,255,0.12)"
+      stroke="#0BA2FF"
+      stroke-width="0.8"
+    />
+    <text 
+      x="${x}" 
+      y="${boxY + 13}" 
+      font-size="11" 
+      text-anchor="middle" 
+      fill="#0BA2FF"
+    >${v}</text>
+
+    <circle cx="${x}" cy="${y}" r="4" fill="#0BA2FF"/>
+  `;
+});
+
+// ---------- expense labels with background ----------
+expense.forEach((v, i) => {
+  const x = scaleX(i), y = scaleY(v);
+
+  const label = String(v);
+  const paddingX = 6;
+  const paddingY = 3;
+
+  // approximate width by characters × 7px
+  const textWidth = label.length * 7;
+  const boxX = x - textWidth/2 - paddingX;
+  const boxY = y - 22;
+
+  svg += `
+    <rect 
+      x="${boxX}" 
+      y="${boxY}" 
+      width="${textWidth + paddingX*2}" 
+      height="18" 
+      rx="4" ry="4" 
+      fill="rgba(255,77,77,0.12)"
+      stroke="#FF4D4D"
+      stroke-width="0.8"
+    />
+    <text 
+      x="${x}" 
+      y="${boxY + 13}" 
+      font-size="11" 
+      text-anchor="middle" 
+      fill="#FF4D4D"
+    >${v}</text>
+
+    <circle cx="${x}" cy="${y}" r="4" fill="#FF4D4D"/>
+  `;
+});
+  
 
   svg += `</svg>`;
   box.innerHTML = svg;
