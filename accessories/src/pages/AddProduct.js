@@ -33,7 +33,7 @@ export default function AddProduct() {
       <input type="number" name="prodRate" value="${editData?.prodRate || ""}" required>
 
       <label>Selling Price (₹)</label>
-      <input type="number" name="prodCustRate" value="${editData?.prodCustRate || ""}" required>
+      <input type="text" name="prodCustRate" value="${editData?.prodCustRate || ""}" required>
 
       <label>Quantity</label>
       <input type="number" name="prodQuantity" min="1" value="${editData?.prodQuantity || 1}" required>

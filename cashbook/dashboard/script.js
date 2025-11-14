@@ -159,7 +159,7 @@ income.forEach((v, i) => {
   // approximate width by characters × 7px
   const textWidth = label.length * 7;
   const boxX = x - textWidth/2 - paddingX;
-  const boxY = y - 22;
+  const boxY = y - 25;
 
   svg += `
     <rect 
@@ -195,7 +195,7 @@ expense.forEach((v, i) => {
   // approximate width by characters × 7px
   const textWidth = label.length * 7;
   const boxX = x - textWidth/2 - paddingX;
-  const boxY = y - 22;
+  const boxY = y - 25;
 
   svg += `
     <rect 
@@ -247,6 +247,7 @@ expense.forEach((v, i) => {
 
   // call enableZoom with svg element and original sizes
   enableZoom(svgElem, { originalWidth: w, originalHeight: h });
+  
 }
 
 
