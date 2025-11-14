@@ -15,6 +15,7 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
 .picker {
@@ -48,4 +49,11 @@ svg {
   border-radius: 8px;
   user-select: none;
   background: white;
+}
+
+
+
+.resetZoom {
+  margin-top: 10px;
+
 }
