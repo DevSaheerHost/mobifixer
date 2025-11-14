@@ -15,7 +15,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-
+const username = localStorage.getItem('CASHBOOK_USER_NAME')
 
 // -----------------------------------
 // HELPERS
@@ -29,7 +29,7 @@ function dayLabel(dateStr) {
 // LOAD DATA (FIXED FOR YOUR STRUCTURE)
 // -----------------------------------
 async function loadRange(start, end) {
-  const snap = await get(child(ref(db), "cashbook"));
+  const snap = await get(child(ref(db), username));
   if (!snap.exists()) return [];
 
   const all = snap.val();

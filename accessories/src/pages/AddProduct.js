@@ -79,7 +79,7 @@ form.appendChild(cancelBtn);
       }
 
       // 🧮 Convert numeric values
-      product.prodRate = Number(product.prodRate);
+     // product.prodRate = product.prodRate;
       product.prodCustRate = Number(product.prodCustRate);
       product.prodQuantity = Number(product.prodQuantity);
       product.createdAt = editData?.createdAt || new Date().toISOString();

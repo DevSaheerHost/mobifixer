@@ -1,3 +1,10 @@
+// check is user authenticated
+const username = localStorage.getItem('CASHBOOK_USER_NAME');
+if (!username) location.href = './auth';
+
+
+
+   
     // ------------------------ CONFIG ------------------------
     const firebaseConfig = {
     apiKey: "AIzaSyCOqgE6IiCyvsZ0BCuCeuTdfRYZEXf7yJs",
@@ -12,6 +19,21 @@
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.database();
+    
+    
+    // get user data from DB
+firebase.database().ref(`/users/${username}`).get()
+  .then(snap => {
+    if (snap.exists()) {
+      const user = snap.val();
+      console.log("Logged user:", user);
+    } else {
+      showToast('Session Timeout');
+      authView.style.display='block';
+        mainView.style.display='none';
+        userArea.innerHTML='';
+    }
+  });
 
     // UI refs
     const authView = document.getElementById('authView');
@@ -46,14 +68,71 @@
     signInBtn.addEventListener('click', async () => {
       const email = emailInput.value.trim();
       const password = passInput.value.trim() || Math.random().toString(36).slice(-8);
-      if(!email) return alert('Enter email');
+      const username = document.getElementById("username").value.trim().toLowerCase();
+      if(!email || !username) return showToast('Fill all fields', '#FFC107');
+      const userRef = db.ref(`/users/${username}`);
+      
       try{
         // try sign in
+        
+        
+
+        const snap = await userRef.get();
+        if (!snap.exists()) {
+          showTopToast("User not found", '#F44336');
+          throw new Error('User Not found, Try to create one')
+          return;
+        }
+        
+        const data = snap.val();
+        if (data.password !== password) {
+          showTopToast("Wrong password", '#F44336');
+          return;
+        }
+
+        
+        
+        
+        
+        
         await auth.signInWithEmailAndPassword(email,password);
+        const loginKey = Date.now();
+        await userRef.child(`logins/${loginKey}`).set(getDeviceInfo());
+        
+       
+        localStorage.setItem('CASHBOOK_USER_NAME', username)
+        showTopToast("SignIn successful");
       }catch(err){
         // create user
-        try{ await auth.createUserWithEmailAndPassword(email,password); }
-        catch(e){ alert('Auth error: '+e.message); }
+        //showToast('User Not Exist, Trying Create Account...', "#FFC107")
+        //showTopToast(err.message)
+        const snap = await userRef.get();
+        if (!snap.exists()) {
+          //showTopToast("User not found", '#F44336');
+          showTopToast('User Not Exist, Trying Create Account...', "#FFC107")
+          
+        }
+        
+        try{ 
+          const snap = await userRef.get();
+        if (snap.exists()) {
+          showTopToast("Username already exists, Filed.", '#F44336');
+          return;
+        }
+        
+          await auth.createUserWithEmailAndPassword(email,password); 
+          
+          await userRef.set({
+          username,
+          password,
+          signupInfo: getDeviceInfo(),
+          logins: {}
+        });
+
+        localStorage.setItem('CASHBOOK_USER_NAME', username)
+        showTopToast("Signup successful");
+        }
+        catch(e){ showTopToast('Auth error: '+e.message, '#F44336'); }
       }
     });
 
@@ -81,7 +160,7 @@
     function formatDT(ts){ const d=new Date(ts); return `${d.toLocaleString()}`; }
 
     // Key path per day
-    function dayRoot(dateISO){ return `cashbook/${dateISO}`; }
+    function dayRoot(dateISO){ return `${username}/${dateISO}`; }
 
     // Load all entries for date
     let currentDate = null;
@@ -618,6 +697,43 @@ function showToast(msg) {
   }, 3000);
 }
 
+
+// Top toast alert
+function showTopToast(msg, bg = "#34A853") {
+  const toast = document.createElement("div");
+  toast.textContent = msg;
+
+  toast.style.position = "fixed";
+  toast.style.top = "1.2rem";                 // ⬅ TOP POSITION
+  toast.style.left = "50%";
+  toast.style.transform = "translateX(-50%)";
+
+  toast.style.background = bg;
+  toast.style.color = '#fff';
+  toast.style.padding = "0.8rem 1.6rem";
+  toast.style.borderRadius = "2rem";
+  toast.style.boxShadow = "0 4px 20px rgba(0,0,0,0.2)";
+  toast.style.fontWeight = "500";
+  toast.style.fontSize = "13px";
+  toast.style.zIndex = "9999";
+
+  toast.style.opacity = "0";
+  toast.style.transition = "opacity 0.3s ease, transform 0.3s ease";
+
+  document.body.appendChild(toast);
+
+  requestAnimationFrame(() => {
+    toast.style.opacity = "1";
+    toast.style.transform = "translateX(-50%) translateY(10px)";
+  });
+
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transform = "translateX(-50%) translateY(0)";
+    setTimeout(() => toast.remove(), 300);
+  }, 2500);
+}
+
 // reload + toast
 function refreshDashboard(type) {
   loadForDate(selectDate.value);
@@ -639,3 +755,16 @@ outDesc.oninput=e=>{
     entryFormOut.querySelector('#amount').value = 200;
   }else entryFormOut.querySelector('#amount').value = '';
 }
+
+
+
+
+function getDeviceInfo() {
+  return {
+    userAgent: navigator.userAgent,
+    platform: navigator.platform,
+    time: new Date().toISOString(),
+  };
+}
+
+

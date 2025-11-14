@@ -1,0 +1,158 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MobiFixer Cashbook – Login / Signup</title>
+ <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <style>
+  *{
+    box-sizing: border-box;
+  }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .auth-box {
+      width: 350px;
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      background: #0BA2FF;
+      border: none;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .switch {
+      text-align: center;
+      margin-top: 10px;
+      cursor: pointer;
+      color: #0BA2FF;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-box">
+    <h2 id="title">Login</h2><input type="text" id="username" placeholder="Username" />
+<input type="password" id="password" placeholder="Password" />
+
+<button id="authBtn">Login</button>
+
+<div class="switch" id="switchMode">Don't have an account? Signup</div>
+
+  </div>  <script type="module">
+    // Firebase Config
+    const firebaseConfig = {
+    apiKey: "AIzaSyCOqgE6IiCyvsZ0BCuCeuTdfRYZEXf7yJs",
+    authDomain: "recat-auth-test.firebaseapp.com",
+    projectId: "recat-auth-test",
+    storageBucket: "recat-auth-test.firebasestorage.app",
+    messagingSenderId: "974600242853",
+    appId: "1:974600242853:web:1bce6de6e6bb4512342f4c"
+  };
+
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+
+
+    let isSignup = false;
+
+    const title = document.getElementById("title");
+    const authBtn = document.getElementById("authBtn");
+    const switchMode = document.getElementById("switchMode");
+
+    switchMode.onclick = () => {
+      isSignup = !isSignup;
+      title.innerText = isSignup ? "Signup" : "Login";
+      authBtn.innerText = isSignup ? "Create Account" : "Login";
+      switchMode.innerText = isSignup ? "Already have an account? Login" : "Don't have an account? Signup";
+    };
+
+    function getDeviceInfo() {
+      return {
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        time: new Date().toISOString(),
+      };
+    }
+
+    authBtn.onclick = async () => {
+      const username = document.getElementById("username").value.trim().toLowerCase();
+      const password = document.getElementById("password").value.trim();
+
+      if (!username || !password) {
+        showTopToast("Enter all fields", '#F44336');
+        return;
+      }
+
+      const userRef = db.ref(`/users/${username}`);
+
+      if (isSignup) {
+        const snap = await userRef.get();
+        if (snap.exists()) {
+          showTopToast("Username already exists", '#FFC107');
+          return;
+        }
+
+        await userRef.set({
+          username,
+          password,
+          signupInfo: getDeviceInfo(),
+          logins: {}
+        });
+
+        localStorage.setItem('CASHBOOK_USER_NAME', username)
+        showTopToast("Signup successful");
+        location.href='../'
+      } else {
+        const snap = await userRef.get();
+        if (!snap.exists()) {
+          showTopToast("User not found", '#F44336');
+          return;
+        }
+
+        const data = snap.val();
+        if (data.password !== password) {
+          showTopToast("Wrong password", '#F44336');
+          return;
+        }
+
+        const loginKey = Date.now();
+        await userRef.child(`logins/${loginKey}`).set(getDeviceInfo());
+        
+        localStorage.setItem('CASHBOOK_USER_NAME', username);
+        showTopToast("Login successful");
+        location.href='../'
+      }
+    }
+    
+    
+
+  </script></body>
+</html>
