@@ -1,5 +1,6 @@
 
-
+// check is user authenticated
+const username = localStorage.getItem('CASHBOOK_USER_NAME');
 
 
    
