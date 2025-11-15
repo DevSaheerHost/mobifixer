@@ -101,6 +101,7 @@ firebase.database().ref(`/users/${username}`).get()
        
         localStorage.setItem('CASHBOOK_USER_NAME', username)
         showTopToast("SignIn successful");
+        location.reload()
       }catch(err){
         // create user
         //showToast('User Not Exist, Trying Create Account...', "#FFC107")
@@ -130,6 +131,7 @@ firebase.database().ref(`/users/${username}`).get()
 
         localStorage.setItem('CASHBOOK_USER_NAME', username)
         showTopToast("Signup successful");
+        location.reload()
         }
         catch(e){ showTopToast('Auth error: '+e.message, '#F44336'); }
       }
