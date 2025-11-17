@@ -27,6 +27,82 @@ and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # CREATED CASHBOOK APP [2025-11-8]
 
+## [5.0.0] - 2025-11-17
+### 🎉 MAJOR UPDATE - Shop Management & Theme System
+
+### ✨ New Features
+- **Shop Details Page** - Complete shop information display with animated header and professional layout
+- **Edit Shop Details Modal** - Update shop information with comprehensive form validation
+- **Professional Theme Customization UI** - 4 preset themes + custom color picker with live preview
+- **Custom Theme Controls** - Fine-tune opacity, blur effects, border radius
+- **Enhanced Settings Page** - Improved UI with better visual hierarchy and descriptions
+- **About/Changelog Page** - Redesigned with creator info, tech stack, and features
+- **Backup & Restore Options** - Complete backup functionality interface (ready for implementation)
+- **Operating Hours Management** - Set and display shop operating hours
+
+### 🔧 Improvements
+- Form validation system (email, phone, required fields)
+- Glass morphism UI enhancements across all pages
+- Smooth animations and transitions for better UX
+- Better responsive design for mobile (480px), tablet (768px), and desktop
+- Shop statistics dashboard with colorful stat cards
+- Professional gradient backgrounds and color schemes
+- Improved visual feedback for all interactive elements
+- Enhanced icon usage with Font Awesome v7.0.1
+
+### 🐛 Bug Fixes
+- Fixed class name preservation in settings page (JS compatibility)
+- Improved form field focus states with accent color highlights
+- Fixed modal animations and transitions
+- Better error handling and validation messages
+- Resolved responsive layout issues on small screens
+
+### 📱 Responsive Updates
+- Mobile optimization with touch-friendly buttons and inputs
+- Tablet optimization with adjusted spacing and layouts
+- Desktop enhancement with full-width layouts
+- Improved form field sizing for all screen sizes
+- Better modal behavior on mobile devices
+
+### 🎨 Design Updates
+- New color schemes for 4 theme presets (Mobifixer Dark, Natural Day, Dark Compat, Developer Mode)
+- Enhanced typography hierarchy with better font weights
+- Professional layout improvements with better spacing
+- Smooth hover effects and transitions
+- Improved contrast and accessibility
+
+### 🗄️ Code Changes
+- Added shop details page component with statistics
+- Implemented edit shop details modal with form handling
+- Created theme customization UI with color/range inputs
+- Enhanced localStorage integration for shop data persistence
+- Added comprehensive form validation functions
+- Improved page routing with shop-details hash route
+
+### 📖 Documentation
+- Added JSDoc comments for new functions
+- Included validation rules documentation
+- Added Firebase integration notes for future updates
+
+### ⚡ Performance
+- Optimized modal rendering with lazy loading
+- Improved form input responsiveness
+- Better CSS selector performance
+- Reduced unnecessary re-renders
+
+### 🔜 Next Steps / TODO
+- Firebase integration for shop details persistence
+- Cloud backup and restore functionality
+- Export data to Excel/PDF
+- Theme persistence across devices via Firebase
+- Customer feedback system
+- Advanced analytics dashboard
+
+---
+
+
+# CREATED CASHBOOK APP [2025-11-8]
+
 ## [4.8.9] - 2025-11-7
 ### 🧩 Fixes
 - 🧮 Numeric Conversion: Fixed an issue where product quantity (prodQuantity) was treated as a string, causing incorrect increments like “1 → 11”.

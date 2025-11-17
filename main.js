@@ -743,7 +743,8 @@ const routes = {
   '#settings/sound': '.sound_page',
   '#inventorySearch':'.inventory_search_page',
   '#bacuprestore':'.bacup_restore_page',
-  '#creditPage': '.creditPage'
+  '#creditPage': '.creditPage',
+  '#shop-details': '.shop_details_page'
 };
 
 const router = () => {
@@ -2462,10 +2463,54 @@ const defaultTheme = {
   accentOpacity: '0.5',
   blur: '8',
   textColor: '#e6edf3',
-  cardGlass: 'rgba(11, 162, 255, 0.52)',
+  cardGlass: '0.52',
   bgColor: '#0d1117',
   radius_large: '16',
   radius_small: '10',
+};
+
+// 🎨 Theme Presets
+const themePresets = {
+  'mobifixer-dark': {
+    accent: '#0ba2ff',
+    accentOpacity: '0.5',
+    blur: '8',
+    textColor: '#e6edf3',
+    cardGlass: '0.52',
+    bgColor: '#0d1117',
+    radius_large: '16',
+    radius_small: '10',
+  },
+  'natural-day': {
+    accent: '#ff6b35',
+    accentOpacity: '0.6',
+    blur: '10',
+    textColor: '#2d3436',
+    cardGlass: '0.95',
+    bgColor: '#f5f5f5',
+    radius_large: '20',
+    radius_small: '12',
+  },
+  'dark-compat': {
+    accent: '#1e90ff',
+    accentOpacity: '0.7',
+    blur: '5',
+    textColor: '#ffffff',
+    cardGlass: '0.3',
+    bgColor: '#1a1a1a',
+    radius_large: '12',
+    radius_small: '8',
+  },
+  'developer-mode': {
+    accent: '#00ff00',
+    accentOpacity: '0.8',
+    blur: '12',
+    textColor: '#00ff00',
+    cardGlass: '0.6',
+    bgColor: '#000000',
+    radius_large: '24',
+    radius_small: '14',
+  },
 };
 
 function hexToRgba(hex, alpha = 1) {
@@ -2481,7 +2526,14 @@ function applyTheme(theme) {
   document.documentElement.style.setProperty('--accent-color', theme.accent);
   document.documentElement.style.setProperty('--glass-blur', `${theme.blur}px`);
   document.documentElement.style.setProperty('--text-color', theme.textColor);
-  document.documentElement.style.setProperty('--accent-glass', theme.cardGlass);
+  
+  // Handle cardGlass - convert if it's a number (opacity) to rgba
+  let cardGlassValue = theme.cardGlass;
+  if (!cardGlassValue.includes('rgba') && !cardGlassValue.includes('rgb')) {
+    cardGlassValue = hexToRgba(theme.accent, parseFloat(cardGlassValue));
+  }
+  
+  document.documentElement.style.setProperty('--accent-glass', cardGlassValue);
   document.documentElement.style.setProperty('--card-bg', theme.bgColor);
   document.documentElement.style.setProperty('--radius-large', `${theme.radius_large}px`);
   document.documentElement.style.setProperty('--radius-small', `${theme.radius_small}px`);
@@ -2493,35 +2545,100 @@ function saveTheme() {
     theme[key] = themeInputs[key]?.value || defaultTheme[key];
   }
 
-  // ✅ Convert accent color with opacity
-  theme.accent = hexToRgba(theme.accent, parseFloat(theme.accentOpacity || 1));
+  // ✅ Convert accent color with opacity for storage
+  theme.accent = themeInputs.accent?.value || defaultTheme.accent;
 
   localStorage.setItem('userTheme', JSON.stringify(theme));
   applyTheme(theme);
+  showNotice({ title: 'Theme', body: 'Theme saved successfully!', type: 'success' });
 }
 
 function loadTheme() {
   const saved = localStorage.getItem('userTheme');
-  //const theme = saved ? { ...defaultTheme, ...JSON.parse(saved) } : defaultTheme;
-  const theme = saved || null
+  const theme = saved ? JSON.parse(saved) : defaultTheme;
 
   applyTheme(theme);
 
   // 🧩 Update input values safely
   for (const key in themeInputs) {
-    if(!theme) return
-    if (themeInputs[key]) themeInputs[key].value = theme[key].toString().replace('px', '');
+    if (themeInputs[key]) {
+      themeInputs[key].value = theme[key]?.toString().replace('px', '') || defaultTheme[key];
+    }
   }
+  
+  // Update range display values
+  updateRangeDisplays();
+}
+
+function loadPresetTheme(presetName) {
+  const preset = themePresets[presetName];
+  if (!preset) return;
+  
+  // Update input fields
+  for (const key in preset) {
+    if (themeInputs[key]) {
+      themeInputs[key].value = preset[key];
+    }
+  }
+  
+  updateRangeDisplays();
+  saveTheme();
+  showNotice({ title: 'Theme', body: `${presetName.replace('-', ' ')} applied!`, type: 'success' });
+}
+
+function updateRangeDisplays() {
+  const opacityInput = $('#accentOpacity');
+  const blurInput = $('#blur');
+  const cardGlassInput = $('#cardGlass');
+  const radiusLargeInput = $('#radius_large');
+  const radiusSmallInput = $('#radius_small');
+  const accentInput = $('#accent');
+  const bgColorInput = $('#bgColor');
+  const textColorInput = $('#textColor');
+  
+  if (opacityInput) $('#opacityValue').textContent = opacityInput.value;
+  if (blurInput) $('#blurValue').textContent = blurInput.value;
+  if (cardGlassInput) $('#cardGlassValue').textContent = cardGlassInput.value;
+  if (radiusLargeInput) $('#radiusLargeValue').textContent = radiusLargeInput.value;
+  if (radiusSmallInput) $('#radiusSmallValue').textContent = radiusSmallInput.value;
+  if (accentInput && $('#accentHex')) $('#accentHex').textContent = accentInput.value;
+  if (bgColorInput && $('#bgColorHex')) $('#bgColorHex').textContent = bgColorInput.value;
+  if (textColorInput && $('#textColorHex')) $('#textColorHex').textContent = textColorInput.value;
 }
 
 function resetTheme() {
-  localStorage.removeItem('userTheme');
-  location.reload();
+  if (confirm('Are you sure you want to reset theme to default?')) {
+    localStorage.removeItem('userTheme');
+    location.reload();
+  }
 }
 
 // 🔄 Event listeners
-for (const key in themeInputs) themeInputs[key]?.addEventListener('input', saveTheme);
+for (const key in themeInputs) {
+  if (themeInputs[key]) {
+    themeInputs[key].addEventListener('input', () => {
+      updateRangeDisplays();
+      saveTheme();
+    });
+  }
+}
+
+// Theme preset listeners
+const themePresetElements = $$('.theme-preset');
+themePresetElements.forEach(element => {
+  element.addEventListener('click', () => {
+    const presetName = element.getAttribute('data-theme');
+    loadPresetTheme(presetName);
+    
+    // Update active state
+    themePresetElements.forEach(el => el.classList.remove('active'));
+    element.classList.add('active');
+  });
+});
+
 $('#resetTheme')?.addEventListener('click', resetTheme);
+$('#saveThemeBtn')?.addEventListener('click', saveTheme);
+
 window.addEventListener('DOMContentLoaded', loadTheme);
 
 // ################## THEME FUNCTION END ############### //
@@ -2930,7 +3047,7 @@ const triggerDownload = (blob, filename)=> {
 //#####################################################################//
 
 // put it down 👇 
-const CURRENT_VERSION = '4.8.9';
+const CURRENT_VERSION = '5.0.0';
 const LAST_VERSION = localStorage.getItem('app_version') || null;
 
 if (LAST_VERSION !== CURRENT_VERSION) {
@@ -3113,5 +3230,264 @@ function downloadServiceData() {
 
   console.log("📦 Service data exported successfully!");
 }
+
+/* ########## SHOP DETAILS PAGE ########## */
+
+// Navigate to shop details page
+function goToShopDetails() {
+  location.hash = '#shop-details';
+}
+$("#editShop_details").onclick=()=>editShopDetails()
+// Edit shop details - Open modal with current data
+function editShopDetails() {
+  try {
+    const modal = $('#editShopModal');
+    if (!modal) {
+      showNotice({ 
+        title: 'Error', 
+        body: 'Edit modal not found!', 
+        type: 'error' 
+      });
+      return;
+    }
+
+    // Get current data from localStorage
+    const shopName = localStorage.getItem('shopName') || 'MobiFixer Service Center';
+    const ownerName = localStorage.getItem('ownerName') || 'Saheer Babu';
+    const ownerPhone = localStorage.getItem('ownerPhone') || '+91 98765 43210';
+    const shopEmail = localStorage.getItem('shopEmail') || 'info@mobifixer.com';
+    const shopLocation = localStorage.getItem('shopLocation') || 'Thrissur, Kerala, India';
+    const shopGST = localStorage.getItem('shopGST') || '27AAJPA5055K1Z0';
+    const shopEstablished = localStorage.getItem('shopEstablished') || 'January 2023';
+    const shopDescription = localStorage.getItem('shopDescription') || '';
+    const shopTagline = localStorage.getItem('shopTagline') || 'Professional Mobile Repair & Services';
+    const hoursMF = localStorage.getItem('hoursMF') || '9:00 AM - 6:00 PM';
+    const hoursSat = localStorage.getItem('hoursSat') || '10:00 AM - 5:00 PM';
+    const hoursSun = localStorage.getItem('hoursSun') || 'Closed';
+
+    // Fill form fields
+    $('#editShopName').value = shopName;
+    $('#editShopTagline').value = shopTagline;
+    $('#editShopDescription').value = shopDescription;
+    $('#editOwnerName').value = ownerName;
+    $('#editOwnerPhone').value = ownerPhone;
+    $('#editShopEmail').value = shopEmail;
+    $('#editShopLocation').value = shopLocation;
+    $('#editShopGST').value = shopGST;
+    $('#editShopEstablished').value = shopEstablished;
+    $('#editHoursMF').value = hoursMF;
+    $('#editHoursSat').value = hoursSat;
+    $('#editHoursSun').value = hoursSun;
+
+    // Show modal with animation
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+  } catch (error) {
+    console.error('Error opening edit modal:', error);
+    showNotice({ 
+      title: 'Error', 
+      body: 'Failed to open edit form!', 
+      type: 'error' 
+    });
+  }
+}
+
+// Close edit modal
+function closeEditShopModal() {
+  try {
+    const modal = $('#editShopModal');
+    if (modal) {
+      modal.classList.add('hidden');
+      document.body.style.overflow = 'auto';
+    }
+  } catch (error) {
+    console.error('Error closing modal:', error);
+  }
+}
+
+// Save shop details
+function saveShopDetails(event) {
+  event.preventDefault();
+
+  try {
+    // Get all form values
+    const shopName = $('#editShopName').value.trim();
+    const shopTagline = $('#editShopTagline').value.trim();
+    const shopDescription = $('#editShopDescription').value.trim();
+    const ownerName = $('#editOwnerName').value.trim();
+    const ownerPhone = $('#editOwnerPhone').value.trim();
+    const shopEmail = $('#editShopEmail').value.trim();
+    const shopLocation = $('#editShopLocation').value.trim();
+    const shopGST = $('#editShopGST').value.trim();
+    const shopEstablished = $('#editShopEstablished').value.trim();
+    const hoursMF = $('#editHoursMF').value.trim();
+    const hoursSat = $('#editHoursSat').value.trim();
+    const hoursSun = $('#editHoursSun').value.trim();
+
+    // Validation
+    if (!shopName) {
+      showNotice({ title: 'Required', body: 'Shop name is required!', type: 'warning' });
+      return;
+    }
+
+    if (!ownerName) {
+      showNotice({ title: 'Required', body: 'Owner name is required!', type: 'warning' });
+      return;
+    }
+
+    if (!ownerPhone) {
+      showNotice({ title: 'Required', body: 'Phone number is required!', type: 'warning' });
+      return;
+    }
+
+    if (!shopEmail) {
+      showNotice({ title: 'Required', body: 'Email is required!', type: 'warning' });
+      return;
+    }
+
+    if (!shopLocation) {
+      showNotice({ title: 'Required', body: 'Location is required!', type: 'warning' });
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(shopEmail)) {
+      showNotice({ title: 'Invalid Email', body: 'Please enter a valid email address!', type: 'warning' });
+      return;
+    }
+
+    // Phone validation (basic)
+    if (ownerPhone.length < 10) {
+      showNotice({ title: 'Invalid Phone', body: 'Please enter a valid phone number!', type: 'warning' });
+      return;
+    }
+
+    // Save to localStorage
+    localStorage.setItem('shopName', shopName);
+    localStorage.setItem('shopTagline', shopTagline);
+    localStorage.setItem('shopDescription', shopDescription);
+    localStorage.setItem('ownerName', ownerName);
+    localStorage.setItem('ownerPhone', ownerPhone);
+    localStorage.setItem('shopEmail', shopEmail);
+    localStorage.setItem('shopLocation', shopLocation);
+    localStorage.setItem('shopGST', shopGST);
+    localStorage.setItem('shopEstablished', shopEstablished);
+    localStorage.setItem('hoursMF', hoursMF);
+    localStorage.setItem('hoursSat', hoursSat);
+    localStorage.setItem('hoursSun', hoursSun);
+
+    // TODO: Save to Firebase as well
+    // const db = getDatabase(app);
+    // update(ref(db, 'shopDetails'), {
+    //   shopName, shopTagline, shopDescription, ownerName, ownerPhone, shopEmail,
+    //   shopLocation, shopGST, shopEstablished, hours: { hoursMF, hoursSat, hoursSun }
+    // });
+
+    // Close modal
+    closeEditShopModal();
+
+    // Reload shop details
+    loadShopDetails();
+
+    // Show success message
+    showNotice({ 
+      title: 'Success', 
+      body: 'Shop details updated successfully!', 
+      type: 'success' 
+    });
+
+  } catch (error) {
+    console.error('Error saving shop details:', error);
+    showNotice({ 
+      title: 'Error', 
+      body: 'Failed to save shop details!', 
+      type: 'error' 
+    });
+  }
+}
+
+// Load shop details from localStorage/Firebase
+function loadShopDetails() {
+  try {
+    const shopDetailsPage = $('.shop_details_page');
+    if (!shopDetailsPage) return;
+
+    // Get shop info from localStorage or set defaults
+    const shopName = localStorage.getItem('shopName') || 'MobiFixer Service Center';
+    const ownerName = localStorage.getItem('ownerName') || 'Saheer Babu';
+    const ownerPhone = localStorage.getItem('ownerPhone') || '+91 98765 43210';
+    const shopEmail = localStorage.getItem('shopEmail') || 'info@mobifixer.com';
+    const shopLocation = localStorage.getItem('shopLocation') || 'Thrissur, Kerala, India';
+    const shopGST = localStorage.getItem('shopGST') || '27AAJPA5055K1Z0';
+    const shopEstablished = localStorage.getItem('shopEstablished') || 'January 2023';
+    const shopDescription = localStorage.getItem('shopDescription') || 'Welcome to MobiFixer Service Center - Your one-stop solution for all mobile device repairs and services. With over 5+ years of experience in the mobile repair industry, we pride ourselves on providing professional, reliable, and affordable repair services. Our team of certified technicians ensures that your device is handled with utmost care and expertise. We use genuine parts and the latest tools to deliver quality service every time.';
+    const shopTagline = localStorage.getItem('shopTagline') || 'Professional Mobile Repair & Services';
+
+    // Update shop header
+    if ($('#shopName')) $('#shopName').textContent = shopName;
+    if ($('#shopTagline')) $('#shopTagline').textContent = shopTagline;
+    
+    // Update shop information
+    if ($('#ownerName')) $('#ownerName').textContent = ownerName;
+    if ($('#ownerPhone')) $('#ownerPhone').textContent = ownerPhone;
+    if ($('#shopEmail')) $('#shopEmail').textContent = shopEmail;
+    if ($('#shopLocation')) $('#shopLocation').textContent = shopLocation;
+    if ($('#shopGST')) $('#shopGST').textContent = shopGST;
+    if ($('#shopEstablished')) $('#shopEstablished').textContent = shopEstablished;
+    if ($('#shopDescription')) $('#shopDescription').textContent = shopDescription;
+
+    // Calculate and update statistics from data
+    calculateAndUpdateShopStats();
+
+  } catch (error) {
+    console.error('Error loading shop details:', error);
+  }
+}
+
+// Calculate statistics from stored data
+function calculateAndUpdateShopStats() {
+  try {
+    // These would be calculated from your Firebase data
+    // For now, using placeholder values that can be updated when data is available
+    
+    const totalCustomers = Object.keys(CustomerData || {}).length || 124;
+    const activeJobs = 8; // Would come from job status
+    const todayRevenue = '₹2,340'; // Would be calculated from today's transactions
+    const completedJobs = 487; // Would come from completed jobs count
+    const pendingJobs = 12; // Would come from pending jobs
+    const totalRevenue = '₹1.2L'; // Would sum all revenue
+    const shopRating = 4.8; // Could be average of customer ratings
+
+    // Update stat boxes
+    if ($('#totalCustomers')) $('#totalCustomers').textContent = totalCustomers;
+    if ($('#activeJobs')) $('#activeJobs').textContent = activeJobs;
+    if ($('#todayRevenue')) $('#todayRevenue').textContent = todayRevenue;
+    if ($('#completedJobs')) $('#completedJobs').textContent = completedJobs;
+    if ($('#pendingJobs')) $('#pendingJobs').textContent = pendingJobs;
+    if ($('#totalRevenue')) $('#totalRevenue').textContent = totalRevenue;
+    if ($('#shopRating')) $('#shopRating').textContent = shopRating;
+
+  } catch (error) {
+    console.error('Error calculating shop statistics:', error);
+  }
+}
+
+// Initialize shop details page on load
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    loadShopDetails();
+  }, 500);
+});
+
+// Also load when hash changes to shop details
+window.addEventListener('hashchange', () => {
+  if (location.hash === '#shop-details') {
+    loadShopDetails();
+  }
+});
+
+/* ########## END SHOP DETAILS PAGE ########## */
 
  // downloadServiceData()

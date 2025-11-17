@@ -491,18 +491,99 @@
 
 
 <main class="changelog-page hidden">
-  <p><i>App Designed and developed by 
-  <b>
-    <a href="https://github.com/DevSaheerHost" target="_blank" style="color: #09a0ff;">SAHEER BABU</a>
-    </b>
-    </i></p>
-  <pre id="changelog">
-    loading 
-  </pre>
-  
-  <h4 class="page_title">Commit Messages</h4>
-  
-  <ul id="commits"></ul>
+  <div class="page_header">
+    <div class="flex">
+      <i class="fa-solid fa-arrow-left" onclick="window.history.back()"></i>
+      <h3>About MobiFixer</h3>
+    </div>
+  </div>
+
+  <div class="about-container">
+    <!-- App Logo & Title -->
+    <div class="about-header">
+      <img src="./assets/images/logo_s_no_bg.png" alt="MobiFixer Logo" class="about-logo">
+      <h2>MobiFixer</h2>
+      <p class="version">v5.0.0</p>
+      <p class="tagline">Smart Mobile Service Management App</p>
+    </div>
+
+    <!-- Description -->
+    <div class="about-section">
+      <h4>About This App</h4>
+      <p>MobiFixer is a comprehensive business management solution designed specifically for mobile repair shops. It helps shop owners and technicians streamline their daily operations, manage customers efficiently, and organize service records.</p>
+    </div>
+
+    <!-- Key Features -->
+    <div class="about-section">
+      <h4>Key Features</h4>
+      <ul class="features-list">
+        <li><i class="fa-solid fa-check"></i> Customer & Service Management</li>
+        <li><i class="fa-solid fa-check"></i> Real-time Job Tracking</li>
+        <li><i class="fa-solid fa-check"></i> Inventory Management System</li>
+        <li><i class="fa-solid fa-check"></i> Income & Expense Tracking</li>
+        <li><i class="fa-solid fa-check"></i> Cloud Backup & Sync</li>
+        <li><i class="fa-solid fa-check"></i> Customizable Themes</li>
+        <li><i class="fa-solid fa-check"></i> Offline-First Architecture</li>
+        <li><i class="fa-solid fa-check"></i> Mobile-Optimized UI</li>
+      </ul>
+    </div>
+
+    <!-- Developer Info -->
+    <div class="about-section creator-section">
+      <h4>Creator & Developer</h4>
+      <div class="creator-card">
+        <div class="creator-info">
+          <p class="creator-name"><strong>Saheer Babu</strong></p>
+          <p class="creator-title">Mobile Technician & Full-Stack Web Developer</p>
+          <p class="creator-email">
+            <i class="fa-solid fa-envelope"></i>
+            <a href="mailto:sheerbabu549@gmail.com">sheerbabu549@gmail.com</a>
+          </p>
+          <div class="creator-links">
+            <a href="https://github.com/DevSaheerHost" target="_blank" rel="noopener noreferrer">
+              <i class="fa-brands fa-github"></i> GitHub
+            </a>
+            <a href="https://saheerbabu.vercel.app/" target="_blank" rel="noopener noreferrer">
+              <i class="fa-solid fa-globe"></i> Portfolio
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Technologies -->
+    <div class="about-section">
+      <h4>Built With</h4>
+      <div class="tech-stack">
+        <span class="tech-badge">HTML5</span>
+        <span class="tech-badge">CSS3</span>
+        <span class="tech-badge">JavaScript (ES6+)</span>
+        <span class="tech-badge">Firebase</span>
+        <span class="tech-badge">Cloudinary</span>
+        <span class="tech-badge">Progressive Web App</span>
+      </div>
+    </div>
+
+    <!-- Version & Changelog -->
+    <div class="about-section">
+      <h4>Latest Updates (v5.0.0)</h4>
+      <pre id="changelog" class="changelog-content">
+Loading changelog...
+      </pre>
+    </div>
+
+    <!-- Commit History -->
+    <div class="about-section">
+      <h4>Recent Commits</h4>
+      <ul id="commits" class="commits-list"></ul>
+    </div>
+
+    <!-- Footer -->
+    <div class="about-footer">
+      <p>© 2024-2025 MobiFixer. All rights reserved.</p>
+      <p>Made with <i class="fa-solid fa-heart" style="color: #e74c3c;"></i> for mobile repair shops</p>
+    </div>
+  </div>
 </main>
 
 
@@ -544,123 +625,170 @@
   </div>
   
       <h4 class="page_title"> 
-      <i class="fa-solid fa-user">
-      </i> Profile & Business</h4>
+      <i class="fa-solid fa-user-circle"></i>
+      Profile & Business</h4>
 
   <ul class="settings_list">
     <a href="#settings/profile">
       <li class="list-item">
-        <p>Manage Profile</p>
-        <i class="fa-solid fa-angle-right"></i>
+        <div class="list-item-content">
+          <p class="list-item-title">Manage Profile</p>
+          <p class="list-item-desc">Update your personal information</p>
+        </div>
+        <i class="fa-solid fa-chevron-right"></i>
       </li>
     </a>
     
     <a href="#settings/shop">
       <li class="list-item">
-        <p>Shop Details</p>
-        <i class="fa-solid fa-angle-right"></i>
+        <div class="list-item-content">
+          <a href="#shop-details">
+          <p class="list-item-title"></p>Shop Details</p>
+          <p class="list-item-desc">Edit shop name and information</p>
+          </a>
+        </div>
+        <i class="fa-solid fa-chevron-right"></i>
       </li>
     </a>
     
       <a href="#settings/password">
          <li class="list-item">
-           <p>Change Password</p>
-           <i class="fa-solid fa-angle-right"></i>
+           <p class="list-item-title">Change Password</p>
+           <i class="fa-solid fa-chevron-right"></i>
          </li>
       </a>
   </ul>
   
   <h4 class="page_title">
-    <i class="fa-solid fa-clipboard"></i>
-Records & Data</h4>
+    <i class="fa-solid fa-database"></i>
+    Records & Data</h4>
   
    <ul class="settings_list">
     <li class="list-item" onclick="location.hash='#bacuprestore'">
-      <p>Backup & Restore Data</p>
-      <i class="fa-solid fa-angle-right"></i>
+      <div class="list-item-content">
+        <p class="list-item-title">Backup & Restore Data</p>
+        <p class="list-item-desc">Cloud sync and export options</p>
+      </div>
+      <i class="fa-solid fa-chevron-right"></i>
     </li>
     
      <li class="list-item">
-      <p>Export to Excel / PDF</p>
-      <i class="fa-solid fa-angle-right"></i>
+      <div class="list-item-content">
+        <p class="list-item-title">Export to Excel / PDF</p>
+        <p class="list-item-desc">Generate reports and exports</p>
+      </div>
+      <i class="fa-solid fa-chevron-right"></i>
     </li>
     
      <li class="list-item">
-      <p>Clear Old Entries</p>
-      <i class="fa-solid fa-angle-right"></i>
+      <div class="list-item-content">
+        <p class="list-item-title">Clear Old Entries</p>
+        <p class="list-item-desc">Remove archived records</p>
+      </div>
+      <i class="fa-solid fa-chevron-right"></i>
     </li>
   </ul>
   
   
    <h4 class="page_title">
-     <i class="fa-solid fa-mobile"></i>
+     <i class="fa-solid fa-palette"></i>
      Theme & Interface</h4>
   
    <ul class="settings_list">
      <a href="#settings/thememode">
        <li class="list-item">
-        <p>Theme Mode</p>
-       <i class="fa-solid fa-angle-right"></i>
-    </li>
+        <div class="list-item-content">
+          <p class="list-item-title">Theme Mode</p>
+          <p class="list-item-desc">Customize colors and appearance</p>
+        </div>
+        <i class="fa-solid fa-chevron-right"></i>
+       </li>
      </a>
     
      <li class="list-item">
-      <p>Language</p>
-      <i class="fa-solid fa-angle-right"></i>
+      <div class="list-item-content">
+        <p class="list-item-title">Language</p>
+        <p class="list-item-desc">Select your preferred language</p>
+      </div>
+      <i class="fa-solid fa-chevron-right"></i>
     </li>
     
     <a href="#settings/sound">
      <li class="list-item">
-      <p>Sound & Notification</p>
-      <i class="fa-solid fa-angle-right"></i>
+      <div class="list-item-content">
+        <p class="list-item-title">Sound & Notification</p>
+        <p class="list-item-desc">Enable alerts and notifications</p>
+      </div>
+      <i class="fa-solid fa-chevron-right"></i>
     </li>
     </a>
      <li class="list-item">
-      <p>Default Home Page</p>
-      <i class="fa-solid fa-angle-right"></i>
+      <div class="list-item-content">
+        <p class="list-item-title">Default Home Page</p>
+        <p class="list-item-desc">Set your startup screen</p>
+      </div>
+      <i class="fa-solid fa-chevron-right"></i>
     </li>
   </ul>
   
      <h4 class="page_title">
-     <i class="fa-solid fa-screwdriver-wrench"></i>
+     <i class="fa-solid fa-tools"></i>
      Tools & Utilities</h4>
   
    <ul class="settings_list">
     <li class="list-item">
-      <p>Printer Settings</p>
-      <i class="fa-solid fa-angle-right"></i>
+      <div class="list-item-content">
+        <p class="list-item-title">Printer Settings</p>
+        <p class="list-item-desc">Configure printer preferences</p>
+      </div>
+      <i class="fa-solid fa-chevron-right"></i>
     </li>
     
      <li class="list-item">
-      <p>Spare Parts Threshold Alert</p>
-      <i class="fa-solid fa-angle-right"></i>
+      <div class="list-item-content">
+        <p class="list-item-title">Spare Parts Threshold Alert</p>
+        <p class="list-item-desc">Set low stock warnings</p>
+      </div>
+      <i class="fa-solid fa-chevron-right"></i>
     </li>
     
      <li class="list-item">
-      <p>Auto Sync Settings</p>
-      <i class="fa-solid fa-angle-right"></i>
+      <div class="list-item-content">
+        <p class="list-item-title">Auto Sync Settings</p>
+        <p class="list-item-desc">Manage synchronization</p>
+      </div>
+      <i class="fa-solid fa-chevron-right"></i>
     </li>
   </ul>
   
     <h4 class="page_title">
-      <i class="fa-solid fa-comment-dots"></i>
+      <i class="fa-solid fa-circle-question"></i>
       Help & Support</h4>
   
    <ul class="settings_list">
      <a href="#changelog">
     <li class="list-item">
-      <p>About MobiFixer</p>
-      <i class="fa-solid fa-angle-right"></i>
+      <div class="list-item-content">
+        <p class="list-item-title">About MobiFixer</p>
+        <p class="list-item-desc">App information and credits</p>
+      </div>
+      <i class="fa-solid fa-chevron-right"></i>
     </li>
      </a>
      <li class="list-item">
-      <p>Report a Bug / Suggest Feature</p>
-      <i class="fa-solid fa-angle-right"></i>
+      <div class="list-item-content">
+        <p class="list-item-title">Report a Bug / Suggest Feature</p>
+        <p class="list-item-desc">Send feedback to developers</p>
+      </div>
+      <i class="fa-solid fa-chevron-right"></i>
     </li>
     
      <li class="list-item">
-      <p>Privacy Policy & Terms</p>
-      <i class="fa-solid fa-angle-right"></i>
+      <div class="list-item-content">
+        <p class="list-item-title">Privacy Policy & Terms</p>
+        <p class="list-item-desc">Read our policies</p>
+      </div>
+      <i class="fa-solid fa-chevron-right"></i>
     </li>
   </ul>
 </main>
@@ -745,29 +873,178 @@ Records & Data</h4>
     <div class="flex">
       <i class="fa-solid fa-arrow-left" onclick="window.history.back()"></i>
       <h3>
+        <i class="fa-solid fa-shield-halved"></i>
          Backup & Restore</h3>
     </div>
   </div>
   
-  <div class="card">
-    <h4>Storage Usage</h4>
-    <div class="prog_bar_container">
-      <div class="prog_bar"></div>
+  <!-- Storage Usage Card -->
+  <div class="backup-section">
+    <div class="storage-card">
+      <h4><i class="fa-solid fa-database"></i> Storage Usage</h4>
+      <div class="prog_bar_container">
+        <div class="prog_bar"></div>
+      </div>
+      <p class="percentage_count">0%</p>
+      <p class="storage-info">Used: <span id="usedStorage">0</span> / Total: <span id="totalStorage">0</span></p>
     </div>
-    <p class="percentage_count">0%</p>
   </div>
-  
-    <h4 class="page_title">Info</h4>
 
+  <!-- Data Summary -->
+  <div class="backup-section">
+    <h4 class="section-title"><i class="fa-solid fa-chart-pie"></i> Data Summary</h4>
+    <div class="info-grid">
+      <div class="info-card">
+        <p class="info-label">Total Customers</p>
+        <p class="info-value" id="customers">0</p>
+      </div>
+      <div class="info-card">
+        <p class="info-label">Spare Items</p>
+        <p class="info-value" id="stocks">0</p>
+      </div>
+      <div class="info-card">
+        <p class="info-label">Total Entries</p>
+        <p class="info-value" id="totalEntries">0</p>
+      </div>
+      <div class="info-card">
+        <p class="info-label">Last Backup</p>
+        <p class="info-value" id="lastBackupDate">Never</p>
+      </div>
+    </div>
+  </div>
 
-  <ul class="list">
-    <li class="list-item">
-      <p id="customers"></p>
-    </li>
-    <li class="list-item">
-      <p id="stocks"></p>
-    </li>
-  </ul>
+  <!-- Backup Options -->
+  <div class="backup-section">
+    <h4 class="section-title"><i class="fa-solid fa-cloud-arrow-up"></i> Backup Options</h4>
+    <div class="options-container">
+      <div class="option-card">
+        <div class="option-icon backup">
+          <i class="fa-solid fa-cloud-arrow-up"></i>
+        </div>
+        <div class="option-content">
+          <h5>Cloud Backup</h5>
+          <p>Sync your data to Firebase cloud storage</p>
+          <button class="option-btn" id="cloudBackupBtn">
+            <i class="fa-solid fa-sync"></i> Backup Now
+          </button>
+        </div>
+      </div>
+
+      <div class="option-card">
+        <div class="option-icon download">
+          <i class="fa-solid fa-download"></i>
+        </div>
+        <div class="option-content">
+          <h5>Download Backup</h5>
+          <p>Export your data as JSON file</p>
+          <button class="option-btn" id="downloadBackupBtn">
+            <i class="fa-solid fa-download"></i> Download
+          </button>
+        </div>
+      </div>
+
+      <div class="option-card">
+        <div class="option-icon excel">
+          <i class="fa-solid fa-file-excel"></i>
+        </div>
+        <div class="option-content">
+          <h5>Export to Excel</h5>
+          <p>Export your customers data as .xlsx</p>
+          <button class="option-btn" id="exportExcelBtn">
+            <i class="fa-solid fa-file-excel"></i> Export
+          </button>
+        </div>
+      </div>
+
+      <div class="option-card">
+        <div class="option-icon pdf">
+          <i class="fa-solid fa-file-pdf"></i>
+        </div>
+        <div class="option-content">
+          <h5>Export to PDF</h5>
+          <p>Generate a PDF report of your records</p>
+          <button class="option-btn" id="exportPdfBtn">
+            <i class="fa-solid fa-file-pdf"></i> Export
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Restore Options -->
+  <div class="backup-section">
+    <h4 class="section-title"><i class="fa-solid fa-cloud-arrow-down"></i> Restore Options</h4>
+    <div class="options-container">
+      <div class="option-card danger">
+        <div class="option-icon restore">
+          <i class="fa-solid fa-cloud-arrow-down"></i>
+        </div>
+        <div class="option-content">
+          <h5>Restore from Cloud</h5>
+          <p>Restore your data from cloud backup</p>
+          <button class="option-btn danger-btn" id="restoreCloudBtn">
+            <i class="fa-solid fa-cloud-arrow-down"></i> Restore
+          </button>
+        </div>
+      </div>
+
+      <div class="option-card danger">
+        <div class="option-icon upload">
+          <i class="fa-solid fa-upload"></i>
+        </div>
+        <div class="option-content">
+          <h5>Restore from File</h5>
+          <p>Upload a JSON backup file to restore</p>
+          <input type="file" id="restoreFileInput" accept=".json" style="display: none;">
+          <button class="option-btn danger-btn" id="restoreFileBtn">
+            <i class="fa-solid fa-upload"></i> Choose File
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Danger Zone -->
+  <div class="backup-section danger-zone">
+    <h4 class="section-title danger"><i class="fa-solid fa-triangle-exclamation"></i> Danger Zone</h4>
+    <div class="danger-action">
+      <div class="danger-info">
+        <p><strong>Clear Old Entries</strong></p>
+        <p class="danger-desc">Remove entries older than a specified date</p>
+      </div>
+      <button class="option-btn danger-btn" id="clearOldEntriesBtn">
+        <i class="fa-solid fa-trash"></i> Clear Entries
+      </button>
+    </div>
+    
+    <div class="danger-action">
+      <div class="danger-info">
+        <p><strong>Delete All Data</strong></p>
+        <p class="danger-desc">⚠️ This will permanently delete all your data. This action cannot be undone.</p>
+      </div>
+      <button class="option-btn danger-btn" id="deleteAllDataBtn">
+        <i class="fa-solid fa-exclamation"></i> Delete All
+      </button>
+    </div>
+  </div>
+
+  <!-- Auto Backup Status -->
+  <div class="backup-section">
+    <h4 class="section-title"><i class="fa-solid fa-clock"></i> Auto Backup</h4>
+    <div class="auto-backup-card">
+      <div class="auto-backup-toggle">
+        <span>
+          <p>Enable Auto Backup</p>
+          <p class="auto-backup-desc">Automatically backup every 24 hours</p>
+        </span>
+        <input type="checkbox" id="autoBackupToggle" class="hidden" />
+        <div class="toggle_btn">
+          <div class="toggle_ball"></div>
+        </div>
+      </div>
+      <p class="auto-backup-status" id="autoBackupStatus">Last auto backup: Never</p>
+    </div>
+  </div>
 </main>
 
 <!-- ########### THEME_PAGE ########## -->
@@ -776,17 +1053,17 @@ Records & Data</h4>
      <div class="page_header">
     <div class="flex">
       <i class="fa-solid fa-arrow-left" onclick="window.history.back()"></i>
-      <h3>Settings</h3>
+      <h3>Theme Settings</h3>
     </div>
   </div>
   
 <div class="mt-2">
   <h4 class="page_title">
     <i class="fa-solid fa-palette"></i>
-    Theme Mode</h4>
+    Theme Presets</h4>
 
-  <ul class="theme_list">
-    <li class="list-item">
+  <ul class="theme_list" id="themePresets">
+    <li class="list-item theme-preset" data-theme="mobifixer-dark">
       <p>Mobifixer Dark</p>
       <span class="block_container">
         <span class="primary block"></span>
@@ -795,35 +1072,165 @@ Records & Data</h4>
       </span>
     </li>
 
-    <li class="list-item">
+    <li class="list-item theme-preset" data-theme="natural-day">
       <p>Natural Day</p>
-   <span class="block_container">
+      <span class="block_container">
         <span class="primary block"></span>
         <span class="secondary block"></span>
         <span class="accent block"></span>
       </span>
     </li>
 
-    <li class="list-item">
+    <li class="list-item theme-preset" data-theme="dark-compat">
       <p>Dark (Better Compatibility)</p>
-   <span class="block_container">
-     <span class="primary block"></span>
-     <span class="secondary block"></span>
-     <span class="accent block"></span>
-   </span>
+      <span class="block_container">
+        <span class="primary block"></span>
+        <span class="secondary block"></span>
+        <span class="accent block"></span>
+      </span>
     </li>
 
-    <li class="list-item">
+    <li class="list-item theme-preset" data-theme="developer-mode">
       <p>Developer Mode (Experiment)</p>
-   <span class="block_container">
-     <span class="primary block"></span>
-     <span class="secondary block"></span>
-     <span class="accent block"></span>
-   </span>
+      <span class="block_container">
+        <span class="primary block"></span>
+        <span class="secondary block"></span>
+        <span class="accent block"></span>
+      </span>
     </li>
   </ul>
 
-  <button id="resetTheme">Reset Default</button>
+  <h4 class="page_title mt-3">
+    <i class="fa-solid fa-sliders"></i>
+    Custom Theme</h4>
+
+  <div class="theme-inputs-container mt-2">
+    <div class="theme-section">
+      <h5 class="theme-section-title">
+        <i class="fa-solid fa-swatchbook"></i> Colors
+      </h5>
+      <div class="input-group">
+        <div class="label-wrapper">
+          <label for="accent">Accent Color</label>
+          <span class="hint">Primary color for buttons & highlights</span>
+        </div>
+        <div class="color-input-wrapper">
+          <input type="color" id="accent" value="#0ba2ff" />
+          <span class="color-value" id="accentHex">#0ba2ff</span>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <div class="label-wrapper">
+          <label for="bgColor">Background Color</label>
+          <span class="hint">Main background color</span>
+        </div>
+        <div class="color-input-wrapper">
+          <input type="color" id="bgColor" value="#0d1117" />
+          <span class="color-value" id="bgColorHex">#0d1117</span>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <div class="label-wrapper">
+          <label for="textColor">Text Color</label>
+          <span class="hint">Primary text color</span>
+        </div>
+        <div class="color-input-wrapper">
+          <input type="color" id="textColor" value="#e6edf3" />
+          <span class="color-value" id="textColorHex">#e6edf3</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="theme-section">
+      <h5 class="theme-section-title">
+        <i class="fa-solid fa-wind"></i> Effects
+      </h5>
+
+      <div class="input-group">
+        <div class="label-wrapper">
+          <label for="accentOpacity">Accent Opacity</label>
+          <span class="hint">Transparency of accent color</span>
+        </div>
+        <div class="range-wrapper">
+          <input type="range" id="accentOpacity" min="0" max="1" step="0.1" value="0.5" />
+          <span class="range-value" id="opacityValue">0.5</span>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <div class="label-wrapper">
+          <label for="blur">Blur Effect (px)</label>
+          <span class="hint">Glass morphism blur intensity</span>
+        </div>
+        <div class="range-wrapper">
+          <input type="range" id="blur" min="0" max="20" value="8" />
+          <span class="range-value" id="blurValue">8</span>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <div class="label-wrapper">
+          <label for="cardGlass">Card Glass Opacity</label>
+          <span class="hint">Card background transparency</span>
+        </div>
+        <div class="range-wrapper">
+          <input type="range" id="cardGlass" min="0" max="1" step="0.1" value="0.52" />
+          <span class="range-value" id="cardGlassValue">0.52</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="theme-section">
+      <h5 class="theme-section-title">
+        <i class="fa-solid fa-square"></i> Radius
+      </h5>
+
+      <div class="input-group">
+        <div class="label-wrapper">
+          <label for="radius_large">Large Radius (px)</label>
+          <span class="hint">Container corner roundness</span>
+        </div>
+        <div class="range-wrapper">
+          <input type="range" id="radius_large" min="0" max="30" value="16" />
+          <span class="range-value" id="radiusLargeValue">16</span>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <div class="label-wrapper">
+          <label for="radius_small">Small Radius (px)</label>
+          <span class="hint">Button corner roundness</span>
+        </div>
+        <div class="range-wrapper">
+          <input type="range" id="radius_small" min="0" max="20" value="10" />
+          <span class="range-value" id="radiusSmallValue">10</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="theme-preview-box">
+      <h5 class="theme-section-title">
+        <i class="fa-solid fa-eye"></i> Preview
+      </h5>
+      <div class="preview-content">
+        <div class="preview-card">
+          <div class="preview-button">Save</div>
+          <div class="preview-text">Preview your theme here</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="theme-actions">
+    <button id="resetTheme" class="btn-secondary">
+      <i class="fa-solid fa-rotate-left"></i> Reset
+    </button>
+    <button id="saveThemeBtn" class="btn-primary">
+      <i class="fa-solid fa-check"></i> Save Theme
+    </button>
+  </div>
 </div>
 </main>
 
@@ -1007,6 +1414,357 @@ Records & Data</h4>
   loop
   autoplay>
 </lottie-player>
+  </div>
+</div>
+
+<!-- ########## SHOP_DETAILS_PAGE ########## -->
+<main class="shop_details_page hidden">
+  <div class="page_header">
+    <div class="flex">
+      <i class="fa-solid fa-arrow-left" onclick="window.history.back()"></i>
+      <h3>Shop Details</h3>
+      <div></div>
+    </div>
+  </div>
+
+  <!-- Shop Header Section -->
+  <div class="shop-header-section">
+    <div class="shop-logo-container">
+      <div class="shop-logo">
+        <i class="fa-solid fa-mobile"></i>
+      </div>
+    </div>
+    <div class="shop-info-header">
+      <h2 class="shop-name" id="shopName">MobiFixer Service Center</h2>
+      <p class="shop-tagline" id="shopTagline">Professional Mobile Repair & Services</p>
+    </div>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="shop-stats-grid">
+    <div class="stat-box">
+      <i class="fa-solid fa-users"></i>
+      <div class="stat-info">
+        <p class="stat-value" id="totalCustomers">124</p>
+        <p class="stat-label">Total Customers</p>
+      </div>
+    </div>
+    <div class="stat-box">
+      <i class="fa-solid fa-wrench"></i>
+      <div class="stat-info">
+        <p class="stat-value" id="activeJobs">8</p>
+        <p class="stat-label">Active Jobs</p>
+      </div>
+    </div>
+    <div class="stat-box">
+      <i class="fa-solid fa-chart-line"></i>
+      <div class="stat-info">
+        <p class="stat-value" id="todayRevenue">₹2,340</p>
+        <p class="stat-label">Today Revenue</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shop Information Card -->
+  <div class="shop-card-section">
+    <h4 class="section-title">
+      <i class="fa-solid fa-circle-info"></i> Shop Information
+    </h4>
+    
+    <div class="info-card">
+      <div class="info-row">
+        <span class="info-label">
+          <i class="fa-solid fa-user-tie"></i> Owner
+        </span>
+        <span class="info-value" id="ownerName">Saheer Babu</span>
+      </div>
+      
+      <div class="info-row">
+        <span class="info-label">
+          <i class="fa-solid fa-phone"></i> Contact
+        </span>
+        <span class="info-value" id="ownerPhone">+91 98765 43210</span>
+      </div>
+      
+      <div class="info-row">
+        <span class="info-label">
+          <i class="fa-solid fa-map-pin"></i> Location
+        </span>
+        <span class="info-value" id="shopLocation">Thrissur, Kerala, India</span>
+      </div>
+      
+      <div class="info-row">
+        <span class="info-label">
+          <i class="fa-solid fa-envelope"></i> Email
+        </span>
+        <span class="info-value" id="shopEmail">info@mobifixer.com</span>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">
+          <i class="fa-solid fa-id-card"></i> GST ID
+        </span>
+        <span class="info-value" id="shopGST">27AAJPA5055K1Z0</span>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">
+          <i class="fa-solid fa-calendar"></i> Established
+        </span>
+        <span class="info-value" id="shopEstablished">January 2023</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Operating Hours -->
+  <div class="shop-card-section">
+    <h4 class="section-title">
+      <i class="fa-solid fa-clock"></i> Operating Hours
+    </h4>
+    
+    <div class="hours-card">
+      <div class="hour-row">
+        <span class="day">Monday - Friday</span>
+        <span class="time">9:00 AM - 6:00 PM</span>
+      </div>
+      <div class="hour-row">
+        <span class="day">Saturday</span>
+        <span class="time">10:00 AM - 5:00 PM</span>
+      </div>
+      <div class="hour-row">
+        <span class="day">Sunday</span>
+        <span class="time">Closed</span>
+        <span class="badge-closed">Closed</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Services Offered -->
+  <div class="shop-card-section">
+    <h4 class="section-title">
+      <i class="fa-solid fa-tools"></i> Services Offered
+    </h4>
+    
+    <div class="services-grid">
+      <div class="service-item">
+        <i class="fa-solid fa-phone-slash"></i>
+        <span>Screen Repair</span>
+      </div>
+      <div class="service-item">
+        <i class="fa-solid fa-battery-half"></i>
+        <span>Battery Replacement</span>
+      </div>
+      <div class="service-item">
+        <i class="fa-solid fa-water"></i>
+        <span>Water Damage</span>
+      </div>
+      <div class="service-item">
+        <i class="fa-solid fa-plug"></i>
+        <span>Charging Port</span>
+      </div>
+      <div class="service-item">
+        <i class="fa-solid fa-microchip"></i>
+        <span>Motherboard</span>
+      </div>
+      <div class="service-item">
+        <i class="fa-solid fa-headphones"></i>
+        <span>Speaker/Mic</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shop Statistics -->
+  <div class="shop-card-section">
+    <h4 class="section-title">
+      <i class="fa-solid fa-chart-pie"></i> Statistics
+    </h4>
+    
+    <div class="stats-detail-grid">
+      <div class="stat-detail-card">
+        <div class="stat-detail-icon completed">
+          <i class="fa-solid fa-check-circle"></i>
+        </div>
+        <div class="stat-detail-info">
+          <p class="stat-detail-value" id="completedJobs">487</p>
+          <p class="stat-detail-label">Jobs Completed</p>
+        </div>
+      </div>
+
+      <div class="stat-detail-card">
+        <div class="stat-detail-icon pending">
+          <i class="fa-solid fa-clock"></i>
+        </div>
+        <div class="stat-detail-info">
+          <p class="stat-detail-value" id="pendingJobs">12</p>
+          <p class="stat-detail-label">Pending Jobs</p>
+        </div>
+      </div>
+
+      <div class="stat-detail-card">
+        <div class="stat-detail-icon revenue">
+          <i class="fa-solid fa-indian-rupee-sign"></i>
+        </div>
+        <div class="stat-detail-info">
+          <p class="stat-detail-value" id="totalRevenue">₹1.2L</p>
+          <p class="stat-detail-label">Total Revenue</p>
+        </div>
+      </div>
+
+      <div class="stat-detail-card">
+        <div class="stat-detail-icon rating">
+          <i class="fa-solid fa-star"></i>
+        </div>
+        <div class="stat-detail-info">
+          <p class="stat-detail-value" id="shopRating">4.8</p>
+          <p class="stat-detail-label">Customer Rating</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- About Shop -->
+  <div class="shop-card-section">
+    <h4 class="section-title">
+      <i class="fa-solid fa-file-lines"></i> About Shop
+    </h4>
+    
+    <div class="about-card">
+      <p id="shopDescription">
+        Welcome to MobiFixer Service Center - Your one-stop solution for all mobile device repairs and services. 
+        With over 5+ years of experience in the mobile repair industry, we pride ourselves on providing 
+        professional, reliable, and affordable repair services. Our team of certified technicians ensures 
+        that your device is handled with utmost care and expertise. We use genuine parts and the latest 
+        tools to deliver quality service every time.
+      </p>
+    </div>
+  </div>
+
+  <!-- Edit Shop Details Button -->
+  <div class="shop-actions">
+    <button class="btn-edit-shop" id="editShop_details" onclick="editShopDetails()">
+      <i class="fa-solid fa-edit"></i> Edit Shop Details
+    </button>
+  </div>
+
+</main>
+
+<!-- ########## EDIT SHOP DETAILS MODAL ########## -->
+<div class="edit-shop-modal hidden" id="editShopModal">
+  <div class="modal-overlay" onclick="closeEditShopModal()"></div>
+  
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Edit Shop Details</h3>
+      <button class="modal-close" onclick="closeEditShopModal()">
+        <i class="fa-solid fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <form id="editShopForm" onsubmit="saveShopDetails(event)">
+        
+        <!-- Shop Basic Info Section -->
+        <div class="form-section">
+          <h4 class="form-section-title">
+            <i class="fa-solid fa-store"></i> Shop Information
+          </h4>
+
+          <div class="form-group">
+            <label for="editShopName">Shop Name *</label>
+            <input type="text" id="editShopName" placeholder="MobiFixer Service Center" required>
+          </div>
+
+          <div class="form-group">
+            <label for="editShopTagline">Tagline</label>
+            <input type="text" id="editShopTagline" placeholder="Professional Mobile Repair & Services">
+          </div>
+
+          <div class="form-group">
+            <label for="editShopDescription">About Shop</label>
+            <textarea id="editShopDescription" rows="4" placeholder="Describe your shop..."></textarea>
+          </div>
+        </div>
+
+        <!-- Owner Info Section -->
+        <div class="form-section">
+          <h4 class="form-section-title">
+            <i class="fa-solid fa-user-tie"></i> Owner Information
+          </h4>
+
+          <div class="form-group">
+            <label for="editOwnerName">Owner Name *</label>
+            <input type="text" id="editOwnerName" placeholder="Owner Name" required>
+          </div>
+
+          <div class="form-group">
+            <label for="editOwnerPhone">Phone Number *</label>
+            <input type="tel" id="editOwnerPhone" placeholder="+91 98765 43210" required>
+          </div>
+
+          <div class="form-group">
+            <label for="editShopEmail">Email *</label>
+            <input type="email" id="editShopEmail" placeholder="info@mobifixer.com" required>
+          </div>
+        </div>
+
+        <!-- Location & Business Info Section -->
+        <div class="form-section">
+          <h4 class="form-section-title">
+            <i class="fa-solid fa-location-dot"></i> Location & Business
+          </h4>
+
+          <div class="form-group">
+            <label for="editShopLocation">Location *</label>
+            <input type="text" id="editShopLocation" placeholder="City, State, Country" required>
+          </div>
+
+          <div class="form-group">
+            <label for="editShopGST">GST ID</label>
+            <input type="text" id="editShopGST" placeholder="27AAJPA5055K1Z0">
+          </div>
+
+          <div class="form-group">
+            <label for="editShopEstablished">Established Date</label>
+            <input type="text" id="editShopEstablished" placeholder="January 2023">
+          </div>
+        </div>
+
+        <!-- Operating Hours Section -->
+        <div class="form-section">
+          <h4 class="form-section-title">
+            <i class="fa-solid fa-clock"></i> Operating Hours
+          </h4>
+
+          <div class="hours-grid">
+            <div class="hour-input-group">
+              <label>Monday - Friday</label>
+              <input type="text" id="editHoursMF" placeholder="9:00 AM - 6:00 PM">
+            </div>
+
+            <div class="hour-input-group">
+              <label>Saturday</label>
+              <input type="text" id="editHoursSat" placeholder="10:00 AM - 5:00 PM">
+            </div>
+
+            <div class="hour-input-group">
+              <label>Sunday</label>
+              <input type="text" id="editHoursSun" placeholder="Closed">
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <button type="button" class="btn-cancel" onclick="closeEditShopModal()">
+            <i class="fa-solid fa-times"></i> Cancel
+          </button>
+          <button type="submit" class="btn-save">
+            <i class="fa-solid fa-check"></i> Save Changes
+          </button>
+        </div>
+
+      </form>
+    </div>
   </div>
 </div>
 
