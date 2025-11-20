@@ -4793,3 +4793,48 @@ nav.status-naveeeeeeess{
 
 /* ########## END EDIT SHOP DETAILS MODAL ########## */
 
+
+
+
+
+.full_screen_alert_page{
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  padding: 2rem;
+}
+
+.full_screen_alert_page .card{
+  padding: 2rem;
+}
+.full_screen_alert_page p{
+ font-style: italic;
+ color: var(--text-muted);
+}
+.full_screen_alert_page i.big{
+  margin: auto;
+  text-align: center;
+  width: 100%;
+  font-size: 63px;
+  margin-bottom: 2rem;
+  color: var(--danger-color);
+}
+.full_screen_alert_page .border{
+  border-top: 1px solid var(--border-color);
+  margin: 1rem 0;
+}
+
+.full_screen_alert_page button{
+  margin-top: 2rem;
+  font-weight: 600;
+  width: 100%;
+  border-radius: 10px;
+}
+.full_screen_alert_page .info{
+  margin-top: 2rem;
+  font-size: 10px;
+}
+

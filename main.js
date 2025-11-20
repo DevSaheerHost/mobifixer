@@ -8,7 +8,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebas
 
 import { onAuthStateChanged, getAuth } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 // Realtime Database import
-import { getDatabase, ref, onChildAdded, onChildChanged, update, query, limitToLast, orderByKey, remove , onValue}
+import { getDatabase, ref, onChildAdded, onChildChanged, update, query, limitToLast, orderByKey, remove , onValue, push}
 from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
 const getDateLabel=(dateString) =>{
@@ -44,6 +44,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
+
 
 const shopName = localStorage.getItem('shopName')
 if(!shopName) location='./auth/index.html'
@@ -744,7 +745,8 @@ const routes = {
   '#inventorySearch':'.inventory_search_page',
   '#bacuprestore':'.bacup_restore_page',
   '#creditPage': '.creditPage',
-  '#shop-details': '.shop_details_page'
+  '#shop-details': '.shop_details_page',
+  '#full_screen_alert': '.full_screen_alert_page'
 };
 
 const router = () => {
@@ -889,7 +891,7 @@ window.addEventListener("hashchange", router);
 // window.addEventListener("hashchange", handleHashChange);
 
 
-
+// helpers
 const getCurrentTime = () => {
   const now = new Date();
   let hours = now.getHours();
@@ -1554,14 +1556,15 @@ isShowing = false;
 
 
 
-document.onerror = (msg, src, line, col, err) => {
-  showNotice({ 
-    title:'ERROR', 
-    body: `Something went wrong. ${msg}`, 
-    type: 'error', 
-    delay:10 
+window.addEventListener("error", (event) => {
+  // alert("error caught");
+  showNotice({
+    title: "ERROR",
+    body: "Something went wrong: " + event.message,
+    type: "error",
+    delay: 10
   });
-};
+});
 
 
 
@@ -3452,12 +3455,114 @@ function calculateAndUpdateShopStats() {
     // These would be calculated from your Firebase data
     // For now, using placeholder values that can be updated when data is available
     
-    const totalCustomers = Object.keys(CustomerData || {}).length || 124;
-    const activeJobs = 8; // Would come from job status
-    const todayRevenue = '₹2,340'; // Would be calculated from today's transactions
-    const completedJobs = 487; // Would come from completed jobs count
-    const pendingJobs = 12; // Would come from pending jobs
-    const totalRevenue = '₹1.2L'; // Would sum all revenue
+    const total_not_included = data.filter(
+  item => item.status !== 'collected' && item.status !== 'return'
+).length;
+
+const collected = data.filter(
+  item => item.status == 'collected').length;
+  
+  const pending = data.filter(
+  item => item.status == 'pending').length;
+  
+  const totalCollectedRevenue = data
+  .filter(item => item.status === 'collected')
+  .reduce((sum, item) => {
+    const amt = parseFloat(item.amount);
+
+    return sum + (isNaN(amt) ? 0 : amt);
+  }, 0);
+
+
+const monthMap = {
+  JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5,
+  JUL: 6, AUG: 7, SEP: 8, SEPT: 8, OCT: 9, NOV: 10, DEC: 11
+};
+
+function toStringIfElement(value) {
+  // If it's a DOM element, take its text
+  if (value && typeof value === 'object' && value.nodeType === 1) {
+    return (value.textContent || value.innerText || '').trim();
+  }
+  return value;
+}
+
+function normalizeDateStr(raw) {
+  if (!raw) return null;
+  raw = toStringIfElement(raw);
+  if (typeof raw !== 'string') return null;
+
+  // remove time part if like "19/11/2025, 23:29:59"
+  raw = raw.split(',')[0].trim();
+
+  // replace multiple whitespace or slashes or dots with single dash
+  raw = raw.replace(/[\/\s\.]+/g, '-');
+
+  return raw;
+}
+
+function parseCustomDate(dateStr) {
+  const s = normalizeDateStr(dateStr);
+  if (!s) return null;
+
+  const parts = s.split('-').filter(Boolean);
+  if (parts.length < 3) return null;
+
+  let day = parts[0];
+  let mon = parts[1];
+  let year = parts[2];
+
+  // If format is dd-mm-yyyy or dd/mm/yyyy where month could be numeric
+  if (/^\d+$/.test(mon)) {
+    const mi = Number(mon) - 1;
+    if (mi < 0 || mi > 11) return null;
+    return new Date(Number(year), mi, Number(day));
+  }
+
+  // Normalize month text (use first 3 or 4 letters)
+  mon = mon.toUpperCase();
+  // try direct lookup, then try first 3 letters
+  let monthIndex = monthMap[mon];
+  if (monthIndex === undefined) monthIndex = monthMap[mon.slice(0,3)];
+
+  if (monthIndex === undefined) return null;
+
+  return new Date(Number(year), monthIndex, Number(day));
+}
+
+function parseAmount(amount) {
+  if (amount == null) return 0;
+  // if DOM element, get text
+  amount = toStringIfElement(amount);
+  // remove any non-digit except minus or dot, and parse
+  const cleaned = String(amount).replace(/[^0-9\.\-]/g, '');
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : 0;
+}
+
+// today revenue
+function calculateTodayRevenue(dataArray) {
+  const today = new Date();
+  return dataArray
+    .filter(item => item && item.status === 'collected')
+    .map(item => {
+      return { ...item, _parsedDate: parseCustomDate(item.date) };
+    })
+    .filter(it => it._parsedDate
+      && it._parsedDate.getDate() === today.getDate()
+      && it._parsedDate.getMonth() === today.getMonth()
+      && it._parsedDate.getFullYear() === today.getFullYear()
+    )
+    .reduce((sum, it) => sum + parseAmount(it.amount), 0);
+}
+  
+    console.log(data)
+    const totalCustomers = Object.keys(data|| {}).length || 124;
+    const activeJobs = total_not_included|| 0; // Would come from job status
+    const todayRevenue = calculateTodayRevenue(data)||0; // Would be calculated from today's transactions
+    const completedJobs = collected|| 0; // Would come from completed jobs count
+    const pendingJobs = pending || 0; // Would come from pending jobs
+    const totalRevenue = totalCollectedRevenue||0; // Would sum all revenue
     const shopRating = 4.8; // Could be average of customer ratings
 
     // Update stat boxes
@@ -3470,7 +3575,7 @@ function calculateAndUpdateShopStats() {
     if ($('#shopRating')) $('#shopRating').textContent = shopRating;
 
   } catch (error) {
-    console.error('Error calculating shop statistics:', error);
+    console.error('Error calculating shop statistics:', error.message);
   }
 }
 
@@ -3478,7 +3583,7 @@ function calculateAndUpdateShopStats() {
 window.addEventListener('load', () => {
   setTimeout(() => {
     loadShopDetails();
-  }, 500);
+  }, 2000);
 });
 
 // Also load when hash changes to shop details
@@ -3491,3 +3596,154 @@ window.addEventListener('hashchange', () => {
 /* ########## END SHOP DETAILS PAGE ########## */
 
  // downloadServiceData()
+ 
+ 
+// Usage:
+// 1) page లో ഈ സ്ക്രിപ്റ്റ് ചേർക്കുക.
+// 2) ഉപയോക്താവിൽ നിന്നും Notification permission വേണം.
+
+const REMINDER_HOUR = 10;   // 24-hour (IST) — change as needed
+const REMINDER_MIN = 0;
+const REMINDER_TEXT = "Remind: Do the monthly task (9th).";
+
+function getNext9thAt(hour = REMINDER_HOUR, minute = REMINDER_MIN) {
+  const now = new Date();
+  // create date in local timezone
+  let year = now.getFullYear();
+  let month = now.getMonth(); // 0..11
+  let candidate = new Date(year, month, 9, hour, minute, 0, 0);
+
+  if (now > candidate) {
+    // already past this month's 9th -> next month
+    month += 1;
+    if (month > 11) { month = 0; year += 1; }
+    candidate = new Date(year, month, 9, hour, minute, 0, 0);
+  }
+  return candidate;
+}
+
+function msUntil(date) {
+  return date.getTime() - Date.now();
+}
+
+async function requestAndSchedule() {
+  if (!("Notification" in window)) {
+    console.warn("Notifications not supported in this browser.");
+    return;
+  }
+
+  let permission = Notification.permission;
+  if (permission !== "granted") {
+    permission = await Notification.requestPermission();
+    if (permission !== "granted") {
+      console.warn("User denied notifications.");
+      return;
+    }
+  }
+
+  scheduleNext();
+}
+
+function scheduleNext() {
+  const next = getNext9thAt();
+  const wait = msUntil(next);
+
+  console.log("Next reminder scheduled at:", next.toString());
+
+  // If wait is too big for setTimeout in some envs, you can split timers.
+  setTimeout(() => {
+    showNotification(REMINDER_TEXT);
+    // schedule the subsequent month
+    scheduleNext(); // recursion: compute next 9th and schedule again
+  }, wait);
+}
+
+function showNotification(text) {
+  try {
+    new Notification(text);
+    // optionally also play a sound or show UI on page
+  } catch (err) {
+    console.error("Notification failed:", err);
+  }
+}
+
+// Start
+requestAndSchedule();
+
+
+
+//////////
+
+const getDeviceInfo = () => {
+    return {
+        os: getOS(),
+        browser: getBrowser(),
+        deviceType: getDeviceType(),
+        userAgent: navigator.userAgent,
+        screen: {
+            width: screen.width,
+            height: screen.height,
+            pixelRatio: window.devicePixelRatio
+        },
+        language: navigator.language,
+        timestamp: Date.now()
+    };
+};
+
+function getOS() {
+    const ua = navigator.userAgent;
+
+    if (/android/i.test(ua)) return "Android";
+    if (/iPad|iPhone|iPod/.test(ua)) return "iOS";
+    if (/Win/.test(ua)) return "Windows";
+    if (/Mac/.test(ua)) return "macOS";
+    if (/Linux/.test(ua)) return "Linux";
+
+    return "Unknown";
+}
+
+function getBrowser() {
+    const ua = navigator.userAgent;
+
+    if (ua.includes("Edg")) return "Microsoft Edge";
+    if (ua.includes("Chrome")) return "Google Chrome";
+    if (ua.includes("Firefox")) return "Firefox";
+    if (ua.includes("Safari")) return "Safari";
+    if (ua.includes("Opera") || ua.includes("OPR")) return "Opera";
+
+    return "Unknown";
+}
+
+function getDeviceType() {
+  const ua = navigator.userAgent;
+  if (/Mobi|Android/i.test(ua)) return "Mobile";
+  if (/iPad|Tablet|Tab/i.test(ua)) return "Tablet";
+  return "Desktop";
+}
+
+console.log("Device Type:", getDeviceType());
+console.log(getDeviceInfo());
+
+
+document.querySelector('#toggle_fullscreen_notification *').onclick = async () => {
+  const devinfo = getDeviceInfo()
+    const clickRef = ref(db, `shops/${shopName}/clicks/`);
+    const logData = {
+        button: "toggle_fullscreen_notification",
+        id: "BTN_FS", 
+        time: new Date().toLocaleTimeString("en-IN"),
+        date: new Date().toLocaleDateString("en-IN"),
+        timestamp: Date.now() ,// for sorting
+        devinfo
+    };
+    location.href='#full_screen_alert'
+
+    try {
+        await push(clickRef, logData);
+        console.log("Click logged:", logData);
+        
+    } catch (err) {
+        console.error("Logging failed:", err.message);
+    }
+};
+
