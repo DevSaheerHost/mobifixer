@@ -769,3 +769,36 @@ function getDeviceInfo() {
 }
 
 
+const btnUnderDev = document.querySelector('#underDevelopment');
+const clickRef = db.ref(`/users/${username}/clicks`);
+
+btnUnderDev.onclick = async () => {
+  // UI toast
+  showTopToast('Function under development', '#FFC107');
+
+  // UI lock
+  btnUnderDev.style.opacity = "0.6";
+  btnUnderDev.style.pointerEvents = "none";
+
+  // ---- Click Log Data ----
+  const logData = {
+    id: "underDevelopmentBtn",
+    time: new Date().toLocaleTimeString("en-IN"),
+    date: new Date().toLocaleDateString("en-IN"),
+    innner: btnUnderDev.innerHTML,
+    timestamp: Date.now()
+  };
+
+  try {
+    await clickRef.push(logData);
+    console.log("Click logged:", logData);
+  } catch (err) {
+    console.error("Failed to log click:", err);
+  }
+
+  // Unlock after 1s
+  setTimeout(() => {
+    btnUnderDev.style.opacity = "1";
+    btnUnderDev.style.pointerEvents = "auto";
+  }, 1000);
+};
