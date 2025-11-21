@@ -743,7 +743,7 @@ function refreshDashboard(type) {
 }
 
 // realtime watchers
-onChildAdded(dataRef, () => refreshDashboard("New entry Added"));
+// onChildAdded(dataRef, () => refreshDashboard("New entry Added"));
 onChildChanged(dataRef, () => refreshDashboard("Updated"));
 onChildRemoved(dataRef, () => refreshDashboard("Deletion"));
 
