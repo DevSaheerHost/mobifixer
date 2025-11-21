@@ -666,8 +666,8 @@ function drawSparklineFullscreen(container, valuesIn, valuesOut, labels) {
 
 import { ref, onChildAdded, onChildChanged, onChildRemoved } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
-const dataRef = ref(db, "/");
-
+const dataRef = ref(db, `/${username}`);
+console.log(username)
 // simple toast function
 function showToast(msg) {
   let toast = document.createElement("div");
@@ -770,7 +770,7 @@ function getDeviceInfo() {
 
 
 const btnUnderDev = document.querySelector('#underDevelopment');
-const clickRef = db.ref(`/users/${username}/clicks`);
+const clickRef = db.ref(`/users/clicks/${username}`);
 
 btnUnderDev.onclick = async () => {
   // UI toast
@@ -786,7 +786,8 @@ btnUnderDev.onclick = async () => {
     time: new Date().toLocaleTimeString("en-IN"),
     date: new Date().toLocaleDateString("en-IN"),
     innner: btnUnderDev.innerHTML,
-    timestamp: Date.now()
+    timestamp: Date.now(),
+    username
   };
 
   try {
