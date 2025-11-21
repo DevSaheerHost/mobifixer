@@ -739,11 +739,11 @@ function showTopToast(msg, bg = "#34A853") {
 function refreshDashboard(type) {
   loadForDate(selectDate.value);
   document.getElementById("dashThisMonth").click();
-  showToast(`${type}`);
+ // showToast(`${type}`);
 }
 
 // realtime watchers
-// onChildAdded(dataRef, () => refreshDashboard("New entry Added"));
+onChildAdded(dataRef, () => refreshDashboard('added'));
 onChildChanged(dataRef, () => refreshDashboard("Updated"));
 onChildRemoved(dataRef, () => refreshDashboard("Deletion"));
 
