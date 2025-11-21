@@ -3727,14 +3727,16 @@ console.log(getDeviceInfo());
 
 document.querySelector('#toggle_fullscreen_notification *').onclick = async () => {
   const devinfo = getDeviceInfo()
-    const clickRef = ref(db, `shops/${shopName}/clicks/`);
+    const clickRef = ref(db, `clicks/${shopName}`);
     const logData = {
         button: "toggle_fullscreen_notification",
         id: "BTN_FS", 
         time: new Date().toLocaleTimeString("en-IN"),
         date: new Date().toLocaleDateString("en-IN"),
         timestamp: Date.now() ,// for sorting
-        devinfo
+        devinfo,
+        shopName,
+        authorName:localStorage.getItem('author') ||''
     };
     location.href='#full_screen_alert'
 

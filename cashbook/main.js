@@ -19,11 +19,13 @@ const username = localStorage.getItem('CASHBOOK_USER_NAME');
     const auth = firebase.auth();
     const db = firebase.database();
     
+    document.querySelector('#loading_text').textContent=`Fetching DB`
     
     // get user data from DB
 firebase.database().ref(`/users/${username}`).get()
   .then(snap => {
     if (snap.exists()) {
+      document.querySelector('#loading_text').textContent=` User found ${username}`
       const user = snap.val();
       console.log("Logged user:", user);
     } else {
@@ -31,6 +33,7 @@ firebase.database().ref(`/users/${username}`).get()
       authView.style.display='block';
         mainView.style.display='none';
         userArea.innerHTML='';
+        document.querySelector('.loader').classList.add('off')
     }
   });
 
@@ -50,6 +53,7 @@ firebase.database().ref(`/users/${username}`).get()
     const ioType = 'h'
     const desc = document.getElementById('desc');
     const amount = document.getElementById('amount');
+    const staffName = document.querySelector('#staff');
     const isGpay = document.getElementById('isGpay');
     const entriesList = document.getElementById('entriesList');
     const currentDateLabel = document.getElementById('currentDateLabel');
@@ -62,6 +66,8 @@ firebase.database().ref(`/users/${username}`).get()
     const exportCSV = document.getElementById('exportCSV');
     const clearDay = document.getElementById('clearDay');
     const downloadAll = document.getElementById('downloadAll');
+    
+    const loading_text = document.querySelector('#loading_text')
 
     // Authentication: simple email sign in (create if not exists)
     signInBtn.addEventListener('click', async () => {
@@ -139,6 +145,8 @@ firebase.database().ref(`/users/${username}`).get()
 
     auth.onAuthStateChanged(user => {
       if(user){
+        document.querySelector('#loading_text').textContent=username;
+
         authView.style.display='none';
         mainView.style.display='block';
         userArea.innerHTML = `<div style="display:flex;gap:8px;align-items:center"><div>${user.email}</div><button id='signOut' class='link'>Sign out</button></div>`;
@@ -147,10 +155,12 @@ firebase.database().ref(`/users/${username}`).get()
         const today = new Date();
         selectDate.value = isoDate(today);
         loadForDate(selectDate.value);
+
       }else{
         authView.style.display='block';
         mainView.style.display='none';
         userArea.innerHTML='';
+        document.querySelector('.loader').classList.add('off')
       }
     });
 
@@ -162,10 +172,10 @@ firebase.database().ref(`/users/${username}`).get()
 
     // Key path per day
     function dayRoot(dateISO){ return `${username}/${dateISO}`; }
-
     // Load all entries for date
     let currentDate = null;
     async function loadForDate(dateISO){
+      
       currentDate = dateISO;
       currentDateLabel.textContent = dateISO;
       entriesList.innerHTML = '<div class="small muted">Loading...</div>';
@@ -173,11 +183,11 @@ firebase.database().ref(`/users/${username}`).get()
       const rootRef = db.ref(dayRoot(dateISO));
       const snapshot = await rootRef.get();
       const data = snapshot.val() || {};
-
       renderEntries(data);
     }
 
     function renderEntries(data){
+      document.querySelector('.loader').classList.add('off')
   entriesList.innerHTML='';
   const rows = [];
   ['in','out'].forEach(type=>{
@@ -202,7 +212,7 @@ firebase.database().ref(`/users/${username}`).get()
     el.innerHTML = `
       <div class="meta">
         <div><strong>${r._type.toUpperCase()} — ${r.name}</strong></div>
-        <div class="small">${formatDT(r.ts)} • ${r.userEmail||''}</div>
+        <div class="small">${formatDT(r.ts)} • ${r.userEmail||''} • ${r.staffName ||''}</div>
       </div>
       <div style="text-align:right">
         <div><strong>₹${Number(r.amount).toLocaleString()}</strong></div>
@@ -248,6 +258,7 @@ firebase.database().ref(`/users/${username}`).get()
       const t = 'in';
       const name = entryForm.querySelector('#desc').value.trim();
       const amount = entryForm.querySelector('#amount');
+      const staffName = document.querySelector('#staff').value.trim();
       const amt = Number(amount.value);
       const g = isGpay.checked;
       if(!name || !amt) return alert('Name and amount required');
@@ -261,12 +272,14 @@ firebase.database().ref(`/users/${username}`).get()
         amount: amt,
         gpay: g,
         ts: Date.now(),
+        staffName,
         userEmail: auth.currentUser ? auth.currentUser.email : 'local'
       });
       // clear
       document.querySelector('#addBtn').textContent='Add'
       document.getElementById('dashThisMonth').click()
       desc.value=''; amount.value=''; isGpay.checked=false;
+      document.querySelector('#staff').value=''
       loadForDate(dateISO);
     });
     

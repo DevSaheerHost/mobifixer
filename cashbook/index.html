@@ -103,7 +103,7 @@
 </head>
 <body>
   <div class="nav">
-    <div class="brand">Mobifixer Cash Book</div>
+    <div class="brand">Cash Book</div>
     <div id="userArea"></div>
   </div>  <div class="container" id="app">
     
@@ -133,6 +133,9 @@
 
           <input id="desc" placeholder="Name: e.g. iPhone 6s battery replacement" style="flex:1; min-width: 30%;"  />
           <input id="amount" placeholder="Amount" type="number"  />
+          
+          <input type="text" name="staff" id="staff" placeholder="User">
+          
           <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="isGpay" /> 
           <i class="fa-brands fa-google-pay gpay big"></i>
           </label>
@@ -234,6 +237,14 @@
 </div> -->
 </div>
 
+
+<div class="loader">
+  <h1>
+    <i class="fa-solid fa-cloud-arrow-down"></i>
+  </h1>
+  
+  <p id="loading_text">Loading...</p>
+</div>
 
   </div> </<!-- Firebase SDKs ( project config) -->  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>  <script type="module" src="./main.js"></script></body>
 </html>

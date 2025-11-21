@@ -147,3 +147,49 @@ svg {
     font-size: 40px;
     
 }
+.loader{
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    backdrop-filter: blur(3px);
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666666;
+    transition: all 0.3s;
+    flex-flow: column;
+    box-shadow: 10px 10px 10px rgba(0, 0, 0, 0.15);
+}
+.loader.off{
+    transform: scaleY(0);
+    overflow: hidden;
+    backdrop-filter: blur(0px);
+    opacity: 0;
+}
+*{
+    transition: all 0.3s;
+    animation: scaleup 0.3s;
+}
+
+.nav{
+    border-radius: 0 0 7px 7px;
+}
+
+@keyframes scaleup{
+    0%{
+        scale: 0.95;
+    }
+    70%{
+        scale: 1.01;
+    }
+    100%{
+        scale: 1;
+    }
+}
+.loader p{
+    font-size: 13px;
+    font-weight: 500;
+    font-style: italic;
+}
