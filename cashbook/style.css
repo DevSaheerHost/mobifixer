@@ -193,3 +193,20 @@ svg {
     font-weight: 500;
     font-style: italic;
 }
+
+input#staff{
+    border: 2px solid #34A853;
+    max-width: 100px;
+}
+
+
+form button{
+    font-weight: 500;
+    flex: 1;
+}
+#entryFormIn button{
+    background: #34A853;
+}
+#entryFormOut button {
+    background: #ef4444;
+}
