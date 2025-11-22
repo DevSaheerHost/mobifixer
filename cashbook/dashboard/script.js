@@ -39,8 +39,12 @@ async function loadRange(start, end) {
   const results = [];
 
   for (let date in all) {
-    const cur = new Date(date);
-    if (cur < sd || cur > ed) continue;
+  
+  // ❗ skip folders like RecycleBin / settings / anything not a date
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
+  
+  const cur = new Date(date);
+  if (cur < sd || cur > ed) continue;
 
     const node = all[date];
 
@@ -61,10 +65,11 @@ async function loadRange(start, end) {
     }
 
     results.push({
-      date,
-      income,
-      expense
-    });
+  date,
+  income,
+  expense,
+  balance: income - expense   // ➕ ADD THIS LINE
+});
   }
 
   results.sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -86,11 +91,13 @@ function drawChart(data) {
   const labels = data.map(d => d.date);
   const income = data.map(d => d.income);
   const expense = data.map(d => d.expense);
+  const balance = data.map(d => d.balance);
 
   const w = Math.max(600, data.length * 80 + 120); // ensure minimum width
   const h = 320;
 
-  const maxVal = Math.max(...income, ...expense, 10);
+  // const maxVal = Math.max(...income, ...expense, 10);
+  const maxVal = Math.max(...income, ...expense, ...balance, 10);
 
   const scaleX = i => 60 + i * ((w - 120) / Math.max(1, data.length - 1));
   const scaleY = v => 40 + (1 - (v / maxVal)) * (h - 100);
@@ -130,6 +137,7 @@ function linePath(values) {
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" role="img">`;
   // background
   svg += `<rect x="0" y="0" width="${w}" height="${h}" fill="transparent"/>`;
+  
 
   // vertical grid + labels (day numbers)
   for (let i = 0; i < data.length; i++) {
@@ -142,10 +150,14 @@ function linePath(values) {
 
   const pathIn = linePath(income);
   const pathOut = linePath(expense);
+  const pathBal = linePath(balance);
 
   // add paths with classes for animation
   svg += `<path d="${pathIn}" fill="none" stroke="#0BA2FF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="line-path in-line"/>`;
   svg += `<path d="${pathOut}" fill="none" stroke="#FF4D4D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="line-path out-line"/>`;
+  
+  svg += `<path d="${pathBal}" fill="none" stroke="#6A5ACD" stroke-width="3" 
+stroke-linecap="round" stroke-linejoin="round" class="line-path bal-line"/>`;
 
   // dots & small labels
   // ---------- income labels with background ----------
@@ -217,6 +229,40 @@ expense.forEach((v, i) => {
     >${v}</text>
 
     <circle cx="${x}" cy="${y}" r="4" fill="#FF4D4D"/>
+  `;
+});
+
+
+// ---------- balance labels with background ----------
+balance.forEach((v, i) => {
+  const x = scaleX(i), y = scaleY(v);
+
+  const label = String(v);
+  const paddingX = 6;
+  const textWidth = label.length * 7;
+  const boxX = x - textWidth/2 - paddingX;
+  const boxY = y - 25;
+
+  svg += `
+    <rect 
+      x="${boxX}" 
+      y="${boxY}" 
+      width="${textWidth + paddingX*2}" 
+      height="18" 
+      rx="4" ry="4" 
+      fill="rgba(106,90,205,0.12)"
+      stroke="#6A5ACD"
+      stroke-width="0.8"
+    />
+    <text 
+      x="${x}" 
+      y="${boxY + 13}" 
+      font-size="11" 
+      text-anchor="middle" 
+      fill="#6A5ACD"
+    >${v}</text>
+
+    <circle cx="${x}" cy="${y}" r="4" fill="#6A5ACD"/>
   `;
 });
   
