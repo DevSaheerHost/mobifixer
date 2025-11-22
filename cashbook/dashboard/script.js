@@ -156,9 +156,9 @@ function linePath(values) {
   svg += `<path d="${pathIn}" fill="none" stroke="#0BA2FF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="line-path in-line"/>`;
   svg += `<path d="${pathOut}" fill="none" stroke="#FF4D4D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="line-path out-line"/>`;
   
-  svg += `<path d="${pathBal}" fill="none" stroke="#6A5ACD" stroke-width="3" 
+  svg += `<path d="${pathBal}" fill="none" stroke="#6A5ACD78" stroke-width="3" 
 stroke-linecap="round" stroke-linejoin="round" class="line-path bal-line"/>`;
-
+//#6A5ACD
   // dots & small labels
   // ---------- income labels with background ----------
 income.forEach((v, i) => {
@@ -251,7 +251,7 @@ balance.forEach((v, i) => {
       height="18" 
       rx="4" ry="4" 
       fill="rgba(106,90,205,0.12)"
-      stroke="#6A5ACD"
+      stroke="#6A5ACD78"
       stroke-width="0.8"
     />
     <text 
@@ -259,7 +259,7 @@ balance.forEach((v, i) => {
       y="${boxY + 13}" 
       font-size="11" 
       text-anchor="middle" 
-      fill="#6A5ACD"
+      fill="#6A5ACD78"
     >${v}</text>
 
     <circle cx="${x}" cy="${y}" r="4" fill="#6A5ACD"/>
@@ -309,7 +309,7 @@ document.getElementById("loadBtn").onclick = async () => {
   drawChart(data);
 };
 
-
+document.querySelector('.top-bar').oninput=()=>loadBtn.click()
 // zoom engine 
 
 // ---------------------------------------------------------
@@ -516,3 +516,5 @@ function setDefaultDates() {
 document.addEventListener("DOMContentLoaded", () => {
   setDefaultDates();
 });
+
+

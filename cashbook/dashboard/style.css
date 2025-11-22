@@ -10,6 +10,17 @@ body {
   margin: auto;
 }
 
+input[type="date"]{
+  border-radius: 7px;
+  background: #fff;
+  font-weight: 500;
+  border: 1px solid ;
+}
+
+.mt-1{
+  margin-top: 1rem;
+}
+
 .top-bar {
   display: flex;
   justify-content: space-between;
@@ -32,7 +43,7 @@ button {
   font-size: 15px;
 }
 
-.chart-card {
+.card {
   background: white;
   padding: 20px;
   border-radius: 18px;
@@ -58,3 +69,18 @@ svg {
   margin-top: 10px;
 
 }
+
+.info li{
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  
+  font-weight: 500;
+}
+.info span{
+  height: 10px;
+  width: 10px;
+  display: block;
+  border-radius: 100px;
+}
+
