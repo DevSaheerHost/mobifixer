@@ -24,6 +24,43 @@ function dayLabel(dateStr) {
   return Number(dateStr.slice(8, 10)); // 12,13,14
 }
 
+function resolveCollisions(labelBoxes) {
+  const MIN_Y = 40;
+  const MAX_Y = 260;
+
+  // group labels by X (one group per day)
+  const groups = {};
+  labelBoxes.forEach(lb => {
+    if (!groups[lb.x]) groups[lb.x] = [];
+    groups[lb.x].push(lb);
+  });
+
+  Object.values(groups).forEach(group => {
+    if (group.length <= 1) return;
+
+    // Sort by value type: income → balance → expense (top to bottom)
+    group.sort((a, b) => {
+      const order = { income: 0, balance: 1, expense: 2 };
+      return order[a.type] - order[b.type];
+    });
+
+    // fixed vertical stacking gap
+    const GAP = 22;
+
+    // Middle reference point (average Y of all labels)
+    const avgY = group.reduce((s, v) => s + v.y, 0) / group.length;
+
+    // Assign stacked Y positions
+    group.forEach((item, idx) => {
+      item.y = avgY + (idx - 1) * GAP;
+
+      // clamp to chart area
+      if (item.y < MIN_Y) item.y = MIN_Y;
+      if (item.y + item.h > MAX_Y) item.y = MAX_Y - item.h;
+    });
+  });
+}
+
 
 // -----------------------------------
 // LOAD DATA (FIXED FOR YOUR STRUCTURE)
@@ -160,109 +197,86 @@ function linePath(values) {
 stroke-linecap="round" stroke-linejoin="round" class="line-path bal-line"/>`;
 //#6A5ACD
   // dots & small labels
-  // ---------- income labels with background ----------
-income.forEach((v, i) => {
-  const x = scaleX(i), y = scaleY(v);
+// -----------------------------
 
-  const label = String(v);
-  const paddingX = 6;
-  const paddingY = 3;
 
-  // approximate width by characters × 7px
-  const textWidth = label.length * 7;
-  const boxX = x - textWidth/2 - paddingX;
-  const boxY = y - 25;
+// -----------------------------
+// DRAW DOTS (INCOME / EXPENSE / BALANCE)
+// -----------------------------
+data.forEach((d, i) => {
+  const x = scaleX(i);
 
-  svg += `
-    <rect 
-      x="${boxX}" 
-      y="${boxY}" 
-      width="${textWidth + paddingX*2}" 
-      height="18" 
-      rx="4" ry="4" 
-      fill="rgba(11,162,255,0.12)"
-      stroke="#0BA2FF"
-      stroke-width="0.8"
-    />
-    <text 
-      x="${x}" 
-      y="${boxY + 13}" 
-      font-size="11" 
-      text-anchor="middle" 
-      fill="#0BA2FF"
-    >${v}</text>
+  // Income dot (blue)
+  svg += `<circle cx="${x}" cy="${scaleY(income[i])}" r="4" fill="#0BA2FF"/>`;
 
-    <circle cx="${x}" cy="${y}" r="4" fill="#0BA2FF"/>
-  `;
-});
+  // Expense dot (red)
+  svg += `<circle cx="${x}" cy="${scaleY(expense[i])}" r="4" fill="#FF4D4D"/>`;
 
-// ---------- expense labels with background ----------
-expense.forEach((v, i) => {
-  const x = scaleX(i), y = scaleY(v);
-
-  const label = String(v);
-  const paddingX = 6;
-  const paddingY = 3;
-
-  // approximate width by characters × 7px
-  const textWidth = label.length * 7;
-  const boxX = x - textWidth/2 - paddingX;
-  const boxY = y - 25;
-
-  svg += `
-    <rect 
-      x="${boxX}" 
-      y="${boxY}" 
-      width="${textWidth + paddingX*2}" 
-      height="18" 
-      rx="4" ry="4" 
-      fill="rgba(255,77,77,0.12)"
-      stroke="#FF4D4D"
-      stroke-width="0.8"
-    />
-    <text 
-      x="${x}" 
-      y="${boxY + 13}" 
-      font-size="11" 
-      text-anchor="middle" 
-      fill="#FF4D4D"
-    >${v}</text>
-
-    <circle cx="${x}" cy="${y}" r="4" fill="#FF4D4D"/>
-  `;
+  // Balance dot (purple)
+  svg += `<circle cx="${x}" cy="${scaleY(balance[i])}" r="4" fill="#6A5ACD"/>`;
 });
 
 
-// ---------- balance labels with background ----------
-balance.forEach((v, i) => {
-  const x = scaleX(i), y = scaleY(v);
 
-  const label = String(v);
-  const paddingX = 6;
-  const textWidth = label.length * 7;
-  const boxX = x - textWidth/2 - paddingX;
-  const boxY = y - 25;
+// AUTO-COLLISION LABEL SYSTEM
+// -----------------------------
 
+const labelsArr = []; // store all labels
+
+data.forEach((d, i) => {
+  const x = scaleX(i);
+
+  const pts = [
+    { v: income[i], color: "#0BA2FF", bg: "rgba(11,162,255,0.12)", stroke: "#0BA2FF" },
+    { v: expense[i], color: "#FF4D4D", bg: "rgba(255,77,77,0.12)", stroke: "#FF4D4D" },
+    { v: balance[i], color: "#6A5ACD", bg: "rgba(106,90,205,0.12)", stroke: "#6A5ACD" }
+  ];
+
+  pts.forEach(pt => {
+    const y = scaleY(pt.v);
+    const textWidth = String(pt.v).length * 7 + 12;
+
+    labelsArr.push({
+  x: x,
+  y: y - 25,
+  w: textWidth,
+  h: 18,
+  value: pt.v,
+  color: pt.color,
+  bg: pt.bg,
+  stroke: pt.stroke,
+  type: (
+    pt.color === "#0BA2FF" ? "income" :
+    pt.color === "#6A5ACD" ? "balance" :
+    "expense"
+  )
+});
+  });
+});
+
+// resolve collisions
+resolveCollisions(labelsArr, 4);
+
+// draw corrected labels
+labelsArr.forEach(lb => {
   svg += `
-    <rect 
-      x="${boxX}" 
-      y="${boxY}" 
-      width="${textWidth + paddingX*2}" 
-      height="18" 
-      rx="4" ry="4" 
-      fill="rgba(106,90,205,0.12)"
-      stroke="#6A5ACD78"
+    <rect
+      x="${lb.x - lb.w/2}"
+      y="${lb.y}"
+      width="${lb.w}"
+      height="${lb.h}"
+      rx="4" ry="4"
+      fill="${lb.bg}"
+      stroke="${lb.stroke}"
       stroke-width="0.8"
     />
     <text 
-      x="${x}" 
-      y="${boxY + 13}" 
-      font-size="11" 
+      x="${lb.x}" 
+      y="${lb.y + 13}"
+      font-size="11"
       text-anchor="middle" 
-      fill="#6A5ACD78"
-    >${v}</text>
-
-    <circle cx="${x}" cy="${y}" r="4" fill="#6A5ACD"/>
+      fill="${lb.color}"
+    >${lb.value}</text>
   `;
 });
   
