@@ -443,9 +443,9 @@ drawSparklineFullscreen(fullscreenChart, nets, labels)
   chartElSvg.onclick=()=>{
   location.href='./dashboard'
     mainView.style.display='none';
-    chartView.style.display='block';
-    document.querySelector('.card.dboard').style.display='none';
-    showFullChart(dayTotals)
+   // chartView.style.display='block';
+   // document.querySelector('.card.dboard').style.display='none';
+   // showFullChart(dayTotals)
   }
 if (dayTotals.length > 1) {
   drawSparkline(
@@ -798,18 +798,29 @@ onChildRemoved(dataRef, () => refreshDashboard("Deletion"));
 
 // Auto add common items
 
-const outDesc = entryFormOut.querySelector('#desc')
-outDesc.oninput=e=>{
-  if (outDesc.value.trim().toLowerCase()==='kuri') {
-    entryFormOut.querySelector('#amount').value = 200;
-  }else entryFormOut.querySelector('#amount').value = '';
-  
-  
-  if (outDesc.value.trim().toLowerCase()==='tea') {
-    entryFormOut.querySelector('#amount').value = 50;
-    username.toLowerCase()==='mobifixer chengamanad'?entryFormOut.querySelector('#amount').value = 100:'';
-  }else entryFormOut.querySelector('#amount').value = '';
-}
+const outDesc = entryFormOut.querySelector('#desc');
+outDesc.oninput = e => {
+  const val = outDesc.value.trim().toLowerCase();
+  const amount = entryFormOut.querySelector('#amount');
+
+  // Default reset
+  amount.value = '';
+
+  if (val === 'kuri') {
+    amount.value = 200;
+    return;
+  }
+
+  if (val === 'tea') {
+    // base amount
+    amount.value = 50;
+
+    // special rule for "mobifixer chengamanad"
+    if (username.toLowerCase() === 'mobifixer chengamanad') {
+      amount.value = 100;
+    }
+  }
+};
 
 
 
