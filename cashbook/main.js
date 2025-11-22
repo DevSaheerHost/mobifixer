@@ -829,103 +829,6 @@ btnUnderDev.onclick = async () => {
 
 
 // ----------------------
-// Helper: Detect Differences per-date
-// ----------------------
-const detectDifferences = (firebaseData = {}, localData = {}) => {
-  const differences = {};
-
-  Object.keys(firebaseData).forEach(date => {
-    if (!localData[date]) return;
-
-    const fbEntry = firebaseData[date];
-    const locEntry = localData[date];
-
-    try {
-      if (JSON.stringify(fbEntry) === JSON.stringify(locEntry)) return;
-    } catch (e) {}
-
-    const fbKeys = Object.keys(fbEntry || {});
-    const locKeys = Object.keys(locEntry || {});
-
-    let different = fbKeys.length !== locKeys.length;
-    if (!different) {
-      for (const k of fbKeys) {
-        const a = fbEntry[k];
-        const b = locEntry[k];
-        const sa = typeof a === 'object' ? JSON.stringify(a) : String(a);
-        const sb = typeof b === 'object' ? JSON.stringify(b) : String(b);
-        if (sa !== sb) { different = true; break; }
-      }
-    }
-
-    if (different) {
-      differences[date] = {
-        firebase: fbEntry,
-        local: locEntry
-      };
-    }
-  });
-
-  return differences;
-};
-
-
-// ----------------------
-// Auto-Resolve Conflicts (timestamp aware)
-// ----------------------
-const autoResolveConflicts = async () => {
-  const rootRef = db.ref(username);
-  const snapshot = await rootRef.get();
-  const firebaseData = snapshot.val() || {};
-
-  const localData = JSON.parse(localStorage.getItem("cashbook_backup") || "{}");
-
-  const conflicts = detectDifferences(firebaseData, localData);
-
-  if (Object.keys(conflicts).length === 0) {
-    console.log("No conflicts detected.");
-    return;
-  }
-
-  console.log("Conflicts:", conflicts);
-
-  const finalData = { ...firebaseData };
-  const finalLocal = { ...localData };
-
-  Object.keys(conflicts).forEach(date => {
-    const fb = conflicts[date].firebase;
-    const loc = conflicts[date].local;
-
-    const fbTs = fb?.updatedAt || fb?.meta?.updatedAt || fb?._updatedAt || null;
-    const locTs = loc?.updatedAt || loc?.meta?.updatedAt || loc?._updatedAt || null;
-
-    const parseTs = (t) => {
-      if (!t) return null;
-      if (typeof t === "number") return t;
-      const n = parseInt(t);
-      return isNaN(n) ? null : n;
-    };
-
-    const fbt = parseTs(fbTs);
-    const loct = parseTs(locTs);
-
-    let chosen;
-
-    if (fbt && loct) chosen = fbt >= loct ? fb : loc;
-    else if (fbt && !loct) chosen = fb;
-    else if (!fbt && loct) chosen = loc;
-    else chosen = fb; // No timestamps → prefer Firebase
-
-    finalData[date] = chosen;
-    finalLocal[date] = chosen;
-  });
-
-  await rootRef.set(finalData);
-  localStorage.setItem("cashbook_backup", JSON.stringify(finalLocal));
-
-  showTopToast("Conflicts fixed & data synced.", "#FBBC05");
-  console.log("autoResolveConflicts: done.");
-};
 
 
 // ----------------------
@@ -945,6 +848,15 @@ const saveData = async () => {
 
   const newDates = firebaseDates.filter(d => !localDates.includes(d));
 
+if (newDates.length < 0) {
+  //  console.log("New dates found:", newDates);
+
+    
+
+    
+    showTopToast("Data missing", '#ef4444');
+  }
+  
   if (newDates.length > 0) {
     console.log("New dates found:", newDates);
 
@@ -955,26 +867,11 @@ const saveData = async () => {
     localStorage.setItem("cashbook_backup", JSON.stringify(backup));
     showTopToast("Data Backup done", '#34A853');
   }
+  
+  
 };
 
 
-// ----------------------
-// Auto Restore
-// ----------------------
-const autoRestore = async () => {
-  const rootRef = db.ref(username);
-  const snapshot = await rootRef.get();
-  const data = snapshot.val() || {};
-
-  const backup = JSON.parse(localStorage.getItem("cashbook_backup") || "{}");
-
-  if (Object.keys(data).length === 0 && Object.keys(backup).length > 0) {
-    await rootRef.set(backup);
-    showTopToast("Recovery completed. Data restored.", "#4285F4");
-    console.log("Auto-restore done.");
-    return;
-  }
-};
 
 
 // ----------------------
@@ -982,8 +879,6 @@ const autoRestore = async () => {
 // ----------------------
 const syncCashbook = async () => {
   await saveData();
-  await autoRestore();
-  await autoResolveConflicts();
 };
 
 
@@ -1001,6 +896,8 @@ function shouldRunToday() {
 }
 
 if (shouldRunToday()) {
-  syncCashbook();
+  // syncCashbook();
   showTopToast("Daily sync completed", "#34A853");
 }
+
+syncCashbook();
