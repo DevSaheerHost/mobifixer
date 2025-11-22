@@ -54,6 +54,48 @@ function showPredictionTooltip(x, y, value) {
 }
 
 
+function stdDev(arr) {
+  const mean = arr.reduce((a,b)=>a+b,0) / arr.length;
+  const variance = arr.reduce((a,b)=>a+(b-mean)**2,0) / arr.length;
+  return Math.sqrt(variance);
+}
+
+function r2Score(xs, ys, m, c) {
+  const mean = ys.reduce((a,b)=>a+b,0) / ys.length;
+
+  let ssTot = 0;
+  let ssRes = 0;
+
+  ys.forEach((y, i) => {
+    const pred = m * xs[i] + c;
+    ssTot += (y - mean) ** 2;
+    ssRes += (y - pred) ** 2;
+  });
+
+  return 1 - (ssRes / ssTot);
+}
+
+function computeConfidence(ys, m, c, xs) {
+  const deviation = stdDev(ys);      // natural volatility
+  const r2 = r2Score(xs, ys, m, c);  // model accuracy
+
+  // normalize deviation (0 to 100)
+ // const devScore = Math.max(1, 100 - deviation * 2);
+  // softer penalty → more natural confidence values
+//const devScore = Math.max(5, 100 - deviation * 0.6);
+const devScore = Math.max(5, 100 - Math.sqrt(deviation) * 15);
+  // r² score already in 0 to 1 → convert to %
+  const accuracyScore = r2 * 100;
+
+  // final confidence = weighted
+  const finalConfidence =
+      (devScore * 0.4) +      // 40% trend stability
+      (accuracyScore * 0.6);  // 60% regression fitting
+
+  return Math.round(finalConfidence);
+}
+
+
 
 // -----------------------------------
 // LOAD DATA (FIXED FOR YOUR STRUCTURE)
@@ -268,6 +310,20 @@ const xs = data.map((_, i) => i);
 const ys = data.map(d => d.balance);
 const future = linearPredict(xs, ys, 5);
 
+// Recompute m & c here for confidence calculation
+const n = xs.length;
+
+const sumX = xs.reduce((a,b)=>a+b,0);
+const sumY = ys.reduce((a,b)=>a+b,0);
+const sumXY = xs.reduce((a,b,i)=>a + b * ys[i],0);
+const sumX2 = xs.reduce((a,b)=>a + b*b,0);
+
+const m = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+const c = (sumY - m * sumX) / n;
+
+// final AI confidence %
+const confidence = computeConfidence(ys, m, c, xs);
+
 // CONFIDENCE BOUNDS (±10%)
 const upper = future.map(v => v * 1.10);
 const lower = future.map(v => v * 0.90);
@@ -338,6 +394,19 @@ svg += `
     font-weight="bold"
   >
     ${arrow}
+  </text>
+`;
+
+
+svg += `
+  <text 
+    x="${lastX + 10}" 
+    y="${lastY + 22}" 
+    font-size="12"
+    fill="${trendColor}"
+    font-weight="600"
+  >
+    ${confidence}% confidence
   </text>
 `;
 
