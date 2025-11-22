@@ -84,3 +84,12 @@ svg {
   border-radius: 100px;
 }
 
+
+.info .prediction{
+  border-top: 2px dashed #FF1744;
+  border-bottom: 2px dashed #00C853;
+
+  border-radius: 0;
+  
+  
+}

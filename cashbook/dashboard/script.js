@@ -224,6 +224,8 @@ data.forEach((d, i) => {
 // TRENDLINE (Stable Linear Regression)
 // -----------------------------------------
 
+
+
 function linearPredict(xs, ys, futurePoints = 7) {
   const n = xs.length;
 
@@ -249,13 +251,22 @@ const ys = data.map(d => d.balance);
 const future = linearPredict(xs, ys, 7);
 const trendPoints = [...ys, ...future];
 
+// Determine trend direction (last predicted vs last real value)
+const lastReal = ys[ys.length - 1];
+const lastPred = future[0];        // first predicted point
+
+let trendColor = "#00C853";  // green (default)
+if (lastPred < lastReal) {
+  trendColor = "#FF1744";    // red (down trend)
+}
+
 const trendPath = linePath(trendPoints);
 
 // Draw trendline
 svg += `
   <path d="${trendPath}"
     fill="none"
-    stroke="#AA66FF"
+    stroke="${trendColor}"
     stroke-width="2"
     stroke-dasharray="8 6"
     opacity="0.9"
