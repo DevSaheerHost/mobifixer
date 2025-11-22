@@ -21,7 +21,7 @@ if (!username || !username.trim()) {
   
   localStorage.setItem('CASHBOOK_USER_NAME', myName)
 }
-
+document.querySelector('#shopName').textContent=username
 // -----------------------------------
 // HELPERS
 // -----------------------------------
