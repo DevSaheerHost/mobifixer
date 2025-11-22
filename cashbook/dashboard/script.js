@@ -25,40 +25,7 @@ function dayLabel(dateStr) {
 }
 
 function resolveCollisions(labelBoxes) {
-  const MIN_Y = 40;
-  const MAX_Y = 260;
 
-  // group labels by X (one group per day)
-  const groups = {};
-  labelBoxes.forEach(lb => {
-    if (!groups[lb.x]) groups[lb.x] = [];
-    groups[lb.x].push(lb);
-  });
-
-  Object.values(groups).forEach(group => {
-    if (group.length <= 1) return;
-
-    // Sort by value type: income → balance → expense (top to bottom)
-    group.sort((a, b) => {
-      const order = { income: 0, balance: 1, expense: 2 };
-      return order[a.type] - order[b.type];
-    });
-
-    // fixed vertical stacking gap
-    const GAP = 22;
-
-    // Middle reference point (average Y of all labels)
-    const avgY = group.reduce((s, v) => s + v.y, 0) / group.length;
-
-    // Assign stacked Y positions
-    group.forEach((item, idx) => {
-      item.y = avgY + (idx - 1) * GAP;
-
-      // clamp to chart area
-      if (item.y < MIN_Y) item.y = MIN_Y;
-      if (item.y + item.h > MAX_Y) item.y = MAX_Y - item.h;
-    });
-  });
 }
 
 
@@ -356,26 +323,39 @@ data.forEach((d, i) => {
     { v: balance[i], color: "#6A5ACD", bg: "rgba(106,90,205,0.12)", stroke: "#6A5ACD" }
   ];
 
-  pts.forEach(pt => {
-    const y = scaleY(pt.v);
-    const textWidth = String(pt.v).length * 7 + 12;
-
-    labelsArr.push({
-  x: x,
-  y: y - 25,
-  w: textWidth,
+  // ---- FIXED LABEL POSITIONS ----
+labelsArr.push({
+  x,
+  y: scaleY(income[i]) - 30,
+  w: String(income[i]).length * 7 + 12,
   h: 18,
-  value: pt.v,
-  color: pt.color,
-  bg: pt.bg,
-  stroke: pt.stroke,
-  type: (
-    pt.color === "#0BA2FF" ? "income" :
-    pt.color === "#6A5ACD" ? "balance" :
-    "expense"
-  )
+  value: income[i],
+  color: "#0BA2FF",
+  bg: "rgba(11,162,255,0.12)",
+  stroke: "#0BA2FF"
 });
-  });
+
+labelsArr.push({
+  x,
+  y: scaleY(balance[i]) - 5,
+  w: String(balance[i]).length * 7 + 12,
+  h: 18,
+  value: balance[i],
+  color: "#6A5ACD",
+  bg: "rgba(106,90,205,0.12)",
+  stroke: "#6A5ACD"
+});
+
+labelsArr.push({
+  x,
+  y: scaleY(expense[i]) + 20,
+  w: String(expense[i]).length * 7 + 12,
+  h: 18,
+  value: expense[i],
+  color: "#FF4D4D",
+  bg: "rgba(255,77,77,0.12)",
+  stroke: "#FF4D4D"
+});
 });
 
 // resolve collisions
