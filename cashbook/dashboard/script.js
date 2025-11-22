@@ -27,6 +27,32 @@ function dayLabel(dateStr) {
 function resolveCollisions(labelBoxes) {
 
 }
+function svgToScreen(svg, x, y) {
+  const point = svg.createSVGPoint();
+  point.x = x;
+  point.y = y;
+  const screenPoint = point.matrixTransform(svg.getScreenCTM());
+  return { x: screenPoint.x, y: screenPoint.y };
+}
+
+function showPredictionTooltip(x, y, value) {
+  const tip = document.getElementById("predictTooltip");
+  const svg = document.querySelector("#chartBox svg");
+
+  // convert to real screen coords
+  const screen = svgToScreen(svg, x, y);
+
+  tip.innerHTML = `Predicted: <b>${value}</b>`;
+  tip.style.left = (screen.x + 10) + "px";
+  tip.style.top  = (screen.y - 20) + "px";
+  tip.style.display = "block";
+
+  clearTimeout(tip.hideTimer);
+  tip.hideTimer = setTimeout(() => {
+    tip.style.display = "none";
+  }, 2000);
+}
+
 
 
 // -----------------------------------
@@ -288,11 +314,17 @@ future.forEach((v, i) => {
   const x = scaleX(xs.length + i);
   const y = scaleY(v);
   
-  svg += `
-    <circle cx="${x}" cy="${y}" r="4"
-      fill="${trendColor}"
-      opacity="0.4"
-    />
+svg += `
+<circle 
+  cx="${x}" cy="${y}" r="6"
+  fill="${trendColor}" opacity="0.7"
+  class="predict-dot"
+  data-x="${x}" 
+  data-y="${y}" 
+  data-value="${Math.round(v)}"
+  style="cursor:pointer"
+  pointer-events="all"
+/>
   `;
 });
 
@@ -387,6 +419,17 @@ labelsArr.forEach(lb => {
 
   svg += `</svg>`;
   box.innerHTML = svg;
+  
+  // handle prediction dot clicks
+box.querySelectorAll(".predict-dot").forEach(dot => {
+  dot.addEventListener("click", () => {
+    const x = parseFloat(dot.getAttribute("data-x"));
+    const y = parseFloat(dot.getAttribute("data-y"));
+    const v = dot.getAttribute("data-value");
+
+    showPredictionTooltip(x, y, v);
+  });
+});
 
   // animate draw
   box.querySelectorAll(".line-path").forEach(path => {
