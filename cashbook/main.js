@@ -235,15 +235,50 @@ firebase.database().ref(`/users/${username}`).get()
   netBalEl.textContent = `₹${net.toLocaleString()}`;
 
   document.querySelectorAll('.deleteBtn').forEach(btn=>
-    btn.addEventListener('click', async (e)=>{
-      const key = e.target.dataset.key;
-      const type = (await db.ref(dayRoot(currentDate)+`/in/${key}`).get()).exists()? 'in':'out';
-      if(!confirm('Delete entry?')) return;
-      await db.ref(dayRoot(currentDate)+`/${type}/${key}`).remove();
-      loadForDate(currentDate);
-    })
-  );
-}
+    btn.addEventListener('click', async (e) => {
+  const key = e.target.dataset.key;
+
+  // Find type: in or out
+  const inPath = db.ref(dayRoot(currentDate) + `/in/${key}`);
+  const type = (await inPath.get()).exists() ? 'in' : 'out';
+
+  // Original entry
+  const originalRef = db.ref(dayRoot(currentDate) + `/${type}/${key}`);
+
+  const snap = await originalRef.get();
+  if (!snap.exists()) {
+    alert("Entry not found.");
+    return;
+  }
+
+  const data = snap.val();
+
+  if (!confirm("Delete entry?")) return;
+
+  // ------------------------------------------------
+  // 1) MOVE TO RECYCLE BIN with type folder
+  // ------------------------------------------------
+  const recycleRef = db.ref(`${username}/recycleBin/${currentDate}/${type}/${key}`);
+
+  await recycleRef.set({
+    ...data,
+    deletedAt: new Date().toLocaleString("en-IN")
+  });
+
+  // ------------------------------------------------
+  // 2) DELETE ORIGINAL
+  // ------------------------------------------------
+  await originalRef.remove();
+
+  // ------------------------------------------------
+  // 3) Refresh UI
+  // ------------------------------------------------
+  loadForDate(currentDate);
+})
+
+)}
+    
+  
 
     // Create serial number (count existing children +1)
     async function nextSerial(dateISO,type){
