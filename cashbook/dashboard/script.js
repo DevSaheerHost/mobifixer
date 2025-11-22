@@ -306,8 +306,34 @@ function linearPredict(xs, ys, futurePoints = 7) {
 }
 
 // Prepare data
-const xs = data.map((_, i) => i);
-const ys = data.map(d => d.balance);
+// remove last index (today)
+let xs = data.map((_, i) => i);
+let ys = data.map(d => d.balance);
+
+// ------------------------------------------------
+// SMART TODAY HANDLING (ignore until 4 PM)
+// ------------------------------------------------
+const lastDate = data[data.length - 1].date;
+const todayStr = new Date().toISOString().split("T")[0];
+const now = new Date();
+
+// check if last date is today
+if (lastDate === todayStr) {
+
+    // If current time is before 4 PM ⇒ IGNORE today's data
+    const cutoffHour = 16; // 4 PM (16:00)
+
+    if (now.getHours() < cutoffHour) {
+        xs = xs.slice(0, -1);
+        ys = ys.slice(0, -1);
+        // console.log("Today ignored for prediction (before 4 PM)");
+    } else {
+        // console.log("Today included (after 4 PM)");
+    }
+}
+
+
+
 const future = linearPredict(xs, ys, 5);
 
 // Recompute m & c here for confidence calculation
