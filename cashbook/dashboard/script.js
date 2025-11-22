@@ -216,6 +216,51 @@ data.forEach((d, i) => {
   svg += `<circle cx="${x}" cy="${scaleY(balance[i])}" r="4" fill="#6A5ACD"/>`;
 });
 
+// -----------------------------------------
+// TRENDLINE (Polynomial Regression Prediction)
+// -----------------------------------------
+
+// -----------------------------------------
+// TRENDLINE (Stable Linear Regression)
+// -----------------------------------------
+
+function linearPredict(xs, ys, futurePoints = 7) {
+  const n = xs.length;
+
+  const sumX = xs.reduce((a,b) => a+b, 0);
+  const sumY = ys.reduce((a,b) => a+b, 0);
+  const sumXY = xs.reduce((a,b,i) => a + b * ys[i], 0);
+  const sumX2 = xs.reduce((a,b) => a + b*b, 0);
+
+  const m = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+  const c = (sumY - m * sumX) / n;
+
+  const predictions = [];
+  for (let i = n; i < n + futurePoints; i++) {
+    predictions.push(m * i + c);
+  }
+
+  return predictions;
+}
+
+const xs = data.map((_, i) => i);
+const ys = data.map(d => d.balance);
+
+const future = linearPredict(xs, ys, 7);
+const trendPoints = [...ys, ...future];
+
+const trendPath = linePath(trendPoints);
+
+// Draw trendline
+svg += `
+  <path d="${trendPath}"
+    fill="none"
+    stroke="#AA66FF"
+    stroke-width="2"
+    stroke-dasharray="8 6"
+    opacity="0.9"
+  />
+`;
 
 
 // AUTO-COLLISION LABEL SYSTEM
