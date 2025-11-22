@@ -171,6 +171,27 @@ function linePath(values) {
   return d;
 }
 
+
+// --- CONFIDENCE CLOUD GENERATOR ---
+function buildConfidencePolygon(upper, lower, startIndex) {
+  if (upper.length === 0) return "";
+
+  let d = `M ${scaleX(startIndex)} ${scaleY(upper[0])}`;
+
+  // Upper boundary
+  upper.forEach((v, i) => {
+    d += ` L ${scaleX(startIndex + i)} ${scaleY(v)}`;
+  });
+
+  // Lower boundary (reverse)
+  lower.slice().reverse().forEach((v, i) => {
+    const idx = upper.length - 1 - i;
+    d += ` L ${scaleX(startIndex + idx)} ${scaleY(v)}`;
+  });
+
+  return d + " Z";
+}
+
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" role="img">`;
   // background
   svg += `<rect x="0" y="0" width="${w}" height="${h}" fill="transparent"/>`;
@@ -226,53 +247,100 @@ data.forEach((d, i) => {
 
 
 
+// -----------------------------------------
+// TRENDLINE (Linear Regression + Premium Effects)
+// -----------------------------------------
+
 function linearPredict(xs, ys, futurePoints = 7) {
   const n = xs.length;
-
-  const sumX = xs.reduce((a,b) => a+b, 0);
-  const sumY = ys.reduce((a,b) => a+b, 0);
-  const sumXY = xs.reduce((a,b,i) => a + b * ys[i], 0);
-  const sumX2 = xs.reduce((a,b) => a + b*b, 0);
-
+  
+  const sumX = xs.reduce((a, b) => a + b, 0);
+  const sumY = ys.reduce((a, b) => a + b, 0);
+  const sumXY = xs.reduce((a, b, i) => a + b * ys[i], 0);
+  const sumX2 = xs.reduce((a, b) => a + b * b, 0);
+  
   const m = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
   const c = (sumY - m * sumX) / n;
-
+  
   const predictions = [];
   for (let i = n; i < n + futurePoints; i++) {
     predictions.push(m * i + c);
   }
-
+  
   return predictions;
 }
 
+// Prepare data
 const xs = data.map((_, i) => i);
 const ys = data.map(d => d.balance);
+const future = linearPredict(xs, ys, 5);
 
-const future = linearPredict(xs, ys, 7);
+// CONFIDENCE BOUNDS (±10%)
+const upper = future.map(v => v * 1.10);
+const lower = future.map(v => v * 0.90);
+
 const trendPoints = [...ys, ...future];
 
-// Determine trend direction (last predicted vs last real value)
+// Trend direction
 const lastReal = ys[ys.length - 1];
-const lastPred = future[0];        // first predicted point
+const nextPred = future[0];
 
-let trendColor = "#00C853";  // green (default)
-if (lastPred < lastReal) {
-  trendColor = "#FF1744";    // red (down trend)
+let trendColor = "#00C853"; // green
+let arrow = "↑";
+
+if (nextPred < lastReal) {
+  trendColor = "#FF1744"; // red
+  arrow = "↓";
 }
 
+// SVG gradient ID
+svg += `
+  <defs>
+    <linearGradient id="trendGrad" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="${trendColor}" stop-opacity="1"/>
+      <stop offset="100%" stop-color="${trendColor}" stop-opacity="0.15"/>
+    </linearGradient>
+  </defs>
+`;
+
+// Draw trendline (dashed)
 const trendPath = linePath(trendPoints);
 
-// Draw trendline
 svg += `
   <path d="${trendPath}"
     fill="none"
-    stroke="${trendColor}"
+    stroke="url(#trendGrad)"
     stroke-width="2"
     stroke-dasharray="8 6"
     opacity="0.9"
   />
 `;
 
+// Draw future dots (faded)
+future.forEach((v, i) => {
+  const x = scaleX(xs.length + i);
+  const y = scaleY(v);
+  
+  svg += `
+    <circle cx="${x}" cy="${y}" r="4"
+      fill="${trendColor}"
+      opacity="0.4"
+    />
+  `;
+});
+
+// Draw arrow at the last prediction point
+const lastX = scaleX(xs.length + future.length - 1);
+const lastY = scaleY(future[future.length - 1]);
+
+svg += `
+  <text x="${lastX + 10}" y="${lastY}" font-size="20"
+    fill="${trendColor}"
+    font-weight="bold"
+  >
+    ${arrow}
+  </text>
+`;
 
 // AUTO-COLLISION LABEL SYSTEM
 // -----------------------------
