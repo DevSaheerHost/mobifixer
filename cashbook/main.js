@@ -820,6 +820,10 @@ outDesc.oninput = e => {
       amount.value = 100;
     }
   }
+  
+  if (val === 'bus') {
+    amount.value = 20;
+  }
 };
 
 
