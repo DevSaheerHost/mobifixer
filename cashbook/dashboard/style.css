@@ -70,14 +70,14 @@ svg {
 
 }
 
-.info li{
+.legend li{
   display: flex;
   align-items: center;
   gap: 1rem;
   
   font-weight: 500;
 }
-.info span{
+.legend span{
   height: 10px;
   width: 10px;
   display: block;
@@ -85,7 +85,7 @@ svg {
 }
 
 
-.info .prediction{
+.legend .prediction{
   border-top: 2px dashed #FF1744;
   border-bottom: 2px dashed #00C853;
 
@@ -95,4 +95,9 @@ svg {
 }
 .ch {
   position: relative;
+}
+.card p.small{
+  font-style: italic;
+  color: #9B9B9B;
+  font-size: 12px;
 }

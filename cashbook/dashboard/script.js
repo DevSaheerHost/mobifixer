@@ -16,6 +16,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const username = localStorage.getItem('CASHBOOK_USER_NAME')
+if (!username || !username.trim()) {
+  const myName = prompt('Enter username:');
+  
+  localStorage.setItem('CASHBOOK_USER_NAME', myName)
+}
 
 // -----------------------------------
 // HELPERS
