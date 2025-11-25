@@ -211,3 +211,22 @@ form button{
 #entryFormOut button {
     background: #ef4444;
 }
+
+.all.active{
+    background: #000 !important;
+    flex: 1;
+}
+
+.in.active {
+    background: #34A853 !important;
+    flex: 1;
+    color: #fff !important;
+    text-align: center;
+}
+
+.out.active {
+    color: #fff !important;
+    background: #ef4444 !important;
+    flex: 1;
+    text-align: end;
+}

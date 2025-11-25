@@ -250,9 +250,18 @@ console.log(type)
       const snapshot = await rootRef.get();
       const data = snapshot.val() || {};
       renderEntries(data);
-      document.querySelector('#in').onclick=()=>renderType('in', data)
-      document.querySelector('#out').onclick=()=>renderType('out', data)
-      document.querySelector('#all').onclick=()=>renderEntries(data)
+      const buttons = document.querySelectorAll('#in, #out, #all');
+
+buttons.forEach(btn => {
+  btn.onclick = (e) => {
+    buttons.forEach(b => b.classList.remove("active"));
+    e.target.classList.add("active");
+
+    if (e.target.id === 'in') renderType('in', data);
+    if (e.target.id === 'out') renderType('out', data);
+    if (e.target.id === 'all') renderEntries(data);
+  };
+});
     }
 
     function renderEntries(data){
