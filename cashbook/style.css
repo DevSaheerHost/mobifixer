@@ -213,7 +213,8 @@ form button{
 }
 
 .all.active{
-    background: #000 !important;
+    background: #878787 !important;
+    color: #fff !important;
     flex: 1;
 }
 
