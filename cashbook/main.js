@@ -169,6 +169,72 @@ firebase.database().ref(`/users/${username}`).get()
       const y=d.getFullYear();const m=String(d.getMonth()+1).padStart(2,'0');const day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;
     }
     function formatDT(ts){ const d=new Date(ts); return `${d.toLocaleString()}`; }
+    
+    
+    function renderType(type, data) {
+  entriesList.innerHTML = '';
+
+  const group = data[type] || {};
+  const rows = Object.keys(group).map(key => ({
+    ...group[key],
+    _key: key,
+    _type: type
+  }));
+console.log(type)
+  if (rows.length === 0) {
+    entriesList.innerHTML = `<div class="small muted">No ${type} entries.</div>`;
+    return;
+  }
+
+  // Sort by time (latest first)
+  rows.sort((a, b) => b.ts - a.ts);
+
+  rows.forEach(r => {
+    const el = document.createElement('div');
+    el.className = `entry ${type}${r.gpay ? ' gp' : ''}`;
+
+    el.innerHTML = `
+      <div class="meta">
+        <div><strong>${type.toUpperCase()} — ${r.name}</strong></div>
+        <div class="small">${formatDT(r.ts)}</div>
+      </div>
+      <div style="text-align:right">
+        <div><strong>₹${Number(r.amount).toLocaleString()}</strong></div>
+        <div class="actions gpay">
+          ${r.gpay ? '<span><i class="fa-brands fa-google-pay"></i></span>' : ''}
+          <button data-key="${r._key}" class="deleteBtn">Delete</button>
+        </div>
+      </div>
+    `;
+
+    entriesList.appendChild(el);
+  });
+
+  // Delete handler
+  document.querySelectorAll('.deleteBtn').forEach(btn =>
+    btn.addEventListener('click', async e => {
+      const key = e.target.dataset.key;
+
+      const ref = db.ref(dayRoot(currentDate) + `/${type}/${key}`);
+      const snap = await ref.get();
+      if (!snap.exists()) return alert("Entry not found!");
+
+      const row = snap.val();
+
+      if (!confirm("Delete entry?")) return;
+
+      // Move to recycle bin
+      await db.ref(`${username}/recycleBin/${currentDate}/${type}/${key}`)
+        .set({ ...row, deletedAt: new Date().toLocaleString("en-IN") });
+
+      // Delete original
+      await ref.remove();
+
+      // Reload same type
+      loadForDate(currentDate, type);
+    })
+  );
+}
 
     // Key path per day
     function dayRoot(dateISO){ return `${username}/${dateISO}`; }
@@ -184,6 +250,9 @@ firebase.database().ref(`/users/${username}`).get()
       const snapshot = await rootRef.get();
       const data = snapshot.val() || {};
       renderEntries(data);
+      document.querySelector('#in').onclick=()=>renderType('in', data)
+      document.querySelector('#out').onclick=()=>renderType('out', data)
+      document.querySelector('#all').onclick=()=>renderEntries(data)
     }
 
     function renderEntries(data){
@@ -840,40 +909,7 @@ function getDeviceInfo() {
 }
 
 
-const btnUnderDev = document.querySelector('#underDevelopment');
-const clickRef = db.ref(`/users/clicks/${username}`);
 
-btnUnderDev.onclick = async () => {
-  // UI toast
-  showTopToast('Function under development', '#FFC107');
-
-  // UI lock
-  btnUnderDev.style.opacity = "0.6";
-  btnUnderDev.style.pointerEvents = "none";
-
-  // ---- Click Log Data ----
-  const logData = {
-    id: "underDevelopmentBtn",
-    time: new Date().toLocaleTimeString("en-IN"),
-    date: new Date().toLocaleDateString("en-IN"),
-    innner: btnUnderDev.innerHTML,
-    timestamp: Date.now(),
-    username
-  };
-
-  try {
-    await clickRef.push(logData);
-    console.log("Click logged:", logData);
-  } catch (err) {
-    console.error("Failed to log click:", err);
-  }
-
-  // Unlock after 1s
-  setTimeout(() => {
-    btnUnderDev.style.opacity = "1";
-    btnUnderDev.style.pointerEvents = "auto";
-  }, 1000);
-};
 
 
 

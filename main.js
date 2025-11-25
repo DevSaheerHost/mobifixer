@@ -8,7 +8,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebas
 
 import { onAuthStateChanged, getAuth } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 // Realtime Database import
-import { getDatabase, ref, onChildAdded, onChildChanged, update, query, limitToLast, orderByKey, remove , onValue, push}
+import { getDatabase, ref, onChildAdded, onChildChanged, update, query, limitToLast, orderByKey, remove , onValue, push, goOffline}
 from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
 const getDateLabel=(dateString) =>{
