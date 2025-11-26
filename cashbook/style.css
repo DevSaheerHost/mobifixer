@@ -196,10 +196,23 @@ background: linear-gradient(0deg, rgba(255, 255, 255, 1) 81%, rgba(11, 162, 255,
 }
 
 input#staff{
-    border: 2px solid #34A853;
-    max-width: 100px;
+    width: 100%;
 }
 
+#amount{
+    flex: 1;
+}
+
+#gpAmount{
+    flex: 1;
+    width: 35vw;
+    
+}
+input:focus{
+    
+    outline: none;
+    border: 2px solid #34A853;
+}
 
 form button{
     font-weight: 500;
@@ -211,7 +224,9 @@ form button{
 #entryFormOut button {
     background: #ef4444;
 }
-
+#entryFormOut input:focus {
+    border: 2px solid #ef4444;
+}
 .all.active{
     background: #878787 !important;
     color: #fff !important;
@@ -229,5 +244,46 @@ form button{
     color: #fff !important;
     background: #ef4444 !important;
     flex: 1;
+    text-align: center;
+}
+
+.bin.active {
+    color: #fff !important;
+    background: #FFD54F !important;
+    flex: 1;
     text-align: end;
+}
+
+
+
+
+@keyframes pop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(0.99); }
+  100% { transform: scale(1); }
+}
+
+.scale-input {
+  font-size: 18px;
+  padding: 10px 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  outline: none;
+}
+
+/* animation class */
+.pop-anim {
+  animation: pop 150ms ease-out;
+}
+
+
+
+#search{
+    margin: auto;
+    width: 100%;
+}
+
+
+.hidden{
+    display: none !important;
 }

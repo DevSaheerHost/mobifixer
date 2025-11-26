@@ -105,7 +105,11 @@
   <div class="nav">
     <div class="brand">Cash Book</div>
     <div id="userArea"></div>
-  </div>  <div class="container" id="app">
+  </div>  
+  <div class="card">
+    <input type="search" name="search" id="search" placeholder="Search">
+  </div>
+  <div class="container" id="app">
     
     
     
@@ -131,12 +135,14 @@
         <h3 style="color: #4CAF50;">Add Income</h3>
         <form id="entryFormIn" class="row">
 
-          <input id="desc" placeholder="Item" style="flex:1; min-width: 30%;"  />
-          <input id="amount" placeholder="Amount" type="number"  />
+          <input id="desc" placeholder="Item" style="flex:1; min-width: 100%;"  />
+          <input id="amount" placeholder="Cash Amount" type="number"  />
+          <input id="gpAmount" placeholder="Gpay Amount" type="number" style="width: 80px;" />
+
           
           <input type="text" name="staff" id="staff" placeholder="Staff">
           
-          <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="isGpay" /> 
+          <label style="display:none;align-items:center;gap:6px"><input type="checkbox" id="isGpay" /> 
           <i class="fa-brands fa-google-pay gpay big"></i>
           </label>
           <button type="submit" id="addBtn">
@@ -173,11 +179,17 @@
           <span class="all" style="color: #000000; border: 1px solid #999999; padding: 0.3rem 1rem; border-radius: 7px; font-weight: 500; background: #ffffff;" id="all">All</span>
           <span class="in" style="color: #4CAF50; border: 1px solid #4CAF50; padding: 0.3rem 1rem; border-radius: 7px; font-weight: 500;" id="in">IN</span>
           <span class="out" style="color: #F44336; border: 1px solid #F44336; padding: 0.3rem 1rem; border-radius: 7px; font-weight: 500;" id="out">OUT</span>
+          <span class="bin" style="color: #FFD54F; border: 1px solid #FFD54F; padding: 0.3rem 1rem; border-radius: 7px; font-weight: 500;" id="bin">
+            <i class="fa-solid fa-trash-arrow-up" style="pointer-events: none;"></i>
+          </span>
         </div>
 
-        <div class="entries" id="entriesList" style="margin-top:12px">
+<div id="parrent">
+  <div class="entries" id="entriesList" style="margin-top:12px">
           <!-- entry cards -->
         </div>
+</div>
+        
       </div>
     </div>
 

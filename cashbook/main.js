@@ -1,4 +1,4 @@
-
+const $ = s => document.querySelector(s)
 // check is user authenticated
 const username = localStorage.getItem('CASHBOOK_USER_NAME');
 
@@ -236,6 +236,43 @@ console.log(type)
   );
 }
 
+
+
+// for search
+function filterData(data, searchValue) {
+  const result = { in: {}, out: {} };
+  const v = searchValue.toLowerCase();
+
+  // 1) Filter IN
+  Object.keys(data.in || {}).forEach(key => {
+    const item = data.in[key];
+    if (
+      (item.name && item.name.toLowerCase().includes(v)) ||
+      (item.amount && String(item.amount).includes(v)) ||
+      (item.gpay && String(item.gpay).includes(v)) ||
+      (item.staffName && item.staffName.toLowerCase().includes(v))
+    ) {
+      result.in[key] = item;
+    }
+  });
+
+  // 2) Filter OUT
+  Object.keys(data.out || {}).forEach(key => {
+    const item = data.out[key];
+    if (
+      (item.name && item.name.toLowerCase().includes(v)) ||
+      (item.amount && String(item.amount).includes(v)) ||
+      (item.gpay && String(item.gpay).includes(v)) ||
+      (item.staffName && item.staffName.toLowerCase().includes(v))
+    ) {
+      result.out[key] = item;
+    }
+  });
+
+  return result;
+}
+
+
     // Key path per day
     function dayRoot(dateISO){ return `${username}/${dateISO}`; }
     // Load all entries for date
@@ -250,18 +287,86 @@ console.log(type)
       const snapshot = await rootRef.get();
       const data = snapshot.val() || {};
       renderEntries(data);
-      const buttons = document.querySelectorAll('#in, #out, #all');
+      const buttons = document.querySelectorAll('#in, #out, #all, #bin');
 
 buttons.forEach(btn => {
-  btn.onclick = (e) => {
+  btn.onclick = async (e) => {
+    if (navigator.vibrate) {
+  navigator.vibrate(10); // short, crisp, non-annoying
+}
     buttons.forEach(b => b.classList.remove("active"));
     e.target.classList.add("active");
 
     if (e.target.id === 'in') renderType('in', data);
     if (e.target.id === 'out') renderType('out', data);
     if (e.target.id === 'all') renderEntries(data);
+    if (e.target.id === 'bin') {
+      
+      function dayRoot(dateISO){ return `${username}/recycleBin/${dateISO}`; }
+      
+      currentDate = dateISO;
+      currentDateLabel.textContent = dateISO;
+      entriesList.innerHTML = '<div class="small muted">Loading...</div>';
+      
+      const rootRef = db.ref(dayRoot(dateISO));
+      const snapshot = await rootRef.get();
+      const data = snapshot.val() || {};
+      renderEntries(data);
+    }
+
   };
 });
+
+
+
+
+// SEARCH 🔍 🔎 
+
+$('#search').oninput = e => {
+  const parrent = $('#parrent');
+  const entriesList = $('#entriesList');
+  const value = e.target.value.trim();
+
+  if (!value) {
+    $('.dboard').classList.remove('hidden');
+    parrent.appendChild(entriesList);
+    renderEntries(data); // default
+    return;
+  }
+
+  $('.dboard').classList.add('hidden');
+  search.parentElement.appendChild(entriesList);
+
+  const filtered = filterData(data, value);
+  renderEntries(filtered);
+};
+
+$('#search').onblur = () => {
+  const parrent = $('#parrent');
+  const entriesList = $('#entriesList');
+  parrent.appendChild(entriesList);
+};
+
+  $('#search').onblur=()=>{
+    const parrent = $('#parrent')
+    const entriesList = $('#entriesList')
+    
+    parrent.appendChild(entriesList);
+    
+
+   
+  }
+  
+
+
+//const buttons = document.querySelectorAll('#in, #out, #all, #bin');
+
+      buttons.forEach(btn => {
+        btn.classList.remove("active");
+      });
+      
+      document.querySelector('#all').classList.add("active");
+
     }
 
     function renderEntries(data){
@@ -294,6 +399,7 @@ buttons.forEach(btn => {
       </div>
       <div style="text-align:right">
         <div><strong>₹${Number(r.amount).toLocaleString()}</strong></div>
+        <div><strong class='gpay'>₹${Number(r.gpay).toLocaleString()}</strong></div>
         <div class="actions gpay">
           ${r.gpay?'<span><i class="fa-brands fa-google-pay"></i></span>':''} 
           <button data-key='${r._key}' class='deleteBtn'>Delete</button>
@@ -301,9 +407,9 @@ buttons.forEach(btn => {
       </div>`;
     entriesList.appendChild(el);
 
-    if(r._type==='in') totalIn += Number(r.amount||0);
+    if(r._type==='in') totalIn += Number(r.amount||0) + Number(r.gpay ||0);
     else totalOut += Number(r.amount||0);
-    if(r.gpay) totalGpay += Number(r.amount||0);
+    if(r.gpay) totalGpay += Number(r.gpay||0);
   });
 
   totalInEl.textContent = `₹${totalIn.toLocaleString()}`;
@@ -373,8 +479,9 @@ buttons.forEach(btn => {
       const amount = entryForm.querySelector('#amount');
       const staffName = document.querySelector('#staff').value.trim();
       const amt = Number(amount.value);
-      const g = isGpay.checked;
-      if(!name || !amt) return alert('Name and amount required');
+      const gpAmount = Number(document.querySelector('#gpAmount').value);
+      const g = gpAmount ||0;
+      if(!name || !amt && !gpAmount) return alert('Name and amount required');
       document.querySelector('#addBtn').textContent='Loading...'
       const dateISO = selectDate.value || isoDate(new Date());
       const s = await nextSerial(dateISO,t);
@@ -388,10 +495,16 @@ buttons.forEach(btn => {
         staffName,
         userEmail: auth.currentUser ? auth.currentUser.email : 'local'
       });
+      
+      
+      if (navigator.vibrate) {
+  navigator.vibrate(15); // short, crisp, non-annoying
+}
+
       // clear
       document.querySelector('#addBtn').textContent='Add'
       document.getElementById('dashThisMonth').click()
-      desc.value=''; amount.value=''; isGpay.checked=false;
+      desc.value=''; amount.value=''; isGpay.checked=false;document.querySelector('#gpAmount').value =''
       document.querySelector('#staff').value=''
       loadForDate(dateISO);
     });
@@ -428,6 +541,10 @@ buttons.forEach(btn => {
 
     selectDate.addEventListener('change', ()=> loadForDate(selectDate.value));
     reloadBtn.addEventListener('click', ()=> loadForDate(selectDate.value));
+
+
+
+
 
 
 
@@ -481,8 +598,8 @@ async function fetchRangeTotals(startISO, endISO){
     ['in','out'].forEach(type=>{
       const group = data[type]||{};
       Object.values(group).forEach(r=>{
-        if(type==='in') tin += Number(r.amount||0); else tout += Number(r.amount||0);
-        if(r.gpay) tg += Number(r.amount||0);
+        if(type==='in') tin += Number(r.amount||0) + Number(r.gpay || 0); else tout += Number(r.amount||0);
+        if(r.gpay) tg += Number(r.gpay||0);
       });
     });
     dayTotals.push({date:d,in:tin,out:tout,gpay:tg});
@@ -746,7 +863,7 @@ function drawSparklineFullscreen(container, valuesIn, valuesOut, labels) {
 
 // Inject dashboard UI into the page (top area)
 (function addDashboardUI(){
-  const container = document.querySelector('.container');
+  const container = document.querySelector('#app');
   const dashCard = document.createElement('div');
   dashCard.className = 'card dboard';
   dashCard.style.marginBottom='12px';
@@ -756,7 +873,7 @@ function drawSparklineFullscreen(container, valuesIn, valuesOut, labels) {
     <div style='display:flex;gap:8px;align-items:center;margin-bottom:8px'>
       <label class='small'>Start: <input type='date' id='dashStart' /></label>
       <label class='small'>End: <input type='date' id='dashEnd' /></label>
-      <button id='dashLoad' style='padding:8px 10px'>Load</button>
+      <button id='dashLoad' style='padding:8px 10px; display:none;'>Load</button>
       <button id='dashToday' class='link'>Today</button>
       <button id='dashThisMonth' class='link'>This Month</button>
     </div>
@@ -768,12 +885,12 @@ function drawSparklineFullscreen(container, valuesIn, valuesOut, labels) {
   container.insertBefore(dashCard, container.firstChild);
 
   // attach handlers
-  document.getElementById('dashLoad').addEventListener('click', ()=>{
+  $('#dashLoad').onclick=()=>{
     const s = document.getElementById('dashStart').value;
     const e = document.getElementById('dashEnd').value;
     if(!s||!e) return alert('Pick start and end date');
     fetchRangeTotals(s,e);
-  });
+  }
   document.getElementById('dashToday').addEventListener('click', ()=>{
     const t = isoDate(new Date());
     document.getElementById('dashStart').value = t; document.getElementById('dashEnd').value = t;
@@ -865,13 +982,22 @@ function showTopToast(msg, bg = "#34A853") {
 function refreshDashboard(type) {
   loadForDate(selectDate.value);
   document.getElementById("dashThisMonth").click();
- // showToast(`${type}`);
-}
+ type==='Deletion'?showToast(`${type}`):''
+ 
+ 
+ const buttons = document.querySelectorAll('#in, #out, #all, #bin');
 
+buttons.forEach(btn => {
+  btn.classList.remove("active");
+});
+
+document.querySelector('#in').classList.add("active");
+
+}
 // realtime watchers
 onChildAdded(dataRef, () => refreshDashboard('added'));
 onChildChanged(dataRef, () => refreshDashboard("Updated"));
-onChildRemoved(dataRef, () => refreshDashboard("Deletion"));
+onChildRemoved(dataRef, () => refreshDashboard("Deleted"));
 
 
 // Auto add common items
@@ -996,3 +1122,25 @@ if (shouldRunToday()) {
 }
 
 syncCashbook();
+
+
+
+
+// input animation 
+
+document.querySelectorAll('input').forEach(inp => {
+  inp.addEventListener("input", () => {
+    inp.classList.remove("pop-anim");
+    void inp.offsetWidth;     // reflow trigger
+    inp.classList.add("pop-anim");
+    
+    if (navigator.vibrate) {
+      navigator.vibrate(15);   // short, crisp, non-annoying
+    }
+  });
+});
+
+
+$('.dboard').onchange=()=>$('#dashLoad').onclick()
+
+
