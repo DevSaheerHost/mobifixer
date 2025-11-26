@@ -32,6 +32,7 @@ firebase.database().ref(`/users/${username}`).get()
       showToast('Session Timeout');
       authView.style.display='block';
         mainView.style.display='none';
+        $('.dboard').style.display='none'
         userArea.innerHTML='';
         document.querySelector('.loader').classList.add('off')
     }
@@ -74,7 +75,12 @@ firebase.database().ref(`/users/${username}`).get()
       const email = emailInput.value.trim();
       const password = passInput.value.trim() || Math.random().toString(36).slice(-8);
       const username = document.getElementById("username").value.trim().toLowerCase();
-      if(!email || !username) return showToast('Fill all fields', '#FFC107');
+      const fullname = document.querySelector('#fullname').value
+      const selectedRole = document.querySelector('input[name="role"]:checked')?.value || null;
+
+      
+      
+      if(!email || !username || !fullname || !selectedRole) return showToast('Fill all fields', '#FFC107');
       const userRef = db.ref(`/users/${username}`);
       
       try{
@@ -102,15 +108,20 @@ firebase.database().ref(`/users/${username}`).get()
         
         await auth.signInWithEmailAndPassword(email,password);
         const loginKey = Date.now();
-        await userRef.child(`logins/${loginKey}`).set(getDeviceInfo());
+        await userRef.child(`logins/${loginKey}_${selectedRole}_${fullname.trim().replace(/\s+/g, '_')}`).set(getDeviceInfo());
         
        
         localStorage.setItem('CASHBOOK_USER_NAME', username)
+        localStorage.setItem('CASHBOOK_ROLL', selectedRole)
+        localStorage.setItem('CASHBOOK_FULLNAME', fullname)
+
         showTopToast("SignIn successful");
         location.reload()
       }catch(err){
         // create user
         //showToast('User Not Exist, Trying Create Account...', "#FFC107")
+        showTopToast(err.message)
+        console.log(err)
         //showTopToast(err.message)
         const snap = await userRef.get();
         if (!snap.exists()) {
@@ -132,10 +143,14 @@ firebase.database().ref(`/users/${username}`).get()
           username,
           password,
           signupInfo: getDeviceInfo(),
+          fullname,
+          role: selectedRole,
           logins: {}
         });
 
         localStorage.setItem('CASHBOOK_USER_NAME', username)
+        localStorage.setItem('CASHBOOK_ROLL', selectedRole)
+        localStorage.setItem('CASHBOOK_FULLNAME', fullname)
         showTopToast("Signup successful");
         location.reload()
         }
@@ -217,7 +232,7 @@ console.log(type)
 
       const ref = db.ref(dayRoot(currentDate) + `/${type}/${key}`);
       const snap = await ref.get();
-      if (!snap.exists()) return alert("Entry not found!");
+      if (!snap.exists()) return showTopToast("Entry not found!");
 
       const row = snap.val();
 
@@ -502,7 +517,7 @@ $('#search').onblur = () => {
 }
 
       // clear
-      document.querySelector('#addBtn').textContent='Add'
+      document.querySelector('#addBtn').textContent='Done'
       document.getElementById('dashThisMonth').click()
       desc.value=''; amount.value=''; isGpay.checked=false;document.querySelector('#gpAmount').value =''
       document.querySelector('#staff').value=''
@@ -519,7 +534,7 @@ $('#search').onblur = () => {
       const name = desc.value.trim();
       const amt = Number(amount.value);
       const g = false;
-      if(!name || !amt) return alert('Name and amount required');
+      if(!name || !amt) return showTopToast('Name and amount required');
       entryFormOut.querySelector('#addBtn').textContent='Loading...'
       const dateISO = selectDate.value || isoDate(new Date());
       const s = await nextSerial(dateISO,t);
@@ -533,7 +548,7 @@ $('#search').onblur = () => {
         userEmail: auth.currentUser ? auth.currentUser.email : 'local'
       });
       // clear
-      entryFormOut.querySelector('#addBtn').textContent='Add'
+      entryFormOut.querySelector('#addBtn').textContent='Done'
       document.getElementById('dashThisMonth').click()
       desc.value=''; amount.value=''; isGpay.checked=false;
       loadForDate(dateISO);
@@ -567,7 +582,9 @@ $('#search').onblur = () => {
     // Clear day (CAUTION): deletes all data for date
     clearDay.addEventListener('click', async ()=>{
       if(!confirm('Delete all entries for this day?')) return;
-      await db.ref(dayRoot(currentDate)).remove(); loadForDate(currentDate);
+     // await db.ref(dayRoot(currentDate)).remove(); loadForDate(currentDate);
+     
+     showTopToast('Sorry, This function was deactivated for security issue','#FFD54F')
     });
 
     // Download day (same as export for now)
@@ -888,7 +905,7 @@ function drawSparklineFullscreen(container, valuesIn, valuesOut, labels) {
   $('#dashLoad').onclick=()=>{
     const s = document.getElementById('dashStart').value;
     const e = document.getElementById('dashEnd').value;
-    if(!s||!e) return alert('Pick start and end date');
+    if(!s||!e) return showTopToast('Pick start and end date');
     fetchRangeTotals(s,e);
   }
   document.getElementById('dashToday').addEventListener('click', ()=>{
@@ -1142,5 +1159,4 @@ document.querySelectorAll('input').forEach(inp => {
 
 
 $('.dboard').onchange=()=>$('#dashLoad').onclick()
-
 

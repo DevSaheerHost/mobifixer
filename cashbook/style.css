@@ -284,6 +284,23 @@ form button{
 }
 
 
+
+.loginInputBox{
+    flex-wrap: wrap;
+}
+.loginInputBox input{
+    min-width: 100%;
+}
+.loginInputBox #role_woner, .loginInputBox #role_staff{
+    min-width: unset;
+}
+.loginInputBox .radioBox{
+    flex-flow: column;
+    width: 100%;
+    gap: 1rem;
+    padding: 1rem;
+}
+
 .hidden{
     display: none !important;
 }

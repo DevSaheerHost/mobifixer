@@ -117,8 +117,31 @@
     <div id="authView" class="card login-box" style="display:none">
       <h3>Sign in — Email</h3>
       <p class="small">Use email to sign-in (new users will be created).</p>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <input type="text" name="username" id="username" placeholder="Username" />
+      <div style="display:flex;gap:8px;margin-top:8px;" class="loginInputBox">
+        <h4 style="margin-bottom: 0;">User Details</h4>
+
+        
+        <input type="text" name="fullname" id="fullname" placeholder="Your Full Name"/>
+        
+        <span style="display: flex;border: 1px solid #ccc; border-radius: 7px;" class="radioBox">
+          
+        
+          <span>
+            <input type="radio" name="role" id="role_woner" value="owner" />
+            <label for="role_woner">Owner</label>
+          </span>
+
+          <span>
+            <input type="radio" name="role" id="role_staff" value="staff" />
+            <label for="role_staff">Staff</label>
+          </span>
+        </span>
+        
+        <h4 style="margin-bottom: 0;">Shop Details</h4>
+
+        
+        
+       <input type="text" name="username" id="username" placeholder="Username"/>
         <input id="email" placeholder="Email" />
         <input id="password" placeholder="Password" type="password" />
         <button id="signInBtn">Sign in</button>
