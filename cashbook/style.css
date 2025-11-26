@@ -171,7 +171,7 @@ background: linear-gradient(0deg, rgba(255, 255, 255, 1) 81%, rgba(11, 162, 255,
 }
 
 .loader .progress {
-    height: 2px;
+    height: 3px;
     width: 100%;
 }
 .loader .progress .bar{

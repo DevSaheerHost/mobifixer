@@ -1272,3 +1272,59 @@ $('.dboard').onchange=()=>$('#dashLoad').onclick()
         hideOverlay();
         
        // showOverlay()
+       
+       
+       
+       
+       
+       
+       const MAX_INACTIVE_TIME_MS = 5 * 60 * 1000; 
+
+let timeoutID;
+
+/**
+ * 
+ */
+function startInactivityTimer() {
+// clear current time 
+    clearTimeout(timeoutID);
+
+    // set new time 
+    timeoutID = setTimeout(() => {
+        console.warn('10 over, reloading');
+        
+
+        window.location.reload(); 
+        
+    }, MAX_INACTIVE_TIME_MS);
+}
+
+/**
+ * user here -> update timer
+ */
+function resetInactivityTimer() {
+    // clear timer, then start new 
+    clearTimeout(timeoutID);
+    startInactivityTimer();
+    // console.log('inactivity reseted.');
+}
+
+/**
+ * 
+ */
+function setupInactivityDetection() {
+    // reset while ->
+    window.addEventListener('mousemove', resetInactivityTimer);
+    window.addEventListener('mousedown', resetInactivityTimer);
+    window.addEventListener('keypress', resetInactivityTimer);
+    window.addEventListener('scroll', resetInactivityTimer);
+    window.addEventListener('touchstart', resetInactivityTimer); // mobile touch
+
+    // page load-> start timer
+    startInactivityTimer(); 
+    
+    console.info('activity trancing, timeout: ' + (MAX_INACTIVE_TIME_MS / 60000) + ' minute.');
+}
+
+// start
+setupInactivityDetection();
