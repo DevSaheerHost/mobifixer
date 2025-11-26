@@ -252,6 +252,40 @@ console.log(type)
 }
 
 
+const askUserPermission=(info)=> {
+            return new Promise((resolve) => {
+              
+              showOverlay(info)
+                const modal = document.getElementById('confirmModal');
+                const confirmBtn = document.getElementById('confirmBtn');
+                const cancelBtn = document.getElementById('cancelBtn');
+
+                // Cleanup function to remove listeners and hide modal
+                const cleanup = () => {
+                    hideOverlay()
+                    confirmBtn.removeEventListener('click', handleYes);
+                    cancelBtn.removeEventListener('click', handleNo);
+                };
+
+                // Handle "Continue" click
+                const handleYes = () => {
+                    cleanup();
+                    resolve(true); // Promise resolves with TRUE
+                };
+
+                // Handle "Cancel" click
+                const handleNo = () => {
+                    cleanup();
+                    resolve(false); // Promise resolves with FALSE
+                };
+
+                // ബട്ടണുകളിൽ ഇവന്റ് ലിസണർ ആഡ് ചെയ്യുന്നു
+                confirmBtn.addEventListener('click', handleYes);
+                cancelBtn.addEventListener('click', handleNo);
+            });
+        }
+
+
 
 // for search
 function filterData(data, searchValue) {
@@ -372,6 +406,15 @@ $('#search').onblur = () => {
    
   }
   
+  
+  
+  
+  
+  
+  
+        
+        
+        
 
 
 //const buttons = document.querySelectorAll('#in, #out, #all, #bin');
@@ -399,7 +442,7 @@ $('#search').onblur = () => {
   rows.sort((a,b)=> b.ts - a.ts);
 
   let totalIn=0,totalOut=0,totalGpay=0;
-  if(rows.length===0){ 
+  if(rows.length===0){
     entriesList.innerHTML='<div class="small muted">No entries for this day.</div>'; 
     return;
   }
@@ -446,13 +489,15 @@ $('#search').onblur = () => {
 
   const snap = await originalRef.get();
   if (!snap.exists()) {
-    alert("Entry not found.");
+    showTopToast("Entry not found.");
     return;
   }
 
   const data = snap.val();
 
-  if (!confirm("Delete entry?")) return;
+const userConfirmed = await askUserPermission({title:'Confirm Deletion', desc:'Are you sure you want to delete this entry? This action cannot be undone.'}); 
+//alert(userConfirmed)
+  if (!userConfirmed) return;
 
   // ------------------------------------------------
   // 1) MOVE TO RECYCLE BIN with type folder
@@ -496,7 +541,7 @@ $('#search').onblur = () => {
       const amt = Number(amount.value);
       const gpAmount = Number(document.querySelector('#gpAmount').value);
       const g = gpAmount ||0;
-      if(!name || !amt && !gpAmount) return alert('Name and amount required');
+      if(!name || !amt && !gpAmount) return showTopToast('Name and amount required');
       document.querySelector('#addBtn').textContent='Loading...'
       const dateISO = selectDate.value || isoDate(new Date());
       const s = await nextSerial(dateISO,t);
@@ -1171,7 +1216,10 @@ $('.dboard').onchange=()=>$('#dashLoad').onclick()
         const cancelBtn = document.getElementById('cancelBtn');
         
         // Function to show the overlay
-        function showOverlay() {
+        function showOverlay(info) {
+        
+        $('#alertTitle').textContent=info.title
+        $('#alertMessage').textContent=info.desc
             // Set visibility and opacity to trigger CSS transitions
             overlay.classList.add('visible');
             
@@ -1197,7 +1245,7 @@ $('.dboard').onchange=()=>$('#dashLoad').onclick()
             // Check if the click happened directly on the overlay element
             if (event.target === overlay) {
                 console.log("Overlay background clicked. Closing alert.");
-                hideOverlay();
+              //  hideOverlay();
             }
         }
         
@@ -1207,16 +1255,16 @@ $('.dboard').onchange=()=>$('#dashLoad').onclick()
         confirmBtn.addEventListener('click', function() {
             // Placeholder action: Log and hide
             console.log("User confirmed the action. Proceeding with transaction.");
-            hideOverlay();
+            //hideOverlay();
         });
         
         cancelBtn.addEventListener('click', function() {
             // Placeholder action: Log and hide
             console.log("User cancelled the action.");
-            hideOverlay();
+           // hideOverlay();
         });
 
         // Initial setup: hide the overlay when the page loads
         hideOverlay();
         
-        showOverlay()
+       // showOverlay()

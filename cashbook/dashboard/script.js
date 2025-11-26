@@ -129,7 +129,7 @@ async function loadRange(start, end) {
     let income = 0;
     if (node.in) {
       Object.values(node.in).forEach(entry => {
-        income += Number(entry.amount || 0);
+        income += Number(entry.amount || 0) + Number(entry.gpay ||0);
       });
     }
 
@@ -365,12 +365,12 @@ const trendPoints = [...ys, ...future];
 const lastReal = ys[ys.length - 1];
 const nextPred = future[0];
 
-let trendColor = "#00C853"; // green
-let arrow = "↑";
+let trendColor = "#FF1744"; // red
+let arrow = "↓";
 
 if (nextPred < lastReal) {
-  trendColor = "#FF1744"; // red
-  arrow = "↓";
+  trendColor = "#00C853"; //  green
+  arrow = "↑";
 }
 
 // SVG gradient ID
@@ -670,18 +670,7 @@ function enableZoom(svg, opts = {}) {
     if (e.touches.length === 1) {
       // double-tap detection
       const now = Date.now();
-      if (now - lastTap < 300) {
-        // double tap => zoom in around touch point
-        const factor = 0.7;
-        const t = e.touches[0];
-        const { vx, vy } = pointToView(t.clientX, t.clientY);
-        width *= factor; height *= factor;
-        minX += vx * (1 - factor); minY += vy * (1 - factor);
-        clamp(); apply();
-        lastTap = 0;
-        return;
-      }
-      lastTap = now;
+      
 
       // start pan
       isPanning = true;
