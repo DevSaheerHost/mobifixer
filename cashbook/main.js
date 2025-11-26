@@ -414,7 +414,7 @@ $('#search').onblur = () => {
       </div>
       <div style="text-align:right">
         <div><strong>₹${Number(r.amount).toLocaleString()}</strong></div>
-        <div><strong class='gpay'>₹${Number(r.gpay).toLocaleString()}</strong></div>
+        <div><strong class='gpay'>₹${Number(r.gpay || 0).toLocaleString()}</strong></div>
         <div class="actions gpay">
           ${r.gpay?'<span><i class="fa-brands fa-google-pay"></i></span>':''} 
           <button data-key='${r._key}' class='deleteBtn'>Delete</button>
@@ -1160,3 +1160,63 @@ document.querySelectorAll('input').forEach(inp => {
 
 $('.dboard').onchange=()=>$('#dashLoad').onclick()
 
+
+
+
+
+        // Get references to DOM elements
+        const overlay = document.getElementById('alertOverlay');
+       // const triggerBtn = document.getElementById('triggerAlert');
+        const confirmBtn = document.getElementById('confirmBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        
+        // Function to show the overlay
+        function showOverlay() {
+            // Set visibility and opacity to trigger CSS transitions
+            overlay.classList.add('visible');
+            
+            // Add event listener to close when clicking outside the card
+            // We use setTimeout to ensure the click listener isn't immediately triggered 
+            // by the same click that opened the alert.
+            setTimeout(() => {
+                overlay.addEventListener('click', handleOverlayClick);
+            }, 50); 
+        }
+
+        // Function to hide the overlay
+        function hideOverlay() {
+            // Remove visibility class
+            overlay.classList.remove('visible');
+            
+            // Remove event listener
+            overlay.removeEventListener('click', handleOverlayClick);
+        }
+
+        // Handler for clicks outside the card area (on the dimmed background)
+        function handleOverlayClick(event) {
+            // Check if the click happened directly on the overlay element
+            if (event.target === overlay) {
+                console.log("Overlay background clicked. Closing alert.");
+                hideOverlay();
+            }
+        }
+        
+        // Attach event listeners
+    //    triggerBtn.addEventListener('click', showOverlay);
+        
+        confirmBtn.addEventListener('click', function() {
+            // Placeholder action: Log and hide
+            console.log("User confirmed the action. Proceeding with transaction.");
+            hideOverlay();
+        });
+        
+        cancelBtn.addEventListener('click', function() {
+            // Placeholder action: Log and hide
+            console.log("User cancelled the action.");
+            hideOverlay();
+        });
+
+        // Initial setup: hide the overlay when the page loads
+        hideOverlay();
+        
+        showOverlay()

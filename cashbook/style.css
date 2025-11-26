@@ -301,6 +301,185 @@ form button{
     padding: 1rem;
 }
 
+
+
+        /* ------------------ Base Styles ------------------ */
+        :root {
+            --primary-blue: #2563eb; /* Blue-600 equivalent */
+            --primary-blue-hover: #1d4ed8; /* Blue-700 equivalent */
+            --gray-900: #1f2937;
+            --gray-600: #4b5563;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --background-color: #f7f9fb;
+        }
+
+        /* Using Inter font as requested, fallback to sans-serif */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+            min-height: 100vh;
+            
+        }
+
+
+
+
+
+        /* ------------------ Overlay Container ------------------ */
+        #alertOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5); /* Dimmed background */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            z-index: 50; 
+            
+            /* Transition for smooth visibility change */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+            pointer-events: none; /* Initially allow clicks to pass through */
+        }
+
+        #alertOverlay.visible {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto; /* Block clicks when visible */
+        }
+
+        /* ------------------ Card UI/UX Style ------------------ */
+        .alert-card {
+            background-color: white;
+            width: 100%;
+            max-width: 24rem; /* Equivalent to Tailwind max-w-sm */
+            margin: auto;
+            border-radius: 1.5rem; /* Rounded-3xl equivalent */
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); /* Shadow-2xl equivalent */
+            padding: 2rem; /* p-8 equivalent on larger screens */
+            box-sizing: border-box;
+            
+            /* Initial state for entrance animation */
+            transform: translateY(-20px);
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+            opacity: 0;
+        }
+        
+        /* Final state for entrance animation when visible */
+        #alertOverlay.visible .alert-card {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Adjust padding for smaller screens (mobile focus) */
+        @media (max-width: 640px) {
+            .alert-card {
+                padding: 1.5rem; /* p-6 equivalent */
+                border-radius: 1.25rem;
+            }
+        }
+
+        /* ------------------ Content Styles ------------------ */
+        .icon-container {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        
+        .icon-svg {
+            height: 3rem; /* h-12 equivalent */
+            width: 3rem; /* w-12 equivalent */
+            color: var(--primary-blue);
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .alert-title {
+            font-size: 1.5rem; /* sm:text-2xl equivalent */
+            font-weight: bold;
+            color: var(--gray-900);
+            text-align: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .alert-message {
+            color: var(--gray-600);
+            text-align: center;
+            margin-bottom: 1.5rem;
+            line-height: 1.625; /* leading-relaxed equivalent */
+        }
+
+        /* ------------------ Button Styles ------------------ */
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem; /* space-y-3 equivalent */
+        }
+        
+        .button {
+            width: 100%;
+            padding: 0.75rem 1rem; /* py-3 px-4 equivalent */
+            font-weight: bold;
+            border-radius: 0.75rem; /* rounded-xl equivalent */
+            transition: background-color 0.15s ease-in-out, transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+            border: none;
+            cursor: pointer;
+            outline: none;
+        }
+
+        /* Primary (Continue) Button */
+        .button-primary {
+            background-color: var(--primary-blue);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); /* shadow-md */
+        }
+
+        .button-primary:hover {
+            background-color: var(--primary-blue-hover);
+            transform: translateY(-1px);
+        }
+
+        .button-primary:focus {
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.5); /* focus:ring-4 focus:ring-blue-500 */
+        }
+
+        /* Secondary (Cancel) Button */
+        .button-secondary {
+            background-color: var(--gray-200);
+            color: var(--gray-700);
+        }
+
+        .button-secondary:hover {
+            background-color: var(--gray-300);
+            transform: translateY(-1px);
+        }
+        
+        .button-secondary:focus {
+            box-shadow: 0 0 0 4px rgba(209, 213, 219, 0.7); /* focus:ring-4 focus:ring-gray-400 */
+        }
+
+        /* Main trigger button for context */
+        #triggerAlert {
+            background-color: var(--primary-blue);
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); /* shadow-lg */
+            transition: all 0.15s ease-in-out;
+            border: none;
+            cursor: pointer;
+        }
+        
+        #triggerAlert:hover {
+            background-color: var(--primary-blue-hover);
+            transform: scale(1.05);
+        }
+        
 .hidden{
     display: none !important;
 }

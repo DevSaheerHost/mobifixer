@@ -275,6 +275,51 @@
 </div>
 
 
+
+
+
+
+    <!-- The FULL-SCREEN ALERT OVERLAY container -->
+    <div id="alertOverlay" role="dialog" aria-modal="true" aria-labelledby="alertTitle" aria-describedby="alertMessage">
+
+        <!-- ALERT CARD (Card UI/UX) -->
+        <div id="alertCard" class="alert-card">
+            
+            <!-- Icon/Visual Element (Using Lucide-like SVG for clarity) -->
+            <div class="icon-container">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon-svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
+            </div>
+
+            <!-- Title -->
+            <h2 id="alertTitle" class="alert-title">Important Notification</h2>
+
+            <!-- Message -->
+            <p id="alertMessage" class="alert-message">
+                This transaction will affect your account balance. Do you wish to continue?
+            </p>
+
+            <!-- Action Buttons -->
+            <div class="button-group">
+                <button id="confirmBtn" class="button button-primary">
+                    Continue
+                </button>
+                <button id="cancelBtn" class="button button-secondary">
+                    Cancel
+                </button>
+            </div>
+
+        </div>
+        <!-- End of ALERT CARD -->
+
+    </div>
+    <!-- End of OVERLAY -->
+    
+    
+    
+
+
 <div class="loader">
   <h1>
     <i class="fa-solid fa-cloud-arrow-down"></i>
