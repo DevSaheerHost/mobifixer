@@ -169,6 +169,19 @@ background: linear-gradient(0deg, rgba(255, 255, 255, 1) 81%, rgba(11, 162, 255,
     backdrop-filter: blur(0px);
     opacity: 0;
 }
+
+.loader .progress {
+    height: 2px;
+    width: 100%;
+}
+.loader .progress .bar{
+    background: var(--primary-blue);
+    height: 100%;
+    width: 10%;
+}
+
+
+
 *{
     transition: all 0.3s;
     animation: scaleup 0.3s;

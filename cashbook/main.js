@@ -2,6 +2,7 @@ const $ = s => document.querySelector(s)
 // check is user authenticated
 const username = localStorage.getItem('CASHBOOK_USER_NAME');
 
+const progressBar = document.querySelector('.loader .progress .bar')
 
    
     // ------------------------ CONFIG ------------------------
@@ -20,12 +21,14 @@ const username = localStorage.getItem('CASHBOOK_USER_NAME');
     const db = firebase.database();
     
     document.querySelector('#loading_text').textContent=`Fetching DB`
+    progressBar.style.width='40%'
     
     // get user data from DB
 firebase.database().ref(`/users/${username}`).get()
   .then(snap => {
     if (snap.exists()) {
       document.querySelector('#loading_text').textContent=` User found ${username}`
+      progressBar.style.width='60%'
       const user = snap.val();
       console.log("Logged user:", user);
     } else {
@@ -69,7 +72,7 @@ firebase.database().ref(`/users/${username}`).get()
     const downloadAll = document.getElementById('downloadAll');
     
     const loading_text = document.querySelector('#loading_text')
-
+    
     // Authentication: simple email sign in (create if not exists)
     signInBtn.addEventListener('click', async () => {
       const email = emailInput.value.trim();
@@ -161,6 +164,7 @@ firebase.database().ref(`/users/${username}`).get()
     auth.onAuthStateChanged(user => {
       if(user){
         document.querySelector('#loading_text').textContent=username;
+        progressBar.style.width='97%'
 
         authView.style.display='none';
         mainView.style.display='block';

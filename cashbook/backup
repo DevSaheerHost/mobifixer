@@ -32,3 +32,23 @@ btnUnderDev.onclick = async () => {
     btnUnderDev.style.pointerEvents = "auto";
   }, 1000);
 };
+
+
+
+
+
+
+
+
+if (now - lastTap < 300) {
+        // double tap => zoom in around touch point
+        const factor = 0.7;
+        const t = e.touches[0];
+        const { vx, vy } = pointToView(t.clientX, t.clientY);
+        width *= factor; height *= factor;
+        minX += vx * (1 - factor); minY += vy * (1 - factor);
+        clamp(); apply();
+        lastTap = 0;
+        return;
+      }
+      lastTap = now;
