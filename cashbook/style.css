@@ -58,6 +58,9 @@ div.card.dboard div{
     display: flex;
     flex-wrap: wrap;
 }
+.card{
+    overflow-x: hidden;
+}
 
 
 svg {
@@ -381,6 +384,9 @@ form button{
             transform: translateY(-20px);
             transition: transform 0.3s ease-out, opacity 0.3s ease-out;
             opacity: 0;
+            
+            max-height: 95dvh;
+            overflow-y: auto;
         }
         
         /* Final state for entrance animation when visible */
@@ -492,6 +498,17 @@ form button{
             background-color: var(--primary-blue-hover);
             transform: scale(1.05);
         }
+        
+        
+        #alertOverlay a{
+            color: #0083D5;
+            background: rgba(0, 131, 213, 0.1);
+            padding: 0.1rem;
+        }
+        
+        
+        
+        
         
 .hidden{
     display: none !important;

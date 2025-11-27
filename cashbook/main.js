@@ -1,6 +1,8 @@
 const $ = s => document.querySelector(s)
 // check is user authenticated
 const username = localStorage.getItem('CASHBOOK_USER_NAME');
+const fullname = localStorage.getItem('CASHBOOK_FULLNAME');
+
 
 const progressBar = document.querySelector('.loader .progress .bar')
 
@@ -26,6 +28,15 @@ const progressBar = document.querySelector('.loader .progress .bar')
     // get user data from DB
 firebase.database().ref(`/users/${username}`).get()
   .then(snap => {
+    if(!username || !fullname){
+      showToast('Session Timeout');
+      authView.style.display='block';
+        mainView.style.display='none';
+        $('.dboard').style.display='none'
+        userArea.innerHTML='';
+        document.querySelector('.loader').classList.add('off')
+        return
+    }
     if (snap.exists()) {
       document.querySelector('#loading_text').textContent=` User found ${username}`
       progressBar.style.width='60%'
@@ -72,6 +83,73 @@ firebase.database().ref(`/users/${username}`).get()
     const downloadAll = document.getElementById('downloadAll');
     
     const loading_text = document.querySelector('#loading_text')
+    const overlay = document.getElementById('alertOverlay');
+    
+    
+    if (!fullname || !username) {
+      localStorage.removeItem('CASHBOOK_USER_NAME')
+      localStorage.removeItem('CASHBOOK_FULLNAME')
+      
+    } else {
+      const read_changelog = localStorage.getItem('read_changelog') || false;
+      if(!read_changelog){
+      const confirmBtn = document.getElementById('confirmBtn');
+      const cancelBtn = document.getElementById('cancelBtn');
+      cancelBtn.style.display='none'
+      confirmBtn.textContent='Close'
+      showOverlay({title:"December 1'st Update", desc:`
+      <span style='display: flex; flex-flow: column; align-items: start; text-align: left'>
+      
+<ul style='padding: 0; padding-left: 1rem'>
+<li>Streamlined payment logging: Separate input fields for Cash and GPay amounts are now combined and stored as a single transaction.
+
+     <a href='./assets/preview/cash_amount_gpay_amount_entering_preview.jpg'>Preview-1</a>
+     
+     <a href='./assets/preview/cash_amount_gpay_amount_list_preview.jpg'>Preview-2</a>
+
+     </li>
+
+
+     <li>Added Recycle Bin to recover accidentally deleted items. (Permenent Storage) 
+     <a href='./assets/preview/filter_delete_preview.jpg'>Preview</a></li>
+     <li>Implemented an audit log to track the user/staff responsible for data deletion</li>
+     <li>Transactions are now searchable via the search bar. 
+     <a href='./assets/preview/filter_search_preview.jpg'>Preview</a>
+     </li>
+
+
+
+
+     <li>Enhanced staff management For Role-Based Access.</li>
+     <li>Introduced Alert Modals.</li>
+     <li>Profit prediction optimized by <b>Zeno AI</b>.</li>
+     <li>Enhanced authentication system.</li>
+     <li>Overall UI optimizd.</li>
+    <li>Implemented critical security fixes.</li>
+    <li>Minor bug fixes and improvements.</li>
+
+
+
+</ul>
+
+     
+      </span>
+      `, important:false, icon:`
+      
+      <svg xmlns="http://www.w3.org/2000/svg" class="icon-svg" viewBox="0 0 20 20" fill="currentColor">
+  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+</svg>
+
+      `
+      })
+      confirmBtn.onclick=()=>{
+        hideOverlay()
+        localStorage.setItem('read_changelog', true)
+        setTimeout(()=>{cancelBtn.style.display='block';confirmBtn.textContent='Confirm'}, 500)
+      }
+    }
+}
+
     
     // Authentication: simple email sign in (create if not exists)
     signInBtn.addEventListener('click', async () => {
@@ -117,6 +195,7 @@ firebase.database().ref(`/users/${username}`).get()
         localStorage.setItem('CASHBOOK_USER_NAME', username)
         localStorage.setItem('CASHBOOK_ROLL', selectedRole)
         localStorage.setItem('CASHBOOK_FULLNAME', fullname)
+        
 
         showTopToast("SignIn successful");
         location.reload()
@@ -240,11 +319,13 @@ console.log(type)
 
       const row = snap.val();
 
-      if (!confirm("Delete entry?")) return;
+      const userConfirmed = await askUserPermission({title:'Confirm Deletion', desc:'Are you sure you want to delete this entry? This action cannot be undone.'}); 
+//alert(userConfirmed)
+  if (!userConfirmed) return;
 
       // Move to recycle bin
       await db.ref(`${username}/recycleBin/${currentDate}/${type}/${key}`)
-        .set({ ...row, deletedAt: new Date().toLocaleString("en-IN") });
+        .set({ ...row, deletedAt: new Date().toLocaleString("en-IN"), deletedBy: fullname||'unknown' });
 
       // Delete original
       await ref.remove();
@@ -457,7 +538,7 @@ $('#search').onblur = () => {
     el.innerHTML = `
       <div class="meta">
         <div><strong>${r._type.toUpperCase()} — ${r.name}</strong></div>
-        <div class="small">${formatDT(r.ts)} • ${r.userEmail||''} • ${r.staffName ||''}</div>
+        <div class="small">${formatDT(r.ts)} • ${r.userEmail||''} <br> ${r.staffName ||''}${r.writer?` : ${r.writer}`:''}<br> ${r.deletedBy?`${r.deletedBy} Deleted This Transaction`:''}</div>
       </div>
       <div style="text-align:right">
         <div><strong>₹${Number(r.amount).toLocaleString()}</strong></div>
@@ -510,7 +591,8 @@ const userConfirmed = await askUserPermission({title:'Confirm Deletion', desc:'A
 
   await recycleRef.set({
     ...data,
-    deletedAt: new Date().toLocaleString("en-IN")
+    deletedAt: new Date().toLocaleString("en-IN"),
+    deletedBy: fullname||'unknown',
   });
 
   // ------------------------------------------------
@@ -541,7 +623,7 @@ const userConfirmed = await askUserPermission({title:'Confirm Deletion', desc:'A
       const t = 'in';
       const name = entryForm.querySelector('#desc').value.trim();
       const amount = entryForm.querySelector('#amount');
-      const staffName = document.querySelector('#staff').value.trim();
+      const staffName = localStorage.getItem('CASHBOOK_FULLNAME').trim() || 'UNKNOWN';
       const amt = Number(amount.value);
       const gpAmount = Number(document.querySelector('#gpAmount').value);
       const g = gpAmount ||0;
@@ -557,6 +639,7 @@ const userConfirmed = await askUserPermission({title:'Confirm Deletion', desc:'A
         gpay: g,
         ts: Date.now(),
         staffName,
+        writer: document.querySelector('#staff').value || null,
         userEmail: auth.currentUser ? auth.currentUser.email : 'local'
       });
       
@@ -588,12 +671,14 @@ const userConfirmed = await askUserPermission({title:'Confirm Deletion', desc:'A
       const dateISO = selectDate.value || isoDate(new Date());
       const s = await nextSerial(dateISO,t);
       const nodeRef = db.ref(dayRoot(dateISO)+`/${t}`).push();
+      const staffName = localStorage.getItem('CASHBOOK_FULLNAME').trim() || 'UNKNOWN';
       await nodeRef.set({
         serial: s,
         name,
         amount: amt,
         gpay: g,
         ts: Date.now(),
+        staffName,
         userEmail: auth.currentUser ? auth.currentUser.email : 'local'
       });
       // clear
@@ -621,7 +706,7 @@ const userConfirmed = await askUserPermission({title:'Confirm Deletion', desc:'A
         const group = data[type]||{};
         Object.keys(group).forEach(k=>rows.push({type, key:k, ...group[k]}));
       });
-      if(rows.length===0) return alert('No data');
+      if(rows.length===0) return showTopToast('No data');
       let csv = 'type,serial,name,amount,gpay,ts,user\n';
       rows.forEach(r=>{ csv+=`${r.type},${r.serial},"${(r.name||'').replace(/"/g,'""')}",${r.amount},${r.gpay?1:0},${new Date(r.ts).toLocaleString()},${r.userEmail||''}\n`; });
       const blob = new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
@@ -1212,18 +1297,25 @@ $('.dboard').onchange=()=>$('#dashLoad').onclick()
 
 
 
-
+var important
         // Get references to DOM elements
-        const overlay = document.getElementById('alertOverlay');
+        
        // const triggerBtn = document.getElementById('triggerAlert');
         const confirmBtn = document.getElementById('confirmBtn');
         const cancelBtn = document.getElementById('cancelBtn');
         
         // Function to show the overlay
         function showOverlay(info) {
+        const icon = document.getElementById('overlayAlertIcon');
+        important=info.important||false
         
+        icon.innerHTML=info.icon || `
+           <svg xmlns="http://www.w3.org/2000/svg" class="icon-svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>`
+
         $('#alertTitle').textContent=info.title
-        $('#alertMessage').textContent=info.desc
+        $('#alertMessage').innerHTML=info.desc
             // Set visibility and opacity to trigger CSS transitions
             overlay.classList.add('visible');
             
@@ -1231,7 +1323,7 @@ $('.dboard').onchange=()=>$('#dashLoad').onclick()
             // We use setTimeout to ensure the click listener isn't immediately triggered 
             // by the same click that opened the alert.
             setTimeout(() => {
-                overlay.addEventListener('click', handleOverlayClick);
+              overlay.onclick=(e)=>handleOverlayClick(e);
             }, 50); 
         }
 
@@ -1242,6 +1334,7 @@ $('.dboard').onchange=()=>$('#dashLoad').onclick()
             
             // Remove event listener
             overlay.removeEventListener('click', handleOverlayClick);
+            important = false;
         }
 
         // Handler for clicks outside the card area (on the dimmed background)
@@ -1249,7 +1342,7 @@ $('.dboard').onchange=()=>$('#dashLoad').onclick()
             // Check if the click happened directly on the overlay element
             if (event.target === overlay) {
                 console.log("Overlay background clicked. Closing alert.");
-              //  hideOverlay();
+              !important? hideOverlay():'';
             }
         }
         
@@ -1259,17 +1352,17 @@ $('.dboard').onchange=()=>$('#dashLoad').onclick()
         confirmBtn.addEventListener('click', function() {
             // Placeholder action: Log and hide
             console.log("User confirmed the action. Proceeding with transaction.");
-            //hideOverlay();
+            !important?hideOverlay():'';
         });
         
         cancelBtn.addEventListener('click', function() {
             // Placeholder action: Log and hide
             console.log("User cancelled the action.");
-           // hideOverlay();
+           !important? hideOverlay():'';
         });
 
         // Initial setup: hide the overlay when the page loads
-        hideOverlay();
+        //hideOverlay();
         
        // showOverlay()
        
@@ -1328,3 +1421,41 @@ function setupInactivityDetection() {
 
 // start
 setupInactivityDetection();
+
+
+
+
+
+// error handling 
+
+window.onerror = (message, source, lineno, colno, error) => {
+    
+    console.error(`Error: ${message}`);
+    showOverlay({title: 'Global Error', desc:`${message}. \n Source: ${source}. \n ${error} `, important:false})
+    return true;
+};
+
+
+
+window.addEventListener('unhandledrejection', (event) => {
+    // 'event' 'event.reason'.
+    console.error('Promise rejection (unhandled):', event.reason);
+    showOverlay({title: 'Promise rejection', desc:`${event.reason} `, important:false})
+
+ const confirmBtn = document.getElementById('confirmBtn');
+const cancelBtn = document.getElementById('cancelBtn');
+confirmBtn.style.display='none'
+
+cancelBtn.onclick=()=>{
+  hideOverlay()
+  confirmBtn.style.display='block'
+}
+    
+    // (preventing default), 'Unhandled Rejection' 
+    event.preventDefault(); 
+});
+
+
+
+
+

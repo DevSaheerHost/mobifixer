@@ -117,15 +117,17 @@
     <div id="authView" class="card login-box" style="display:none">
       <h3>Sign in — Email</h3>
       <p class="small">Use email to sign-in (new users will be created).</p>
+  
       <div style="display:flex;gap:8px;margin-top:8px;" class="loginInputBox">
         <h4 style="margin-bottom: 0;">User Details</h4>
 
         
         <input type="text" name="fullname" id="fullname" placeholder="Your Full Name"/>
         
+      
         <span style="display: flex;border: 1px solid #ccc; border-radius: 7px;" class="radioBox">
           
-        
+        <h4 style="margin: 0rem;">Role</h4>
           <span>
             <input type="radio" name="role" id="role_woner" value="owner" />
             <label for="role_woner">Owner</label>
@@ -137,11 +139,14 @@
           </span>
         </span>
         
+        
+        <p class="small" style="margin-top:10px"><b>Hint:</b> Full Name is the name of the person currently using this app.</p>
+        
         <h4 style="margin-bottom: 0;">Shop Details</h4>
 
         
         
-       <input type="text" name="username" id="username" placeholder="Username"/>
+       <input type="text" name="username" id="username" placeholder="Username / Shop name"/>
         <input id="email" placeholder="Email" />
         <input id="password" placeholder="Password" type="password" />
         <button id="signInBtn">Sign in</button>
@@ -286,10 +291,13 @@
         <div id="alertCard" class="alert-card">
             
             <!-- Icon/Visual Element (Using Lucide-like SVG for clarity) -->
-            <div class="icon-container">
+            <div class="icon-container" id="overlayAlertIcon">
+
                 <svg xmlns="http://www.w3.org/2000/svg" class="icon-svg" viewBox="0 0 20 20" fill="currentColor">
                   <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
                 </svg>
+
+
             </div>
 
             <!-- Title -->
