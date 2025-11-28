@@ -95,6 +95,11 @@ firebase.database().ref(`/users/${username}`).get()
       if(!read_changelog){
       const confirmBtn = document.getElementById('confirmBtn');
       const cancelBtn = document.getElementById('cancelBtn');
+      const overlay = document.getElementById('alertOverlay');
+      
+      
+
+      
       cancelBtn.style.display='none'
       confirmBtn.textContent='Close'
       showOverlay({title:"December 1'st Update", desc:`
@@ -142,14 +147,35 @@ firebase.database().ref(`/users/${username}`).get()
 
       `
       })
-      confirmBtn.onclick=()=>{
+      
+      const handleCloseAlert = (e)=>{
+        if(e && e.target.id==='alertOverlay'){
+          
+          
+          hideOverlay()
+        localStorage.setItem('read_changelog', true)
+        setTimeout(()=>{cancelBtn.style.display='block'
+        confirmBtn.textContent='Confirm'}, 500)
+        return
+        }
         hideOverlay()
         localStorage.setItem('read_changelog', true)
-        setTimeout(()=>{cancelBtn.style.display='block';confirmBtn.textContent='Confirm'}, 500)
+        setTimeout(()=>{cancelBtn.style.display='block'
+        confirmBtn.textContent='Confirm'}, 500)
       }
-    }
-}
+      confirmBtn.onclick=()=>{
+        handleCloseAlert()
+        if (navigator.vibrate) {
+                      navigator.vibrate([15, 80, 15]); // short, crisp, non-annoying
+                    }
+                
+      }
+      overlay.removeEventListener('click', handleCloseAlert)
+      overlay.addEventListener('click', handleCloseAlert)
 
+    }
+ 
+}
     
     // Authentication: simple email sign in (create if not exists)
     signInBtn.addEventListener('click', async () => {
@@ -179,8 +205,13 @@ firebase.database().ref(`/users/${username}`).get()
         const data = snap.val();
         if (data.password !== password) {
           showTopToast("Wrong password", '#F44336');
-          return;
-        }
+          if (navigator.vibrate) {
+            navigator.vibrate([15, 80, 15]); // short, crisp, non-annoying
+          }
+          return
+          };
+          
+        
 
         
         
@@ -341,7 +372,7 @@ const askUserPermission=(info)=> {
             return new Promise((resolve) => {
               
               showOverlay(info)
-                const modal = document.getElementById('confirmModal');
+                const overlay = document.getElementById('alertOverlay')
                 const confirmBtn = document.getElementById('confirmBtn');
                 const cancelBtn = document.getElementById('cancelBtn');
 
@@ -350,6 +381,7 @@ const askUserPermission=(info)=> {
                     hideOverlay()
                     confirmBtn.removeEventListener('click', handleYes);
                     cancelBtn.removeEventListener('click', handleNo);
+                    overlay.removeEventListener('click', handleOverlayClick);
                 };
 
                 // Handle "Continue" click
@@ -362,11 +394,22 @@ const askUserPermission=(info)=> {
                 const handleNo = () => {
                     cleanup();
                     resolve(false); // Promise resolves with FALSE
+                    showToast('Aborted by user')
+                    if (navigator.vibrate) {
+                      navigator.vibrate([15, 80, 15]); // short, crisp, non-annoying
+                    }
                 };
+                
+                const handleOverlayClick=e =>{
+                  if(e.target.id ==='alertOverlay')handleNo()
+                }
 
                 // ബട്ടണുകളിൽ ഇവന്റ് ലിസണർ ആഡ് ചെയ്യുന്നു
                 confirmBtn.addEventListener('click', handleYes);
                 cancelBtn.addEventListener('click', handleNo);
+                
+                overlay.addEventListener('click', handleOverlayClick);
+
             });
         }
 
@@ -430,7 +473,7 @@ buttons.forEach(btn => {
 }
     buttons.forEach(b => b.classList.remove("active"));
     e.target.classList.add("active");
-
+document.querySelector('#today_summery_card').style.display='block'
     if (e.target.id === 'in') renderType('in', data);
     if (e.target.id === 'out') renderType('out', data);
     if (e.target.id === 'all') renderEntries(data);
@@ -446,6 +489,7 @@ buttons.forEach(btn => {
       const snapshot = await rootRef.get();
       const data = snapshot.val() || {};
       renderEntries(data);
+      document.querySelector('#today_summery_card').style.display='none'
     }
 
   };
@@ -575,12 +619,20 @@ $('#search').onblur = () => {
   const snap = await originalRef.get();
   if (!snap.exists()) {
     showTopToast("Entry not found.");
+    if (navigator.vibrate) {
+  navigator.vibrate([15, 80, 15]); // short, crisp, non-annoying
+}
     return;
   }
 
   const data = snap.val();
 
-const userConfirmed = await askUserPermission({title:'Confirm Deletion', desc:'Are you sure you want to delete this entry? This action cannot be undone.'}); 
+const userConfirmed = await askUserPermission({title:'Confirm Deletion', desc:'Are you sure you want to delete this entry? This action cannot be undone.', icon:` 
+  <svg xmlns="http://www.w3.org/2000/svg" class="icon-svg" viewBox="0 0 20 20" fill="red">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
+
+`}); 
 //alert(userConfirmed)
   if (!userConfirmed) return;
 
@@ -715,7 +767,15 @@ const userConfirmed = await askUserPermission({title:'Confirm Deletion', desc:'A
 
     // Clear day (CAUTION): deletes all data for date
     clearDay.addEventListener('click', async ()=>{
-      if(!confirm('Delete all entries for this day?')) return;
+    
+    const userConfirmed = await askUserPermission({title:'Confirm Deletion', desc:`Are you sure you want to delete this day? <span style='color: #ef4444; font-weight: 500'>This action cannot be undone.</span>`, icon:`
+      <svg xmlns="http://www.w3.org/2000/svg" class="icon-svg" viewBox="0 0 20 20" fill="#ef4444">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
+    
+    `}); 
+    
+      if(!userConfirmed) return;
      // await db.ref(dayRoot(currentDate)).remove(); loadForDate(currentDate);
      
      showTopToast('Sorry, This function was deactivated for security issue','#FFD54F')
