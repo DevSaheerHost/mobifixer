@@ -52,3 +52,87 @@ if (now - lastTap < 300) {
         return;
       }
       lastTap = now;
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+  // Delete handler
+    // Delete handler
+  document.querySelectorAll('.deleteBtn').forEach(btn =>
+    btn.addEventListener('click', async e => {
+      alert('c')
+      const key = e.target.dataset.key;
+
+      const ref = db.ref(dayRoot(currentDate) + `/${type}/${key}`);
+      const snap = await ref.get();
+      if (!snap.exists()) return showTopToast("Entry not found!");
+
+      const row = snap.val();
+
+      const userConfirmed = await askUserPermission({title:'Confirm Deletion', desc:'Are you sure you want to delete this entry? This action cannot be undone.'}); 
+//alert(userConfirmed)
+  if (!userConfirmed) return;
+
+      // Move to recycle bin
+      await db.ref(`${username}/recycleBin/${currentDate}/${type}/${key}`)
+        .set({ ...row, deletedAt: new Date().toLocaleString("en-IN"), deletedBy: fullname||'unknown' });
+
+      // Delete original
+      await ref.remove();
+
+      // Reload same type
+      loadForDate(currentDate, type);
+      
+      const searchTerm = search.value.trim()
+      if(searchTerm){
+       if($('#entriesListSearch')) $('#entriesListSearch').remove();
+      }
+    })
+  );
+
+
+
+
+
+
+
+    // Cache DOM elements
+const search = $('#search');
+const parrent = $('#parrent');
+//const entriesList = $('#entriesList');
+const dboard = $('.dboard');
+
+
+// Create a clone for search results
+const entriesListClone = entriesList.cloneNode(true);
+entriesListClone.id = 'entriesListSearch';
+search.parentElement.appendChild(entriesListClone);
+entriesListClone.style.display = 'none';
+
+// Search functionality
+search.oninput = e => {
+  const value = e.target.value.trim();
+
+  if (!value) {
+    // Show default view
+    dboard.classList.remove('hidden');
+    entriesList.style.display = 'block';
+    entriesListClone.style.display = 'none';
+    renderEntries(data); // Render in default list
+    return;
+  }
+
+  // Show search view
+  dboard.classList.add('hidden');
+  entriesList.style.display = 'none';
+  entriesListClone.style.display = 'block';
+  
+  const filtered = filterData(data, value);
+  renderEntries(filtered, entriesListClone); // Render in search list
+};

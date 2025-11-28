@@ -337,37 +337,13 @@ console.log(type)
     `;
 
     entriesList.appendChild(el);
-  });
-
-  // Delete handler
-  document.querySelectorAll('.deleteBtn').forEach(btn =>
-    btn.addEventListener('click', async e => {
-      const key = e.target.dataset.key;
-
-      const ref = db.ref(dayRoot(currentDate) + `/${type}/${key}`);
-      const snap = await ref.get();
-      if (!snap.exists()) return showTopToast("Entry not found!");
-
-      const row = snap.val();
-
-      const userConfirmed = await askUserPermission({title:'Confirm Deletion', desc:'Are you sure you want to delete this entry? This action cannot be undone.'}); 
-//alert(userConfirmed)
-  if (!userConfirmed) return;
-
-      // Move to recycle bin
-      await db.ref(`${username}/recycleBin/${currentDate}/${type}/${key}`)
-        .set({ ...row, deletedAt: new Date().toLocaleString("en-IN"), deletedBy: fullname||'unknown' });
-
-      // Delete original
-      await ref.remove();
-
-      // Reload same type
-      loadForDate(currentDate, type);
-    })
-  );
-}
+  });}
 
 
+
+
+  
+  
 const askUserPermission=(info)=> {
             return new Promise((resolve) => {
               
@@ -498,52 +474,64 @@ document.querySelector('#today_summery_card').style.display='block'
 
 
 
-// SEARCH 🔍 🔎 
 
-$('#search').oninput = e => {
-  const parrent = $('#parrent');
-  const entriesList = $('#entriesList');
+// SEARCH 🔍 🔎 
+const search = $('#search');
+const parrent = $('#parrent');
+//const entriesList = $('#entriesList');
+const dboard = $('.dboard');
+
+// Create a clone for search results
+const entriesListClone = entriesList.cloneNode(true);
+entriesListClone.id = 'entriesListSearch';
+search.parentElement.appendChild(entriesListClone);
+entriesListClone.style.display = 'none';
+
+let scrollTimer;
+let isSearchActive = false;
+
+// Update search input to track state
+search.oninput = e => {
   const value = e.target.value.trim();
+  isSearchActive = !!value;
 
   if (!value) {
-    $('.dboard').classList.remove('hidden');
-    parrent.appendChild(entriesList);
-    renderEntries(data); // default
+    dboard.classList.remove('hidden');
+    //entriesList.style.display = 'block';
+    entriesListClone.style.display = 'none';
+    renderEntries(data);
     return;
   }
 
-  $('.dboard').classList.add('hidden');
-  search.parentElement.appendChild(entriesList);
-
+  dboard.classList.add('hidden');
+  //entriesList.style.display = 'none';
+  entriesListClone.style.display = 'block';
+  
   const filtered = filterData(data, value);
-  renderEntries(filtered);
+  renderEntries(filtered, entriesListClone);
 };
 
-$('#search').onblur = () => {
-  const parrent = $('#parrent');
-  const entriesList = $('#entriesList');
-  parrent.appendChild(entriesList);
-};
+window.onscroll = () => {
+  // Only hide search results if they're active
+  if (!isSearchActive) return;
+  
+  clearTimeout(scrollTimer);
+  scrollTimer = setTimeout(() => {
+    if (entriesListClone.style.display !== 'none') {
+      entriesListClone.style.display = 'none';
+     // entriesList.style.display = 'block';
+      dboard.classList.remove('hidden');
+      isSearchActive = false;
+      search.value = ''; // Optional: clear search input
+    }
+  }, 100);
+};  
 
-  $('#search').onblur=()=>{
-    const parrent = $('#parrent')
-    const entriesList = $('#entriesList')
-    
-    parrent.appendChild(entriesList);
-    
+  
 
-   
-  }
-  
-  
-  
-  
-  
-  
-  
-        
-        
-        
+
+
+
 
 
 //const buttons = document.querySelectorAll('#in, #out, #all, #bin');
@@ -556,109 +544,88 @@ $('#search').onblur = () => {
 
     }
 
-    function renderEntries(data){
-      document.querySelector('.loader').classList.add('off')
-  entriesList.innerHTML='';
+
+
+
+
+// Updated renderEntries function with target support
+function renderEntries(data, target = entriesList) {
+  document.querySelector('.loader').classList.add('off');
+  
+  // Clear the target container
+  target.innerHTML = '';
+  
   const rows = [];
-  ['in','out'].forEach(type=>{
+  ['in','out'].forEach(type => {
     const group = data[type] || {};
-    Object.keys(group).forEach(key=>{
-      rows.push({...group[key], _type:type, _key:key});
+    Object.keys(group).forEach(key => {
+      rows.push({...group[key], _type: type, _key: key});
     });
   });
 
   // 🔁 sort by timestamp (latest first)
-  rows.sort((a,b)=> b.ts - a.ts);
+  rows.sort((a, b) => b.ts - a.ts);
 
-  let totalIn=0,totalOut=0,totalGpay=0;
-  if(rows.length===0){
-    entriesList.innerHTML='<div class="small muted">No entries for this day.</div>'; 
+  let totalIn = 0, totalOut = 0, totalGpay = 0;
+  
+  if (rows.length === 0) {
+    target.innerHTML = '<div class="small muted">No entries found.</div>'; 
+    
+    // Reset totals when no data
+    totalInEl.textContent = '₹0';
+    totalOutEl.textContent = '₹0';
+    totalGpayEl.textContent = '₹0';
+    netBalEl.textContent = '₹0';
     return;
   }
 
-  rows.forEach(r=>{
+  rows.forEach(r => {
     const el = document.createElement('div');
     el.className = `entry ${r._type === 'in' ? 'in' : 'out'}${r.gpay ? ' gp' : ''}`;
     el.innerHTML = `
       <div class="meta">
         <div><strong>${r._type.toUpperCase()} — ${r.name}</strong></div>
-        <div class="small">${formatDT(r.ts)} • ${r.userEmail||''} <br> ${r.staffName ||''}${r.writer?` : ${r.writer}`:''}<br> ${r.deletedBy?`${r.deletedBy} Deleted This Transaction`:''}</div>
+        <div class="small">${formatDT(r.ts)} • ${r.userEmail || ''} <br> ${r.staffName || ''} ${r.writer ? ` : ${r.writer} (${r.role ||'_'})` : ` (${r.role||'_'})`}<br> ${r.deletedBy ? `${r.deletedBy} Deleted This Transaction` : ''}</div>
       </div>
       <div style="text-align:right">
         <div><strong>₹${Number(r.amount).toLocaleString()}</strong></div>
         <div><strong class='gpay'>₹${Number(r.gpay || 0).toLocaleString()}</strong></div>
         <div class="actions gpay">
-          ${r.gpay?'<span><i class="fa-brands fa-google-pay"></i></span>':''} 
+          ${r.gpay ? '<span><i class="fa-brands fa-google-pay"></i></span>' : ''} 
           <button data-key='${r._key}' class='deleteBtn'>Delete</button>
         </div>
       </div>`;
-    entriesList.appendChild(el);
+    target.appendChild(el);
 
-    if(r._type==='in') totalIn += Number(r.amount||0) + Number(r.gpay ||0);
-    else totalOut += Number(r.amount||0);
-    if(r.gpay) totalGpay += Number(r.gpay||0);
+    if (r._type === 'in') {
+      totalIn += Number(r.amount || 0) + Number(r.gpay || 0);
+    } else {
+      totalOut += Number(r.amount || 0);
+    }
+    if (r.gpay) totalGpay += Number(r.gpay || 0);
   });
 
+  // Update totals (shared for both views)
   totalInEl.textContent = `₹${totalIn.toLocaleString()}`;
   totalOutEl.textContent = `₹${totalOut.toLocaleString()}`;
   totalGpayEl.textContent = `₹${totalGpay.toLocaleString()}`;
   const net = totalIn - totalOut - totalGpay;
   netBalEl.textContent = `₹${net.toLocaleString()}`;
-
-  document.querySelectorAll('.deleteBtn').forEach(btn=>
-    btn.addEventListener('click', async (e) => {
-  const key = e.target.dataset.key;
-
-  // Find type: in or out
-  const inPath = db.ref(dayRoot(currentDate) + `/in/${key}`);
-  const type = (await inPath.get()).exists() ? 'in' : 'out';
-
-  // Original entry
-  const originalRef = db.ref(dayRoot(currentDate) + `/${type}/${key}`);
-
-  const snap = await originalRef.get();
-  if (!snap.exists()) {
-    showTopToast("Entry not found.");
-    if (navigator.vibrate) {
-  navigator.vibrate([15, 80, 15]); // short, crisp, non-annoying
 }
-    return;
-  }
 
-  const data = snap.val();
-
-const userConfirmed = await askUserPermission({title:'Confirm Deletion', desc:'Are you sure you want to delete this entry? This action cannot be undone.', icon:` 
-  <svg xmlns="http://www.w3.org/2000/svg" class="icon-svg" viewBox="0 0 20 20" fill="red">
-                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                </svg>
-
-`}); 
-//alert(userConfirmed)
-  if (!userConfirmed) return;
-
-  // ------------------------------------------------
-  // 1) MOVE TO RECYCLE BIN with type folder
-  // ------------------------------------------------
-  const recycleRef = db.ref(`${username}/recycleBin/${currentDate}/${type}/${key}`);
-
-  await recycleRef.set({
-    ...data,
-    deletedAt: new Date().toLocaleString("en-IN"),
-    deletedBy: fullname||'unknown',
+// Optional: Add event delegation for delete buttons in both lists
+function setupEventDelegation() {
+  document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('deleteBtn')) {
+      const key = e.target.dataset.key;
+      // Your delete logic here
+      //handleDelete(key); // this function not exist 
+    }
   });
+}
 
-  // ------------------------------------------------
-  // 2) DELETE ORIGINAL
-  // ------------------------------------------------
-  await originalRef.remove();
-
-  // ------------------------------------------------
-  // 3) Refresh UI
-  // ------------------------------------------------
-  loadForDate(currentDate);
-})
-
-)}
+// Initialize event delegation
+//setupEventDelegation();
     
   
 
@@ -745,6 +712,82 @@ const userConfirmed = await askUserPermission({title:'Confirm Deletion', desc:'A
 
 
 
+// DELETE EVENT LISTENER: 
+// We use event delegation on the document or a persistent parent.
+document.addEventListener('click', async (e) => {
+  // Check if the clicked element is a delete button
+  if (e.target.classList.contains('deleteBtn')) {
+    
+    
+    
+    const key = e.target.dataset.key;
+    
+    // Find type: in or out
+    const inPath = db.ref(dayRoot(currentDate) + `/in/${key}`);
+    const type = (await inPath.get()).exists() ? 'in' : 'out';
+
+    // Original entry
+    const originalRef = db.ref(dayRoot(currentDate) + `/${type}/${key}`);
+
+    const snap = await originalRef.get();
+    if (!snap.exists()) {
+      showTopToast("Entry not found.");
+      if (navigator.vibrate) {
+        navigator.vibrate([15, 80, 15]);
+      }
+      return;
+    }
+
+    const data = snap.val();
+
+    const userConfirmed = await askUserPermission({
+      title: 'Confirm Deletion',
+      desc: 'Are you sure you want to delete this entry? This action cannot be undone.',
+      icon: ` 
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon-svg" viewBox="0 0 20 20" fill="red">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                      </svg>
+
+    `
+    });
+    
+    if (!userConfirmed) return;
+
+    // 1) MOVE TO RECYCLE BIN with type folder
+    const recycleRef = db.ref(`${username}/recycleBin/${currentDate}/${type}/${key}`);
+    await recycleRef.set({
+      ...data,
+      deletedAt: new Date().toLocaleString("en-IN"),
+      deletedBy: fullname || 'unknown',
+      role: localStorage.getItem('CASHBOOK_ROLL') || 'UNKNOWN',
+    });
+
+    // 2) DELETE ORIGINAL
+    await originalRef.remove();
+
+    // 3) Refresh UI
+    loadForDate(currentDate);
+    
+    
+   // const entriesListClone = document.querySelector('#entriesListClone')
+    $('.dboard').classList.remove('hidden');
+    //entriesList.style.display = 'block';
+   // entriesListClone.style.display = 'none';
+    // here is
+    
+
+    
+    
+    if(search.value.trim()){
+  // Use closest() for more reliable traversal
+  const cloneNode = e.target.closest('.entry')?.parentElement;
+  if (cloneNode && cloneNode.id === 'entriesListSearch') {
+    cloneNode.remove();
+    search.value = '';
+  }
+}
+  }
+});
 
 
 
