@@ -891,12 +891,13 @@ drawSparklineFullscreen(fullscreenChart, nets, labels)
 
   chartElSvg.onclick=()=>{
   location.href='./dashboard'
-    mainView.style.display='none';
+  //  mainView.style.display='none';
    // chartView.style.display='block';
    // document.querySelector('.card.dboard').style.display='none';
    // showFullChart(dayTotals)
+   $('.loader').style.display='block'
   }
-if (dayTotals.length > 1) {
+if (dayTotals.length > 0) {
   drawSparkline(
     chartEl,
     dayTotals.map(d => d.in), // blue = income

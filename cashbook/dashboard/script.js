@@ -564,6 +564,7 @@ box.querySelectorAll(".predict-dot").forEach(dot => {
 document.getElementById("loadBtn").onclick = async () => {
   const s = startDate.value;
   const e = endDate.value;
+  console.log(e, s)
   if (!s || !e) return;
 
   const data = await loadRange(s, e);
@@ -674,13 +675,13 @@ function enableZoom(svg, opts = {}) {
 
       // start pan
       isPanning = true;
-      startX = e.touches[0].clientX;
-      startY = e.touches[0].clientY;
+      startX = e.touches[0].clientY;
+      startY = e.touches[0].clientX;
     } else if (e.touches.length === 2) {
       // pinch start
       isPanning = false;
-      const dx = e.touches[0].clientX - e.touches[1].clientX;
-      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dx = e.touches[0].clientY - e.touches[1].clientY;
+      const dy = e.touches[0].clientX - e.touches[1].clientX;
       lastTouchDist = Math.hypot(dx, dy);
     }
   }, { passive: false });
@@ -688,10 +689,10 @@ function enableZoom(svg, opts = {}) {
   svg.addEventListener("touchmove", (e) => {
     e.preventDefault();
     if (e.touches.length === 1 && isPanning) {
-      const dx = (e.touches[0].clientX - startX) * (width / svg.clientWidth);
-      const dy = (e.touches[0].clientY - startY) * (height / svg.clientHeight);
+      const dx = (e.touches[0].clientY - startX) * (width / svg.clientWidth);
+      const dy = (e.touches[0].clientX - startY) * (height / svg.clientHeight);
       minX -= dx; minY -= dy;
-      startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+      startX = e.touches[0].clientY; startY = e.touches[0].clientX;
       apply();
     } else if (e.touches.length === 2) {
       // pinch -> zoom
