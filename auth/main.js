@@ -223,6 +223,8 @@ $('#signup').onclick = async (e) => {
 
     localStorage.setItem('shopName', businessName);
     localStorage.setItem('author', userName);
+    localStorage.setItem('role', 'Shop Owner');
+    
     alert("✅ Signup successful!");
     location.hash = "#/login";
   } catch (err) {

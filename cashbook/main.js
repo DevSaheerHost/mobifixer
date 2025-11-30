@@ -325,20 +325,20 @@ console.log(type)
     el.innerHTML = `
       <div class="meta">
         <div><strong>${type.toUpperCase()} — ${r.name}</strong></div>
-        <div class="small">${formatDT(r.ts)}</div>
+        <div class="small">${formatDT(r.ts)} • ${r.userEmail || ''} <br> ${r.staffName || ''} ${r.writer ? ` : ${r.writer} (${r.role ||'_'})` : ` (${r.role||'_'})`}<br> ${r.deletedBy ? `${r.deletedBy} Deleted This Transaction` : ''}</div>
       </div>
       <div style="text-align:right">
         <div><strong>₹${Number(r.amount).toLocaleString()}</strong></div>
+        <div><strong class='gpay'>₹${Number(r.gpay || 0).toLocaleString()}</strong></div>
         <div class="actions gpay">
-          ${r.gpay ? '<span><i class="fa-brands fa-google-pay"></i></span>' : ''}
-          <button data-key="${r._key}" class="deleteBtn">Delete</button>
+          ${r.gpay ? '<span><i class="fa-brands fa-google-pay"></i></span>' : ''} 
+          <button data-key='${r._key}' class='deleteBtn'>Delete</button>
         </div>
       </div>
     `;
 
     entriesList.appendChild(el);
   });}
-
 
 
 
@@ -636,9 +636,13 @@ function setupEventDelegation() {
       const count = snap.exists()? Object.keys(snap.val()).length:0;
       return count+1;
     }
-
+    
+    
+var progress = false;
     entryForm.addEventListener('submit', async (e)=>{
       e.preventDefault();
+      if(progress) return showTopToast('Try again');
+      
       const t = 'in';
       const name = entryForm.querySelector('#desc').value.trim();
       const amount = entryForm.querySelector('#amount');
@@ -647,6 +651,7 @@ function setupEventDelegation() {
       const gpAmount = Number(document.querySelector('#gpAmount').value);
       const g = gpAmount ||0;
       if(!name || !amt && !gpAmount) return showTopToast('Name and amount required');
+      progress=true;
       document.querySelector('#addBtn').textContent='Loading...'
       const dateISO = selectDate.value || isoDate(new Date());
       const s = await nextSerial(dateISO,t);
@@ -659,13 +664,18 @@ function setupEventDelegation() {
         ts: Date.now(),
         staffName,
         writer: document.querySelector('#staff').value || null,
-        userEmail: auth.currentUser ? auth.currentUser.email : 'local'
+        userEmail: auth.currentUser ? auth.currentUser.email : 'local',
+        role: localStorage.getItem('CASHBOOK_ROLL') || 'unknown'
+      }).then(()=>{
+        
+        progress=false
+        if (navigator.vibrate) {
+         navigator.vibrate(15); // short, crisp, non-annoying
+        }
       });
       
       
-      if (navigator.vibrate) {
-  navigator.vibrate(15); // short, crisp, non-annoying
-}
+      
 
       // clear
       document.querySelector('#addBtn').textContent='Done'
@@ -679,6 +689,8 @@ function setupEventDelegation() {
     entryFormOut.addEventListener('submit', async (e)=>{
       
       e.preventDefault();
+            if(progress) return showTopToast('Try again');
+            
       const desc = entryFormOut.querySelector('#desc')
       const amount = entryFormOut.querySelector('#amount');
       const t = 'out';
@@ -686,6 +698,7 @@ function setupEventDelegation() {
       const amt = Number(amount.value);
       const g = false;
       if(!name || !amt) return showTopToast('Name and amount required');
+      progress=true;
       entryFormOut.querySelector('#addBtn').textContent='Loading...'
       const dateISO = selectDate.value || isoDate(new Date());
       const s = await nextSerial(dateISO,t);
@@ -698,7 +711,13 @@ function setupEventDelegation() {
         gpay: g,
         ts: Date.now(),
         staffName,
-        userEmail: auth.currentUser ? auth.currentUser.email : 'local'
+        userEmail: auth.currentUser ? auth.currentUser.email : 'local',
+        role: localStorage.getItem('CASHBOOK_ROLL') || 'UNKNOWN',
+      }).then(()=>{
+        progress=false;
+        if (navigator.vibrate) {
+         navigator.vibrate(15); // short, crisp, non-annoying
+        }
       });
       // clear
       entryFormOut.querySelector('#addBtn').textContent='Done'
@@ -1235,9 +1254,9 @@ function showTopToast(msg, bg = "#34A853") {
 
 // reload + toast
 function refreshDashboard(type) {
-  loadForDate(selectDate.value);
+  // loadForDate(selectDate.value);
   document.getElementById("dashThisMonth").click();
- type==='Deletion'?showToast(`${type}`):''
+ type==='Deleted'?showToast(`${type}`):''
  
  
  const buttons = document.querySelectorAll('#in, #out, #all, #bin');
@@ -1246,7 +1265,7 @@ buttons.forEach(btn => {
   btn.classList.remove("active");
 });
 
-document.querySelector('#in').classList.add("active");
+//document.querySelector('#in').classList.add("active");
 
 }
 // realtime watchers
@@ -1490,7 +1509,7 @@ function startInactivityTimer() {
     timeoutID = setTimeout(() => {
         console.warn('10 over, reloading');
         
-
+        showTopToast('Session Timeout, Reloading')
         window.location.reload(); 
         
     }, MAX_INACTIVE_TIME_MS);
@@ -1535,7 +1554,9 @@ setupInactivityDetection();
 window.onerror = (message, source, lineno, colno, error) => {
     
     console.error(`Error: ${message}`);
-    showOverlay({title: 'Global Error', desc:`${message}. \n Source: ${source}. \n ${error} `, important:false})
+    showOverlay({title: 'Global Error', desc:`${message}. <br>
+    ${error}. <br> 
+    line: ${lineno}`, important:false})
     return true;
 };
 
@@ -1563,3 +1584,54 @@ cancelBtn.onclick=()=>{
 
 
 
+$('#setReminder').onclick=()=>{
+throw new Error("Uh oh! Couldn't set the Reminder.");
+}
+
+
+
+
+$('#setGoal').onclick = () => {
+    try {
+        // Assume goal data is processed here
+        
+        // --- Simulated Checks ---
+        // 1. Simulate a validation failure
+        // if (goalTitle.length < 5) {
+        //     throw new Error("Validation: TitleTooShort"); 
+        // }
+        
+        // 2. Simulate a network failure
+        // if (!navigator.onLine) {
+        //     throw new Error("Network: Offline");
+        // }
+        
+        // ... success path ...
+        throw new Error('Uh oh! Backend Server Error')
+    } catch (error) {
+        let title = "Goal Setting Failed.";
+        let message = "An unknown error occurred. Please try again.";
+
+        // --- Check specific error reasons ---
+        if (error.message.includes("TitleTooShort")) {
+            title = "Goal Setup Incomplete.";
+            message = "The goal title must be at least 5 characters long. Please review your input.";
+        
+        } else if (error.message.includes("Offline")) {
+            title = "Connection Lost.";
+            message = "Please check your internet connection and try setting the goal again.";
+
+        } else {
+            // Generic fallback for any other unexpected error
+            title = "Oops! Something Went Wrong.";
+            message = "A technical problem occurred. Please refresh the page or contact support.";
+        }
+
+        // Show the user-friendly overlay using the specific messages
+        showOverlay({
+            title, 
+            desc: message,
+            
+        });
+    }
+};
