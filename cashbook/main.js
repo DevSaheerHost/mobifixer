@@ -492,6 +492,7 @@ let isSearchActive = false;
 
 // Update search input to track state
 search.oninput = e => {
+  if(!fullname)return;
   const value = e.target.value.trim();
   isSearchActive = !!value;
 
