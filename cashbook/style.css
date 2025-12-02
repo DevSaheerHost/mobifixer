@@ -169,7 +169,7 @@ background: linear-gradient(0deg, rgba(255, 255, 255, 0.6) 81%, rgba(11, 162, 25
     padding: 1rem;
     z-index: 9;
 }
-.loader.off{
+.off{
     transform: scale(0.8);
     overflow: hidden;
     backdrop-filter: blur(0px);

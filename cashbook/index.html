@@ -159,6 +159,19 @@
 <div id="mainView" style="display:none">
   <div class="grid">
     <div>
+      
+      
+      <div class="card" style="margin-bottom: 10px;" id="obCard">
+        <h3>Set Opening Balance for Tomorrow</h3>
+        <form id="obForm">
+          <input type="number" name="obAmount" id="obAmount" placeholder="OB Amount" />
+          <button type="submit">Done</button>
+        </form>
+      </div>
+      
+      
+      
+      
       <div class="card" style="border: 2px solid #4CAF50; background: #FCFFFC;">
         <h3 style="color: #4CAF50;">Add Income</h3>
         <form id="entryFormIn" class="row">
@@ -226,6 +239,8 @@
         <h3>Today summary</h3>
         <div class="totals">
           <div class="tot-row"><div class="small">Total IN</div><div id="totalIn">₹0</div></div>
+          <div class="tot-row hidden"><div class="small">without Opening Balance</div><div id="noOb">₹0</div></div>
+
           <div class="tot-row"><div class="small">Total OUT</div><div id="totalOut">₹0</div></div>
           <div class="tot-row"><div class="small">Total GPay (IN)</div><div id="totalGpay">₹0</div></div>
           <div class="tot-row"><div class="small">Net (IN - OUT - GPay)</div><div id="netBal">₹0</div></div>

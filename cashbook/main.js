@@ -84,6 +84,9 @@ firebase.database().ref(`/users/${username}`).get()
     
     const loading_text = document.querySelector('#loading_text')
     const overlay = document.getElementById('alertOverlay');
+    const obForm = $('#obForm')
+    const obCard = $('#obCard');
+    
     
     
     if (!fullname || !username) {
@@ -435,6 +438,12 @@ function filterData(data, searchValue) {
       currentDate = dateISO;
       currentDateLabel.textContent = dateISO;
       entriesList.innerHTML = '<div class="small muted">Loading...</div>';
+    const  today = new Date();
+    //  alert(isoDate(today))
+    
+    if(currentDate != isoDate(today)){
+      // hereee
+    }
 
       const rootRef = db.ref(dayRoot(dateISO));
       const snapshot = await rootRef.get();
@@ -579,8 +588,10 @@ function renderEntries(data, target = entriesList) {
     netBalEl.textContent = '₹0';
     return;
   }
+  let ob
 
   rows.forEach(r => {
+    if(r.name === 'Opening Balance') ob = r.amount;
     const el = document.createElement('div');
     el.className = `entry ${r._type === 'in' ? 'in' : 'out'}${r.gpay ? ' gp' : ''}`;
     el.innerHTML = `
@@ -607,11 +618,16 @@ function renderEntries(data, target = entriesList) {
   });
 
   // Update totals (shared for both views)
+  const withoutOb = `₹${totalIn - ob.toLocaleString()}`
   totalInEl.textContent = `₹${totalIn.toLocaleString()}`;
   totalOutEl.textContent = `₹${totalOut.toLocaleString()}`;
   totalGpayEl.textContent = `₹${totalGpay.toLocaleString()}`;
   const net = totalIn - totalOut - totalGpay;
   netBalEl.textContent = `₹${net.toLocaleString()}`;
+  // total - ob
+  
+  
+  
 }
 
 // Optional: Add event delegation for delete buttons in both lists
@@ -654,7 +670,8 @@ var progress = false;
       if(!name || !amt && !gpAmount) return showTopToast('Name and amount required');
       progress=true;
       document.querySelector('#addBtn').textContent='Loading...'
-      const dateISO = selectDate.value || isoDate(new Date());
+    //  const dateISO = selectDate.value || isoDate(new Date());
+    const dateISO = isoDate(new Date());
       const s = await nextSerial(dateISO,t);
       const nodeRef = db.ref(dayRoot(dateISO)+`/${t}`).push();
       await nodeRef.set({
@@ -729,6 +746,76 @@ var progress = false;
 
     selectDate.addEventListener('change', ()=> loadForDate(selectDate.value));
     reloadBtn.addEventListener('click', ()=> loadForDate(selectDate.value));
+    
+    
+    
+    
+    ///. OPENING BALANCE ////
+
+
+obForm.onsubmit = async (e)=> {
+  const obAmount = $('#obAmount').value
+  e.preventDefault()
+  const t = 'in'
+  const dateISO = selectDate.value || isoDate(new Date());
+      const s = await nextSerial(dateISO,t);
+      const nodeRef = db.ref(dayRoot(dateISO)+`/${t}`).push();
+      const staffName = localStorage.getItem('CASHBOOK_FULLNAME').trim() || 'UNKNOWN';
+      
+if(progress) return showTopToast('Try again');
+      progress = true;
+      await nodeRef.set({
+        serial: s,
+        name: 'Opening Balance',
+        amount: obAmount,
+        gpay: false,
+        ts: Date.now(),
+        staffName,
+        userEmail: auth.currentUser ? auth.currentUser.email : 'local',
+        role: localStorage.getItem('CASHBOOK_ROLL') || 'UNKNOWN',
+      }).then(()=>{
+        progress=false;
+        if (navigator.vibrate) {
+         navigator.vibrate(15); // short, crisp, non-annoying
+        }
+        localStorage.setItem('CASHBOOK_OB', true);
+        obCard.classList.add('off')
+        setTimeout(() => {
+  obCard.classList.add('hidden')
+}, 1000);
+
+
+
+      });
+      
+      // clear 
+      $('#obAmount').value = '';
+}
+
+
+
+// check opening Balance already or timeout 
+
+
+function checkOBBox() {
+  console.log('checking ob')
+  const now = new Date();
+  const hour = now.getHours(); // 0–23
+  
+  const noOB = !localStorage.getItem('CASHBOOK_OB');
+  const inTime = hour >= 21 && hour < 23; // 9pm to 11pm
+  
+  if (noOB && inTime) {
+    obCard.classList.remove('hidden');
+    
+  } else {
+    obCard.classList.add('hidden');
+  }
+}
+
+checkOBBox();
+
+
 
 
 
@@ -872,6 +959,7 @@ async function fetchRangeTotals(startISO, endISO){
     ['in','out'].forEach(type=>{
       const group = data[type]||{};
       Object.values(group).forEach(r=>{
+      if(r.name==='Opening Balance')return;
         if(type==='in') tin += Number(r.amount||0) + Number(r.gpay || 0); else tout += Number(r.amount||0);
         if(r.gpay) tg += Number(r.gpay||0);
       });
@@ -1495,7 +1583,7 @@ var important
        
        
        
-       const MAX_INACTIVE_TIME_MS = 5 * 60 * 1000; 
+       const MAX_INACTIVE_TIME_MS = 10 * 60 * 1000;
 
 let timeoutID;
 
