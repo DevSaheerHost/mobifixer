@@ -88,14 +88,15 @@ firebase.database().ref(`/users/${username}`).get()
     const obCard = $('#obCard');
     
     
+    const VERSION_CODE = 'v1.5'
     
     if (!fullname || !username) {
       localStorage.removeItem('CASHBOOK_USER_NAME')
       localStorage.removeItem('CASHBOOK_FULLNAME')
       
     } else {
-      const read_changelog = localStorage.getItem('read_changelog') || false;
-      if(!read_changelog){
+      const version = localStorage.getItem('version_code');
+      if(version!=VERSION_CODE){
       const confirmBtn = document.getElementById('confirmBtn');
       const cancelBtn = document.getElementById('cancelBtn');
       const overlay = document.getElementById('alertOverlay');
@@ -105,64 +106,20 @@ firebase.database().ref(`/users/${username}`).get()
       
       cancelBtn.style.display='none'
       confirmBtn.textContent='Close'
-      showOverlay({title:"December 1'st Update", desc:`
-      <span style='display: flex; flex-flow: column; align-items: start; text-align: left'>
       
-<ul style='padding: 0; padding-left: 1rem'>
-<li>Streamlined payment logging: Separate input fields for Cash and GPay amounts are now combined and stored as a single transaction.
-
-     <a href='./assets/preview/cash_amount_gpay_amount_entering_preview.jpg'>Preview-1</a>
-     
-     <a href='./assets/preview/cash_amount_gpay_amount_list_preview.jpg'>Preview-2</a>
-
-     </li>
-
-
-     <li>Added Recycle Bin to recover accidentally deleted items. (Permenent Storage) 
-     <a href='./assets/preview/filter_delete_preview.jpg'>Preview</a></li>
-     <li>Implemented an audit log to track the user/staff responsible for data deletion</li>
-     <li>Transactions are now searchable via the search bar. 
-     <a href='./assets/preview/filter_search_preview.jpg'>Preview</a>
-     </li>
-
-
-
-
-     <li>Enhanced staff management For Role-Based Access.</li>
-     <li>Introduced Alert Modals.</li>
-     <li>Profit prediction optimized by <b>Zeno AI</b>.</li>
-     <li>Enhanced authentication system.</li>
-     <li>Overall UI optimizd.</li>
-    <li>Implemented critical security fixes.</li>
-    <li>Minor bug fixes and improvements.</li>
-
-
-
-</ul>
-
-     
-      </span>
-      `, important:false, icon:`
-      
-      <svg xmlns="http://www.w3.org/2000/svg" class="icon-svg" viewBox="0 0 20 20" fill="currentColor">
-  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-</svg>
-
-      `
-      })
       
       const handleCloseAlert = (e)=>{
         if(e && e.target.id==='alertOverlay'){
           
           
           hideOverlay()
-        localStorage.setItem('read_changelog', true)
+        localStorage.setItem('version_code', VERSION_CODE)
         setTimeout(()=>{cancelBtn.style.display='block'
         confirmBtn.textContent='Confirm'}, 500)
         return
         }
         hideOverlay()
-        localStorage.setItem('read_changelog', true)
+        localStorage.setItem('version_code', VERSION_CODE)
         setTimeout(()=>{cancelBtn.style.display='block'
         confirmBtn.textContent='Confirm'}, 500)
       }
@@ -588,7 +545,7 @@ function renderEntries(data, target = entriesList) {
     netBalEl.textContent = '₹0';
     return;
   }
-  let ob
+  let ob = 0
 
   rows.forEach(r => {
     if(r.name === 'Opening Balance') ob = r.amount;
@@ -690,6 +647,7 @@ var progress = false;
         if (navigator.vibrate) {
          navigator.vibrate(15); // short, crisp, non-annoying
         }
+        $('#desc').focus()
       });
       
       
@@ -718,7 +676,8 @@ var progress = false;
       if(!name || !amt) return showTopToast('Name and amount required');
       progress=true;
       entryFormOut.querySelector('#addBtn').textContent='Loading...'
-      const dateISO = selectDate.value || isoDate(new Date());
+      // const dateISO = selectDate.value || isoDate(new Date());
+      const dateISO = isoDate(new Date());
       const s = await nextSerial(dateISO,t);
       const nodeRef = db.ref(dayRoot(dateISO)+`/${t}`).push();
       const staffName = localStorage.getItem('CASHBOOK_FULLNAME').trim() || 'UNKNOWN';
@@ -742,6 +701,7 @@ var progress = false;
       document.getElementById('dashThisMonth').click()
       desc.value=''; amount.value=''; isGpay.checked=false;
       loadForDate(dateISO);
+      desc.focus()
     });
 
     selectDate.addEventListener('change', ()=> loadForDate(selectDate.value));
