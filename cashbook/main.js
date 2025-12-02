@@ -106,7 +106,51 @@ firebase.database().ref(`/users/${username}`).get()
       
       cancelBtn.style.display='none'
       confirmBtn.textContent='Close'
+      showOverlay({title:"December 1'st Update", desc:`
+      <span style='display: flex; flex-flow: column; align-items: start; text-align: left'>
       
+<ul style='padding: 0; padding-left: 1rem'>
+<li>Streamlined payment logging: Separate input fields for Cash and GPay amounts are now combined and stored as a single transaction.
+
+     <a href='./assets/preview/cash_amount_gpay_amount_entering_preview.jpg'>Preview-1</a>
+     
+     <a href='./assets/preview/cash_amount_gpay_amount_list_preview.jpg'>Preview-2</a>
+
+     </li>
+
+
+     <li>Added Recycle Bin to recover accidentally deleted items. (Permenent Storage) 
+     <a href='./assets/preview/filter_delete_preview.jpg'>Preview</a></li>
+     <li>Implemented an audit log to track the user/staff responsible for data deletion</li>
+     <li>Transactions are now searchable via the search bar. 
+     <a href='./assets/preview/filter_search_preview.jpg'>Preview</a>
+     </li>
+
+
+
+
+     <li>Enhanced staff management For Role-Based Access.</li>
+     <li>Introduced Alert Modals.</li>
+     <li>Profit prediction optimized by <b>Zeno AI</b>.</li>
+     <li>Enhanced authentication system.</li>
+     <li>Overall UI optimizd.</li>
+    <li>Implemented critical security fixes.</li>
+    <li>Minor bug fixes and improvements.</li>
+
+
+
+</ul>
+
+     
+      </span>
+      `, important:false, icon:`
+      
+      <svg xmlns="http://www.w3.org/2000/svg" class="icon-svg" viewBox="0 0 20 20" fill="currentColor">
+  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+</svg>
+
+      `
+      })
       
       const handleCloseAlert = (e)=>{
         if(e && e.target.id==='alertOverlay'){
