@@ -94,7 +94,8 @@ firebase.database().ref(`/users/${username}`).get()
       localStorage.removeItem('CASHBOOK_USER_NAME')
       localStorage.removeItem('CASHBOOK_FULLNAME')
       
-    } else {
+    } 
+    else {
       const version = localStorage.getItem('version_code');
       if(version!=VERSION_CODE){
       const confirmBtn = document.getElementById('confirmBtn');
@@ -164,6 +165,65 @@ firebase.database().ref(`/users/${username}`).get()
         }
         hideOverlay()
         localStorage.setItem('version_code', VERSION_CODE)
+        setTimeout(()=>{cancelBtn.style.display='block'
+        confirmBtn.textContent='Confirm'}, 500)
+      }
+      confirmBtn.onclick=()=>{
+        handleCloseAlert()
+        if (navigator.vibrate) {
+                      navigator.vibrate([15, 80, 15]); // short, crisp, non-annoying
+                    }
+                
+      }
+      overlay.removeEventListener('click', handleCloseAlert)
+      overlay.addEventListener('click', handleCloseAlert)
+
+    }
+    
+    const salaryDay = localStorage.getItem('salaryDay')
+     if(!salaryDay && username==='shahinsha'){
+      const confirmBtn = document.getElementById('confirmBtn');
+      const cancelBtn = document.getElementById('cancelBtn');
+      const overlay = document.getElementById('alertOverlay');
+      
+      
+
+      
+      cancelBtn.style.display='none'
+      confirmBtn.textContent='Close'
+      showOverlay({title:"Salary Ahead", desc:`
+      <span style='display: flex; flex-flow: column; align-items: start; text-align: left'>
+      
+<ul style='padding: 0; padding-left: 1rem'>
+
+
+<li>5 days to go! (Expected credit on [07-12-2025]) ;-)</li>
+
+</ul>
+
+     
+      </span>
+      `, important:false, icon:`
+      
+      <svg xmlns="http://www.w3.org/2000/svg" class="icon-svg" viewBox="0 0 20 20" fill="currentColor">
+  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+</svg>
+
+      `
+      })
+      
+      const handleCloseAlert = (e)=>{
+        if(e && e.target.id==='alertOverlay'){
+          
+          
+          hideOverlay()
+        localStorage.setItem('salaryDay', true)
+        setTimeout(()=>{cancelBtn.style.display='block'
+        confirmBtn.textContent='Confirm'}, 500)
+        return
+        }
+        hideOverlay()
+        localStorage.setItem('salaryDay', true)
         setTimeout(()=>{cancelBtn.style.display='block'
         confirmBtn.textContent='Confirm'}, 500)
       }
