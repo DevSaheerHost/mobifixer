@@ -43,8 +43,18 @@
     }   /* 💰 cash in - green */
 .entry.out { border-left: 4px solid #F44336; border-top: 1px solid #F44336;}  /* 💸 cash out - red */
 .entry.gp { background-color: #FFF9C4; border-left-color: #FFD54F; border-top: 1px solid #FFD54F;} /* 🟡 gpay */
+.in.ob{
+    border-left: 4px solid #2f9cff;
+    border-top: 1px solid #2f9cff;
+    background: #EBF5FF;
+}
 
 
+.in.ob .deleteBtn{
+    color: #2f9cff;
+    border-color: #2f9cff;
+    background: #EBF5FF;
+}
 
 *{
     max-width: 100%;

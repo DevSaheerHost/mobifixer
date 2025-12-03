@@ -340,7 +340,7 @@ console.log(type)
 
   rows.forEach(r => {
     const el = document.createElement('div');
-    el.className = `entry ${type}${r.gpay ? ' gp' : ''}`;
+    el.className = `entry ${type}${r.gpay ? ' gp' : '', r.name==='Opening Balance'?' ob':''}`;
 
     el.innerHTML = `
       <div class="meta">
@@ -400,11 +400,15 @@ const askUserPermission=(info)=> {
                   if(e.target.id ==='alertOverlay')handleNo()
                 }
 
-                // ബട്ടണുകളിൽ ഇവന്റ് ലിസണർ ആഡ് ചെയ്യുന്നു
+                // adding e listener 
                 confirmBtn.addEventListener('click', handleYes);
                 cancelBtn.addEventListener('click', handleNo);
                 
                 overlay.addEventListener('click', handleOverlayClick);
+                if(info.btnColor){
+                  confirmBtn.style.background=info.btnColor
+                }else{confirmBtn.style.background='#2563eb' // primary blue
+                }
 
             });
         }
@@ -610,7 +614,7 @@ function renderEntries(data, target = entriesList) {
   rows.forEach(r => {
     if(r.name === 'Opening Balance') ob = r.amount;
     const el = document.createElement('div');
-    el.className = `entry ${r._type === 'in' ? 'in' : 'out'}${r.gpay ? ' gp' : ''}`;
+    el.className = `entry ${r._type === 'in' ? 'in' : 'out'}${r.gpay ? ' gp' : '', r.name==='Opening Balance'?' ob':''}`;
     el.innerHTML = `
       <div class="meta">
         <div><strong>${r._type.toUpperCase()} — ${r.name}</strong></div>
@@ -708,6 +712,12 @@ var progress = false;
          navigator.vibrate(15); // short, crisp, non-annoying
         }
         $('#desc').focus()
+      }).catch((error)=>{
+        showOverlay({
+          title:'Data save failed!',
+          desc:`Please check your connection or try again. Error:  ${error.message}`,
+          btnColor:'#ef4444'
+        })
       });
       
       
@@ -875,7 +885,8 @@ document.addEventListener('click', async (e) => {
                         <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
                       </svg>
 
-    `
+    `,
+    btnColor: '#F44336', // red
     });
     
     if (!userConfirmed) return;
@@ -943,7 +954,7 @@ document.addEventListener('click', async (e) => {
                   <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
                 </svg>
     
-    `}); 
+    `, btnColor:'#F44336'}); //red
     
       if(!userConfirmed) return;
      // await db.ref(dayRoot(currentDate)).remove(); loadForDate(currentDate);
