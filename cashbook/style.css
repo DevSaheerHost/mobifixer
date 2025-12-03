@@ -60,6 +60,7 @@ div.card.dboard div{
 }
 .card{
     overflow-x: hidden;
+    overflow-y: hidden;
 }
 
 
@@ -232,6 +233,10 @@ input:focus{
     
     outline: none;
     border: 2px solid #34A853;
+}
+#obCard input:focus{
+    outline: none;
+    border: 2px solid #2f9cff;
 }
 
 form button{
@@ -529,6 +534,12 @@ form button{
   /* small helper */
   .kbd{font-family:monospace;background:#071028;padding:4px 8px;border-radius:8px}
   
+        
+        
+        #dashChart{
+            height: 170px !important;
+            margin-top: 2rem;
+        }
         
         
 .hidden{

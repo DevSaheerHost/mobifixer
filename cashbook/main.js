@@ -39,7 +39,7 @@ firebase.database().ref(`/users/${username}`).get()
     }
     if (snap.exists()) {
       document.querySelector('#loading_text').textContent=` User found ${username}`
-      progressBar.style.width='60%'
+      progressBar.style.width='100%'
       const user = snap.val();
       console.log("Logged user:", user);
     } else {
@@ -777,7 +777,7 @@ obForm.onsubmit = async (e)=> {
   const obAmount = $('#obAmount').value
   e.preventDefault()
   const t = 'in'
-  const dateISO = selectDate.value || isoDate(new Date());
+  const dateISO = selectDate.value || isoDate(new Date()+1);
       const s = await nextSerial(dateISO,t);
       const nodeRef = db.ref(dayRoot(dateISO)+`/${t}`).push();
       const staffName = localStorage.getItem('CASHBOOK_FULLNAME').trim() || 'UNKNOWN';
@@ -971,7 +971,7 @@ function datesBetween(startISO, endISO){
 async function fetchRangeTotals(startISO, endISO){
   const days = datesBetween(startISO,endISO);
   const dayTotals = [];
-  let aggIn=0, aggOut=0, aggG=0;
+  let aggIn=0, aggOut=0, aggG=0, ob=0;
   for(const d of days){
     const snap = await db.ref(dayRoot(d)).get();
     const data = snap.val() || {};
@@ -979,7 +979,7 @@ async function fetchRangeTotals(startISO, endISO){
     ['in','out'].forEach(type=>{
       const group = data[type]||{};
       Object.values(group).forEach(r=>{
-      if(r.name==='Opening Balance')return;
+      if(r.name==='Opening Balance') ob+=Number(r.amount);
         if(type==='in') tin += Number(r.amount||0) + Number(r.gpay || 0); else tout += Number(r.amount||0);
         if(r.gpay) tg += Number(r.gpay||0);
       });
@@ -987,7 +987,7 @@ async function fetchRangeTotals(startISO, endISO){
     dayTotals.push({date:d,in:tin,out:tout,gpay:tg});
     aggIn += tin; aggOut += tout; aggG += tg;
   }
-  renderDashboard(dayTotals, {aggIn, aggOut, aggG});
+  renderDashboard(dayTotals, {aggIn, aggOut, aggG, ob});
 }
 
 
@@ -995,11 +995,12 @@ async function fetchRangeTotals(startISO, endISO){
 function renderDashboard(dayTotals, aggs){
   const dashSummary = document.getElementById('dashSummary');
   const dashChart = document.getElementById('dashChart');
-  const {aggIn, aggOut, aggG} = aggs;
+  const {aggIn, aggOut, aggG, ob} = aggs;
   dashSummary.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:6px">
       <div class="small">Range days: ${dayTotals.length}</div>
       <div class="tot-row"><div class="small">Range IN</div><div>₹${aggIn.toLocaleString()}</div></div>
+      <div class="tot-row"><div class="small">OB</div><div>₹${ob.toLocaleString()}</div></div>
       <div class="tot-row"><div class="small">Range OUT</div><div>₹${aggOut.toLocaleString()}</div></div>
       <div class="tot-row"><div class="small">Range GPay (IN)</div><div>₹${aggG.toLocaleString()}</div></div>
       <div class="tot-row"><div class="small">Net (IN - OUT - GPay)</div><div>₹${(aggIn-aggOut-aggG).toLocaleString()}</div></div>
