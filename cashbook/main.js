@@ -791,6 +791,7 @@ obForm.onsubmit = async (e)=> {
       const s = await nextSerial(dateISO,t);
       const nodeRef = db.ref(dayRoot(dateISO)+`/${t}`).push();
       const staffName = localStorage.getItem('CASHBOOK_FULLNAME').trim() || 'UNKNOWN';
+      const now = new Date()
       
 if(progress) return showTopToast('Try again');
       progress = true;
@@ -808,7 +809,7 @@ if(progress) return showTopToast('Try again');
         if (navigator.vibrate) {
          navigator.vibrate(15); // short, crisp, non-annoying
         }
-        localStorage.setItem('CASHBOOK_OB', true);
+        localStorage.setItem('CASHBOOK_OB',now.getDate());
         obCard.classList.add('off')
         setTimeout(() => {
   obCard.classList.add('hidden')
@@ -832,7 +833,7 @@ function checkOBBox() {
   const now = new Date();
   const hour = now.getHours(); // 0–23
   
-  const noOB = !localStorage.getItem('CASHBOOK_OB');
+  const noOB = localStorage.getItem('CASHBOOK_OB')!=now.getDate();
   const inTime = hour >= 21 && hour < 23; // 9pm to 11pm
   
   if (noOB && inTime) {
@@ -1014,7 +1015,7 @@ function renderDashboard(dayTotals, aggs){
       <div class="tot-row"><div class="small">OB</div><div>₹${ob.toLocaleString()}</div></div>
       <div class="tot-row"><div class="small">Range OUT</div><div>₹${aggOut.toLocaleString()}</div></div>
       <div class="tot-row"><div class="small">Range GPay (IN)</div><div>₹${aggG.toLocaleString()}</div></div>
-      <div class="tot-row"><div class="small">Net (IN - OUT - GPay)</div><div>₹${(aggIn-aggOut-aggG).toLocaleString()}</div></div>
+      <div class="tot-row"><div class="small">Net (IN - OUT - GPay - OB)</div><div>₹${(aggIn-aggOut-aggG-ob).toLocaleString()}</div></div>
     </div>
   `;
 
