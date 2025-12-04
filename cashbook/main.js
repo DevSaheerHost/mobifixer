@@ -792,7 +792,7 @@ obForm.onsubmit = async (e)=> {
   const obAmount = $('#obAmount').value
   e.preventDefault()
   const t = 'in'
-  const dateISO = selectDate.value || isoDate(new Date()+1);
+  const dateISO =  isoDate(new Date(Date.now() + 24*60*60*1000));
       const s = await nextSerial(dateISO,t);
       const nodeRef = db.ref(dayRoot(dateISO)+`/${t}`).push();
       const staffName = localStorage.getItem('CASHBOOK_FULLNAME').trim() || 'UNKNOWN';
