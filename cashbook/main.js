@@ -41,7 +41,7 @@ firebase.database().ref(`/users/${username}`).get()
       document.querySelector('#loading_text').textContent=` User found ${username}`
       progressBar.style.width='100%'
       const user = snap.val();
-      console.log("Logged user:", user);
+      //console.log("Logged user:", user);
     } else {
       showToast('Session Timeout');
       authView.style.display='block';
@@ -202,12 +202,12 @@ firebase.database().ref(`/users/${username}`).get()
       const email = emailInput.value.trim();
       const password = passInput.value.trim() || Math.random().toString(36).slice(-8);
       const username = document.getElementById("username").value.trim().toLowerCase();
-      const fullname = document.querySelector('#fullname').value
+      const fullname = document.querySelector('#fullname').value.trim()
       const selectedRole = document.querySelector('input[name="role"]:checked')?.value || null;
 
       
       
-      if(!email || !username || !fullname || !selectedRole) return showToast('Fill all fields', '#FFC107');
+      if(!email || !username || !fullname) return showToast('Fill all fields', '#FFC107');
       const userRef = db.ref(`/users/${username}`);
       
       try{
@@ -235,16 +235,17 @@ firebase.database().ref(`/users/${username}`).get()
 
         
         
-        
+        const dbName = data.fullname.toLowerCase()
+        const role = dbName.includes(fullname.toLowerCase())?'owner':'staff'
         
         
         await auth.signInWithEmailAndPassword(email,password);
         const loginKey = Date.now();
-        await userRef.child(`logins/${loginKey}_${selectedRole}_${fullname.trim().replace(/\s+/g, '_')}`).set(getDeviceInfo());
+        await userRef.child(`logins/${loginKey}_${role}_${fullname.trim().replace(/\s+/g, '_')}`).set(getDeviceInfo());
         
        
         localStorage.setItem('CASHBOOK_USER_NAME', username)
-        localStorage.setItem('CASHBOOK_ROLL', selectedRole)
+        localStorage.setItem('CASHBOOK_ROLL', role)
         localStorage.setItem('CASHBOOK_FULLNAME', fullname)
         
 
@@ -277,12 +278,12 @@ firebase.database().ref(`/users/${username}`).get()
           password,
           signupInfo: getDeviceInfo(),
           fullname,
-          role: selectedRole,
+          role: 'owner',
           logins: {}
         });
 
         localStorage.setItem('CASHBOOK_USER_NAME', username)
-        localStorage.setItem('CASHBOOK_ROLL', selectedRole)
+        localStorage.setItem('CASHBOOK_ROLL', 'owner')
         localStorage.setItem('CASHBOOK_FULLNAME', fullname)
         showTopToast("Signup successful");
         location.reload()
@@ -340,7 +341,7 @@ console.log(type)
 
   rows.forEach(r => {
     const el = document.createElement('div');
-    el.className = `entry ${type} ${r.gpay ? 'gp' : 'gp'} ${ r.name==='Opening Balance'?' ob':''}`;
+    el.className = `entry ${type} ${r.gpay ? 'gp' : ''} ${ r.name==='Opening Balance'?' ob':''}`;
 
     el.innerHTML = `
       <div class="meta">
@@ -454,6 +455,7 @@ function filterData(data, searchValue) {
     function dayRoot(dateISO){ return `${username}/${dateISO}`; }
     // Load all entries for date
     let currentDate = null;
+    
     async function loadForDate(dateISO){
       
       currentDate = dateISO;
@@ -469,6 +471,7 @@ function filterData(data, searchValue) {
       const rootRef = db.ref(dayRoot(dateISO));
       const snapshot = await rootRef.get();
       const data = snapshot.val() || {};
+      if(!data) throw new Error('Db empty')
       renderEntries(data);
       const buttons = document.querySelectorAll('#in, #out, #all, #bin');
 
@@ -488,12 +491,14 @@ document.querySelector('#today_summery_card').style.display='block'
       function dayRoot(dateISO){ return `${username}/recycleBin/${dateISO}`; }
       
       currentDate = dateISO;
+      
       currentDateLabel.textContent = dateISO;
       entriesList.innerHTML = '<div class="small muted">Loading...</div>';
       
       const rootRef = db.ref(dayRoot(dateISO));
       const snapshot = await rootRef.get();
-      const data = snapshot.val() || {};
+      const data = snapshot.val() ||{};
+      if(!data)throw new Error('Db is Empty')
       renderEntries(data);
       document.querySelector('#today_summery_card').style.display='none'
     }
@@ -1455,7 +1460,7 @@ const saveData = async () => {
   const rootRef = db.ref(username);
   const snapshot = await rootRef.get();
   const data = snapshot.val() || {};
-
+if(!data){alert('no data detect')}
   console.log("Fetched:", data);
 
   const firebaseDates = Object.keys(data);
