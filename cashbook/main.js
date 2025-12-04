@@ -340,7 +340,7 @@ console.log(type)
 
   rows.forEach(r => {
     const el = document.createElement('div');
-    el.className = `entry ${type}${r.gpay ? ' gp' : '', r.name==='Opening Balance'?' ob':''}`;
+    el.className = `entry ${type} ${r.gpay ? 'gp' : 'gp'} ${ r.name==='Opening Balance'?' ob':''}`;
 
     el.innerHTML = `
       <div class="meta">
@@ -614,7 +614,7 @@ function renderEntries(data, target = entriesList) {
   rows.forEach(r => {
     if(r.name === 'Opening Balance') ob = r.amount;
     const el = document.createElement('div');
-    el.className = `entry ${r._type === 'in' ? 'in' : 'out'}${r.gpay ? ' gp' : '', r.name==='Opening Balance'?' ob':''}`;
+    el.className = `entry ${r._type === 'in' ? 'in' : 'out'}${r.gpay ? ' gp' : ''} ${ r.name==='Opening Balance'?' ob':''}`;
     el.innerHTML = `
       <div class="meta">
         <div><strong>${r._type.toUpperCase()} — ${r.name}</strong></div>
