@@ -281,6 +281,13 @@ firebase.database().ref(`/users/${username}`).get()
           role: 'owner',
           logins: {}
         });
+        
+        
+        // for new user (fixed maximum callstack exceeded error )
+        const ref = db.ref(username);
+        const snaps = await ref.get();
+        await ref.update({ _init: true });
+  // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
         localStorage.setItem('CASHBOOK_USER_NAME', username)
         localStorage.setItem('CASHBOOK_ROLL', 'owner')

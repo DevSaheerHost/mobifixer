@@ -136,3 +136,5 @@ search.oninput = e => {
   const filtered = filterData(data, value);
   renderEntries(filtered, entriesListClone); // Render in search list
 };
+
+
