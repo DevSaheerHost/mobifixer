@@ -663,6 +663,23 @@ form button{
 
 
 
+
+
+.popup-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #4b5563;
+  margin-bottom: 6px;
+  text-align: left;
+}
+
+/* Optional: Different color for Goal Save button to distinguish from Delete */
+.popup-btn-confirm {
+  /* Default is red from previous code, you can override inline or add a class like .popup-btn-green */
+}
+
+
         
 .hidden{
     display: none !important;

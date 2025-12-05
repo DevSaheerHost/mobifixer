@@ -1778,47 +1778,104 @@ throw new Error("Uh oh! Couldn't set the Reminder.");
 
 
 
-$('#setGoal').onclick = () => {
+$('#setGoal').onclick = async () => {
     try {
-        // Assume goal data is processed here
-        
-        // --- Simulated Checks ---
-        // 1. Simulate a validation failure
-        // if (goalTitle.length < 5) {
-        //     throw new Error("Validation: TitleTooShort"); 
-        // }
-        
-        // 2. Simulate a network failure
-        // if (!navigator.onLine) {
-        //     throw new Error("Network: Offline");
-        // }
-        
-        // ... success path ...
-        throw new Error('Uh oh! Backend Server Error')
-    } catch (error) {
-        let title = "Goal Setting Failed.";
-        let message = "An unknown error occurred. Please try again.";
+        // 1. Get input from user using a custom popup
+        const goalData = await askUserForGoal({
+            title: 'Set Daily Goal',
+            currentDate: currentDate // Display the date in popup if needed
+        });
 
-        // --- Check specific error reasons ---
-        if (error.message.includes("TitleTooShort")) {
-            title = "Goal Setup Incomplete.";
-            message = "The goal title must be at least 5 characters long. Please review your input.";
-        
-        } else if (error.message.includes("Offline")) {
-            title = "Connection Lost.";
-            message = "Please check your internet connection and try setting the goal again.";
+        // If user cancelled
+        if (!goalData) return;
 
-        } else {
-            // Generic fallback for any other unexpected error
-            title = "Oops! Something Went Wrong.";
-            message = "A technical problem occurred. Please refresh the page or contact support.";
+        // 2. Validate Amount
+        const amount = parseFloat(goalData.amount);
+        if (isNaN(amount) || amount <= 0) {
+            showTopToast("Please enter a valid amount.");
+            return;
         }
 
-        // Show the user-friendly overlay using the specific messages
-        showOverlay({
-            title, 
-            desc: message,
-            
+        // 3. Define the path: username/goals/YYYY-MM-DD
+        // Using set() to overwrite if a goal already exists for today
+        const goalRef = db.ref(`${username}/goals/${currentDate}`);
+        
+        await goalRef.set({
+            targetAmount: amount,
+            note: goalData.note || '',
+            setAt: new Date().toLocaleString("en-IN"),
+            lastUpdatedBy: fullname || 'unknown'
         });
+
+        // 4. Success Feedback
+        showTopToast("Daily goal set successfully! 🎯");
+        
+        // Optional: Update UI to show the new goal immediately
+        // updateGoalUI(amount); 
+
+    } catch (error) {
+        console.error("Error setting goal:", error);
+        showTopToast("Failed to set goal. Try again.");
     }
 };
+
+// --- HELPER FUNCTION: Popup for Goal ---
+function askUserForGoal({ title, currentDate }) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'popup-overlay';
+
+    overlay.innerHTML = `
+      <div class="popup-box">
+        <h3 class="popup-title">${title} <span style="font-size:0.8em; color:#666">(${currentDate})</span></h3>
+        
+        <label class="popup-label">Target Amount</label>
+        <input type="number" id="goalAmount" class="popup-input" placeholder="e.g., 5000" autocomplete="off">
+        
+        <label class="popup-label">Note (Optional)</label>
+        <input type="text" id="goalNote" class="popup-input" placeholder="e.g., Limit expenses" autocomplete="off">
+        
+        <div class="popup-actions">
+          <button id="cancelGoalBtn" class="popup-btn popup-btn-cancel">Cancel</button>
+          <button id="saveGoalBtn" class="popup-btn popup-btn-confirm" style="background-color: #10b981;">Set Goal</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const amountInput = overlay.querySelector('#goalAmount');
+    const noteInput = overlay.querySelector('#goalNote');
+    const saveBtn = overlay.querySelector('#saveGoalBtn');
+    const cancelBtn = overlay.querySelector('#cancelGoalBtn');
+
+    setTimeout(() => amountInput.focus(), 50);
+
+    const close = (data) => {
+      overlay.remove();
+      resolve(data);
+    };
+
+    saveBtn.onclick = () => {
+        const amount = amountInput.value.trim();
+        const note = noteInput.value.trim();
+        if (!amount) {
+            amountInput.style.borderColor = 'red';
+            return;
+        }
+        close({ amount, note });
+    };
+
+    cancelBtn.onclick = () => close(null);
+    
+    // Allow Enter key on Amount input to jump to Note, and Enter on Note to Submit
+    amountInput.onkeydown = (e) => {
+        if (e.key === 'Enter') noteInput.focus();
+        if (e.key === 'Escape') cancelBtn.click();
+    };
+    noteInput.onkeydown = (e) => {
+        if (e.key === 'Enter') saveBtn.click();
+        if (e.key === 'Escape') cancelBtn.click();
+    };
+  });
+}
