@@ -53,7 +53,7 @@ if (typeof firebase !== 'undefined') {
                 phoneNumber,
                 productModel,
                 productName,
-                
+                orderDate,
                 notes,
                 created: timestamp,
                 isCompleted: false // Status flag for pending orders
