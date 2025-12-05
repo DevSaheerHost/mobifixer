@@ -20,7 +20,7 @@ function getTodayDate() {
     return `${day}-${month}-${year}`; // DD-MM-YYYY format
 }
 
-
+//document.querySelector('.submit-button').onclick=()=>orderForm.submit()
 // Initialize Firebase
 if (typeof firebase !== 'undefined') {
     firebase.initializeApp(firebaseConfig);
@@ -34,7 +34,7 @@ if (typeof firebase !== 'undefined') {
     const statusMessage = document.getElementById('statusMessage');
 
     // --- FUNCTION 1: ADD NEW ORDER ---
-    orderForm.addEventListener('submit', async (e) => {
+    document.querySelector('.submit-button').addEventListener('click', async (e) => {
         e.preventDefault();
 
         // Get values from the form inputs
@@ -53,7 +53,7 @@ if (typeof firebase !== 'undefined') {
                 phoneNumber,
                 productModel,
                 productName,
-                orderDate,
+                
                 notes,
                 created: timestamp,
                 isCompleted: false // Status flag for pending orders
