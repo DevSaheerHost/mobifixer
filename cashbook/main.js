@@ -630,7 +630,10 @@ function renderEntries(data, target = entriesList) {
     el.innerHTML = `
       <div class="meta">
         <div><strong>${r._type.toUpperCase()} — ${r.name}</strong></div>
-        <div class="small">${formatDT(r.ts)} • ${r.userEmail || ''} <br> ${r.staffName || ''} ${r.writer ? ` : ${r.writer} (${r.role ||'_'})` : ` (${r.role||'_'})`}<br> ${r.deletedBy ? `${r.deletedBy} Deleted This Transaction` : ''}</div>
+        <div class="small">${formatDT(r.ts)} • ${r.userEmail || ''} <br> ${r.staffName || ''} ${r.writer ? ` : ${r.writer} (${r.role ||'_'})` : ` (${r.role||'_'})`}<br> ${r.deletedBy ? `${r.deletedBy} Deleted This Transaction` : ''}<br>
+        
+       ${r.deleteReason?`Reason: ${r.deleteReason}`:''}
+        </div>
       </div>
       <div style="text-align:right">
         <div><strong>₹${Number(r.amount).toLocaleString()}</strong></div>
@@ -863,12 +866,9 @@ checkOBBox();
 
 
 // DELETE EVENT LISTENER: 
-// We use event delegation on the document or a persistent parent.
 document.addEventListener('click', async (e) => {
   // Check if the clicked element is a delete button
   if (e.target.classList.contains('deleteBtn')) {
-    
-    
     
     const key = e.target.dataset.key;
     
@@ -890,55 +890,108 @@ document.addEventListener('click', async (e) => {
 
     const data = snap.val();
 
+    // 1. First Popup: CONFIRMATION
     const userConfirmed = await askUserPermission({
       title: 'Confirm Deletion',
-      desc: 'Are you sure you want to delete this entry? This action cannot be undone.',
+      desc: 'Are you sure you want to delete this entry?',
       icon: ` 
         <svg xmlns="http://www.w3.org/2000/svg" class="icon-svg" viewBox="0 0 20 20" fill="red">
-                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                      </svg>
-
-    `,
-    btnColor: '#F44336', // red
+             <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+        </svg>
+      `,
+      btnColor: '#F44336', // red
     });
     
     if (!userConfirmed) return;
 
-    // 1) MOVE TO RECYCLE BIN with type folder
+    // 2. Second Popup: REASON FOR DELETION (New Step)
+    const deletionReason = await askUserReason({
+        title: 'Reason for Deletion (Optional)',
+        placeholder: 'e.g., Wrong Amount, Duplicate Entry...',
+        btnText: 'Confirm Delete'
+    });
+
+    // If user cancels the reason input or leaves it empty (optional: remove !deletionReason check if empty is allowed)
+    if (deletionReason === null) return; 
+
+    // 3. MOVE TO RECYCLE BIN with Reason
     const recycleRef = db.ref(`${username}/recycleBin/${currentDate}/${type}/${key}`);
     await recycleRef.set({
       ...data,
+      deleteReason: deletionReason || 'No reason provided', // Save the input
       deletedAt: new Date().toLocaleString("en-IN"),
       deletedBy: fullname || 'unknown',
       role: localStorage.getItem('CASHBOOK_ROLL') || 'UNKNOWN',
     });
 
-    // 2) DELETE ORIGINAL
+    // 4. DELETE ORIGINAL
     await originalRef.remove();
 
-    // 3) Refresh UI
+    // 5. Refresh UI
     loadForDate(currentDate);
     
-    
-   // const entriesListClone = document.querySelector('#entriesListClone')
     $('.dboard').classList.remove('hidden');
-    //entriesList.style.display = 'block';
-   // entriesListClone.style.display = 'none';
-    // here is
-    
 
-    
-    
     if(search.value.trim()){
-  // Use closest() for more reliable traversal
-  const cloneNode = e.target.closest('.entry')?.parentElement;
-  if (cloneNode && cloneNode.id === 'entriesListSearch') {
-    cloneNode.remove();
-    search.value = '';
-  }
-}
+      // Use closest() for more reliable traversal
+      const cloneNode = e.target.closest('.entry')?.parentElement;
+      if (cloneNode && cloneNode.id === 'entriesListSearch') {
+        cloneNode.remove();
+        search.value = '';
+      }
+    }
   }
 });
+
+// --- HELPER FUNCTION ---
+// This creates a popup with a text input
+function askUserReason({ title, placeholder, btnText }) {
+  return new Promise((resolve) => {
+    // Create Modal HTML elements
+    const overlay = document.createElement('div');
+    overlay.className = 'popup-overlay'; // Using custom CSS class
+    
+    overlay.innerHTML = `
+      <div class="popup-box">
+        <h3 class="popup-title">${title}</h3>
+        <input type="text" id="reasonInput" class="popup-input" placeholder="${placeholder}" autocomplete="off">
+        <div class="popup-actions">
+          <button id="cancelReasonBtn" class="popup-btn popup-btn-cancel">Cancel</button>
+          <button id="confirmReasonBtn" class="popup-btn popup-btn-confirm">${btnText}</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const input = overlay.querySelector('#reasonInput');
+    const confirmBtn = overlay.querySelector('#confirmReasonBtn');
+    const cancelBtn = overlay.querySelector('#cancelReasonBtn');
+
+    // Focus input automatically
+    setTimeout(() => input.focus(), 50);
+
+    const close = (value) => {
+      // Small fade-out effect logic could go here, but removing directly for simplicity
+      overlay.remove();
+      resolve(value);
+    };
+
+    confirmBtn.onclick = () => {
+        const val = input.value.trim();
+        close(val);
+    };
+
+    cancelBtn.onclick = () => close(null);
+
+    // Allow Enter key to confirm
+    input.onkeydown = (e) => {
+        if (e.key === 'Enter') confirmBtn.click();
+        if (e.key === 'Escape') cancelBtn.click();
+    };
+  });
+}
+
 
 
 

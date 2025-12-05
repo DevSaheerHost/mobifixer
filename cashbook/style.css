@@ -552,6 +552,118 @@ form button{
         }
         
         
+        
+        
+        
+        
+        
+        
+        
+        /* Popup Overlay - The dark background */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* The White Box */
+.popup-box {
+  background-color: #ffffff;
+  width: 100%;
+  max-width: 380px; /* Max width for desktop */
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  transform: scale(0.95);
+  animation: scaleIn 0.2s ease-out forwards;
+  font-family: sans-serif;
+}
+
+/* Title */
+.popup-title {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+/* Input Field */
+.popup-input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 20px;
+  box-sizing: border-box; /* Important for padding */
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.popup-input:focus {
+  border-color: #3b82f6; /* Blue border on focus */
+}
+
+/* Button Container */
+.popup-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Common Button Styles */
+.popup-btn {
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: background 0.2s;
+}
+
+/* Cancel Button */
+.popup-btn-cancel {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+.popup-btn-cancel:hover {
+  background-color: #e5e7eb;
+}
+
+/* Confirm Button (Red) */
+.popup-btn-confirm {
+  background-color: #ef4444;
+  color: white;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+}
+.popup-btn-confirm:hover {
+  background-color: #dc2626;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+
+
+        
 .hidden{
     display: none !important;
 }
