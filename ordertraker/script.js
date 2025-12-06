@@ -147,3 +147,8 @@ if (typeof firebase !== 'undefined') {
         ordersList.innerHTML = '<p style="color: red; text-align: center;">Firebase SDK not loaded. Check configuration.</p>';
     });
 }
+
+
+
+
+
