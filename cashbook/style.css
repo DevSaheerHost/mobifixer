@@ -85,9 +85,32 @@ svg {
 
 
 
+#in, #out, #all{
+    white-space: nowrap;
+    display: flex;
+    flex-flow: row;
+    gap: 0rem;
+}
 
+#all span, #in span, #out span{
+    padding: 0;
+    margin: 0;
+    scale: 0;
+    pointer-events: none;
+    opacity: 0;
+}
+#all.active span, #in.active span, #out.active span{
+    scale: 1;
+    opacity: 1;
+}
 
+#in, #out{
+    
+}
 
+span.active{
+    justify-content: space-between !important;
+}
 
 
 

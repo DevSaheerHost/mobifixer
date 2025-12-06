@@ -337,7 +337,7 @@ firebase.database().ref(`/users/${username}`).get()
     _key: key,
     _type: type
   }));
-console.log(type)
+
   if (rows.length === 0) {
     entriesList.innerHTML = `<div class="small muted">No ${type} entries.</div>`;
     return;
@@ -345,7 +345,6 @@ console.log(type)
 
   // Sort by time (latest first)
   rows.sort((a, b) => b.ts - a.ts);
-
   rows.forEach(r => {
     const el = document.createElement('div');
     el.className = `entry ${type} ${r.gpay ? 'gp' : ''} ${ r.name==='Opening Balance'?' ob':''}`;
@@ -622,7 +621,7 @@ function renderEntries(data, target = entriesList) {
     return;
   }
   let ob = 0
-
+let count = 0;
   rows.forEach(r => {
     if(r.name === 'Opening Balance') ob = r.amount;
     const el = document.createElement('div');
@@ -644,11 +643,15 @@ function renderEntries(data, target = entriesList) {
         </div>
       </div>`;
     target.appendChild(el);
-
+    
+    count ++
+document.querySelector('#all').innerHTML=`ALL <span>${count}</span>`
     if (r._type === 'in') {
       totalIn += Number(r.amount || 0) + Number(r.gpay || 0);
+      document.querySelector('#in').innerHTML=`IN <span>${count}</span>`
     } else {
       totalOut += Number(r.amount || 0);
+      document.querySelector('#out').innerHTML=`OUT <span>${count}</span>`
     }
     if (r.gpay) totalGpay += Number(r.gpay || 0);
   });
