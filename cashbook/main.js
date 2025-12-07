@@ -623,6 +623,7 @@ function renderEntries(data, target = entriesList) {
   let ob = 0
 let count = 0;
 let inCount =0
+let outCount = 0
   rows.forEach(r => {
     if(r.name === 'Opening Balance') ob = r.amount;
     const el = document.createElement('div');
@@ -652,8 +653,9 @@ document.querySelector('#all').innerHTML=`ALL <span>${count}</span>`
       totalIn += Number(r.amount || 0) + Number(r.gpay || 0);
       document.querySelector('#in').innerHTML=`IN <span>${inCount}</span>`
     } else {
+      outCount++
       totalOut += Number(r.amount || 0);
-      document.querySelector('#out').innerHTML=`OUT <span>${count}</span>`
+      document.querySelector('#out').innerHTML=`OUT <span>${outCount}</span>`
     }
     if (r.gpay) totalGpay += Number(r.gpay || 0);
   });
@@ -668,8 +670,49 @@ document.querySelector('#all').innerHTML=`ALL <span>${count}</span>`
   // total - ob
   
   
+  checkGoals(totalIn)
   
 }
+// check goal function 
+
+const checkGoals = async (totalIn) =>{
+  function dayRoot(dateISO) { return `${username}/goals/${currentDate}`; }
+
+// currentDate = dateISO;
+
+// currentDateLabel.textContent = dateISO;
+//entriesList.innerHTML = '<div class="small muted">Loading...</div>';
+
+const rootRef = db.ref(dayRoot(currentDate));
+const snapshot = await rootRef.get();
+const data = snapshot.val() || {};
+const isUserViewGoalAlert = localStorage.getItem('isUserViewGoalAlert')
+if (!data) throw new Error('Db is Empty')
+if (Object.values(data).length === 0) {
+ // $('#setGoal').click()
+ showToast("Set Today's Goal now! 👇")
+}
+// 2. Data exists, now check the alert flag for UI/logic control
+if (isUserViewGoalAlert ==='yes') {
+  // User has already viewed the goal alert, so skip showing it.
+  console.log("Goal alert already shown to the user. Skipping.", isUserViewGoalAlert);
+  return; // Or continue processing other non-alert logic
+}
+//renderEntries(data);
+if (data.targetAmount <=totalIn) {
+  showOverlay({
+  title: '🥳 Mission Accomplished! Your Daily Goal is CRUSHED!',
+  desc: `You absolutely smashed your target of <b>₹${data.targetAmount}</b>! Today's total income is a fantastic <b>₹${totalIn}</b>. Keep up the great work!`
+})
+
+
+
+localStorage.setItem('isUserViewGoalAlert', 'yes')
+}
+//document.querySelector('#today_summery_card').style.display = 'none'
+}
+
+
 
 // Optional: Add event delegation for delete buttons in both lists
 function setupEventDelegation() {
@@ -1811,6 +1854,9 @@ $('#setGoal').onclick = async () => {
             setAt: new Date().toLocaleString("en-IN"),
             lastUpdatedBy: fullname || 'unknown'
         });
+        
+        // set to Localstorage
+        localStorage.setItem('isUserViewGoalAlert', 'no')
 
         // 4. Success Feedback
         showTopToast("Daily goal set successfully! 🎯");
