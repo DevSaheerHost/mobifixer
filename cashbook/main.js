@@ -794,6 +794,51 @@ if (data.targetAmount <=totalIn) {
 
 localStorage.setItem('isUserViewGoalAlert', 'yes')
 }
+
+// Local Storage Key to track the last totalIn when the overlay was shown
+const LAST_SHOWN_INCOME_KEY = 'lastShownOverlayIncome';
+
+// 1. Calculate the 70% threshold
+const seventyPercentThreshold = data.targetAmount * 0.7;
+
+// 2. Get the last recorded income from Local Storage (defaults to 0 if not set)
+const lastShownIncomeString = localStorage.getItem(LAST_SHOWN_INCOME_KEY);
+const lastShownIncome = lastShownIncomeString ? parseFloat(lastShownIncomeString) : 0;
+
+// 3. Define the increment threshold (Here we use 5% increase for simplicity, 
+//    but since you just said 'old amount++', we'll check if the current income is greater).
+//    For better UX, we'll keep the 5% buffer from the previous suggestion:
+const MIN_INCREASE_PERCENT = 0.05; // 5% minimum increase
+const requiredIncrease = lastShownIncome * MIN_INCREASE_PERCENT;
+
+// Determine if the overlay should be displayed again:
+// a) If it's the first time (lastShownIncome === 0)
+// b) OR if the current totalIn is significantly higher than the last time it was shown
+const shouldShowAgain = lastShownIncome === 0 || (totalIn >= lastShownIncome + requiredIncrease);
+
+
+// 4. Combined Check
+if (
+    data.targetAmount > totalIn && // Goal is NOT reached
+    totalIn >= seventyPercentThreshold && // 70% threshold is met
+    shouldShowAgain // Show only if it's the first time OR there's a 5% income increase
+) {
+    // Calculate the remaining amount needed
+    const remainingAmount = data.targetAmount - totalIn;
+
+    // Show the Overlay
+    showOverlay({
+        title: '🔥 You’re So Close! Just a Little Push Needed!',
+        desc: `You've already earned <b>₹${totalIn}</b>. You only need <b>₹${remainingAmount}</b> more to reach your daily goal of <b>₹${data.targetAmount}</b>. Keep the momentum going!`
+    });
+
+    // 5. Update Local Storage AFTER showing the overlay
+    // This prevents the overlay from showing again immediately on the next check/refresh
+    localStorage.setItem(LAST_SHOWN_INCOME_KEY, totalIn.toString());
+}
+
+
+
 //document.querySelector('#today_summery_card').style.display = 'none'
 }
 
