@@ -3,7 +3,7 @@ const $ = s => document.querySelector(s)
 const username = localStorage.getItem('CASHBOOK_USER_NAME');
 const fullname = localStorage.getItem('CASHBOOK_FULLNAME');
 
-
+var globalIn =0 // for get total amount for ever
 const progressBar = document.querySelector('.loader .progress .bar')
 
    
@@ -89,6 +89,84 @@ firebase.database().ref(`/users/${username}`).get()
     
     
     const VERSION_CODE = 'v1.5'
+    
+    
+    
+    
+    var important
+        // Get references to DOM elements
+        
+       // const triggerBtn = document.getElementById('triggerAlert');
+        const confirmBtn = document.getElementById('confirmBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        
+        // Function to show the overlay
+        const showOverlay=(info) =>{
+        const icon = document.getElementById('overlayAlertIcon');
+        important=info.important||false
+        
+        icon.innerHTML=info.icon || `
+           <svg xmlns="http://www.w3.org/2000/svg" class="icon-svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>`
+
+        $('#alertTitle').textContent=info.title
+        $('#alertMessage').innerHTML=info.desc
+            // Set visibility and opacity to trigger CSS transitions
+            overlay.classList.add('visible');
+            
+            // Add event listener to close when clicking outside the card
+            // We use setTimeout to ensure the click listener isn't immediately triggered 
+            // by the same click that opened the alert.
+            setTimeout(() => {
+              overlay.onclick=(e)=>handleOverlayClick(e);
+            }, 50); 
+        }
+
+        // Function to hide the overlay
+        function hideOverlay() {
+            // Remove visibility class
+            overlay.classList.remove('visible');
+            
+            // Remove event listener
+            overlay.removeEventListener('click', handleOverlayClick);
+            important = false;
+        }
+
+        // Handler for clicks outside the card area (on the dimmed background)
+        function handleOverlayClick(event) {
+            // Check if the click happened directly on the overlay element
+            if (event.target === overlay) {
+                console.log("Overlay background clicked. Closing alert.");
+              !important? hideOverlay():'';
+            }
+        }
+        
+        // Attach event listeners
+    //    triggerBtn.addEventListener('click', showOverlay);
+        
+        confirmBtn.addEventListener('click', function() {
+            // Placeholder action: Log and hide
+            console.log("User confirmed the action. Proceeding with transaction.");
+            !important?hideOverlay():'';
+        });
+        
+        cancelBtn.addEventListener('click', function() {
+            // Placeholder action: Log and hide
+            console.log("User cancelled the action.");
+           !important? hideOverlay():'';
+        });
+
+        // Initial setup: hide the overlay when the page loads
+        //hideOverlay();
+        
+       // showOverlay()
+       
+    
+    
+    
+    
+    
     
     if (!fullname || !username) {
       localStorage.removeItem('CASHBOOK_USER_NAME')
@@ -669,7 +747,7 @@ document.querySelector('#all').innerHTML=`ALL <span>${count}</span>`
   netBalEl.textContent = `₹${net.toLocaleString()}`;
   // total - ob
   
-  
+  globalIn = totalIn
   checkGoals(totalIn)
   
 }
@@ -884,11 +962,44 @@ if(progress) return showTopToast('Try again');
       
       // clear 
       $('#obAmount').value = '';
+      
+      checkGoalAchived()
+      
 }
 
 
+const checkGoalAchived= async ()=>{
+  function dayRoot(dateISO) { return `${username}/goals/${currentDate}`; }
 
+// currentDate = dateISO;
+
+// currentDateLabel.textContent = dateISO;
+//entriesList.innerHTML = '<div class="small muted">Loading...</div>';
+
+const rootRef = db.ref(dayRoot(currentDate));
+const snapshot = await rootRef.get();
+const data = snapshot.val() || {};
+
+if (!data) throw new Error('Db is Empty')
+if (Object.values(data).length === 0) {
+ // $('#setGoal').click()
+}
+
+
+if (data.targetAmount > globalIn) {
+  showOverlay({
+  title: '😔 Keep Going! Daily Goal Not Yet Reached!',
+  desc: `You aimed for <b>₹${data.targetAmount}</b>. Today's total income is <b>₹${globalIn}</b>. You're close—let's hit that target tomorrow!`
+})
+}
+//document.querySelector('#today_summery_card').style.display = 'none'
+
+}
 // check opening Balance already or timeout 
+
+
+
+//checkGoalAchived()
 
 
 function checkOBBox() {
@@ -901,7 +1012,6 @@ function checkOBBox() {
   
   if (noOB && inTime) {
     obCard.classList.remove('hidden');
-    
   } else {
     obCard.classList.add('hidden');
   }
@@ -1655,75 +1765,7 @@ $('.dboard').onchange=()=>$('#dashLoad').onclick()
 
 
 
-var important
-        // Get references to DOM elements
-        
-       // const triggerBtn = document.getElementById('triggerAlert');
-        const confirmBtn = document.getElementById('confirmBtn');
-        const cancelBtn = document.getElementById('cancelBtn');
-        
-        // Function to show the overlay
-        function showOverlay(info) {
-        const icon = document.getElementById('overlayAlertIcon');
-        important=info.important||false
-        
-        icon.innerHTML=info.icon || `
-           <svg xmlns="http://www.w3.org/2000/svg" class="icon-svg" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                </svg>`
 
-        $('#alertTitle').textContent=info.title
-        $('#alertMessage').innerHTML=info.desc
-            // Set visibility and opacity to trigger CSS transitions
-            overlay.classList.add('visible');
-            
-            // Add event listener to close when clicking outside the card
-            // We use setTimeout to ensure the click listener isn't immediately triggered 
-            // by the same click that opened the alert.
-            setTimeout(() => {
-              overlay.onclick=(e)=>handleOverlayClick(e);
-            }, 50); 
-        }
-
-        // Function to hide the overlay
-        function hideOverlay() {
-            // Remove visibility class
-            overlay.classList.remove('visible');
-            
-            // Remove event listener
-            overlay.removeEventListener('click', handleOverlayClick);
-            important = false;
-        }
-
-        // Handler for clicks outside the card area (on the dimmed background)
-        function handleOverlayClick(event) {
-            // Check if the click happened directly on the overlay element
-            if (event.target === overlay) {
-                console.log("Overlay background clicked. Closing alert.");
-              !important? hideOverlay():'';
-            }
-        }
-        
-        // Attach event listeners
-    //    triggerBtn.addEventListener('click', showOverlay);
-        
-        confirmBtn.addEventListener('click', function() {
-            // Placeholder action: Log and hide
-            console.log("User confirmed the action. Proceeding with transaction.");
-            !important?hideOverlay():'';
-        });
-        
-        cancelBtn.addEventListener('click', function() {
-            // Placeholder action: Log and hide
-            console.log("User cancelled the action.");
-           !important? hideOverlay():'';
-        });
-
-        // Initial setup: hide the overlay when the page loads
-        //hideOverlay();
-        
-       // showOverlay()
-       
        
        
        
