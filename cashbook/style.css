@@ -184,7 +184,7 @@ span.active{
     font-size: 40px;
     
 }
-.loader{
+.loader.old{
     width: 100%;
     position: fixed;
     top: 0;
@@ -203,8 +203,51 @@ background: linear-gradient(0deg, rgba(255, 255, 255, 0.6) 81%, rgba(11, 162, 25
     padding: 1rem;
     z-index: 9;
 }
+
+.loader{
+    position: fixed;
+    top: 1rem;
+    display: flex;
+    align-items: center;
+    flex-flow: column;
+    justify-content: center;
+    width: 50%;
+    transform: translateX(50%);
+    right: 50%;
+    backdrop-filter: blur(3px);
+    border-radius: 7px;
+    z-index: 9;
+    background: rgba(255, 255, 255, 0.96);
+    overflow: hidden;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.11);
+    
+    gap: 0.5rem;
+}
+.loader h1{
+    border: 2px solid black;
+    border-radius: 100px;
+    padding: 0.5rem;
+    position: relative;
+}
+.loader h1::after{
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    background: transparent;
+    content: "";
+    display: block;
+    top: 0;
+    left: 0;
+    border-radius: 100px;
+    border: 0px;
+    border-left: 3px solid red;
+    z-index: 9;
+}
+.loader p{
+    color: var(--muted);
+}
 .off{
-    transform: scale(0.8);
+    transform: translateY(-100px) translateX(50%);
     overflow: hidden;
     backdrop-filter: blur(0px);
     opacity: 0;
@@ -701,6 +744,71 @@ form button{
 .popup-btn-confirm {
   /* Default is red from previous code, you can override inline or add a class like .popup-btn-green */
 }
+
+
+
+
+
+
+
+.loaderAnim {
+  width: 40px;
+  height: 20px;
+  --c:no-repeat radial-gradient(farthest-side,#000 93%,#0000);
+  background:
+    var(--c) 0    0,
+    var(--c) 50%  0;
+  background-size: 8px 8px;
+  position: relative;
+  clip-path: inset(-200% -100% 0 0);
+  animation: l6-0 1.5s linear infinite;
+  margin-top: 1rem;
+}
+.loaderAnim:before {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 12px;
+  background: #000;
+  left: -16px;
+  top: 0;
+  animation: 
+    l6-1 1.5s linear infinite,
+    l6-2 0.5s cubic-bezier(0,200,.8,200) infinite;
+    border-radius: 10px 10px 3px 3px;
+}
+.loaderAnim:after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #000; 
+  animation: l6-3 1.5s linear infinite;
+}
+@keyframes l6-0 {
+  0%,30%  {background-position: 0  0   ,50% 0   }
+  33%     {background-position: 0  100%,50% 0   }
+  41%,63% {background-position: 0  0   ,50% 0   }
+  66%     {background-position: 0  0   ,50% 100%}
+  74%,100%{background-position: 0  0   ,50% 0   }
+}
+@keyframes l6-1 {
+  90%  {transform:translateY(0)}
+  95%  {transform:translateY(15px); background: black;}
+  100% {transform:translateY(15px);left:calc(100% - 8px); background: red;}
+}
+@keyframes l6-2 {
+  100% {top:-0.1px}
+}
+@keyframes l6-3 {
+  0%,80%,100% {transform:translate(0)}
+  90%         {transform:translate(26px);background: var(--accent);}
+}
+  
+
+    
 
 
         

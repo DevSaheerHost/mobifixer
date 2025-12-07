@@ -290,18 +290,20 @@ firebase.database().ref(`/users/${username}`).get()
       
       try{
         // try sign in
-        
+        $('.loader').classList.remove('off')
         
 
         const snap = await userRef.get();
         if (!snap.exists()) {
           showTopToast("User not found", '#F44336');
+          $('.loader').classList.add('off')
           throw new Error('User Not found, Try to create one')
           return;
         }
         
         const data = snap.val();
         if (data.password !== password) {
+          $('.loader').classList.add('off')
           showTopToast("Wrong password", '#F44336');
           if (navigator.vibrate) {
             navigator.vibrate([15, 80, 15]); // short, crisp, non-annoying
@@ -326,11 +328,12 @@ firebase.database().ref(`/users/${username}`).get()
         localStorage.setItem('CASHBOOK_ROLL', role)
         localStorage.setItem('CASHBOOK_FULLNAME', fullname)
         
-
+          $('.loader').classList.add('off')
         showTopToast("SignIn successful");
         location.reload()
       }catch(err){
         // create user
+        $('.loader').classList.add('off')
         //showToast('User Not Exist, Trying Create Account...', "#FFC107")
         showTopToast(err.message)
         console.log(err)
@@ -343,11 +346,14 @@ firebase.database().ref(`/users/${username}`).get()
         }
         
         try{ 
+        $('.loader').classList.remove('off')
           const snap = await userRef.get();
         if (snap.exists()) {
+        $('.loader').classList.add('off')
           showTopToast("Username already exists, Filed.", '#F44336');
           return;
         }
+        $('.loader').classList.remove('off')
         
           await auth.createUserWithEmailAndPassword(email,password); 
           
@@ -371,9 +377,10 @@ firebase.database().ref(`/users/${username}`).get()
         localStorage.setItem('CASHBOOK_ROLL', 'owner')
         localStorage.setItem('CASHBOOK_FULLNAME', fullname)
         showTopToast("Signup successful");
+        $('.loader').classList.add('off')
         location.reload()
         }
-        catch(e){ showTopToast('Auth error: '+e.message, '#F44336'); }
+        catch(e){ showTopToast('Auth error: '+e.message, '#F44336'); $('.loader').classList.add('off')}
       }
     });
 
@@ -832,6 +839,8 @@ var progress = false;
       if(!name || !amt && !gpAmount) return showTopToast('Name and amount required');
       progress=true;
       document.querySelector('#addBtn').textContent='Loading...'
+      $('.loader').classList.remove('off')
+      loading_text.textContent='Updating...'
     //  const dateISO = selectDate.value || isoDate(new Date());
     const dateISO = isoDate(new Date());
       const s = await nextSerial(dateISO,t);
@@ -849,11 +858,14 @@ var progress = false;
       }).then(()=>{
         
         progress=false
+        $('.loader').classList.add('off')
+        loading_text.textContent='Done'
         if (navigator.vibrate) {
          navigator.vibrate(15); // short, crisp, non-annoying
         }
         $('#desc').focus()
       }).catch((error)=>{
+        $('.loader').classList.add('off')
         showOverlay({
           title:'Data save failed!',
           desc:`Please check your connection or try again. Error:  ${error.message}`,
@@ -886,6 +898,8 @@ var progress = false;
       const g = false;
       if(!name || !amt) return showTopToast('Name and amount required');
       progress=true;
+      $('.loader').classList.remove('off')
+      loading_text.textContent='Updating...'
       entryFormOut.querySelector('#addBtn').textContent='Loading...'
       // const dateISO = selectDate.value || isoDate(new Date());
       const dateISO = isoDate(new Date());
@@ -902,6 +916,8 @@ var progress = false;
         userEmail: auth.currentUser ? auth.currentUser.email : 'local',
         role: localStorage.getItem('CASHBOOK_ROLL') || 'UNKNOWN',
       }).then(()=>{
+        $('.loader').classList.add('off')
+        loading_text.textContent='Done'
         progress=false;
         if (navigator.vibrate) {
          navigator.vibrate(15); // short, crisp, non-annoying
@@ -935,6 +951,7 @@ obForm.onsubmit = async (e)=> {
       const now = new Date()
       
 if(progress) return showTopToast('Try again');
+$('.loader').classList.remove('off')
       progress = true;
       await nodeRef.set({
         serial: s,
@@ -946,6 +963,7 @@ if(progress) return showTopToast('Try again');
         userEmail: auth.currentUser ? auth.currentUser.email : 'local',
         role: localStorage.getItem('CASHBOOK_ROLL') || 'UNKNOWN',
       }).then(()=>{
+        $('.loader').classList.add('off')
         progress=false;
         if (navigator.vibrate) {
          navigator.vibrate(15); // short, crisp, non-annoying
@@ -1259,7 +1277,7 @@ drawSparklineFullscreen(fullscreenChart, nets, labels)
    // chartView.style.display='block';
    // document.querySelector('.card.dboard').style.display='none';
    // showFullChart(dayTotals)
-   $('.loader').style.display='block'
+   $('.loader').classList.remove('off')
   }
 if (dayTotals.length > 0) {
   drawSparkline(
