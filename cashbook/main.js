@@ -622,6 +622,7 @@ function renderEntries(data, target = entriesList) {
   }
   let ob = 0
 let count = 0;
+let inCount =0
   rows.forEach(r => {
     if(r.name === 'Opening Balance') ob = r.amount;
     const el = document.createElement('div');
@@ -647,8 +648,9 @@ let count = 0;
     count ++
 document.querySelector('#all').innerHTML=`ALL <span>${count}</span>`
     if (r._type === 'in') {
+      inCount++
       totalIn += Number(r.amount || 0) + Number(r.gpay || 0);
-      document.querySelector('#in').innerHTML=`IN <span>${count}</span>`
+      document.querySelector('#in').innerHTML=`IN <span>${inCount}</span>`
     } else {
       totalOut += Number(r.amount || 0);
       document.querySelector('#out').innerHTML=`OUT <span>${count}</span>`
