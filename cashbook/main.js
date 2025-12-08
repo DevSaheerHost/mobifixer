@@ -87,6 +87,8 @@ firebase.database().ref(`/users/${username}`).get()
     const obForm = $('#obForm')
     const obCard = $('#obCard');
     
+    let globalDate // for load for date = change thisndate value too
+    
     
     const VERSION_CODE = 'v1.5'
     
@@ -106,12 +108,20 @@ firebase.database().ref(`/users/${username}`).get()
         important=info.important||false
         
         icon.innerHTML=info.icon || `
-           <svg xmlns="http://www.w3.org/2000/svg" class="icon-svg" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                </svg>`
+<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" 
+     viewBox="0 0 24 24" fill="currentColor">
+  <path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2Zm0 4a1 1 0 0 1 1 1v6a1 1 0 1 1-2 0V7a1 1 0 0 1 1-1Zm0 10.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Z"/>
+</svg>
+`
 
         $('#alertTitle').textContent=info.title
         $('#alertMessage').innerHTML=info.desc
+        
+        confirmBtn.style.background=`${info.btnColor
+                      ?info.btnColor
+                      : '#0BA2FF'
+        };`
+        
             // Set visibility and opacity to trigger CSS transitions
             overlay.classList.add('visible');
             
@@ -548,7 +558,7 @@ function filterData(data, searchValue) {
     let currentDate = null;
     
     async function loadForDate(dateISO){
-      
+      globalDate = dateISO
       currentDate = dateISO;
       currentDateLabel.textContent = dateISO;
       entriesList.innerHTML = '<div class="small muted">Loading...</div>';
@@ -762,7 +772,7 @@ document.querySelector('#all').innerHTML=`ALL <span>${count}</span>`
 // check goal function 
 
 const checkGoals = async (totalIn) =>{
-  function dayRoot(dateISO) { return `${username}/goals/${currentDate}`; }
+  function dayRoot(dateISO) { return `${username}/goals/${dateISO}`; }
 
 // currentDate = dateISO;
 
@@ -788,8 +798,14 @@ if (isUserViewGoalAlert ==='yes') {
 if (data.targetAmount <=totalIn) {
   showOverlay({
   title: '🥳 Mission Accomplished! Your Daily Goal is CRUSHED!',
-  desc: `You absolutely smashed your target of <b>₹${data.targetAmount}</b>! Today's total income is a fantastic <b>₹${totalIn}</b>. Keep up the great work!`
-})
+  desc: `You absolutely smashed your target of <b>₹${data.targetAmount}</b>! Today's total income is a fantastic <b>₹${totalIn}</b>. Keep up the great work!
+  <br>
+  <small style="font-style: italic">Target set by: **${data.lastUpdatedBy.toLowerCase() === fullname.toLowerCase() ? "You" : data.lastUpdatedBy}**</small>`
+, icon:`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#10b981" class="size-2">
+  <path fill-rule="evenodd" d="M8.603 3.799A4.49 4.49 0 0 1 12 2.25c1.357 0 2.573.6 3.397 1.549a4.49 4.49 0 0 1 3.498 1.307 4.491 4.491 0 0 1 1.307 3.497A4.49 4.49 0 0 1 21.75 12a4.49 4.49 0 0 1-1.549 3.397 4.491 4.491 0 0 1-1.307 3.497 4.491 4.491 0 0 1-3.497 1.307A4.49 4.49 0 0 1 12 21.75a4.49 4.49 0 0 1-3.397-1.549 4.49 4.49 0 0 1-3.498-1.306 4.491 4.491 0 0 1-1.307-3.498A4.49 4.49 0 0 1 2.25 12c0-1.357.6-2.573 1.549-3.397a4.49 4.49 0 0 1 1.307-3.497 4.49 4.49 0 0 1 3.497-1.307Zm7.007 6.387a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" />
+</svg>
+`, btnColor:'#10b981'})
+
 
 
 
@@ -830,7 +846,10 @@ if (
     // Show the Overlay
     showOverlay({
         title: '🔥 You’re So Close! Just a Little Push Needed!',
-        desc: `You've already earned <b>₹${totalIn}</b>. You only need <b>₹${remainingAmount}</b> more to reach your daily goal of <b>₹${data.targetAmount}</b>. Keep the momentum going!`
+        desc: `You've already earned <b>₹${totalIn}</b>. You only need <b>₹${remainingAmount}</b> more to reach your daily goal of <b>₹${data.targetAmount}</b>. Keep the momentum going!
+        
+        <small style="font-style: italic">Target set by: **${data.lastUpdatedBy.toLowerCase() === fullname.toLowerCase() ? "You" : data.lastUpdatedBy}**</small>`
+        
     });
 
     // 5. Update Local Storage AFTER showing the overlay
@@ -841,6 +860,14 @@ if (
 
 
 //document.querySelector('#today_summery_card').style.display = 'none'
+
+$('#target').innerHTML = `
+${
+  data.targetAmount && Number(data.targetAmount) !== 0
+    ? `${data.targetAmount}`
+    : `<a style="color:#09a0ff;" onclick="document.querySelector('#setGoal').click()">Set now</a>`
+}
+`;
 }
 
 
@@ -1053,10 +1080,13 @@ if (Object.values(data).length === 0) {
 if (data.targetAmount > globalIn) {
   showOverlay({
   title: '😔 Keep Going! Daily Goal Not Yet Reached!',
-  desc: `You aimed for <b>₹${data.targetAmount}</b>. Today's total income is <b>₹${globalIn}</b>. You're close—let's hit that target tomorrow!`
+  desc: `You aimed for <b>₹${data.targetAmount}</b>. Today's total income is <b>₹${globalIn}</b>. You're close—let's hit that target tomorrow!
+  
+  <small style="font-style: italic">Target set by: **${data.lastUpdatedBy.toLowerCase() === fullname.toLowerCase() ? "You" : data.lastUpdatedBy}**</small>`
 })
 }
 //document.querySelector('#today_summery_card').style.display = 'none'
+
 
 }
 // check opening Balance already or timeout 

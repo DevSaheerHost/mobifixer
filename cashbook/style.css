@@ -501,6 +501,9 @@ form button{
             margin-left: auto;
             margin-right: auto;
         }
+        #alertOverlay svg{
+            max-width: 80px;
+        }
 
         .alert-title {
             font-size: 1.5rem; /* sm:text-2xl equivalent */
