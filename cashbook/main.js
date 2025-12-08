@@ -731,10 +731,11 @@ let outCount = 0
       </div>`;
     target.appendChild(el);
     
-    count ++
+    if(r.name.toLowerCase()!='opening balance')count ++;
 document.querySelector('#all').innerHTML=`ALL <span>${count}</span>`
     if (r._type === 'in') {
-      inCount++
+      
+      if(r.name.toLowerCase()!='opening balance')inCount++;
       totalIn += Number(r.amount || 0) + Number(r.gpay || 0);
       document.querySelector('#in').innerHTML=`IN <span>${inCount}</span>`
     } else {
