@@ -788,6 +788,16 @@ if (Object.values(data).length === 0) {
  // $('#setGoal').click()
  showToast("Set Today's Goal now! 👇")
 }
+
+$('#target').innerHTML = `
+${
+  data.targetAmount && Number(data.targetAmount) != 0
+    ? `${data.targetAmount}`
+    : `<a style="color:#09a0ff;" onclick="document.querySelector('#setGoal').click()">Set now</a>`
+}
+`;
+if(data.targetAmount >=totalIn) $('#target').innerHTML = `<p style="font-weight: bold;" class='small'>${data.targetAmount} Completed ⚡</p>`
+
 // 2. Data exists, now check the alert flag for UI/logic control
 if (isUserViewGoalAlert ==='yes') {
   // User has already viewed the goal alert, so skip showing it.
@@ -800,7 +810,13 @@ if (data.targetAmount <=totalIn) {
   title: '🥳 Mission Accomplished! Your Daily Goal is CRUSHED!',
   desc: `You absolutely smashed your target of <b>₹${data.targetAmount}</b>! Today's total income is a fantastic <b>₹${totalIn}</b>. Keep up the great work!
   <br>
-  <small style="font-style: italic">Target set by: **${data.lastUpdatedBy.toLowerCase() === fullname.toLowerCase() ? "You" : data.lastUpdatedBy}**</small>`
+  <small style="font-style: italic">Target set by: **${data.lastUpdatedBy.toLowerCase() === fullname.toLowerCase() ? "You" : data.lastUpdatedBy}**</small>
+  <br>
+  
+  <p> We have a special party 🎉</p>
+  <button class="meme_btn">Join For Free </button>
+  
+  `
 , icon:`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#10b981" class="size-2">
   <path fill-rule="evenodd" d="M8.603 3.799A4.49 4.49 0 0 1 12 2.25c1.357 0 2.573.6 3.397 1.549a4.49 4.49 0 0 1 3.498 1.307 4.491 4.491 0 0 1 1.307 3.497A4.49 4.49 0 0 1 21.75 12a4.49 4.49 0 0 1-1.549 3.397 4.491 4.491 0 0 1-1.307 3.497 4.491 4.491 0 0 1-3.497 1.307A4.49 4.49 0 0 1 12 21.75a4.49 4.49 0 0 1-3.397-1.549 4.49 4.49 0 0 1-3.498-1.306 4.491 4.491 0 0 1-1.307-3.498A4.49 4.49 0 0 1 2.25 12c0-1.357.6-2.573 1.549-3.397a4.49 4.49 0 0 1 1.307-3.497 4.49 4.49 0 0 1 3.497-1.307Zm7.007 6.387a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" />
 </svg>
@@ -861,13 +877,7 @@ if (
 
 //document.querySelector('#today_summery_card').style.display = 'none'
 
-$('#target').innerHTML = `
-${
-  data.targetAmount && Number(data.targetAmount) !== 0
-    ? `${data.targetAmount}`
-    : `<a style="color:#09a0ff;" onclick="document.querySelector('#setGoal').click()">Set now</a>`
-}
-`;
+
 }
 
 
@@ -880,6 +890,7 @@ function setupEventDelegation() {
       // Your delete logic here
       //handleDelete(key); // this function not exist 
     }
+    
   });
 }
 
@@ -1193,6 +1204,12 @@ document.addEventListener('click', async (e) => {
       }
     }
   }
+  
+  
+  if (e.target.classList.contains('meme_btn')) {
+    hideOverlay()
+    setTimeout(()=>startMeme(), 2000)
+  }
 });
 
 // --- HELPER FUNCTION ---
@@ -1243,6 +1260,194 @@ function askUserReason({ title, placeholder, btnText }) {
     };
   });
 }
+
+
+
+// --------- CAT NEME FUNCTION -------- //
+
+// Function to start the meme process
+const startMeme = () => {
+  
+  const video = document.querySelector('video')
+  video.classList.remove('hidden')
+  video.play()
+  
+  
+    // ----------------------------------------------------
+  // ADDITION: Event Listener to automatically stop the meme when the video ends
+  // ----------------------------------------------------
+  
+  // Define a function reference for the listener so we can remove it later in stopMeme
+  const videoEndHandler = () => {
+      // The video has ended, so automatically call the stopMeme function
+      stopMeme();
+      
+      // IMPORTANT: Remove the listener so it doesn't fire again unexpectedly 
+      // if the video is manually played/replayed outside the meme functions.
+      video.removeEventListener('ended', videoEndHandler);
+      
+      console.log("Video ended. stopMeme() called automatically and listener removed.");
+  };
+
+  // Add the listener to the video element
+  video.addEventListener('ended', videoEndHandler);
+  
+  // Select all input elements on the page once
+  const inputs = document.querySelectorAll('input');
+  
+
+  
+  // --- Inner Function for Inputs ---
+  // This function handles adding/removing the '.meme' class from all inputs.
+  const manageInputMeme = (action) => {
+    // action should be 'add' or 'remove'
+    if (action === 'add') {
+      inputs.forEach(input => {
+        input.classList.add('meme');
+      });
+      console.log('Class .meme ADDED to all input elements.');
+    } else if (action === 'remove') {
+      inputs.forEach(input => {
+        input.classList.remove('meme');
+      });
+      console.log('Class .meme REMOVED from all input elements.');
+    } else {
+      console.error("Invalid action for manageInputMeme. Use 'add' or 'remove'.");
+    }
+  };
+
+  // --- Inner Function for Cards ---
+  // This function handles adding/removing the '.meme' class from all cards.
+  const manageCardMeme = (action) => {
+      // Select all card elements on the page once
+  const cards = document.querySelectorAll('.card'); 
+    // action should be 'add' or 'remove'
+    if (action === 'add') {
+      cards.forEach(card => {
+        card.classList.add('meme');
+      });
+      console.log('Class .meme ADDED to all .card elements.');
+    } else if (action === 'remove') {
+      cards.forEach(card => {
+        card.classList.remove('meme');
+      });
+      console.log('Class .meme REMOVED from all .card elements.');
+    } else {
+      console.error("Invalid action for manageCardMeme. Use 'add' or 'remove'.");
+    }
+  };
+
+  // ---------------------------------------------
+  // --- Execution Logic (Calling as per needed) ---
+  // ---------------------------------------------
+
+  // 1. Initial Step: Add classList .meme to each input element
+  manageInputMeme('add');
+  
+  // OPTIONAL: Wait 1 second and remove the class from inputs (e.g., if the shake animation ends)
+  // setTimeout(() => {
+  //   manageInputMeme('remove');
+  // }, 1000); 
+
+  // 2. Delayed Step: Wait 5 seconds and then add classList .meme to each .card element
+  setTimeout(() => {
+    manageCardMeme('add');
+    
+    // OPTIONAL: Wait another 1 second and remove the class from cards
+    // setTimeout(() => {
+    //   manageCardMeme('remove');
+    // }, 1000);
+
+  }, 6500); // 5000 milliseconds = 5 seconds
+  
+  setTimeout(()=>{
+    document.body.classList.add('dj')
+  }, 15000)
+};
+
+// Example: You can call startMeme() when a button is clicked or on page load.
+ //startMeme();
+
+
+
+
+
+
+const stopMeme = () => {
+  // Select the video element
+  const video = document.querySelector('video');
+  // Select all input elements on the page
+  const inputs = document.querySelectorAll('input');
+  // Select all card elements on the page (Note: You are selecting this inside manageCardMeme in startMeme, 
+  // but selecting it here is more efficient for stopMeme's logic)
+  const cards = document.querySelectorAll('.card'); 
+
+  // --- Inner Function for Inputs (Reusing logic for cleanup) ---
+  const manageInputMeme = (action) => {
+    // action should be 'add' or 'remove'
+    if (action === 'add') {
+      // Logic for adding class (not needed for stopMeme, but kept for consistency)
+      inputs.forEach(input => input.classList.add('meme'));
+      console.log('Class .meme ADDED to all input elements.');
+    } else if (action === 'remove') {
+      inputs.forEach(input => {
+        input.classList.remove('meme');
+      });
+      console.log('Class .meme REMOVED from all input elements.');
+    } else {
+      console.error("Invalid action for manageInputMeme. Use 'add' or 'remove'.");
+    }
+  };
+
+  // --- Inner Function for Cards (Reusing logic for cleanup) ---
+  const manageCardMeme = (action) => {
+    // action should be 'add' or 'remove'
+    if (action === 'add') {
+      // Logic for adding class (not needed for stopMeme)
+      cards.forEach(card => card.classList.add('meme'));
+      console.log('Class .meme ADDED to all .card elements.');
+    } else if (action === 'remove') {
+      cards.forEach(card => {
+        card.classList.remove('meme');
+      });
+      console.log('Class .meme REMOVED from all .card elements.');
+    } else {
+      console.error("Invalid action for manageCardMeme. Use 'add' or 'remove'.");
+    }
+  };
+
+  // ---------------------------------------------
+  // --- Execution Logic for Stopping ---
+  // ---------------------------------------------
+
+  // 1. Stop the video and hide it
+  if (video) {
+    video.pause();
+    // Resetting the video to the start for the next play is often good practice
+    video.currentTime = 0; 
+    video.classList.add('hidden');
+    console.log('Video paused and hidden.');
+  }
+
+  // 2. Remove .meme class from all inputs
+  manageInputMeme('remove');
+  
+  // 3. Remove .meme class from all cards
+  manageCardMeme('remove');
+
+  // 4. Remove 'dj' class from the body
+  document.body.classList.remove('dj');
+  console.log('Class .dj REMOVED from body.');
+
+  // IMPORTANT: Clear any pending timeouts from startMeme if needed. 
+  // You would need to store the IDs of the timeouts (e.g., const timeoutId = setTimeout(...)) 
+  // and use clearTimeout(timeoutId) here. Since you didn't store them, this is a suggestion 
+  // for future optimization.
+  
+};
+
+// Example: You can call stopMeme() when a 'Stop' button is clicked.
+// stopMeme();
 
 
 
@@ -1999,6 +2204,7 @@ $('#setGoal').onclick = async () => {
         
         // Optional: Update UI to show the new goal immediately
         // updateGoalUI(amount); 
+        $('#target').innerHTML = amount
 
     } catch (error) {
         console.error("Error setting goal:", error);

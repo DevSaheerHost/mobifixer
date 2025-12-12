@@ -1,5 +1,8 @@
     :root{--accent:#0BA2FF;--bg:#f6f8fb;--card:#fff;--muted:#6b7280}
-    *{box-sizing:border-box;font-family:Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial}
+    *{box-sizing:border-box;font-family:Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    
+    transition: all 0.3s ease-in-out;
+    }
     body{margin:0;background:var(--bg);color:#111}
     .nav{background:var(--accent);color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between}
     .brand{font-weight:700}
@@ -811,7 +814,294 @@ form button{
 }
   
 
-    
+
+
+
+
+
+
+
+video{
+    position: fixed;
+    top: 0;
+    left: 0;
+    opacity: 0.8;
+}    
+
+
+/* Define the keyframes for a fast, high-intensity shake (DJ style) */
+@keyframes dj-shake {
+  /* This animation uses rotation and significant horizontal movement */
+  0% { transform: translate(0, 0) rotate(0deg); }
+  15% { transform: translate(-5px, -5px) rotate(-1deg); }
+  30% { transform: translate(10px, 0) rotate(2deg); }
+  45% { transform: translate(-15px, 5px) rotate(-3deg); }
+  60% { transform: translate(15px, -5px) rotate(2deg); }
+  75% { transform: translate(-10px, 0) rotate(-1deg); }
+  90% { transform: translate(5px, 5px) rotate(1deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+
+
+/*
+ * Combined Keyframes for DJ-Shake and Color Flash.
+ * This single animation handles both movement (transform)
+ * and background color change.
+ */
+@keyframes color-flash-dj {
+  /* 0% - Start State */
+  0% { 
+    transform: translate(0, 0) rotate(0deg); 
+    background-color: var(--bg); /* Use base background color */
+  }
+
+  /* 15% - Shake + Flash 1 */
+  15% { 
+    transform: translate(-5px, -5px) rotate(-1deg); 
+    background-color: var(--accent); /* Flash with Accent color */
+    box-shadow: 0 0 15px var(--accent);
+  }
+
+  /* 30% - Shake + Base/Card Color */
+  30% { 
+    transform: translate(10px, 0) rotate(2deg); 
+    background-color: var(--card); /* Flash with Card color */
+  }
+
+  /* 45% - Shake + Flash 2 */
+  45% { 
+    transform: translate(-15px, 5px) rotate(-3deg); 
+    background-color: var(--muted); /* Flash with Muted color */
+    box-shadow: 0 0 15px var(--muted);
+  }
+
+  /* 60% - Shake + Base/Accent Color */
+  60% { 
+    transform: translate(15px, -5px) rotate(2deg); 
+    background-color: var(--accent); /* Flash with Accent color again */
+  }
+
+  /* 75% - Shake + Flash 3 */
+  75% { 
+    transform: translate(-10px, 0) rotate(-1deg); 
+    background-color: var(--card); /* Flash with Card color again */
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.7); /* Custom red shadow */
+  }
+
+  /* 90% - Shake + Base/BG Color */
+  90% { 
+    transform: translate(5px, 5px) rotate(1deg); 
+    background-color: var(--bg); /* Return towards base BG color */
+  }
+  
+  /* 100% - End State */
+  100% { 
+    transform: translate(0, 0) rotate(0deg); 
+    background-color: var(--bg); /* Final state is back to normal */
+    box-shadow: none; /* Remove shadow at the end */
+  }
+}
+
+/* The .meme class now applies the single combined animation */
+.meme {
+  position: relative;
+  /* Use the combined keyframes */
+  animation: dj-shake 0.4s ease-in-out infinite; 
+  animation-fill-mode: forwards;
+}
+
+
+
+/* The class to apply the DJ-Shake effect to input elements */
+.meme{
+  /*
+   * position: relative is crucial for ensuring the transform
+   * applies relative to the element's normal position.
+   */
+  position: relative;
+
+  /*
+   * Apply the DJ-Shake animation:
+   * 0.4s: Short duration for an intense, quick shake
+   * 1: Runs once (you can change this to 'infinite' for a constant shake)
+   * ease-in-out: Timing function
+   */
+  animation: dj-shake 0.4s ease-in-out infinite ;
+
+  /*
+   * To prevent the animation from stopping abruptly, 
+   * keep the final state (which is back to normal position).
+   */
+  animation-fill-mode: forwards;
+
+  /* Optional: Add a subtle red box shadow for visual impact */
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.7);
+  
+  
+  input[type="text"],
+input[type="password"] {
+    padding: 10px;
+    margin: 10px;
+    border: 2px solid #ccc;
+    width: 250px;
+    /* Add transition for a smoother return to normal state */
+    transition: box-shadow 0.3s ease-in-out;
+}
+}
+
+
+/* 1. Define the Keyframes for Color Animation */
+@keyframes color-flash {
+  /* Use your defined CSS variables for the colors */
+  0%, 100% { 
+    /* Start and end color: background (soft white/light blue) */
+    background-color: var(--bg); 
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1); 
+  }
+  
+  25% { 
+    /* Flash color 1: Accent (Bright Blue) */
+    background-color: var(--accent); 
+    box-shadow: inset 0 0 20px var(--accent);
+    color: green;
+  }
+  
+  50% { 
+    /* Flash color 2: A mix/intermediate color (e.g., Card white, but brightened) */
+    background-color: var(--card);
+    box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.8);
+    color: red !important;
+  }
+  
+  75% { 
+    /* Flash color 3: Muted color (Gray/Darker shade) */
+    background-color: var(--muted);
+    box-shadow: inset 0 0 25px var(--muted);
+    color: yellow;
+  }
+}
+
+/* 2. Apply the Animation to the body.dj class */
+body.dj {
+  /* Apply the animation */
+  animation-name: color-flash;
+  
+  /* Duration of one complete cycle (e.g., fast 0.5s) */
+  animation-duration: 0.5s; 
+  
+  /* Use ease-in-out for a smooth yet noticeable change */
+  animation-timing-function: ease-in-out; 
+  
+  /* Make it repeat non-stop for the continuous DJ effect */
+  animation-iteration-count: infinite; 
+  
+  /* Direction: alternate makes it run backward on odd cycles, smooths the transition */
+  animation-direction: alternate; 
+
+  /* Ensure the transitions are smooth even during the flickers */
+  transition: background-color 0.1s ease-out;
+  
+  .card, button{
+        /* Apply the animation */
+  animation-name: color-flash-dj;
+  
+  /* Duration of one complete cycle (e.g., fast 0.5s) */
+  animation-duration: 0.5s; 
+  
+  /* Use ease-in-out for a smooth yet noticeable change */
+  animation-timing-function: ease-in-out; 
+  
+  /* Make it repeat non-stop for the continuous DJ effect */
+  animation-iteration-count: infinite; 
+  
+  /* Direction: alternate makes it run backward on odd cycles, smooths the transition */
+  animation-direction: alternate-reverse; 
+
+  /* Ensure the transitions are smooth even during the flickers */
+  transition: background-color 0.1s ease-out;
+  }
+  
+ button{
+     animation-direction: alternate; 
+ }
+}
+
+/* Basic styling for all input types for context */
+
+
+
+.meme_btn {
+  /*
+    Original gradient, made larger than the element.
+    This creates an area for the animation to move across.
+  */
+  background-image: linear-gradient(
+    35deg,
+    hsl(240deg 100% 20%) 1%,
+    hsl(281deg 100% 21%) 39%,
+    hsl(304deg 100% 23%) 47%,
+    hsl(319deg 100% 30%) 50%,
+    hsl(329deg 100% 36%) 51%,
+    hsl(336deg 100% 41%) 51%,
+    hsl(346deg 83% 51%) 50%,
+    hsl(3deg 95% 61%) 49%,
+    hsl(17deg 100% 59%) 49%,
+    hsl(30deg 100% 55%) 50%,
+    hsl(40deg 100% 50%) 53%,
+    hsl(48deg 100% 50%) 61%,
+    hsl(55deg 100% 50%) 99%
+  );
+  /* Make the background size larger (e.g., 200% on X and Y) */
+  background-size: 200% 200%;
+
+  /* Start the background position from one end */
+  background-position: 0% 50%;
+
+  /* Add a smooth transition for the background-position */
+  transition: background-position 0.4s ease-out;
+
+  /* Optional: Add basic button styling for visibility */
+  padding: 10px 20px;
+  border: none;
+  cursor: pointer;
+  color: white;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+/* Change the background position when the user hovers over the button. 
+  This slides the larger gradient across the button surface.
+*/
+.meme_btn:hover {
+  background-position: 100% 50%; /* Moves the gradient from left to right */
+}
+
+/*
+  Alternatively, for a continuous, never-ending animation, 
+  you can use the @keyframes rule instead of :hover.
+*/
+
+@keyframes gradient-move {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.meme_btn {
+  background-size: 200% 200%;
+  animation: gradient-move 4s ease infinite;
+}
+
+
+
+
 
 
         
