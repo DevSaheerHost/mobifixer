@@ -796,7 +796,7 @@ ${
     : `<a style="color:#09a0ff;" onclick="document.querySelector('#setGoal').click()">Set now</a>`
 }
 `;
-if(data.targetAmount >=totalIn) $('#target').innerHTML = `<p style="font-weight: bold;" class='small'>${data.targetAmount} Completed ⚡</p>`
+
 
 // 2. Data exists, now check the alert flag for UI/logic control
 if (isUserViewGoalAlert ==='yes') {
@@ -826,6 +826,8 @@ if (data.targetAmount <=totalIn) {
 
 
 localStorage.setItem('isUserViewGoalAlert', 'yes')
+
+$('#target').innerHTML = `<p style="font-weight: bold;" class='small'>${data.targetAmount} Completed ⚡</p>`
 }
 
 // Local Storage Key to track the last totalIn when the overlay was shown
@@ -2264,6 +2266,221 @@ function askUserForGoal({ title, currentDate }) {
     // Allow Enter key on Amount input to jump to Note, and Enter on Note to Submit
     amountInput.onkeydown = (e) => {
         if (e.key === 'Enter') noteInput.focus();
+        if (e.key === 'Escape') cancelBtn.click();
+    };
+    noteInput.onkeydown = (e) => {
+        if (e.key === 'Enter') saveBtn.click();
+        if (e.key === 'Escape') cancelBtn.click();
+    };
+  });
+}
+
+
+
+
+
+
+
+
+// ====================================================================
+// !!! REQUIRED GLOBAL DEPENDENCIES DEFINITION !!!
+// These variables and functions MUST be defined globally for setReminder to work.
+// We are defining them here based on your existing code structure.
+// ====================================================================
+
+// Mock Variables (Replace with actual user/system data in production)
+
+
+// Mock Toast Function (Replace with your actual UI notification function)
+
+// Simple Mock for jQuery-style element selection. 
+// Assumes the button with id 'setReminder' is available.
+
+
+// Mock function for database reference (dbRef is now fully defined)
+const dbRef = {
+    ref: (path) => ({
+        set: (data) => {
+            return new Promise(resolve => {
+                console.log(`\n============================================`);
+                console.log(`[DBRef MOCK ACTION]: Data SET attempted.`);
+                console.log(`[PATH]: ${path}`);
+                console.log(`[DATA SAVED]:`, data);
+                console.log(`============================================\n`);
+                resolve();
+            });
+        }
+    })
+};
+
+// ====================================================================
+// 1. THE MAIN setReminder EXECUTION FUNCTION
+// ====================================================================
+
+/**
+ * Function to set a daily reminder, mirroring the structure of the setGoal function,
+ * utilizing the global dependencies and helper function.
+ */
+$('#setReminder').onclick = async () => {
+    try {
+        // 1. Get input from user using the custom popup
+        const reminderData = await askUserForReminder({
+            title: 'Set New Reminder',
+            // Passing the nicely formatted current date for the popup header
+            currentDate: new Date().toLocaleDateString("en-IN") 
+        });
+
+        // If user cancelled
+        if (!reminderData) return;
+
+        // 2. Validate essential inputs (Validation is also done inside the popup, but repeated here for safety)
+        const reminderDate = reminderData.reminderDate; // YYYY-MM-DD
+        const reminderTime = reminderData.reminderTime; // HH:MM
+        const reminderTitle = reminderData.title;
+
+        if (!reminderDate || !reminderTime || !reminderTitle) {
+            // This case should ideally not be hit if popup validation is strong
+            showTopToast("Missing required reminder details (Date, Time, or Title).");
+            return;
+        }
+
+        // Combine date and time for full timestamp
+        const fullReminderTime = `${reminderDate} ${reminderTime}`;
+
+
+        // 3. Define the path and save to database (USING dbRef)
+        // Path structure: username/reminders/YYYY-MM-DD (Reminder Date)/uniqueId
+        const uniqueReminderKey = Date.now(); 
+        // THIS LINE NOW USES THE DEFINED username and dbRef
+        const reminderRefPath = dbRef.ref(`${username}/reminders/${reminderDate}/${uniqueReminderKey}`);
+        
+        // Data structure to save
+        await reminderRefPath.set({
+            reminderTitle: reminderTitle,
+            reminderDate: reminderDate, 
+            reminderTime: reminderTime, 
+            fullTimestamp: fullReminderTime,
+            note: reminderData.note || '', 
+            setAt: new Date().toLocaleString("en-IN"),
+            lastUpdatedBy: fullname || 'unknown' // Uses defined fullname
+        });
+        
+        // set to Localstorage 
+        localStorage.setItem('hasNewReminderToday', 'yes');
+
+        // 4. Success Feedback
+        showTopToast(`Reminder "${reminderTitle}" set successfully for ${reminderDate} at ${reminderTime}! 🔔`);
+        
+    } catch (error) {
+        // Error handling
+        console.error("Error setting reminder:", error);
+        // The console.error will show if variables like dbRef, username etc., were undefined.
+        showTopToast("Failed to set reminder. Try again.");
+    }
+};
+
+// ====================================================================
+// 2. THE HELPER FUNCTION (Unchanged, as it was already correct)
+// ====================================================================
+
+/**
+ * Displays a custom popup to ask the user for reminder details (What, Date, and Time).
+ * @param {object} options - Configuration options.
+ * @param {string} options.title - The title for the popup header.
+ * @param {string} options.currentDate - The date to display in the header.
+ * @returns {Promise<{title: string, reminderDate: string, reminderTime: string, note: string} | null>} - A promise that resolves with the reminder data or null if cancelled.
+ */
+function askUserForReminder({ title, currentDate }) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'popup-overlay'; 
+
+    overlay.innerHTML = `
+      <div class="popup-box">
+        <h3 class="popup-title">${title} <span style="font-size:0.8em; color:#666">(${currentDate})</span></h3>
+        
+        <label class="popup-label">Reminder Title / What to do?</label>
+        <input type="text" id="reminderTitle" class="popup-input" placeholder="e.g., Call the doctor" autocomplete="off">
+        
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <div style="flex: 1;">
+                <label class="popup-label">Reminder Date</label>
+                <input type="date" id="reminderDate" class="popup-input" style="width: 100%;">
+            </div>
+            <div style="flex: 1;">
+                <label class="popup-label">Reminder Time</label>
+                <input type="time" id="reminderTime" class="popup-input" style="width: 100%;">
+            </div>
+        </div>
+        
+        <label class="popup-label">Note (Optional Details)</label>
+        <input type="text" id="reminderNote" class="popup-input" placeholder="e.g., Check prescription details" autocomplete="off">
+
+        <div class="popup-actions">
+          <button id="cancelReminderBtn" class="popup-btn popup-btn-cancel">Cancel</button>
+          <button id="saveReminderBtn" class="popup-btn popup-btn-confirm" style="background-color: #f7931e;">Set Reminder</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // Get input and button references
+    const titleInput = overlay.querySelector('#reminderTitle');
+    const dateInput = overlay.querySelector('#reminderDate');
+    const timeInput = overlay.querySelector('#reminderTime');
+    const noteInput = overlay.querySelector('#reminderNote');
+    const saveBtn = overlay.querySelector('#saveReminderBtn');
+    const cancelBtn = overlay.querySelector('#cancelReminderBtn');
+
+    // Set default date to today for better UX
+    dateInput.value = new Date().toISOString().slice(0, 10);
+    
+    // Focus on the first required input
+    setTimeout(() => titleInput.focus(), 50);
+
+    const close = (data) => {
+      overlay.remove();
+      resolve(data);
+    };
+
+    saveBtn.onclick = () => {
+        const title = titleInput.value.trim();
+        const reminderDate = dateInput.value.trim(); 
+        const reminderTime = timeInput.value.trim(); 
+        const note = noteInput.value.trim();
+        
+        // Basic validation: Title, Date, and Time are mandatory
+        if (!title) {
+            titleInput.style.borderColor = 'red';
+            return;
+        }
+        if (!reminderDate) {
+            dateInput.style.borderColor = 'red';
+            return;
+        }
+        if (!reminderTime) {
+            timeInput.style.borderColor = 'red';
+            return;
+        }
+
+        // Return the collected data
+        close({ title, reminderDate, reminderTime, note });
+    };
+
+    cancelBtn.onclick = () => close(null);
+    
+    // Keyboard navigation logic
+    titleInput.onkeydown = (e) => {
+        if (e.key === 'Enter') dateInput.focus(); 
+        if (e.key === 'Escape') cancelBtn.click();
+    };
+    dateInput.onkeydown = (e) => {
+        if (e.key === 'Enter') timeInput.focus();
+        if (e.key === 'Escape') cancelBtn.click();
+    };
+    timeInput.onkeydown = (e) => {
+        if (e.key === 'Enter') noteInput.focus(); 
         if (e.key === 'Escape') cancelBtn.click();
     };
     noteInput.onkeydown = (e) => {
