@@ -1413,12 +1413,14 @@ function processQueue() {
   // Pattern: vibrate → pause → vibrate
   if (type==='error' || type ==='warn') {
     navigator.vibrate([50, 50, 50]);
-    speakText(body);
     //speakText("നന്ദി, വീണ്ടും വരുക kumar ഏട്ടാ!", "ml-IN", 1.1, 1);
+  }
+  if (type==='error') {
+    speakText(body);
   }
   if (type ==='info') {
     navigator.vibrate([50, 70, 50]);
-    speakText(body);
+   // speakText(body);
   }
   if (type ==='success') {
     navigator.vibrate([50]);
