@@ -1029,6 +1029,7 @@ var progress = false;
 obForm.onsubmit = async (e)=> {
   const obAmount = $('#obAmount').value
   e.preventDefault()
+  if(!obAmount)throw new  Error('Enter Amount')
   const t = 'in'
   const dateISO =  isoDate(new Date(Date.now() + 24*60*60*1000));
       const s = await nextSerial(dateISO,t);
@@ -1115,7 +1116,7 @@ function checkOBBox() {
   const hour = now.getHours(); // 0–23
   
   const noOB = localStorage.getItem('CASHBOOK_OB')!=now.getDate();
-  const inTime = hour >= 21 && hour < 23; // 9pm to 11pm
+  const inTime = hour >= 17 && hour < 23; // 9pm to 11pm
   
   if (noOB && inTime) {
     obCard.classList.remove('hidden');
