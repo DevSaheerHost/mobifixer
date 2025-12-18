@@ -576,6 +576,7 @@ function filterData(data, searchValue) {
       const data = snapshot.val() || {};
       if(!data) throw new Error('Db empty')
       renderEntries(data);
+      renderLiquid(data.liquid)
       const buttons = document.querySelectorAll('#in, #out, #all, #bin');
 
 buttons.forEach(btn => {
@@ -685,6 +686,17 @@ window.onscroll = () => {
 
 
 
+// render liquid money 
+function renderLiquid(liquid) {
+  if (!liquid) {
+    console.log('ther is no Liquid money')
+    return;
+  }
+
+  $('#liquidMoneyLabel').textContent=liquid.amount;
+  
+}
+
 
 
 // Updated renderEntries function with target support
@@ -701,6 +713,7 @@ function renderEntries(data, target = entriesList) {
       rows.push({...group[key], _type: type, _key: key});
     });
   });
+  
 
   // 🔁 sort by timestamp (latest first)
   rows.sort((a, b) => b.ts - a.ts);
@@ -1170,7 +1183,7 @@ if (data.targetAmount > globalIn) {
   setTimeout(() => liquidCard.classList.add('hidden'), 1000);
 };
 
-
+/// end liquid ///
 
 
 
@@ -1195,6 +1208,15 @@ function checkOBBox() {
   } else {
     obCard.classList.add('hidden');
   }
+  
+  
+  // liquid card
+  
+  const noLiquid = localStorage.getItem('CASHBOOK_LIQUID')!=now.getDate();
+  
+  if(inTime){
+    liquidCard.classList.remove('hidden');
+  }else liquidCard.classList.add('hidden');
 }
 
 checkOBBox();
