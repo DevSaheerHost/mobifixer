@@ -87,6 +87,8 @@ firebase.database().ref(`/users/${username}`).get()
     const obForm = $('#obForm')
     const obCard = $('#obCard');
     
+    const liquidCard = $('#liquidCard')
+    const liquidMoneyForm = $('#liquidMoneyForm')
     let globalDate // for load for date = change thisndate value too
     
     
@@ -1075,6 +1077,11 @@ $('.loader').classList.remove('off')
 
 const checkGoalAchived= async ()=>{
   function dayRoot(dateISO) { return `${username}/goals/${currentDate}`; }
+  
+  
+  
+
+
 
 // currentDate = dateISO;
 
@@ -1103,6 +1110,71 @@ if (data.targetAmount > globalIn) {
 
 
 }
+
+
+
+
+
+  ////. LIQUID MONTY THAT TODAYS LAST AMOUT IN COUNTER /////
+  
+  liquidMoneyForm.onsubmit = async (e) => {
+  e.preventDefault();
+
+  if (progress) return showTopToast('Try again');
+
+  const liqAmount = $('#liqAmount').value;
+  if (!liqAmount) {
+    showTopToast('Enter Amount');
+    return;
+  }
+
+  progress = true;
+  $('.loader').classList.remove('off');
+
+  const now = new Date();
+  const dateISO = isoDate(now);
+
+  const s = await nextSerial(dateISO);
+  const staffName = localStorage.getItem('CASHBOOK_FULLNAME')?.trim() || 'UNKNOWN';
+
+  const liquidRef = db.ref(dayRoot(dateISO) + '/liquid');
+
+  await liquidRef.set({
+    serial: s,
+    name: 'Liquid Amount',
+    amount: Number(liqAmount),
+    gpay: false,
+
+    // 🔥 time & date
+    date: dateISO,                       // 2025-12-18
+    time: now.toLocaleTimeString('en-IN', {
+      hour: '2-digit',
+      minute: '2-digit'
+    }),                                  // 09:42 PM
+
+    ts: now.getTime(),                   // machine timestamp
+
+    staffName,
+    userEmail: auth.currentUser?.email || 'local',
+    role: localStorage.getItem('CASHBOOK_ROLL') || 'UNKNOWN',
+  });
+
+  $('.loader').classList.add('off');
+  progress = false;
+
+  navigator.vibrate?.(15);
+
+  localStorage.setItem('CASHBOOK_LIQUID', now.getDate());
+
+  liquidCard.classList.add('off');
+  setTimeout(() => liquidCard.classList.add('hidden'), 1000);
+};
+
+
+
+
+
+
 // check opening Balance already or timeout 
 
 
@@ -2490,3 +2562,6 @@ function askUserForReminder({ title, currentDate }) {
     };
   });
 }
+
+
+
