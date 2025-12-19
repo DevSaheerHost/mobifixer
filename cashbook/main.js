@@ -2587,3 +2587,19 @@ function askUserForReminder({ title, currentDate }) {
 
 
 
+
+// for fast transaction/reload
+let wasHidden = false;
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") {
+    wasHidden = true;
+    
+  }
+
+  if (document.visibilityState === "visible" && wasHidden) {
+    reloadBtn.click();
+    wasHidden = false;
+    
+  }
+});
