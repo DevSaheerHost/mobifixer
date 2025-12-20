@@ -464,7 +464,28 @@ firebase.database().ref(`/users/${username}`).get()
     entriesList.appendChild(el);
   });}
 
+const reminderCache = {};
 
+async function loadRemindersForDate(dateISO){
+  if(reminderCache[dateISO]){
+    renderReminders(reminderCache[dateISO]);
+    return;
+  }
+
+  const snap = await db
+    .ref(`${username}/reminders/${dateISO}`)
+    .get();
+
+  const data = snap.val();
+
+  if(!data){
+    renderReminders({});
+    return;
+  }
+
+  reminderCache[dateISO] = data;
+  renderReminders(data);
+}
 
   
   
@@ -2257,9 +2278,7 @@ cancelBtn.onclick=()=>{
 
 
 
-$('#setReminder').onclick=()=>{
-throw new Error("Uh oh! Couldn't set the Reminder.");
-}
+
 
 
 
@@ -2447,7 +2466,7 @@ $('#setReminder').onclick = async () => {
         // Path structure: username/reminders/YYYY-MM-DD (Reminder Date)/uniqueId
         const uniqueReminderKey = Date.now(); 
         // THIS LINE NOW USES THE DEFINED username and dbRef
-        const reminderRefPath = dbRef.ref(`${username}/reminders/${reminderDate}/${uniqueReminderKey}`);
+        const reminderRefPath = db.ref(`${username}/reminders/${reminderDate}/${uniqueReminderKey}`);
         
         // Data structure to save
         await reminderRefPath.set({
@@ -2495,7 +2514,7 @@ function askUserForReminder({ title, currentDate }) {
         <h3 class="popup-title">${title} <span style="font-size:0.8em; color:#666">(${currentDate})</span></h3>
         
         <label class="popup-label">Reminder Title / What to do?</label>
-        <input type="text" id="reminderTitle" class="popup-input" placeholder="e.g., Call the doctor" autocomplete="off">
+        <input type="text" id="reminderTitle" class="popup-input" placeholder="e.g., Call the customer" autocomplete="off">
         
         <div style="display: flex; gap: 10px; margin-bottom: 10px;">
             <div style="flex: 1;">
@@ -2509,7 +2528,7 @@ function askUserForReminder({ title, currentDate }) {
         </div>
         
         <label class="popup-label">Note (Optional Details)</label>
-        <input type="text" id="reminderNote" class="popup-input" placeholder="e.g., Check prescription details" autocomplete="off">
+        <input type="text" id="reminderNote" class="popup-input" placeholder="e.g., Pending money" autocomplete="off">
 
         <div class="popup-actions">
           <button id="cancelReminderBtn" class="popup-btn popup-btn-cancel">Cancel</button>
@@ -2603,3 +2622,48 @@ document.addEventListener("visibilitychange", () => {
     
   }
 });
+
+
+
+
+
+
+function isReminderSeen(id){
+  return localStorage.getItem('rem_seen_' + id) === 'yes';
+}
+
+function markReminderSeen(id){
+  localStorage.setItem('rem_seen_' + id, 'yes');
+}
+
+
+
+function renderReminders(data){
+
+  const keys = Object.keys(data);
+  if(keys.length === 0) return;
+
+  const arr = keys.map(k => ({ id: k, ...data[k] }));
+
+  // earliest first
+  arr.sort((a,b)=> a.reminderTime.localeCompare(b.reminderTime));
+
+  // 🔍 find FIRST unseen reminder
+  const r = arr.find(rem => !isReminderSeen(rem.id));
+
+  // all reminders already seen → do nothing
+  if(!r) return;
+
+  showOverlay({
+    title: r.reminderTitle,
+    desc: `🕒 ${r.reminderTime}${r.note ? ' • ' + r.note : ''}`
+  });
+
+  // ✅ mark as seen immediately
+  markReminderSeen(r.id);
+}
+
+
+const todayISO = new Date().toISOString().slice(0,10);
+loadRemindersForDate(todayISO);
+
