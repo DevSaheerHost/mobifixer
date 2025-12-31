@@ -98,6 +98,9 @@ if (typeof firebase !== 'undefined') {
                     <span>📞 ${data.phoneNumber}</span>
                     <span>Created Date: ${data.orderDate}</span>
                     ${data.notes ? `<span>Notes: ${data.notes}</span>` : ''}
+                    
+                    <a href="tel:+91${data.phoneNumber}" class="call-btn">📞 Call</a>
+                    
                 </div>
                 <button class="complete-button" data-id="${orderId}">
                     <span class="material-icons">done_all</span> Delivered

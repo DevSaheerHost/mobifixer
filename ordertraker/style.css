@@ -201,6 +201,43 @@ textarea {
 }
 
 
+
+
+.call-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 22px;
+  background: var(--primary-color);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 50px;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(0, 121, 107, 0.35);
+  transition: all 0.25s ease;
+  width: 60%;
+  margin: auto;
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.call-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(0, 121, 107, 0.45);
+}
+
+.call-btn:active {
+  transform: scale(0.96);
+}
+
+.call-btn i {
+  font-size: 18px;
+}
+
+
 .hidden{
     display: none;
 }
