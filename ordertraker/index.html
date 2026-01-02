@@ -17,10 +17,15 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
 <body>
+
+    <main class="page active" id="home">
+        
     <div class="app-container">
         <header class="app-bar">
             <h1>Order Tracker</h1>
         </header>
+            <button data-link="details">Go Details</button>
+<button data-link="about">About</button>
 
         <section class="card form-section">
             <h2 class="card-title"><span class="material-icons">add_circle</span> New Order</h2>
@@ -69,6 +74,43 @@
 
         <div id="statusMessage" class="status-message"></div>
     </div>
+    </main>
+    
+    
+    <main class="page" id="details">
+        <header class="app-bar">
+            <h1>Order Tracker</h1>
+        </header>
+    </main>
+  <main class="page" id="about">About</main>
+
+
+
+
+
+
+<!-- BOTTOM NAV -->
+
+<div class="bottom_navbar">
+  <nav>
+    <button class="nav_btn active" onclick="history.back()">
+      
+        <span class="material-icons">home</span> 
+        <small>Home</small>
+     
+    </button>
+
+    <button class="nav_btn" data-link="about">
+        
+      <span class="material-icons">done_all</span>
+      <small>History</small>
+      
+    </button>
+  </nav>
+</div>
+
+
+
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>

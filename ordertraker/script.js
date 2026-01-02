@@ -91,6 +91,7 @@ if (typeof firebase !== 'undefined') {
             
             // Format the order item HTML structure
             const orderItem = document.createElement('div');
+            orderItem.dataset.link='details'
             orderItem.className = 'order-item';
             orderItem.innerHTML = `
                 <div class="order-details">
@@ -109,9 +110,12 @@ if (typeof firebase !== 'undefined') {
             ordersList.appendChild(orderItem);
 
             // Attach event listener for the complete button
-            orderItem.querySelector('.complete-button').addEventListener('click', () => {
+            orderItem.querySelector('.complete-button').addEventListener('click', (e) => {
+                e.stopPropagation()
                 markAsComplete(orderId, data.productModel, data.customerName, data.productName);
             });
+            
+            orderItem.querySelector('.call-btn').onclick=e=>e.stopPropagation()
         });
     }, (error) => {
         console.error("Error fetching orders: ", error);
@@ -155,3 +159,42 @@ if (typeof firebase !== 'undefined') {
 
 
 
+
+// script for page switching (SPA)
+
+const pages = document.querySelectorAll('.page');
+let currentPage = document.querySelector('.page.active');
+
+function navigate(hash) {
+  const id = hash.replace('#', '') || 'home';
+  const nextPage = document.getElementById(id);
+
+  if (!nextPage || nextPage === currentPage) return;
+
+  // exit old
+  currentPage.classList.add('exit');
+  currentPage.classList.remove('active');
+  
+  // enter new
+  nextPage.classList.add('active');
+  nextPage.classList.remove('exit');
+
+  currentPage = nextPage;
+}
+
+// click navigation
+document.addEventListener('click', e => {
+  const link = e.target.closest('[data-link]');
+  if (!link) return;
+
+  e.preventDefault();
+  location.hash = link.dataset.link;
+});
+
+// back / forward support
+window.addEventListener('hashchange', () => {
+  navigate(location.hash);
+});
+
+// initial load
+navigate(location.hash);
