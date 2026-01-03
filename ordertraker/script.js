@@ -180,6 +180,8 @@ nextPage.classList.add('active');
 nextPage.classList.remove('exit');
 
 currentPage = nextPage;
+
+setActiveNav(hash)
 }
 
 // click navigation
@@ -199,6 +201,26 @@ navigate(location.hash);
 // initial load
 navigate(location.hash);
 
+
+
+
+
+
+
+// nav btn color function 
+
+const navBtns = document.querySelectorAll('.nav_btn');
+
+function setActiveNav(hash) {
+  const id = hash.replace('#', '') || '#';
+
+  navBtns.forEach(btn => {
+    btn.classList.toggle(
+      'active',
+      btn.dataset.link === id || btn.dataset.link === hash
+    );
+  });
+}
 
 
 

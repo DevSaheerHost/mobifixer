@@ -24,9 +24,27 @@
         <header class="app-bar">
             <h1>Order Tracker</h1>
         </header>
-            <button data-link="details">Go Details</button>
-<button data-link="about">About</button>
+            
 
+      
+        <section class="card list-section">
+            <h2 class="card-title"><span class="material-icons">list_alt</span> Pending Orders</h2>
+            <div id="ordersList" class="orders-list">
+                <p id="loadingIndicator">Loading...</p>
+            </div>
+        </section>
+
+       
+    </div>
+    </main>
+    
+    
+    <main class="page" id="details">
+        <header class="app-bar">
+            <h1>Order Tracker</h1>
+        </header>
+    </main>
+  <main class="page" id="add">
         <section class="card form-section">
             <h2 class="card-title"><span class="material-icons">add_circle</span> New Order</h2>
             <form id="orderForm">
@@ -65,30 +83,13 @@
             </form>
         </section>
 
-        <section class="card list-section">
-            <h2 class="card-title"><span class="material-icons">list_alt</span> Pending Orders</h2>
-            <div id="ordersList" class="orders-list">
-                <p id="loadingIndicator">Loading...</p>
-            </div>
-        </section>
-
-        <div id="statusMessage" class="status-message"></div>
-    </div>
-    </main>
-    
-    
-    <main class="page" id="details">
-        <header class="app-bar">
-            <h1>Order Tracker</h1>
-        </header>
-    </main>
-  <main class="page" id="about">About</main>
+  </main>
 
 
 
 
 
-
+ <div id="statusMessage" class="status-message"></div>
 <!-- BOTTOM NAV -->
 
 <div class="bottom_navbar">
