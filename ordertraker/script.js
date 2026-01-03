@@ -166,35 +166,45 @@ const pages = document.querySelectorAll('.page');
 let currentPage = document.querySelector('.page.active');
 
 function navigate(hash) {
-  const id = hash.replace('#', '') || 'home';
-  const nextPage = document.getElementById(id);
+const id = hash.replace('#', '') || 'home';
+const nextPage = document.getElementById(id);
 
-  if (!nextPage || nextPage === currentPage) return;
+if (!nextPage || nextPage === currentPage) return;
 
-  // exit old
-  currentPage.classList.add('exit');
-  currentPage.classList.remove('active');
-  
-  // enter new
-  nextPage.classList.add('active');
-  nextPage.classList.remove('exit');
+// exit old
+currentPage.classList.add('exit');
+currentPage.classList.remove('active');
 
-  currentPage = nextPage;
+// enter new
+nextPage.classList.add('active');
+nextPage.classList.remove('exit');
+
+currentPage = nextPage;
 }
 
 // click navigation
 document.addEventListener('click', e => {
-  const link = e.target.closest('[data-link]');
-  if (!link) return;
+const link = e.target.closest('[data-link]');
+if (!link) return;
 
-  e.preventDefault();
-  location.hash = link.dataset.link;
+e.preventDefault();
+location.hash = link.dataset.link;
 });
 
 // back / forward support
 window.addEventListener('hashchange', () => {
-  navigate(location.hash);
+navigate(location.hash);
 });
 
 // initial load
 navigate(location.hash);
+
+
+
+
+
+
+
+window.addEventListener("load", () => {
+  document.documentElement.style.opacity = "1";
+});

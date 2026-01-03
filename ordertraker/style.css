@@ -9,6 +9,10 @@
     --text-light: #757575; /* Medium grey for labels */
 }
 
+html {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
 * {
     box-sizing: border-box;
     margin: 0;
