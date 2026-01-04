@@ -406,3 +406,7 @@ function setActiveNav(hash) {
 window.addEventListener("load", () => {
   document.documentElement.style.opacity = "1";
 });
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js');
+}

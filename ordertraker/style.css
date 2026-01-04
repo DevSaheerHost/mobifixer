@@ -31,6 +31,7 @@ main { /*.app-container*/
     margin: 0 auto;
     background-color: var(--surface-color); /* Full screen white on mobile */
     min-height: 100vh;
+    padding-bottom: 4rem;
 }
 
 /* App Bar - Top Header */
@@ -407,3 +408,25 @@ body{
   transform: translateX(100%);
   
 }
+
+
+
+
+/* ===== Remove scrollbar everywhere ===== */
+
+/* Chrome, Edge, Safari */
+::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
+}
+
+/* Firefox */
+html {
+  scrollbar-width: none; /* hides scrollbar */
+}
+
+/* IE / old Edge */
+body {
+  -ms-overflow-style: none;
+}
+
