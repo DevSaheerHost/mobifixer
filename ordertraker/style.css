@@ -233,6 +233,12 @@ textarea {
   margin: auto;
   margin-top: 1rem;
   text-align: center;
+  
+  white-space: nowrap;
+}
+.call-btn span{
+    color: #fff;
+    font-size: 20px;
 }
 
 .call-btn:hover {
@@ -309,6 +315,53 @@ textarea {
 .nav_btn:active {
   transform: scale(.92);
 }
+
+
+
+.flex{
+    display: flex;
+    align-items: center;
+}
+
+.user-info strong{
+    display: block;
+font-size: 16px;
+color: var(--primary-color);
+font-weight: 500;
+}
+
+
+
+
+.item-info{
+    margin-top: 1rem;
+    border-top: 1px solid #E3E3E3;
+    padding-top: 1rem;
+}
+
+
+.user-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.item-info .flex{
+    gap: 1rem;
+}
+.item-info img{
+    max-width: 40%;
+    background: #E3E3E3;
+    display: block;
+}
+
+.user-info .call-btn{
+    font-size: 14px;
+}
+
+
+
+
 
 
 .hidden{

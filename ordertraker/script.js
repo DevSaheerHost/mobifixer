@@ -100,7 +100,10 @@ if (typeof firebase !== 'undefined') {
                     <span>Created Date: ${data.orderDate}</span>
                     ${data.notes ? `<span>Notes: ${data.notes}</span>` : ''}
                     
-                    <a href="tel:+91${data.phoneNumber}" class="call-btn">📞 Call</a>
+                    <a href="tel:+91${data.phoneNumber}" class="call-btn">
+                     <span class="material-icons">phone</span>
+
+                    Call</a>
                     
                 </div>
                 <button class="complete-button" data-id="${orderId}">
