@@ -41,14 +41,14 @@
     
     <main class="page" id="details">
         <header class="app-bar">
-            <h1>Order Tracker</h1>
+            <h1 id="pageTitle">Order Tracker</h1>
         </header>
         
         <section class="card list-section">
              <div class="user-info">
                 <div>
                      
-                 <strong>Vidya - Used phone - Vivo Y20</strong>
+                 <strong id="title">Vidya - Used phone - Vivo Y20</strong>
                  <span class="flex">
                      <span class="material-icons">phone</span>
                      <p>583939593</p>
@@ -57,7 +57,7 @@
                 
                 <button class="call-btn" style="max-width: fit-content;">
                     <span class="material-icons">phone</span>
-                    Call she</button>
+                    Call</button>
 
              </div>
              
@@ -67,18 +67,10 @@
                  <div class="flex">
                      <img src="./icons/icon-192x192.png" alt="" />
                      
-                     <div class="box">
-                         <p>Order ID : zxsancnBsanN</p>
-                         <p>Created At: 03-01-2026</p>
-                         <p>Status : <span>✅</span><b>Delivered</b></p>
-                         <p>Notes: Used mobile</p>
+                     <div class="box" id="item_box">
                          
-                         <div>
-                              <button class="call-btn" style="min-width: fit-content;">
-                                 <span class="material-icons">phone</span>
-                                Call she
-                             </button>
-                        </div>
+                         
+                         
                      </div>
                  </div>
              </div>
@@ -128,6 +120,14 @@
   </main>
 
 
+<main class="page" id="history">
+      <section class="card list-section">
+      <h2 class="card-title"><span class="material-icons">list_alt</span> Pending Orders</h2>
+      <div id="historyList" class="orders-list">
+          <p id="loadingIndicator">Loading...</p>
+      </div>
+  </section>
+</main>
 
 
 
@@ -150,7 +150,7 @@
     </button>
     
 
-    <button class="nav_btn" data-link="about">
+    <button class="nav_btn" data-link="history">
       <span class="material-icons">done_all</span>
       <small>History</small>
     </button>

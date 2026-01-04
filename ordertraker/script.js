@@ -92,11 +92,23 @@ if (typeof firebase !== 'undefined') {
             // Format the order item HTML structure
             const orderItem = document.createElement('div');
             orderItem.dataset.link='details'
+            orderItem.dataset.number=data.phoneNumber
+            orderItem.dataset.name=data.customerName
+            orderItem.dataset.model=data.productModel
+            orderItem.dataset.productName=data.productName
+            orderItem.dataset.date=data.orderDate
+            orderItem.dataset.notes=data.notes || ''
+            orderItem.dataset.id=orderId
+            orderItem.dataset.status=data.isCompleted
+            
+
+
+
             orderItem.className = 'order-item';
             orderItem.innerHTML = `
                 <div class="order-details">
                     <strong>${data.customerName} - ${data.productModel} - ${data.productName}</strong>
-                    <span>📞 ${data.phoneNumber}</span>
+                    <span class='num'>📞 ${data.phoneNumber}</span>
                     <span>Created Date: ${data.orderDate}</span>
                     ${data.notes ? `<span>Notes: ${data.notes}</span>` : ''}
                     
@@ -135,6 +147,7 @@ if (typeof firebase !== 'undefined') {
                     completedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 showStatusMessage(`✅ Order for ${name} completed.`);
+                location.hash='#'
             } catch (error) {
                 console.error("Error updating document: ", error);
                 showStatusMessage("❌ Error completing order!");
@@ -156,6 +169,25 @@ if (typeof firebase !== 'undefined') {
     document.addEventListener('DOMContentLoaded', () => {
         ordersList.innerHTML = '<p style="color: red; text-align: center;">Firebase SDK not loaded. Check configuration.</p>';
     });
+}
+
+
+
+const db = firebase.firestore();
+async function markAsComplete(orderId, model, name, product) {
+    if (confirm(`Mark order for ${name} (${model} - ${product}) as delivered?`)) {
+        try {
+            await db.collection('orders').doc(orderId).update({
+                isCompleted: true,
+                completedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            showStatusMessage(`✅ Order for ${name} completed.`);
+            location.hash='#'
+        } catch (error) {
+            console.error(error);
+            showStatusMessage("❌ Error completing order!");
+        }
+    }
 }
 
 
@@ -194,6 +226,68 @@ if (!link) return;
 
 e.preventDefault();
 location.hash = link.dataset.link;
+
+
+if (e.target.closest('.order-item')) {
+    const target = e.target.closest('.order-item')
+    
+    const item_box = document.querySelector('#item_box')
+    
+    
+    const title = target.querySelector('strong').textContent
+    
+    
+const number = target.dataset.number
+const name = target.dataset.name 
+const model = target.dataset.model
+const productName = target.dataset.productName
+const createdAt = target.dataset.date
+const notes = target.dataset.notes
+const orderId = target.dataset.id
+const status = target.dataset.status === 'true'
+  ? 'Delivered'
+  : 'Pending';
+//alert(status)
+    
+    document.querySelector('#pageTitle').textContent=name
+    
+    const box = document.createElement('div')
+    document.querySelector('#title').textContent=title ||'null'
+    box.innerHTML=`
+    
+     
+                         <p>Order ID :<small style='font-size: 9px;'> ${orderId}</small></p>
+                         <p>Created At: ${createdAt}</p>
+                         <p>Status :<b>${status}</b></p>
+                         <p>Notes: ${notes}</p>
+                         
+                         <div style='display: flex; align-items: center; gap: 1rem;'>
+                              <a href="tel:+91${number}" class="call-btn" style='min-width: fit-content;'>
+                     <span class="material-icons">phone</span>
+
+                    Call ${name}</a>
+                    
+                      <button class="complete-button" data-id="${orderId}">
+                    <span class="material-icons">done_all</span>
+                </button>
+                        </div>
+                        
+                       
+                        `
+                        item_box.innerHTML = '';
+                        item_box.appendChild(box)
+                        
+                        
+item_box.querySelector('.complete-button').addEventListener('click', async (e) => {
+    await markAsComplete(
+        orderId,
+        target.dataset.model,
+        target.dataset.name,
+        target.dataset.productName
+    );
+});
+                     
+}
 });
 
 // back / forward support
@@ -224,6 +318,85 @@ function setActiveNav(hash) {
     );
   });
 }
+
+
+
+    // --- FUNCTION 3: REAL-TIME LISTENER FOR All ORDERS ---
+    db.collection('orders')
+      .where('isCompleted', '==', true) // Only show pending orders
+      .orderBy('created', 'desc') // Show latest first
+      .onSnapshot((snapshot) => {
+          
+          const ordersList = document.querySelector('#historyList')
+        
+        ordersList.innerHTML = ''; // Clear the current list
+
+
+        if (snapshot.empty) {
+            ordersList.innerHTML = '<p style="text-align: center; color: var(--text-light);">No pending orders.</p>';
+            return;
+        }
+
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            const orderId = doc.id;
+            
+            // Format the order item HTML structure
+            const orderItem = document.createElement('div');
+            orderItem.dataset.link='details'
+            orderItem.dataset.number=data.phoneNumber
+            orderItem.dataset.name=data.customerName
+            orderItem.dataset.model=data.productModel
+            orderItem.dataset.productName=data.productName
+            orderItem.dataset.date=data.orderDate
+            orderItem.dataset.notes=data.notes || ''
+            orderItem.dataset.id=orderId
+            orderItem.dataset.status=data.isCompleted
+            
+
+
+
+            orderItem.className = 'order-item';
+            orderItem.innerHTML = `
+                <div class="order-details">
+                    <strong>${data.customerName} - ${data.productModel} - ${data.productName}</strong>
+                    <span class='num'>📞 ${data.phoneNumber}</span>
+                    <span>Created Date: ${data.orderDate}</span>
+                    ${data.notes ? `<span>Notes: ${data.notes}</span>` : ''}
+                    
+                    <a href="tel:+91${data.phoneNumber}" class="call-btn" style='max-width:   fit-content'>
+                     <span class="material-icons">phone</span>
+
+                    Call</a>
+                    
+                </div>
+                <button class="complete-button hidden" data-id="${orderId}">
+                    <span class="material-icons">done_all</span> Delivered
+                </button>
+            `;
+            ordersList.appendChild(orderItem);
+
+            // Attach event listener for the complete button
+            orderItem.querySelector('.complete-button').addEventListener('click', (e) => {
+                e.stopPropagation()
+                markAsComplete(orderId, data.productModel, data.customerName, data.productName);
+            });
+            
+            orderItem.querySelector('.call-btn').onclick=e=>e.stopPropagation()
+        });
+    }, (error) => {
+        console.error("Error fetching orders: ", error);
+        ordersList.innerHTML = `<p style="color: red;">Error loading data: ${error.message}</p>`;
+    });
+
+
+
+
+
+
+
+
+
 
 
 

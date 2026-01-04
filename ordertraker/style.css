@@ -355,8 +355,9 @@ font-weight: 500;
     display: block;
 }
 
-.user-info .call-btn{
+.user-info .call-btn, .item-info .call-btn{
     font-size: 14px;
+    padding: 8px 20px;
 }
 
 
