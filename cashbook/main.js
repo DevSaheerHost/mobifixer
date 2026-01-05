@@ -29,7 +29,7 @@ const progressBar = document.querySelector('.loader .progress .bar')
 firebase.database().ref(`/users/${username}`).get()
   .then(snap => {
     if(!username || !fullname){
-      showToast('Session Timeout');
+      showToast('Session Timeout : 401');
       authView.style.display='block';
         mainView.style.display='none';
         $('.dboard').style.display='none'
@@ -43,7 +43,7 @@ firebase.database().ref(`/users/${username}`).get()
       const user = snap.val();
       //console.log("Logged user:", user);
     } else {
-      showToast('Session Timeout');
+      showToast('Session Timeout : 404');
       authView.style.display='block';
         mainView.style.display='none';
         $('.dboard').style.display='none'
@@ -307,7 +307,7 @@ firebase.database().ref(`/users/${username}`).get()
 
         const snap = await userRef.get();
         if (!snap.exists()) {
-          showTopToast("User not found", '#F44336');
+          showTopToast("User not found : 404", '#F44336');
           $('.loader').classList.add('off')
           throw new Error('User Not found, Try to create one')
           return;
@@ -341,7 +341,7 @@ firebase.database().ref(`/users/${username}`).get()
         localStorage.setItem('CASHBOOK_FULLNAME', fullname)
         
           $('.loader').classList.add('off')
-        showTopToast("SignIn successful");
+        showTopToast("SignIn successful : 200");
         location.reload()
       }catch(err){
         // create user
@@ -362,7 +362,7 @@ firebase.database().ref(`/users/${username}`).get()
           const snap = await userRef.get();
         if (snap.exists()) {
         $('.loader').classList.add('off')
-          showTopToast("Username already exists, Filed.", '#F44336');
+          showTopToast("Username already exists, Filed : 409.", '#F44336');
           return;
         }
         $('.loader').classList.remove('off')
@@ -388,7 +388,7 @@ firebase.database().ref(`/users/${username}`).get()
         localStorage.setItem('CASHBOOK_USER_NAME', username)
         localStorage.setItem('CASHBOOK_ROLL', 'owner')
         localStorage.setItem('CASHBOOK_FULLNAME', fullname)
-        showTopToast("Signup successful");
+        showTopToast("Signup successful : 201");
         $('.loader').classList.add('off')
         location.reload()
         }
@@ -949,7 +949,7 @@ function setupEventDelegation() {
 var progress = false;
     entryForm.addEventListener('submit', async (e)=>{
       e.preventDefault();
-      if(progress) return showTopToast('Try again');
+      if(progress) return showTopToast('Try again : 409');
       
       const t = 'in';
       const name = entryForm.querySelector('#desc').value.trim();
@@ -1010,7 +1010,7 @@ var progress = false;
     entryFormOut.addEventListener('submit', async (e)=>{
       
       e.preventDefault();
-            if(progress) return showTopToast('Try again');
+            if(progress) return showTopToast('Try again : 409');
             
       const desc = entryFormOut.querySelector('#desc')
       const amount = entryFormOut.querySelector('#amount');
@@ -1073,7 +1073,7 @@ obForm.onsubmit = async (e)=> {
       const staffName = localStorage.getItem('CASHBOOK_FULLNAME').trim() || 'UNKNOWN';
       const now = new Date()
       
-if(progress) return showTopToast('Try again');
+if(progress) return showTopToast('Try again : 409');
 $('.loader').classList.remove('off')
       progress = true;
       await nodeRef.set({
@@ -1154,7 +1154,7 @@ if (data.targetAmount > globalIn) {
   liquidMoneyForm.onsubmit = async (e) => {
   e.preventDefault();
 
-  if (progress) return showTopToast('Try again');
+  if (progress) return showTopToast('Try again : 409');
 
   const liqAmount = $('#liqAmount').value;
   if (!liqAmount) {
@@ -1262,7 +1262,7 @@ document.addEventListener('click', async (e) => {
 
     const snap = await originalRef.get();
     if (!snap.exists()) {
-      showTopToast("Entry not found.");
+      showTopToast("Entry not found. : 404");
       if (navigator.vibrate) {
         navigator.vibrate([15, 80, 15]);
       }
@@ -1580,7 +1580,7 @@ const stopMeme = () => {
         const group = data[type]||{};
         Object.keys(group).forEach(k=>rows.push({type, key:k, ...group[k]}));
       });
-      if(rows.length===0) return showTopToast('No data');
+      if(rows.length===0) return showTopToast('No data : 404');
       let csv = 'type,serial,name,amount,gpay,ts,user\n';
       rows.forEach(r=>{ csv+=`${r.type},${r.serial},"${(r.name||'').replace(/"/g,'""')}",${r.amount},${r.gpay?1:0},${new Date(r.ts).toLocaleString()},${r.userEmail||''}\n`; });
       const blob = new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
