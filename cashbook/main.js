@@ -2667,3 +2667,29 @@ function renderReminders(data){
 const todayISO = new Date().toISOString().slice(0,10);
 loadRemindersForDate(todayISO);
 
+
+
+
+
+const today = new Date();
+const isBirthday = today.getDate() === 27 && today.getMonth() === 1;
+
+if (isBirthday) {
+  const overlay = document.getElementById('birthday-overlay');
+  if (!overlay) throw new Error("missing element.");
+  
+  const items = ['🎉', '🎂', '🎊'];
+  
+  setInterval(() => {
+    const el = document.createElement('div');
+    el.className = 'birthday-item';
+    el.textContent = items[Math.floor(Math.random() * items.length)];
+    el.style.left = Math.random() * 100 + 'vw';
+    el.style.animationDuration = 2 + Math.random() * 2 + 's';
+    
+    overlay.appendChild(el);
+    
+    // cleanup each item (memory leak avoid)
+    setTimeout(() => el.remove(), 4000);
+  }, 400); // 👈 slow, classy
+}
