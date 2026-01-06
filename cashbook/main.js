@@ -2471,13 +2471,19 @@ $('#setReminder').onclick = async () => {
             // Passing the nicely formatted current date for the popup header
             currentDate: new Date().toLocaleDateString("en-IN") 
         });
+function getTime() {
+  const now = new Date();
+  return now.toLocaleTimeString();
+}
+
+
 
         // If user cancelled
         if (!reminderData) return;
 
         // 2. Validate essential inputs (Validation is also done inside the popup, but repeated here for safety)
         const reminderDate = reminderData.reminderDate; // YYYY-MM-DD
-        const reminderTime = reminderData.reminderTime || new Date().toLocaleDateString("en-IN") ; // HH:MM
+        const reminderTime = reminderData.reminderTime || getTime() ; // HH:MM
         const reminderTitle = reminderData.title;
 
         if (!reminderDate || !reminderTitle) {
