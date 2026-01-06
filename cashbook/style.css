@@ -1153,6 +1153,31 @@ body.dj {
 .settings_page .muted{
     color: var(--muted);
     font-size: 14px;
+    max-width: fit-content;
+}
+
+.settings_page .status-active{
+    color: #27EA4F;
+    background: rgba(23, 187, 57, 0.10);
+    padding: 0.3rem 0.5rem;
+}
+
+.settings_page .status-logout{
+    color: #6B7280; /* neutral gray */
+    background: rgba(107, 114, 128, 0.12);
+    padding: 0.3rem 0.5rem;
+}
+
+.settings_page .status-new{
+    color: #F59E0B; /* amber */
+    background: rgba(245, 158, 11, 0.14);
+    padding: 0.3rem 0.5rem;
+}
+
+.settings_page .status-removed{
+    color: #EF4444;
+    background: rgba(239, 68, 68, 0.14);
+    padding: 0.3rem 0.5rem;
 }
 
 .settings_page ul{
@@ -1203,6 +1228,12 @@ body.dj {
 .settings_page .remove{
     color: #f44336;
     background: rgba(244, 67, 54, 0.14901960784313725);
+}
+.settings_page .approve{
+    color: #0ECF36;
+background: rgba(23, 187, 57, 0.10);
+
+
 }
 
 
@@ -1282,4 +1313,10 @@ top: 1rem;
         
 .hidden{
     display: none !important;
+}
+
+.ui-locked {
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.5;
 }

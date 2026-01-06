@@ -6,6 +6,12 @@ const fullname = localStorage.getItem('CASHBOOK_FULLNAME');
 var globalIn =0 // for get total amount for ever
 const progressBar = document.querySelector('.loader .progress .bar')
 
+
+function getTime() {
+  const now = new Date();
+  return now.toLocaleTimeString();
+}
+
    
     // ------------------------ CONFIG ------------------------
     const firebaseConfig = {
@@ -42,6 +48,158 @@ firebase.database().ref(`/users/${username}`).get()
       progressBar.style.width='100%'
       const user = snap.val();
       //console.log("Logged user:", user);
+      
+      
+      
+      const staffUser = user.staff[fullname];
+
+if(fullname===user.signupInfo.fullname){
+  
+} else{
+
+if (!staffUser) {
+  auth.signOut()
+  localStorage.clear()
+  showTopToast('User not found : 404');
+  return;
+}
+if(!staffUser.status){
+  showOverlay({
+  title: `Welcome, ${fullname}`,
+  desc: `
+  Your access is pending approval from the shop owner.
+  You’ll be able to use the app once it’s approved.
+  `
+});
+  
+  document.body.classList.add('ui-locked')
+}
+if (staffUser.status == 'removed') {
+   auth.signOut()
+   localStorage.clear()
+  showTopToast('Access revoked by owner');
+  return;
+}
+
+if (staffUser.status == 'logout') {
+   // auth.signOut()
+   // localStorage.clear()
+   document.body.classList.add('ui-locked');
+   document.onclick=()=> showToast('Access Denied')
+  showTopToast('Access revoked by owner');
+  return;
+}
+
+}
+console.log('Login successful');
+const userRef = db.ref(`/users/${username}`);
+const staff_container = $('#staff_container')
+Object.values(user.staff).forEach(staff => {
+  const li = document.createElement('li')
+  li.innerHTML=`
+  
+  
+        <div class="left">
+          <p>${staff.fullname}</p>
+          <div>
+          <p class="muted status-${staff.status || 'new'}">${staff.status||'new'}</p>
+          <p class='muted'>${staff.date}</p>
+          </div>
+        </div>
+        
+        <div class="icons">
+          
+          
+          <span class="logout">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15m-3 0-3-3m0 0 3-3m-3 3H15" />
+</svg>
+
+          </span>
+          <span class="remove">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+</svg>
+          </span>
+          
+          <span class='approve'>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" />
+</svg>
+</span>
+        </div>
+      
+      `
+      staff_container.appendChild(li)
+      
+      const removeBtn = li.querySelector('.remove')
+      const logoutBtn = li.querySelector('.logout')
+      const approveBtn = li.querySelector('.approve')
+      
+      logoutBtn.addEventListener('click', async()=>{
+        
+        const userConfirmed = await askUserPermission({
+      title: `Sign Out ${staff.fullname}?`,
+      desc: `This will sign the staff out from the app. They can log in again anytime using their account.`,
+      icon: ` 
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon-svg" viewBox="0 0 20 20" fill="red">
+             <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+        </svg>
+      `,
+      btnColor: '#FFD54F',//'#F44336', // red#FFD54F
+    });
+    
+    if (!userConfirmed) return;
+    
+        await userRef.child(`staff/${staff.fullname}`).update({
+        status: 'logout'
+        });
+      })
+      removeBtn.addEventListener('click', async ()=>{
+        
+        const userConfirmed = await askUserPermission({
+      title: `Remove ${staff.fullname} permanently?`,
+      desc: `This will permanently remove the staff from your shop.
+They will no longer be able to log in or access the app.`,
+      icon: ` 
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon-svg" viewBox="0 0 20 20" fill="red">
+             <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+        </svg>
+      `,
+      btnColor: '#F44336',
+    });
+    
+    if (!userConfirmed) return;
+    
+        
+        await userRef.child(`staff/${staff.fullname}`).update({
+        status: 'removed'
+        });
+      })
+      
+      approveBtn.addEventListener('click', async () => {
+  
+  const userConfirmed = await askUserPermission({
+    title: `Approve new staf ( ${staff.fullname})?`,
+    desc: `${staff.fullname} wants to join your shop.
+Once approved, they can log in and access the app.`,
+    icon: ` 
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon-svg" viewBox="0 0 20 20" fill="red">
+             <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+        </svg>
+      `,
+    btnColor: '#0BA2FF', //'#F44336', // red#FFD54F
+  });
+  
+  if (!userConfirmed) return;
+  
+  await userRef.child(`staff/${staff.fullname}`).update({
+    status: 'active'
+  });
+})
+});
+
+
     } else {
       showToast('Session Timeout : 404');
       authView.style.display='block';
@@ -51,6 +209,10 @@ firebase.database().ref(`/users/${username}`).get()
         document.querySelector('.loader').classList.add('off')
     }
   });
+
+
+if (localStorage.getItem('CASHBOOK_ROLL')!=='owner')$('#staff_container').classList.add('hidden')
+
 
     // UI refs
     const authView = document.getElementById('authView');
@@ -335,6 +497,14 @@ firebase.database().ref(`/users/${username}`).get()
         const loginKey = Date.now();
         await userRef.child(`logins/${loginKey}_${role}_${fullname.trim().replace(/\s+/g, '_')}`).set(getDeviceInfo());
         
+        if(role==='staff'){
+    await userRef.child(`staff/${fullname}`).update({
+  fullname,
+  date: new Date().toLocaleString(),
+  time: getTime(),
+  device: getDeviceInfo()
+});
+        }
        
         localStorage.setItem('CASHBOOK_USER_NAME', username)
         localStorage.setItem('CASHBOOK_ROLL', role)
@@ -2519,10 +2689,7 @@ $('#setReminder').onclick = async () => {
             // Passing the nicely formatted current date for the popup header
             currentDate: new Date().toLocaleDateString("en-IN") 
         });
-function getTime() {
-  const now = new Date();
-  return now.toLocaleTimeString();
-}
+// gettime old func here
 
 
 
