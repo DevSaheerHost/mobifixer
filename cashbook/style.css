@@ -1137,6 +1137,10 @@ body.dj {
     width: 100%;
     height: 100%;
     background: #F5F5F5;
+    display: none;
+}
+.settings_page.active{
+    display: block;
 }
 
 .settings_page .title{
@@ -1199,6 +1203,80 @@ body.dj {
 .settings_page .remove{
     color: #f44336;
     background: rgba(244, 67, 54, 0.14901960784313725);
+}
+
+
+
+
+.user-menu summary {
+    position: absolute;
+right: 1rem;
+top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  list-style: none;
+  background: var(--card);
+  padding: 0.3rem 0.5rem;
+  border-radius: 7px;
+  color: var(--accent);
+}
+
+.user-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.menu-content {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #fff;
+  position: absolute;
+    right: 1rem;
+    top: 3rem;
+    
+    background: var(--card);
+    border-radius: 7px;
+    box-shadow: 0 10px 10px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    padding: 0.5rem;
+    
+    
+    border: 4px solid #F5F5F5;
+}
+
+.menu-content button, .menu-content button div.flex{
+    font-size: 14px;
+    gap: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: start;
+    padding: auto 0.5rem;
+    flex-wrap: nowrap;
+}
+.menu-content button{
+    justify-content: center;
+    min-width: max-content;
+    color: #000 !important;
+    font-weight: 600;
+}
+
+
+.menu-content button.signout{
+    justify-content: start;
+    background: rgba(219, 219, 219, 0.13) !important;
+    border: 1px solid #EFEFEF;
+}
+.menu-content button.signout svg{
+    background: transparent;
+}
+
+.menu-content svg{
+    color: #FFD54F;
+    
+    font-size: 15px;
 }
 
         
