@@ -32,7 +32,7 @@ firebase.database().ref(`/users/${username}`).get()
       showToast('Session Timeout : 401');
       authView.style.display='block';
         mainView.style.display='none';
-        $('.dboard').style.display='none'
+        //$('.dboard').style.display='none'
         userArea.innerHTML='';
         document.querySelector('.loader').classList.add('off')
         return
@@ -404,7 +404,24 @@ firebase.database().ref(`/users/${username}`).get()
         authView.style.display='none';
         mainView.style.display='block';
         userArea.innerHTML = `<div style="display:flex;gap:8px;align-items:center"><div>${user.email}</div><button id='signOut' class='link'>Sign out</button></div>`;
-        document.getElementById('signOut').addEventListener('click', ()=>auth.signOut());
+        document.getElementById('signOut').addEventListener('click', async ()=>{
+        
+          const userConfirmed = await askUserPermission({
+      title: 'Confirm Sign Out',
+      desc: 'Are you sure you want to Sign Out?',
+      icon: ` 
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon-svg" viewBox="0 0 20 20" fill="red">
+             <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+        </svg>
+      `,
+      btnColor: '#F44336', // red
+    });
+    
+    if (!userConfirmed) return;
+    
+    auth.signOut();
+    localStorage.clear()
+        });
         // set default date to today
         const today = new Date();
         selectDate.value = isoDate(today);
@@ -1898,7 +1915,12 @@ function drawSparklineFullscreen(container, valuesIn, valuesOut, labels) {
 
 
 // Inject dashboard UI into the page (top area)
+
+if (username || fullname) {
+  
 (function addDashboardUI(){
+
+
   const container = document.querySelector('#app');
   const dashCard = document.createElement('div');
   dashCard.className = 'card dboard';
@@ -1939,14 +1961,14 @@ function drawSparklineFullscreen(container, valuesIn, valuesOut, labels) {
     fetchRangeTotals(start,end);
   });
 })();
-
+} // username || fullname
 // ------------------------ END DASHBOARD ------------------------
 
 
 import { ref, onChildAdded, onChildChanged, onChildRemoved } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
 const dataRef = ref(db, `/${username}`);
-console.log(username)
+console.log(username || 'unknown user')
 // simple toast function
 function showToast(msg) {
   let toast = document.createElement("div");
@@ -2031,9 +2053,13 @@ buttons.forEach(btn => {
 
 }
 // realtime watchers
-onChildAdded(dataRef, () => refreshDashboard('added'));
+if (username || fullname) {
+  onChildAdded(dataRef, () => refreshDashboard('added'));
 onChildChanged(dataRef, () => refreshDashboard("Updated"));
 onChildRemoved(dataRef, () => refreshDashboard("Deleted"));
+} else {
+  console.log("not signed in")
+}
 
 
 // Auto add common items
@@ -2177,7 +2203,9 @@ document.querySelectorAll('input').forEach(inp => {
 });
 
 
+username || fullname ?
 $('.dboard').onchange=()=>$('#dashLoad').onclick()
+: null;
 
 
 
