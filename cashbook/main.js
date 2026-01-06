@@ -102,7 +102,7 @@ Object.values(user.staff).forEach(staff => {
         <div class="left">
           <p>${staff.fullname}</p>
           <div>
-          <p class="muted status-${staff.status || 'new'}">${staff.status||'new'}</p>
+          <p class="muted status-${staff.status || 'new'} text">${staff.status||'new'}</p>
           <p class='muted'>${staff.date}</p>
           </div>
         </div>
@@ -154,6 +154,10 @@ Object.values(user.staff).forEach(staff => {
         await userRef.child(`staff/${staff.fullname}`).update({
         status: 'logout'
         });
+        
+        const statusEl = li.querySelector('.text');
+  statusEl.textContent = 'logout';
+  statusEl.className = 'muted status-logout text';
       })
       removeBtn.addEventListener('click', async ()=>{
         
@@ -175,6 +179,10 @@ They will no longer be able to log in or access the app.`,
         await userRef.child(`staff/${staff.fullname}`).update({
         status: 'removed'
         });
+        
+        const statusEl = li.querySelector('.text');
+  statusEl.textContent = 'removed';
+  statusEl.className = 'muted status-removed text';
       })
       
       approveBtn.addEventListener('click', async () => {
@@ -196,6 +204,10 @@ Once approved, they can log in and access the app.`,
   await userRef.child(`staff/${staff.fullname}`).update({
     status: 'active'
   });
+  
+  const statusEl = li.querySelector('.text');
+statusEl.textContent = 'active';
+statusEl.className = 'muted status-active text';
 })
 });
 
