@@ -2477,10 +2477,10 @@ $('#setReminder').onclick = async () => {
 
         // 2. Validate essential inputs (Validation is also done inside the popup, but repeated here for safety)
         const reminderDate = reminderData.reminderDate; // YYYY-MM-DD
-        const reminderTime = reminderData.reminderTime; // HH:MM
+        const reminderTime = reminderData.reminderTime || new Date().toLocaleDateString("en-IN") ; // HH:MM
         const reminderTitle = reminderData.title;
 
-        if (!reminderDate || !reminderTime || !reminderTitle) {
+        if (!reminderDate || !reminderTitle) {
             // This case should ideally not be hit if popup validation is strong
             showTopToast("Missing required reminder details (Date, Time, or Title).");
             return;
@@ -2603,7 +2603,7 @@ function askUserForReminder({ title, currentDate }) {
         }
         if (!reminderTime) {
             timeInput.style.borderColor = 'red';
-            return;
+           // return;
         }
 
         // Return the collected data
