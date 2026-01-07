@@ -56,7 +56,7 @@ firebase.database().ref(`/users/${username}`).get()
 if(fullname.toLowerCase()===user.signupInfo.fullname.toLowerCase()){
   
 } else{
-const staffUser = user.staff[fullname];
+const staffUser = user.staff?.[fullname] ?? null;
 if (!staffUser) {
   auth.signOut()
   localStorage.clear()
