@@ -1252,6 +1252,19 @@ top: 1rem;
   padding: 0.3rem 0.5rem;
   border-radius: 7px;
   color: var(--accent);
+  box-shadow: 0 3px 5px #42445A5E;
+}
+
+summary.new::after{
+    content: "";
+    height: 10px;
+    width: 10px;
+    border-radius: 100px;
+    background: #FFD54F;
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    box-shadow: 0 5px 5px #42445A5E;
 }
 
 .user-menu summary::-webkit-details-marker {
@@ -1318,5 +1331,4 @@ top: 1rem;
 .ui-locked {
   pointer-events: none;
   user-select: none;
-  opacity: 0.5;
 }

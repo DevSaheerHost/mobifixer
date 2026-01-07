@@ -5,7 +5,7 @@ const fullname = localStorage.getItem('CASHBOOK_FULLNAME');
 
 var globalIn =0 // for get total amount for ever
 const progressBar = document.querySelector('.loader .progress .bar')
-
+const oldTotalStaffCount = Number(localStorage.getItem('CASHBOOK_TOTAL_STAFF')) || 0;
 
 function getTime() {
   const now = new Date();
@@ -51,12 +51,12 @@ firebase.database().ref(`/users/${username}`).get()
       
       
       
-      const staffUser = user.staff[fullname];
+      
 
-if(fullname===user.signupInfo.fullname){
+if(fullname.toLowerCase()===user.signupInfo.fullname.toLowerCase()){
   
 } else{
-
+const staffUser = user.staff[fullname];
 if (!staffUser) {
   auth.signOut()
   localStorage.clear()
@@ -94,9 +94,39 @@ if (staffUser.status == 'logout') {
 console.log('Login successful');
 const userRef = db.ref(`/users/${username}`);
 const staff_container = $('#staff_container')
-Object.values(user.staff).forEach(staff => {
+
+if(user.staff){
+ const staffObj = user.staff || {};
+const staffList = Object.values(staffObj);
+const totalStaff = staffList.length;
+if(oldTotalStaffCount < totalStaff && localStorage.getItem('CASHBOOK_ROLL')!=='staff'){
+  
+  document.querySelector('summary').classList.add('new');
+ (async ()=>{
+   
+   const userConfirmed = await askUserPermission({
+  title: `New staff detected.`,
+  desc: `A new staff member is waiting for your approval. Open settings and 
+Approve to allow access, or manage later from Settings.
+  `,
+  icon: ` 
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="#FFD54F" class="size-6">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" />
+</svg>
+
+      `,
+  btnColor: '#FFD54F', // red#FFD54F
+});
+
+if (!userConfirmed) return;
+ localStorage.setItem('CASHBOOK_TOTAL_STAFF', totalStaff)
+ })()
+ 
+}
+  staffList.forEach(staff => {
+    
   const li = document.createElement('li')
-  li.innerHTML=`
+  li.innerHTML = `
   
   
         <div class="left">
@@ -130,15 +160,15 @@ Object.values(user.staff).forEach(staff => {
         </div>
       
       `
-      staff_container.appendChild(li)
-      
-      const removeBtn = li.querySelector('.remove')
-      const logoutBtn = li.querySelector('.logout')
-      const approveBtn = li.querySelector('.approve')
-      
-      logoutBtn.addEventListener('click', async()=>{
-        
-        const userConfirmed = await askUserPermission({
+  staff_container.appendChild(li)
+  
+  const removeBtn = li.querySelector('.remove')
+  const logoutBtn = li.querySelector('.logout')
+  const approveBtn = li.querySelector('.approve')
+  
+  logoutBtn.addEventListener('click', async () => {
+    
+    const userConfirmed = await askUserPermission({
       title: `Sign Out ${staff.fullname}?`,
       desc: `This will sign the staff out from the app. They can log in again anytime using their account.`,
       icon: ` 
@@ -146,22 +176,22 @@ Object.values(user.staff).forEach(staff => {
              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
         </svg>
       `,
-      btnColor: '#FFD54F',//'#F44336', // red#FFD54F
+      btnColor: '#FFD54F', //'#F44336', // red#FFD54F
     });
     
     if (!userConfirmed) return;
     
-        await userRef.child(`staff/${staff.fullname}`).update({
-        status: 'logout'
-        });
-        
-        const statusEl = li.querySelector('.text');
-  statusEl.textContent = 'logout';
-  statusEl.className = 'muted status-logout text';
-      })
-      removeBtn.addEventListener('click', async ()=>{
-        
-        const userConfirmed = await askUserPermission({
+    await userRef.child(`staff/${staff.fullname}`).update({
+      status: 'logout'
+    });
+    
+    const statusEl = li.querySelector('.text');
+    statusEl.textContent = 'logout';
+    statusEl.className = 'muted status-logout text';
+  })
+  removeBtn.addEventListener('click', async () => {
+    
+    const userConfirmed = await askUserPermission({
       title: `Remove ${staff.fullname} permanently?`,
       desc: `This will permanently remove the staff from your shop.
 They will no longer be able to log in or access the app.`,
@@ -175,41 +205,42 @@ They will no longer be able to log in or access the app.`,
     
     if (!userConfirmed) return;
     
-        
-        await userRef.child(`staff/${staff.fullname}`).update({
-        status: 'removed'
-        });
-        
-        const statusEl = li.querySelector('.text');
-  statusEl.textContent = 'removed';
-  statusEl.className = 'muted status-removed text';
-      })
-      
-      approveBtn.addEventListener('click', async () => {
+    
+    await userRef.child(`staff/${staff.fullname}`).update({
+      status: 'removed'
+    });
+    
+    const statusEl = li.querySelector('.text');
+    statusEl.textContent = 'removed';
+    statusEl.className = 'muted status-removed text';
+  })
   
-  const userConfirmed = await askUserPermission({
-    title: `Approve new staf ( ${staff.fullname})?`,
-    desc: `${staff.fullname} wants to join your shop.
+  approveBtn.addEventListener('click', async () => {
+    
+    const userConfirmed = await askUserPermission({
+      title: `Approve new staf ( ${staff.fullname})?`,
+      desc: `${staff.fullname} wants to join your shop.
 Once approved, they can log in and access the app.`,
-    icon: ` 
+      icon: ` 
         <svg xmlns="http://www.w3.org/2000/svg" class="icon-svg" viewBox="0 0 20 20" fill="red">
              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
         </svg>
       `,
-    btnColor: '#0BA2FF', //'#F44336', // red#FFD54F
-  });
-  
-  if (!userConfirmed) return;
-  
-  await userRef.child(`staff/${staff.fullname}`).update({
-    status: 'active'
-  });
-  
-  const statusEl = li.querySelector('.text');
-statusEl.textContent = 'active';
-statusEl.className = 'muted status-active text';
-})
+      btnColor: '#0BA2FF', //'#F44336', // red#FFD54F
+    });
+    
+    if (!userConfirmed) return;
+    
+    await userRef.child(`staff/${staff.fullname}`).update({
+      status: 'active'
+    });
+    
+    const statusEl = li.querySelector('.text');
+    statusEl.textContent = 'active';
+    statusEl.className = 'muted status-active text';
+  })
 });
+}
 
 
     } else {
