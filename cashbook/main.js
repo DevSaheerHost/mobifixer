@@ -82,11 +82,15 @@ if (staffUser.status == 'removed') {
 }
 
 if (staffUser.status == 'logout') {
-   // auth.signOut()
+    auth.signOut()
    // localStorage.clear()
-   document.body.classList.add('ui-locked');
-   document.onclick=()=> showToast('Access Denied')
+   // document.body.classList.add('ui-locked');
+   
   showTopToast('Access revoked by owner');
+  const userRef = db.ref(`/users/${username}`);
+  (async()=>await userRef.child(`staff/${staffUser.fullname}`).update({
+  status: 'active'
+}))()
   return;
 }
 
@@ -679,7 +683,16 @@ Sign out</button>
     });
     
     if (!userConfirmed) return;
-    
+    const roll = localStorage.getItem('CASHBOOK_ROLL');
+
+
+// work, but add later. (we need yo to set if user login back=== set status )
+//     if(roll && roll =='staff'){
+//       const userRef = db.ref(`/users/${username}`);
+// (async () => await userRef.child(`staff/${fullname}`).update({
+//   status: 'logout'
+// }))()
+//     }
     auth.signOut();
     localStorage.clear()
         });
