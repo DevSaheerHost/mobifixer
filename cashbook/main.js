@@ -1,18 +1,51 @@
 const $ = s => document.querySelector(s)
-// check is user authenticated
 const username = localStorage.getItem('CASHBOOK_USER_NAME');
 const fullname = localStorage.getItem('CASHBOOK_FULLNAME');
 
-var globalIn =0 // for get total amount for ever
-const progressBar = document.querySelector('.loader .progress .bar')
-const oldTotalStaffCount = Number(localStorage.getItem('CASHBOOK_TOTAL_STAFF')) || 0;
-
-function getTime() {
-  const now = new Date();
-  return now.toLocaleTimeString();
-}
-
-   
+    // UI refs
+    const authView = document.getElementById('authView');
+    const mainView = document.getElementById('mainView');
+    const userArea = document.getElementById('userArea');
+    const chartView = document.getElementById('chartView');
+    const emailInput = document.getElementById('email');
+    const passInput = document.getElementById('password');
+    const signInBtn = document.getElementById('signInBtn');
+    const entryForm = document.getElementById('entryFormIn');
+    const entryFormOut = document.getElementById('entryFormOut');
+    const ioType = 'h'
+    const desc = document.getElementById('desc');
+    const amount = document.getElementById('amount');
+    const staffName = document.querySelector('#staff');
+    const isGpay = document.getElementById('isGpay');
+    const entriesList = document.getElementById('entriesList');
+    const currentDateLabel = document.getElementById('currentDateLabel');
+    const selectDate = document.getElementById('selectDate');
+    const totalInEl = document.getElementById('totalIn');
+    const totalOutEl = document.getElementById('totalOut');
+    const totalGpayEl = document.getElementById('totalGpay');
+    const netBalEl = document.getElementById('netBal');
+    const reloadBtn = document.getElementById('reloadBtn');
+    const exportCSV = document.getElementById('exportCSV');
+    const clearDay = document.getElementById('clearDay');
+    const downloadAll = document.getElementById('downloadAll');
+    const overlay = document.getElementById('alertOverlay');
+    const obForm = $('#obForm')
+    const obCard = $('#obCard');
+    const liquidCard = $('#liquidCard')
+    const liquidMoneyForm = $('#liquidMoneyForm')
+    let globalDate // for load for date = change thisndate value too
+    const VERSION_CODE = 'v1.5'
+    var important // for show overlay type
+    const confirmBtn = document.getElementById('confirmBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    var globalIn =0 // for get total amount for ever
+    const progressBar = document.querySelector('.loader .progress .bar')
+    const oldTotalStaffCount = Number(localStorage.getItem('CASHBOOK_TOTAL_STAFF')) || 0;
+    const staff_container = $('#staff_container')
+    const loading_text = $('#loading_text')
+    const version = localStorage.getItem('version_code');
+    const reminderCache = {};
+    const isOwner = localStorage.getItem('CASHBOOK_ROLL') === 'owner';
     // ------------------------ CONFIG ------------------------
     const firebaseConfig = {
     apiKey: "AIzaSyCOqgE6IiCyvsZ0BCuCeuTdfRYZEXf7yJs",
@@ -24,119 +57,126 @@ function getTime() {
   };
     // ------------------------ END CONFIG --------------------
 
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.database();
-    
-    document.querySelector('#loading_text').textContent=`Fetching DB`
-    progressBar.style.width='40%'
-    
-    // get user data from DB
-firebase.database().ref(`/users/${username}`).get()
-  .then(snap => {
-    if(!username || !fullname){
-      showToast('Session Timeout : 401');
-      authView.style.display='block';
-        mainView.style.display='none';
-        //$('.dboard').style.display='none'
-        userArea.innerHTML='';
-        document.querySelector('.loader').classList.add('off')
-        return
+// helper function 
+
+function getTime() {
+  const now = new Date();
+  return now.toLocaleTimeString();
+}
+function isoDate(d){
+      const y=d.getFullYear();const m=String(d.getMonth()+1).padStart(2,'0');const day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;
     }
-    if (snap.exists()) {
-      document.querySelector('#loading_text').textContent=` User found ${username}`
-      progressBar.style.width='100%'
-      const user = snap.val();
-      //console.log("Logged user:", user);
-      
-      
-      
-      
+function formatDT(ts){ const d=new Date(ts); return `${d.toLocaleString()}`; }
 
-if(fullname.toLowerCase()===user.signupInfo.fullname.toLowerCase()){
+
+// functions
+
+const handleInvalidAuthState = ()=>{
+  localStorage.removeItem('CASHBOOK_USER_NAME')
+  localStorage.removeItem('CASHBOOK_FULLNAME')
+  showToast('Session Timeout : 401');
+  authView.style.display = 'block';
+  mainView.style.display = 'none';
+  if($('.dboard'))$('.dboard').style.display='none';
+  userArea.innerHTML = '';
+  document.querySelector('.loader').classList.add('off')
   
-} else{
-const staffUser = user.staff?.[fullname] ?? null;
-if (!staffUser) {
-  auth.signOut()
-  localStorage.clear()
-  showTopToast('User not found : 404');
   return;
 }
-if(!staffUser.status){
-  showOverlay({
-  title: `Welcome, ${fullname}`,
-  desc: `
-  Your access is pending approval from the shop owner.
-  You’ll be able to use the app once it’s approved.
-  `
-});
-  
-  document.body.classList.add('ui-locked')
-}
-if (staffUser.status == 'removed') {
-   auth.signOut()
-   localStorage.clear()
-  showTopToast('Access revoked by owner');
-  return;
-}
-
-if (staffUser.status == 'logout') {
-    auth.signOut()
-   // localStorage.clear()
-   // document.body.classList.add('ui-locked');
-   
-  showTopToast('Access revoked by owner');
-  const userRef = db.ref(`/users/${username}`);
-  (async()=>await userRef.child(`staff/${staffUser.fullname}`).update({
-  status: 'active'
-}))()
-  return;
-}
-
-}
-console.log('Login successful');
-const userRef = db.ref(`/users/${username}`);
-const staff_container = $('#staff_container')
-
-if(user.staff){
- const staffObj = user.staff || {};
-const staffList = Object.values(staffObj);
-const totalStaff = staffList.length;
-if(oldTotalStaffCount < totalStaff && localStorage.getItem('CASHBOOK_ROLL')!=='staff'){
-  
-  document.querySelector('summary').classList.add('new');
- (async ()=>{
-   
-   const userConfirmed = await askUserPermission({
-  title: `New staff detected.`,
-  desc: `A new staff member is waiting for your approval. Open settings and 
-Approve to allow access, or manage later from Settings.
-  `,
-  icon: ` 
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="#FFD54F" class="size-6">
-  <path stroke-linecap="round" stroke-linejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" />
-</svg>
-
-      `,
-  btnColor: '#FFD54F', // blue red#FFD54F
-});
-
-if (!userConfirmed) return;
- localStorage.setItem('CASHBOOK_TOTAL_STAFF', totalStaff)
- })()
- 
-}
-  staffList.forEach(staff => {
+const handleStaffAccessControl = (user) =>{
+  const isOwner = fullname.trim().toLowerCase() === user.signupInfo.fullname.trim().toLowerCase();
+  if (!isOwner) {
     
+  
+  const staffUser = user.staff?.[fullname] ?? null;
+    if (!staffUser) {
+      auth.signOut()
+      localStorage.clear()
+      showTopToast('User not found : 404');
+      return;
+    }
+    if (!staffUser.status) {
+      showOverlay({
+        title: `Welcome, ${fullname}`,
+        desc: `
+      Your access is pending approval from the shop owner.
+      You’ll be able to use the app once it’s approved.
+      `
+      });
+      
+      document.body.classList.add('ui-locked')
+    }
+    if (staffUser.status == 'removed') {
+      auth.signOut()
+      localStorage.clear()
+      showTopToast('Access revoked by owner');
+      return;
+    }
+    
+    if (staffUser.status == 'logout') {
+      auth.signOut()
+      // localStorage.clear()
+      // document.body.classList.add('ui-locked');
+      
+      showTopToast('Access revoked by owner.');
+      authView.style.display = 'block';
+     mainView.style.display = 'none';
+      const userRef = db.ref(`/users/${username}`);
+      (async () => await userRef.child(`staff/${staffUser.fullname}`).update({
+        status: 'active'
+      }))()
+      return;
+    }
+  }
+}
+
+const detectNewStaffAndNotifyOwner=(totalStaff)=>
+{
+  if(oldTotalStaffCount < totalStaff && localStorage.getItem('CASHBOOK_ROLL')!=='staff'){
+  
+      if($('summary'))$('summary').classList.add('new');
+      (async () => {
+        
+      const userConfirmed = await askUserPermission({
+          title: `New staff detected.`,
+          desc: `A new staff member is waiting for your approval. Open settings and 
+    Approve to allow access, or manage later from Settings.
+      `,
+          icon: ` 
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="#FFD54F" class="size-6">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" />
+            </svg>
+    
+          `,
+          btnColor: '#FFD54F', // blue red#FFD54F
+        });
+        
+        if (!userConfirmed) return;
+        localStorage.setItem('CASHBOOK_TOTAL_STAFF', totalStaff)
+      })()
+  }
+}
+const renderStaffList = (staffList) =>{
+  staff_container.innerHTML=''
+  staffList.forEach(staff =>addStaffToUI(staff));
+}
+const addStaffToUI = (staff)=>{
+  if(!isOwner) {
+    staff_container.innerHTML=`<p class="muted" style="display: flex; align-items: center; justify-content: center; padding: 0.5rem;">This section is available only to the shop owner.
+If you need changes, please contact the owner.</p>`;
+return
+  };
+  const userRef = db.ref(`/users/${username}`);
   const li = document.createElement('li')
-  li.innerHTML = `
+  li.setAttribute('data-key', staff.fullname)
+  li.classList.add('staff-item')
+li.innerHTML = `
   
   
         <div class="left">
-          <p>${staff.fullname}</p>
+          <p class='name'>${staff.fullname}</p>
           <div>
-          <p class="muted status-${staff.status || 'new'} text">${staff.status||'new'}</p>
+          <p class="muted status status-${staff.status || 'new'} text">${staff.status||'new'}</p>
           <p class='muted'>${staff.date}</p>
           </div>
         </div>
@@ -164,165 +204,105 @@ if (!userConfirmed) return;
         </div>
       
       `
-  staff_container.appendChild(li)
+staff_container.appendChild(li)
+
+const removeBtn = li.querySelector('.remove')
+const logoutBtn = li.querySelector('.logout')
+const approveBtn = li.querySelector('.approve')
+
+logoutBtn.addEventListener('click', async () => {
   
-  const removeBtn = li.querySelector('.remove')
-  const logoutBtn = li.querySelector('.logout')
-  const approveBtn = li.querySelector('.approve')
-  
-  logoutBtn.addEventListener('click', async () => {
-    
-    const userConfirmed = await askUserPermission({
-      title: `Sign Out ${staff.fullname}?`,
-      desc: `This will sign the staff out from the app. They can log in again anytime using their account.`,
-      icon: ` 
+  const userConfirmed = await askUserPermission({
+    title: `Sign Out ${staff.fullname}?`,
+    desc: `This will sign the staff out from the app. They can log in again anytime using their account.`,
+    icon: ` 
         <svg style='width: 60px' xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="#FFD54F" class="size-6">
   <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15m-3 0-3-3m0 0 3-3m-3 3H15" />
 </svg>
       `,
-      btnColor: '#FFD54F', //'#F44336', // red#FFD54F
-    });
-    
-    if (!userConfirmed) return;
-    
-    await userRef.child(`staff/${staff.fullname}`).update({
-      status: 'logout'
-    });
-    
-    const statusEl = li.querySelector('.text');
-    statusEl.textContent = 'logout';
-    statusEl.className = 'muted status-logout text';
-  })
-  removeBtn.addEventListener('click', async () => {
-    
-    const userConfirmed = await askUserPermission({
-      title: `Remove ${staff.fullname} permanently?`,
-      desc: `This will permanently remove the staff from your shop.
+    btnColor: '#FFD54F', //'#F44336', // red#FFD54F
+  });
+  
+  if (!userConfirmed) return;
+  
+  await userRef.child(`staff/${staff.fullname}`).update({
+    status: 'logout'
+  });
+  
+  const statusEl = li.querySelector('.text');
+  statusEl.textContent = 'logout';
+  statusEl.className = 'muted status-logout text';
+})
+removeBtn.addEventListener('click', async () => {
+  
+  const userConfirmed = await askUserPermission({
+    title: `Remove ${staff.fullname} permanently?`,
+    desc: `This will permanently remove the staff from your shop.
 They will no longer be able to log in or access the app.`,
-      icon: ` 
+    icon: ` 
         <svg xmlns="http://www.w3.org/2000/svg" class="icon-svg" viewBox="0 0 20 20" fill="red">
              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
         </svg>
       `,
-      btnColor: '#F44336',
-    });
-    
-    if (!userConfirmed) return;
-    
-    
-    await userRef.child(`staff/${staff.fullname}`).update({
-      status: 'removed'
-    });
-    
-    const statusEl = li.querySelector('.text');
-    statusEl.textContent = 'removed';
-    statusEl.className = 'muted status-removed text';
-  })
+    btnColor: '#F44336',
+  });
   
-  approveBtn.addEventListener('click', async () => {
-    
-    const userConfirmed = await askUserPermission({
-      title: `Approve new staf ( ${staff.fullname})?`,
-      desc: `${staff.fullname} wants to join your shop.
+  if (!userConfirmed) return;
+  
+  
+  await userRef.child(`staff/${staff.fullname}`).update({
+    status: 'removed'
+  });
+  
+  const statusEl = li.querySelector('.text');
+  statusEl.textContent = 'removed';
+  statusEl.className = 'muted status-removed text';
+})
+
+approveBtn.addEventListener('click', async () => {
+  
+  const userConfirmed = await askUserPermission({
+    title: `Approve new staf ( ${staff.fullname})?`,
+    desc: `${staff.fullname} wants to join your shop.
 Once approved, they can log in and access the app.`,
-      icon: ` 
+    icon: ` 
                   <svg style='width: 60px' xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="#0ECF36" class="size-6">
   <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" />
 </svg>
       `,
-      btnColor: '#0BA2FF', //'#F44336', // red#FFD54F
-    });
-    
-    if (!userConfirmed) return;
-    
-    await userRef.child(`staff/${staff.fullname}`).update({
-      status: 'active'
-    });
-    
-    const statusEl = li.querySelector('.text');
-    statusEl.textContent = 'active';
-    statusEl.className = 'muted status-active text';
-  })
-});
+    btnColor: '#0BA2FF', //'#F44336', // red#FFD54F
+  });
+  
+  if (!userConfirmed) return;
+  
+  await userRef.child(`staff/${staff.fullname}`).update({
+    status: 'active'
+  });
+  
+  const statusEl = li.querySelector('.text');
+  statusEl.textContent = 'active';
+  statusEl.className = 'muted status-active text';
+})
 }
 
 
-    } else {
-      showToast('Session Timeout : 404');
-      authView.style.display='block';
-        mainView.style.display='none';
-        $('.dboard').style.display='none'
-        userArea.innerHTML='';
-        document.querySelector('.loader').classList.add('off')
-    }
-  });
-
-
-if (localStorage.getItem('CASHBOOK_ROLL')!=='owner')$('#staff_container').classList.add('hidden')
-
-
-    // UI refs
-    const authView = document.getElementById('authView');
-    const mainView = document.getElementById('mainView');
-    const userArea = document.getElementById('userArea');
-    const chartView = document.getElementById('chartView');
-
-
-    const emailInput = document.getElementById('email');
-    const passInput = document.getElementById('password');
-    const signInBtn = document.getElementById('signInBtn');
-
-    const entryForm = document.getElementById('entryFormIn');
-    const entryFormOut = document.getElementById('entryFormOut');
-    const ioType = 'h'
-    const desc = document.getElementById('desc');
-    const amount = document.getElementById('amount');
-    const staffName = document.querySelector('#staff');
-    const isGpay = document.getElementById('isGpay');
-    const entriesList = document.getElementById('entriesList');
-    const currentDateLabel = document.getElementById('currentDateLabel');
-    const selectDate = document.getElementById('selectDate');
-    const totalInEl = document.getElementById('totalIn');
-    const totalOutEl = document.getElementById('totalOut');
-    const totalGpayEl = document.getElementById('totalGpay');
-    const netBalEl = document.getElementById('netBal');
-    const reloadBtn = document.getElementById('reloadBtn');
-    const exportCSV = document.getElementById('exportCSV');
-    const clearDay = document.getElementById('clearDay');
-    const downloadAll = document.getElementById('downloadAll');
-    
-    const loading_text = document.querySelector('#loading_text')
-    const overlay = document.getElementById('alertOverlay');
-    const obForm = $('#obForm')
-    const obCard = $('#obCard');
-    
-    const liquidCard = $('#liquidCard')
-    const liquidMoneyForm = $('#liquidMoneyForm')
-    let globalDate // for load for date = change thisndate value too
-    
-    
-    const VERSION_CODE = 'v1.5'
-    
-    
-    
-    
-    var important
-        // Get references to DOM elements
+function showOverlay(info={}){
         
-       // const triggerBtn = document.getElementById('triggerAlert');
-        const confirmBtn = document.getElementById('confirmBtn');
-        const cancelBtn = document.getElementById('cancelBtn');
-        
-        // Function to show the overlay
-        const showOverlay=(info) =>{
-        const icon = document.getElementById('overlayAlertIcon');
+        let{
+          title = '',
+          desc = '',
+          icon = null,
+          btnColor='#0BA2FF',
+          important=false
+        } = info
+        const iconEl = document.getElementById('overlayAlertIcon');
         important=info.important||false
         
-        icon.innerHTML=info.icon || `
-<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" 
+        iconEl.innerHTML=info.icon || `
+        <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" 
      viewBox="0 0 24 24" fill="currentColor">
-  <path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2Zm0 4a1 1 0 0 1 1 1v6a1 1 0 1 1-2 0V7a1 1 0 0 1 1-1Zm0 10.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Z"/>
-</svg>
+      <path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2Zm0 4a1 1 0 0 1 1 1v6a1 1 0 1 1-2 0V7a1 1 0 0 1 1-1Zm0 10.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Z"/>
+      </svg>
 `
 
         $('#alertTitle').textContent=info.title
@@ -333,7 +313,6 @@ if (localStorage.getItem('CASHBOOK_ROLL')!=='owner')$('#staff_container').classL
                       : '#0BA2FF'
         };`
         
-            // Set visibility and opacity to trigger CSS transitions
             overlay.classList.add('visible');
             
             // Add event listener to close when clicking outside the card
@@ -343,9 +322,7 @@ if (localStorage.getItem('CASHBOOK_ROLL')!=='owner')$('#staff_container').classL
               overlay.onclick=(e)=>handleOverlayClick(e);
             }, 50); 
         }
-
-        // Function to hide the overlay
-        function hideOverlay() {
+function hideOverlay() {
             // Remove visibility class
             overlay.classList.remove('visible');
             
@@ -353,370 +330,26 @@ if (localStorage.getItem('CASHBOOK_ROLL')!=='owner')$('#staff_container').classL
             overlay.removeEventListener('click', handleOverlayClick);
             important = false;
         }
-
-        // Handler for clicks outside the card area (on the dimmed background)
-        function handleOverlayClick(event) {
+function handleOverlayClick(event) {
             // Check if the click happened directly on the overlay element
             if (event.target === overlay) {
                 console.log("Overlay background clicked. Closing alert.");
               !important? hideOverlay():'';
             }
         }
-        
-        // Attach event listeners
-    //    triggerBtn.addEventListener('click', showOverlay);
-        
-        confirmBtn.addEventListener('click', function() {
-            // Placeholder action: Log and hide
-            console.log("User confirmed the action. Proceeding with transaction.");
-            !important?hideOverlay():'';
-        });
-        
-        cancelBtn.addEventListener('click', function() {
-            // Placeholder action: Log and hide
-            console.log("User cancelled the action.");
-           !important? hideOverlay():'';
-        });
-
-        // Initial setup: hide the overlay when the page loads
-        //hideOverlay();
-        
-       // showOverlay()
-       
-    
-    
-    
-    
-    
-    
-    if (!fullname || !username) {
-      localStorage.removeItem('CASHBOOK_USER_NAME')
-      localStorage.removeItem('CASHBOOK_FULLNAME')
-      
-    } 
-    else {
-      const version = localStorage.getItem('version_code');
-      if(version!=VERSION_CODE){
-      const confirmBtn = document.getElementById('confirmBtn');
-      const cancelBtn = document.getElementById('cancelBtn');
-      const overlay = document.getElementById('alertOverlay');
-      
-      
-
-      
-      cancelBtn.style.display='none'
-      confirmBtn.textContent='Close'
-      
-      
-      const handleCloseAlert = (e)=>{
-        if(e && e.target.id==='alertOverlay'){
-          
-          
-          hideOverlay()
-        localStorage.setItem('version_code', VERSION_CODE)
-        setTimeout(()=>{cancelBtn.style.display='block'
-        confirmBtn.textContent='Confirm'}, 500)
-        return
-        }
-        hideOverlay()
-        localStorage.setItem('version_code', VERSION_CODE)
-        setTimeout(()=>{cancelBtn.style.display='block'
-        confirmBtn.textContent='Confirm'}, 500)
-      }
-      confirmBtn.onclick=()=>{
-        handleCloseAlert()
-        if (navigator.vibrate) {
-                      navigator.vibrate([15, 80, 15]); // short, crisp, non-annoying
-                    }
-                
-      }
-      overlay.removeEventListener('click', handleCloseAlert)
-      overlay.addEventListener('click', handleCloseAlert)
-
-    }
-    
-    const salaryDay = localStorage.getItem('salaryDay')
-     if(!salaryDay && username==='shahinsha'){
-      const confirmBtn = document.getElementById('confirmBtn');
-      const cancelBtn = document.getElementById('cancelBtn');
-      const overlay = document.getElementById('alertOverlay');
-      
-      
-
-      
-      cancelBtn.style.display='none'
-      confirmBtn.textContent='Close'
-      showOverlay({title:"Salary Ahead", desc:`
-      <span style='display: flex; flex-flow: column; align-items: start; text-align: left'>
-      
-<ul style='padding: 0; padding-left: 1rem'>
-
-
-<li>5 days to go! (Expected credit on [07-12-2025]) ;-)</li>
-
-</ul>
-
-     
-      </span>
-      `, important:false, icon:`
-      
-      <svg xmlns="http://www.w3.org/2000/svg" class="icon-svg" viewBox="0 0 20 20" fill="currentColor">
-  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-</svg>
-
-      `
-      })
-      
-      const handleCloseAlert = (e)=>{
-        if(e && e.target.id==='alertOverlay'){
-          
-          
-          hideOverlay()
-        localStorage.setItem('salaryDay', true)
-        setTimeout(()=>{cancelBtn.style.display='block'
-        confirmBtn.textContent='Confirm'}, 500)
-        return
-        }
-        hideOverlay()
-        localStorage.setItem('salaryDay', true)
-        setTimeout(()=>{cancelBtn.style.display='block'
-        confirmBtn.textContent='Confirm'}, 500)
-      }
-      confirmBtn.onclick=()=>{
-        handleCloseAlert()
-        if (navigator.vibrate) {
-                      navigator.vibrate([15, 80, 15]); // short, crisp, non-annoying
-                    }
-                
-      }
-      overlay.removeEventListener('click', handleCloseAlert)
-      overlay.addEventListener('click', handleCloseAlert)
-
-    }
- 
-}
-    
-    // Authentication: simple email sign in (create if not exists)
-    signInBtn.addEventListener('click', async () => {
-      const email = emailInput.value.trim();
-      const password = passInput.value.trim() || Math.random().toString(36).slice(-8);
-      const username = document.getElementById("username").value.trim().toLowerCase();
-      const fullname = document.querySelector('#fullname').value.trim()
-      const selectedRole = document.querySelector('input[name="role"]:checked')?.value || null;
-
-      
-      
-      if(!email || !username || !fullname) return showToast('Fill all fields', '#FFC107');
-      const userRef = db.ref(`/users/${username}`);
-      
-      try{
-        // try sign in
-        $('.loader').classList.remove('off')
-        
-
-        const snap = await userRef.get();
-        if (!snap.exists()) {
-          showTopToast("User not found : 404", '#F44336');
-          $('.loader').classList.add('off')
-          throw new Error('User Not found, Try to create one')
-          return;
-        }
-        
-        const data = snap.val();
-        if (data.password !== password) {
-          $('.loader').classList.add('off')
-          showTopToast("Wrong password", '#F44336');
-          if (navigator.vibrate) {
-            navigator.vibrate([15, 80, 15]); // short, crisp, non-annoying
-          }
-          return
-          };
-          
-        
-
-        
-        
-        const dbName = data.fullname.toLowerCase()
-        const role = dbName.includes(fullname.toLowerCase())?'owner':'staff'
-        
-        
-        await auth.signInWithEmailAndPassword(email,password);
-        const loginKey = Date.now();
-        await userRef.child(`logins/${loginKey}_${role}_${fullname.trim().replace(/\s+/g, '_')}`).set(getDeviceInfo());
-        
-        if(role==='staff'){
-    await userRef.child(`staff/${fullname}`).update({
-  fullname,
-  date: new Date().toLocaleString(),
-  time: getTime(),
-  device: getDeviceInfo()
+confirmBtn.addEventListener('click', function() {
+  // Placeholder action: Log and hide
+  console.log("User confirmed the action. Proceeding with transaction.");
+  !important ? hideOverlay() : '';
 });
-        }
-       
-        localStorage.setItem('CASHBOOK_USER_NAME', username)
-        localStorage.setItem('CASHBOOK_ROLL', role)
-        localStorage.setItem('CASHBOOK_FULLNAME', fullname)
-        
-          $('.loader').classList.add('off')
-        showTopToast("SignIn successful : 200");
-        location.reload()
-      }catch(err){
-        // create user
-        $('.loader').classList.add('off')
-        //showToast('User Not Exist, Trying Create Account...', "#FFC107")
-        showTopToast(err.message)
-        console.log(err)
-        //showTopToast(err.message)
-        const snap = await userRef.get();
-        if (!snap.exists()) {
-          //showTopToast("User not found", '#F44336');
-          showTopToast('User Not Exist, Trying Create Account...', "#FFC107")
-          
-        }
-        
-        try{ 
-        $('.loader').classList.remove('off')
-          const snap = await userRef.get();
-        if (snap.exists()) {
-        $('.loader').classList.add('off')
-          showTopToast("Username already exists, Filed : 409.", '#F44336');
-          return;
-        }
-        $('.loader').classList.remove('off')
-        
-          await auth.createUserWithEmailAndPassword(email,password); 
-          
-          await userRef.set({
-          username,
-          password,
-          signupInfo: getDeviceInfo(),
-          fullname,
-          role: 'owner',
-          logins: {}
-        });
-        
-        
-        // for new user (fixed maximum callstack exceeded error )
-        const ref = db.ref(username);
-        const snaps = await ref.get();
-        await ref.update({ _init: true });
-  // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-        localStorage.setItem('CASHBOOK_USER_NAME', username)
-        localStorage.setItem('CASHBOOK_ROLL', 'owner')
-        localStorage.setItem('CASHBOOK_FULLNAME', fullname)
-        showTopToast("Signup successful : 201");
-        $('.loader').classList.add('off')
-        location.reload()
-        }
-        catch(e){ showTopToast('Auth error: '+e.message, '#F44336'); $('.loader').classList.add('off')}
-      }
-    });
-
-    auth.onAuthStateChanged(user => {
-      if(user){
-        document.querySelector('#loading_text').textContent=username;
-        progressBar.style.width='97%'
-
-        authView.style.display='none';
-        mainView.style.display='block';
-        
-        userArea.innerHTML = `
-        <details class="user-menu">
-  <summary class="user-summary">
-    <span class="username">${fullname}</span>
-
-    
-    
-  </summary>
-
-  <div class="menu-content" style='color: #fff'>
-    <div style='border-bottom: 1px solid #EFEFEF; padding: 0.5rem; padding-top: 0;'>
-      <p style='color: #000; font-weight: 500; font-size: 18px; margin:0;'>${fullname}</p>
-    </div>
-    <button class="link hidden">Profile</button>
-    
-    <button class="link" style='background: rgba(11, 162, 255, 0.15);' data-link='settings'>
-      <div class='flex'>
-        
-              <svg style='width: 20px ;min-width: 20px; color: var(--accent); font-weight: bold;' xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-6">
-  <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" />
-  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-</svg>
+cancelBtn.addEventListener('click', function() {
+  // Placeholder action: Log and hide
+  console.log("User cancelled the action.");
+  !important ? hideOverlay() : '';
+});
 
 
-
-
-
-
-Settings
-      </div>
-
-
-
-<svg style='height: 20px; color: var(--accent)' xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-  <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
-</svg>
-
-
-    </button>
-    <button class="link danger signout" id='signOut'>
-                          <svg style='width: 20px' xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-6">
-  <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15m-3 0-3-3m0 0 3-3m-3 3H15" />
-</svg>
-Sign out</button>
-  </div>
-</details>
-        `
-       
-        document.getElementById('signOut').addEventListener('click', async ()=>{
-        
-          const userConfirmed = await askUserPermission({
-      title: 'Confirm Sign Out',
-      desc: 'Are you sure you want to Sign Out?',
-      icon: ` 
-        <svg xmlns="http://www.w3.org/2000/svg" class="icon-svg" viewBox="0 0 20 20" fill="red">
-             <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-        </svg>
-      `,
-      btnColor: '#F44336', // red
-    });
-    
-    if (!userConfirmed) return;
-    const roll = localStorage.getItem('CASHBOOK_ROLL');
-
-
-// work, but add later. (we need yo to set if user login back=== set status )
-//     if(roll && roll =='staff'){
-//       const userRef = db.ref(`/users/${username}`);
-// (async () => await userRef.child(`staff/${fullname}`).update({
-//   status: 'logout'
-// }))()
-//     }
-    auth.signOut();
-    localStorage.clear()
-        });
-        // set default date to today
-        const today = new Date();
-        selectDate.value = isoDate(today);
-        loadForDate(selectDate.value);
-
-      }else{
-        authView.style.display='block';
-        mainView.style.display='none';
-        userArea.innerHTML='';
-        document.querySelector('.loader').classList.add('off')
-      }
-    });
-
-    // helpers
-    function isoDate(d){
-      const y=d.getFullYear();const m=String(d.getMonth()+1).padStart(2,'0');const day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;
-    }
-    function formatDT(ts){ const d=new Date(ts); return `${d.toLocaleString()}`; }
-    
-    
-    function renderType(type, data) {
+function renderType(type, data) {
   entriesList.innerHTML = '';
 
   const group = data[type] || {};
@@ -753,11 +386,99 @@ Sign out</button>
     `;
 
     entriesList.appendChild(el);
-  });}
+  })}
+  
+  const getAuthInput = () =>{
+  return {
+    email: emailInput.value.trim(),
+    password: passInput.value.trim() || Math.random().toString(36).slice(-8),
+    username: document.getElementById("username").value.trim().toLowerCase(),
+    fullname : document.querySelector('#fullname').value.trim(),
+    selectedRole : document.querySelector('input[name="role"]:checked')?.value || null
+  }
+}
+  const validateAuthInput = ({ email, username, fullname }) => {
+  if (!email || !username || !fullname) {
+    showToast('Fill all fields', '#FFC107');
+    return false;
+  }
+  return true;
+}
+  const getUser = async(username)=>{
+  const userRef = db.ref(`/users/${username}`);
+  const snap = await userRef.get();
+  return snap.exists() ? snap.val() : null;
+}
+  const verifyPassword=(dbUser, password)=> {
+  if (dbUser.password !== password) {
+    showTopToast("Wrong password", '#F44336');
+    navigator.vibrate?.([15, 80, 15]);
+    return false;
+  }
+  return true;
+}
+  const detectRole=(dbUser, fullname) =>{
+  return dbUser.fullname.toLowerCase().includes(fullname.toLowerCase())
+    ? 'owner'
+    : 'staff';
+}
+  const loginUser= async({ email, password, username, fullname })=> {
+  const dbUser = await getUser(username);
+  if (!dbUser) {
+    showTopToast("User not found : 404", '#F44336');
+    return;
+  }
 
-const reminderCache = {};
+  if (!verifyPassword(dbUser, password)) return;
 
-async function loadRemindersForDate(dateISO){
+  const role = detectRole(dbUser, fullname);
+
+  await auth.signInWithEmailAndPassword(email, password);
+
+  await db.ref(`/users/${username}/logins/${Date.now()}_${role}_${fullname}`)
+    .set(getDeviceInfo());
+
+  if (role === 'staff') {
+    await db.ref(`/users/${username}/staff/${fullname}`).update({
+      fullname,
+      date: new Date().toLocaleString(),
+      time: getTime(),
+      device: getDeviceInfo()
+    });
+  }
+
+  persistSession(username, fullname, role);
+  showTopToast("SignIn successful : 200");
+  location.reload();
+}
+  const signupUser = async ({ email, password, username, fullname }) => {
+  const exists = await getUser(username);
+  if (exists) {
+    showTopToast("Username already exists : 409", '#F44336');
+    return;
+  }
+  
+  await auth.createUserWithEmailAndPassword(email, password);
+  
+  await db.ref(`/users/${username}`).set({
+    username,
+    password,
+    fullname,
+    role: 'owner',
+    signupInfo: getDeviceInfo(),
+    logins: {}
+  });
+  
+  persistSession(username, fullname, 'owner');
+  showTopToast("Signup successful : 201");
+  location.reload();
+}
+  const persistSession = (username, fullname, role) => {
+  localStorage.setItem('CASHBOOK_USER_NAME', username);
+  localStorage.setItem('CASHBOOK_ROLL', role);
+  localStorage.setItem('CASHBOOK_FULLNAME', fullname);
+}
+  async function loadRemindersForDate(dateISO){
   if(reminderCache[dateISO]){
     renderReminders(reminderCache[dateISO]);
     return;
@@ -777,10 +498,7 @@ async function loadRemindersForDate(dateISO){
   reminderCache[dateISO] = data;
   renderReminders(data);
 }
-
-  
-  
-const askUserPermission=(info)=> {
+  const askUserPermission=(info)=> {
             return new Promise((resolve) => {
               
               showOverlay(info)
@@ -828,41 +546,290 @@ const askUserPermission=(info)=> {
 
             });
         }
+        
+  const updateStaffInUI = (updatedStaff) => {
+//     if(updatedStaff&&updatedStaff.fullname===fullname && updatedStaff.status!='active'){
+//       auth.signOut()
+// localStorage.clear()
+//     }
+  if (!updatedStaff || !isOwner) return;
+  
+  const staffEl = document.querySelector(
+    `.staff-item[data-key="${updatedStaff.fullname}"]`
+  );
+  
+  if (!staffEl) {
+    console.warn('Staff element not found in UI', updatedStaff);
+    return;
+  }
+  
+  // update name
+  const nameEl = staffEl.querySelector('.name');
+  if (nameEl && updatedStaff.fullname) {
+    nameEl.textContent = updatedStaff.fullname;
+  }
+  
+  // update status
+  const statusEl = staffEl.querySelector('p.status');
+  if (statusEl) {
+    statusEl.textContent = updatedStaff.status || 'active';
+    
+    statusEl.classList.remove('status-active', 'status-logout', 'status-suspend');
+    statusEl.classList.add(`status-${updatedStaff.status || 'active'}`);
+  }
+};
+        
+        // search functions 
+    const SEARCH_FIELDS = ['name', 'amount', 'gpay', 'staffName'];
+
+    const isMatch = (item = {}, v = '') =>
+      SEARCH_FIELDS.some(key =>
+        String(item[key] ?? '').toLowerCase().includes(v)
+      );
+        
+        
+  
+  function filterGroup(group = {}, searchValue = '') {
+  const v = searchValue.toLowerCase();
+  const result = {};
+
+  if (!v) return { ...group }; // intentional behavior
+
+  for (const [key, item] of Object.entries(group)) {
+    if (isMatch(item, v)) {
+      result[key] = item;
+    }
+  }
+
+  return result;
+}
 
 
+if(!username || !fullname)handleInvalidAuthState();
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+    
+    loading_text.textContent=`Fetching DB`
+    progressBar.style.width='40%'
+    
+
+
+    auth.onAuthStateChanged(user => {
+   if (user) {
+     loading_text.textContent = username;
+     progressBar.style.width = '97%'
+     
+     authView.style.display = 'none';
+     mainView.style.display = 'block';
+     
+     userArea.innerHTML = `
+        <details class="user-menu">
+  <summary class="user-summary">
+    <span class="menu_icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="size-6">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
+</svg>
+
+    </span>
+
+    
+    
+  </summary>
+
+  <div class="menu-content" style='color: #fff'>
+    <div style='border-bottom: 1px solid #EFEFEF; padding: 0.5rem; padding-top: 0;'>
+      <p style='color: #000; font-weight: 500; font-size: 18px; margin:0;'>${fullname}</p>
+    </div>
+    <button class="link hidden">Profile</button>
+    
+    <button class="link" style='background: rgba(11, 162, 255, 0.15);' data-link='settings'>
+      <div class='flex'>
+        
+              <svg style='width: 20px ;min-width: 20px; color: var(--accent); font-weight: bold;' xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-6">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" />
+  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+</svg>
+
+
+
+
+
+
+Settings
+      </div>
+
+
+
+<svg style='height: 20px; color: var(--accent)' xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+  <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+</svg>
+
+
+    </button>
+    <button class="link danger signout" id='signOut'>
+                          <svg style='width: 20px' xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-6">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15m-3 0-3-3m0 0 3-3m-3 3H15" />
+</svg>
+Sign out</button>
+  </div>
+</details>
+        `
+     
+     document.getElementById('signOut').addEventListener('click', async () => {
+       
+       const userConfirmed = await askUserPermission({
+         title: 'Confirm Sign Out',
+         desc: 'Are you sure you want to Sign Out?',
+         icon: ` 
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon-svg" viewBox="0 0 20 20" fill="red">
+             <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+        </svg>
+      `,
+         btnColor: '#F44336', // red
+       });
+       
+       if (!userConfirmed) return;
+       const roll = localStorage.getItem('CASHBOOK_ROLL');
+       
+       
+       // work, but add later. (we need yo to set if user login back=== set status )
+            if(roll && roll =='staff'){
+              const userRef = db.ref(`/users/${username}`);
+        (async () => await userRef.child(`staff/${fullname}`).update({
+         status: 'logout'
+        }))()
+            }
+       auth.signOut();
+       localStorage.clear()
+     });
+     // set default date to today
+     const today = new Date();
+     selectDate.value = isoDate(today);
+     loadForDate(selectDate.value);
+     
+   } else {
+     authView.style.display = 'block';
+     mainView.style.display = 'none';
+     userArea.innerHTML = '';
+     document.querySelector('.loader').classList.add('off')
+   }
+ });
+ 
+ 
+    
+    const loadUserFromDB = async () => {
+  if (!username) return handleInvalidAuthState();
+  
+  try {
+    loading_text.textContent = 'Loading user...';
+    progressBar.style.width = '30%';
+    document.querySelector('.loader').classList.remove('off');
+    
+    const snap = await firebase
+      .database()
+      .ref(`/users/${username}`)
+      .get();
+    
+    if (!snap.exists()) {
+      handleInvalidAuthState();
+      return;
+    }
+    
+    loading_text.textContent = `User found ${username}`;
+    progressBar.style.width = '100%';
+    document.querySelector('.loader').classList.add('off');
+    
+    authView.style.display = 'none';
+    mainView.style.display = 'block';
+    
+    const today = new Date();
+    selectDate.value = isoDate(today);
+    loadForDate(selectDate.value);
+    
+    const user = snap.val();
+    handleStaffAccessControl(user);
+    
+  } catch (err) {
+    console.error(err);
+    showTopToast('Something went wrong. Retry.');
+  }
+};
+
+loadUserFromDB()
+    // get user data from DB
+
+  
+  
+  
+  let staffInitialLoadDone = false;
+  const staffRef = firebase.database().ref(`/users/${username}/staff`);
+  staffRef.once('value', snap => {
+  if (!snap.exists()) {
+    renderStaffList([]);
+    return;
+  }
+  
+  const staffList = Object.values(snap.val());
+  const staffCount = staffList.length
+  detectNewStaffAndNotifyOwner(staffCount);
+  renderStaffList(staffList);
+  staffInitialLoadDone = true
+});
+  
+  staffRef.on('child_added', snap => {
+  if (!staffInitialLoadDone || !isOwner) return; // ❌ ignore initial data
+
+  const staff = snap.val();
+
+  addStaffToUI(staff);
+
+  oldTotalStaffCount
+  const newCount = oldTotalStaffCount + 1;
+
+  localStorage.setItem('CASHBOOK_TOTAL_STAFF', newCount);
+
+  showOverlay({title:`New staff Request: ${staff.fullname}`, desc:`Approve only If you know
+  <p>Click <a href='#settings'>Here</a> to Open Settings.</p>
+  `});
+
+  if ($('summary')) $('summary').classList.add('new');
+});
+
+
+staffRef.on('child_changed', snap => {
+  const updatedStaff = snap.val();
+
+  updateStaffInUI(updatedStaff);
+});
+  
+  
+  
+  
+  
+    // Authentication: simple email sign in (create if not exists)
+signInBtn.addEventListener('click', async () => {
+  const input = getAuthInput();
+  if (!validateAuthInput(input)) return;
+
+  $('.loader')?.classList.remove('off');
+  try {
+    await loginUser(input);
+  } catch (e) {
+    await signupUser(input);
+  } finally {
+    $('.loader')?.classList.add('off');
+  }
+});
 
 // for search
 function filterData(data, searchValue) {
-  const result = { in: {}, out: {} };
-  const v = searchValue.toLowerCase();
-
-  // 1) Filter IN
-  Object.keys(data.in || {}).forEach(key => {
-    const item = data.in[key];
-    if (
-      (item.name && item.name.toLowerCase().includes(v)) ||
-      (item.amount && String(item.amount).includes(v)) ||
-      (item.gpay && String(item.gpay).includes(v)) ||
-      (item.staffName && item.staffName.toLowerCase().includes(v))
-    ) {
-      result.in[key] = item;
-    }
-  });
-
-  // 2) Filter OUT
-  Object.keys(data.out || {}).forEach(key => {
-    const item = data.out[key];
-    if (
-      (item.name && item.name.toLowerCase().includes(v)) ||
-      (item.amount && String(item.amount).includes(v)) ||
-      (item.gpay && String(item.gpay).includes(v)) ||
-      (item.staffName && item.staffName.toLowerCase().includes(v))
-    ) {
-      result.out[key] = item;
-    }
-  });
-
-  return result;
+  return {
+    in: filterGroup(data.in, searchValue),
+    out: filterGroup(data.out, searchValue)
+  };
 }
 
 
@@ -980,10 +947,6 @@ window.onscroll = () => {
 };  
 
   
-
-
-
-
 
 
 //const buttons = document.querySelectorAll('#in, #out, #all, #bin');
