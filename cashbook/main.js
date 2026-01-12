@@ -173,8 +173,10 @@ const renderStaffList = (staffList) =>{
 }
 const addStaffToUI = (staff)=>{
   if(!isOwner) {
-    staff_container.innerHTML=`<p class="muted" style="display: flex; align-items: center; justify-content: center; padding: 0.5rem;">This section is available only to the shop owner.
-If you need changes, please contact the owner.</p>`;
+    staff_container.classList.add('hidden');
+    $('#staff_container_title').classList.add('hidden')
+//     staff_container.innerHTML=`<p class="muted" style="display: flex; align-items: center; justify-content: center; padding: 0.5rem;">This section is available only to the shop owner.
+// If you need changes, please contact the owner.</p>`;
 return
   };
   const userRef = db.ref(`/users/${username}`);
@@ -819,10 +821,7 @@ const saveSettings = () => {
   prevSettings = { ...appSettings };
 };
 
-document.querySelector('#suggestion').addEventListener('change', e => {
-  appSettings.suggestion = e.target.checked;
-  saveSettings();
-});
+
 
 document.querySelector('#vibration').addEventListener('change', e => {
   appSettings.vibration = e.target.checked;
