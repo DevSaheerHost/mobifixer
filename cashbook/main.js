@@ -46,6 +46,13 @@ const fullname = localStorage.getItem('CASHBOOK_FULLNAME');
     const version = localStorage.getItem('version_code');
     const reminderCache = {};
     const isOwner = localStorage.getItem('CASHBOOK_ROLL') === 'owner';
+    
+    const SETTINGS_KEY = 'app_settings';
+
+    const defaultSettings = {
+      suggestion: true,
+      vibration: true
+    };
     // ------------------------ CONFIG ------------------------
     const firebaseConfig = {
     apiKey: "AIzaSyCOqgE6IiCyvsZ0BCuCeuTdfRYZEXf7yJs",
@@ -83,6 +90,10 @@ const handleInvalidAuthState = ()=>{
   
   return;
 }
+
+/**
+  * @param {object} user check user status on db and take access.
+**/
 const handleStaffAccessControl = (user) =>{
   const isOwner = fullname.trim().toLowerCase() === user.signupInfo.fullname.trim().toLowerCase();
   if (!isOwner) {
@@ -412,7 +423,7 @@ function renderType(type, data) {
   const verifyPassword=(dbUser, password)=> {
   if (dbUser.password !== password) {
     showTopToast("Wrong password", '#F44336');
-    navigator.vibrate?.([15, 80, 15]);
+    vibrate([15, 80, 15]);
     return false;
   }
   return true;
@@ -525,9 +536,9 @@ function renderType(type, data) {
                     cleanup();
                     resolve(false); // Promise resolves with FALSE
                     showToast('Aborted by user')
-                    if (navigator.vibrate) {
-                      navigator.vibrate([15, 80, 15]); // short, crisp, non-annoying
-                    }
+                    
+                      vibrate([15, 80, 15]); // short, crisp, non-annoying
+                    
                 };
                 
                 const handleOverlayClick=e =>{
@@ -761,7 +772,49 @@ Sign out</button>
 loadUserFromDB()
     // get user data from DB
 
+  const loadSettings = () => {
+  const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY));
+  const settings = { ...defaultSettings, ...saved };
+
+  document.querySelector('#suggestion').checked = settings.suggestion;
+  document.querySelector('#vibration').checked = settings.vibration;
+
+  return settings;
+};
+
+let appSettings = loadSettings();
+
+
+const saveSettings = () => {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(appSettings));
+};
+
+document.querySelector('#suggestion').addEventListener('change', e => {
+  appSettings.suggestion = e.target.checked;
+  saveSettings();
+});
+
+document.querySelector('#vibration').addEventListener('change', e => {
+  appSettings.vibration = e.target.checked;
+  saveSettings();
+});
+
+document.querySelector('#suggestion').addEventListener('change', e => {
+  appSettings.suggestion = e.target.checked;
+  saveSettings();
   
+  if (!appSettings.suggestion) {
+    incomeInput.classList.remove('focus');
+    suggestionBox.innerHTML = '';
+  }
+});
+
+const vibrate = (pattern = 50) => {
+  if (!appSettings.vibration) return;
+  if (!('vibrate' in navigator)) return;
+
+  navigator.vibrate(pattern);
+};
   
   
   let staffInitialLoadDone = false;
@@ -860,9 +913,9 @@ function filterData(data, searchValue) {
 
 buttons.forEach(btn => {
   btn.onclick = async (e) => {
-    if (navigator.vibrate) {
-  navigator.vibrate(10); // short, crisp, non-annoying
-}
+    
+  vibrate(10); // short, crisp, non-annoying
+
     buttons.forEach(b => b.classList.remove("active"));
     e.target.classList.add("active");
 document.querySelector('#today_summery_card').style.display='block'
@@ -1190,6 +1243,8 @@ function setupEventDelegation() {
 //setupEventDelegation();
     
   
+  
+
 
     // Create serial number (count existing children +1)
     async function nextSerial(dateISO,type){
@@ -1262,9 +1317,9 @@ var progress = false;
         progress=false
         $('.loader').classList.add('off')
         loading_text.textContent='Done'
-        if (navigator.vibrate) {
-         navigator.vibrate(15); // short, crisp, non-annoying
-        }
+        
+         vibrate(15); // short, crisp, non-annoying
+        
         $('#desc').focus()
       }).catch((error)=>{
         $('.loader').classList.add('off')
@@ -1321,9 +1376,9 @@ var progress = false;
         $('.loader').classList.add('off')
         loading_text.textContent='Done'
         progress=false;
-        if (navigator.vibrate) {
-         navigator.vibrate(15); // short, crisp, non-annoying
-        }
+        
+         vibrate(15); // short, crisp, non-annoying
+        
       });
       // clear
       entryFormOut.querySelector('#addBtn').textContent='Done'
@@ -1368,9 +1423,9 @@ $('.loader').classList.remove('off')
       }).then(()=>{
         $('.loader').classList.add('off')
         progress=false;
-        if (navigator.vibrate) {
-         navigator.vibrate(15); // short, crisp, non-annoying
-        }
+        
+         vibrate(15); // short, crisp, non-annoying
+        
         localStorage.setItem('CASHBOOK_OB',now.getDate());
         obCard.classList.add('off')
         setTimeout(() => {
@@ -1476,7 +1531,7 @@ if (data.targetAmount > globalIn) {
   $('.loader').classList.add('off');
   progress = false;
 
-  navigator.vibrate?.(15);
+  vibrate(15);
 
   localStorage.setItem('CASHBOOK_LIQUID', now.getDate());
 
@@ -1491,7 +1546,16 @@ if (data.targetAmount > globalIn) {
 
 const incomeInput = entryForm.querySelector('#desc')
 const suggestionBox = document.querySelector('#suggestionBox')
+const toggleSuggestionFocus = (isFocus) => {
+  if (!appSettings.suggestion) return;
+  incomeInput.classList.toggle('focus', isFocus);
+};
+
+incomeInput.onfocus = () => toggleSuggestionFocus(true);
+incomeInput.onblur  = () => toggleSuggestionFocus(false);
+
 incomeInput.addEventListener('input', () => {
+  if (!appSettings.suggestion) return; // STOP HERE
   const raw = incomeInput.value;
   const list = JSON.parse(localStorage.getItem('itemNames') || '[]');
 
@@ -1600,9 +1664,9 @@ document.addEventListener('click', async (e) => {
     const snap = await originalRef.get();
     if (!snap.exists()) {
       showTopToast("Entry not found. : 404");
-      if (navigator.vibrate) {
-        navigator.vibrate([15, 80, 15]);
-      }
+      
+        vibrate([15, 80, 15]);
+      
       return;
     }
 
@@ -1908,21 +1972,7 @@ const stopMeme = () => {
 
 
 
-    // Export CSV for current date
-    exportCSV.addEventListener('click', async ()=>{
-      const rootRef = db.ref(dayRoot(currentDate));
-      const snap = await rootRef.get(); const data = snap.val()||{};
-      const rows = [];
-      ['in','out'].forEach(type=>{
-        const group = data[type]||{};
-        Object.keys(group).forEach(k=>rows.push({type, key:k, ...group[k]}));
-      });
-      if(rows.length===0) return showTopToast('No data : 404');
-      let csv = 'type,serial,name,amount,gpay,ts,user\n';
-      rows.forEach(r=>{ csv+=`${r.type},${r.serial},"${(r.name||'').replace(/"/g,'""')}",${r.amount},${r.gpay?1:0},${new Date(r.ts).toLocaleString()},${r.userEmail||''}\n`; });
-      const blob = new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
-      const a=document.createElement('a'); a.href=url; a.download=`cashbook-${currentDate}.csv`; a.click(); URL.revokeObjectURL(url);
-    });
+
 
     // Clear day (CAUTION): deletes all data for date
     clearDay.addEventListener('click', async ()=>{
@@ -2516,9 +2566,9 @@ document.querySelectorAll('input').forEach(inp => {
     void inp.offsetWidth;     // reflow trigger
     inp.classList.add("pop-anim");
     
-    if (navigator.vibrate) {
-      navigator.vibrate(15);   // short, crisp, non-annoying
-    }
+    
+      vibrate(15);   // short, crisp, non-annoying
+    
   });
 });
 
@@ -2845,7 +2895,7 @@ $('#setReminder').onclick = async () => {
 };
 
 // ====================================================================
-// 2. THE HELPER FUNCTION (Unchanged, as it was already correct)
+// 2. THE HELPER FUNCTION
 // ====================================================================
 
 /**
@@ -3093,3 +3143,25 @@ const PageRouter = (() => {
 
 //PageRouter.show('#about');
 //PageRouter.show('#settings');
+
+
+
+
+
+    // Export CSV for current date
+    exportCSV.addEventListener('click', async ()=>{
+      const rootRef = db.ref(dayRoot(currentDate));
+      const snap = await rootRef.get(); const data = snap.val()||{};
+      const rows = [];
+      ['in','out'].forEach(type=>{
+        const group = data[type]||{};
+        Object.keys(group).forEach(k=>rows.push({type, key:k, ...group[k]}));
+      });
+      if(rows.length===0) return showTopToast('No data : 404');
+      let csv = 'type,serial,name,amount,gpay,ts,user\n';
+      rows.forEach(r=>{ csv+=`${r.type},${r.serial},"${(r.name||'').replace(/"/g,'""')}",${r.amount},${r.gpay?1:0},${new Date(r.ts).toLocaleString()},${r.userEmail||''}\n`; });
+      const blob = new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
+      const a=document.createElement('a'); a.href=url; a.download=`cashbook-${currentDate}.csv`; a.click(); URL.revokeObjectURL(url);
+    });
+    
+    // ----- KEEP IT LAST ------ //

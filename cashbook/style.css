@@ -344,7 +344,7 @@ form button{
     gap: 1rem;
     max-height: 0px;
     color: transparent;
-    transform: translateY(-4px);
+    transform: translateY(4px);
     opacity: 0;
     transition:
     max-height 0.25s ease,
@@ -357,24 +357,28 @@ form button{
     background: #DCF6FF !important;
     font-weight: 500;
 }
+.suggestion-container span{
+    padding: 0.3rem 0.5rem;
+    font-size: 14px;
+}
 
-#entryFormIn input:focus ~ .suggestion-container{
+#entryFormIn input.focus ~ .suggestion-container{
     padding: 0.3rem;
     background: #FCFCFC;
     border-radius: 10px;
     max-height: 100px;
     opacity: 1;
   transform: translateY(0);
-  font-size: 14px;
+  
 }
 
-#entryFormIn input:focus ~ .suggestion-container span{
-    padding: 0.3rem 0.5rem;
+#entryFormIn input.focus ~ .suggestion-container span{
+    
     border-radius: 7px;
     background: #BEBEBE;
     color: #fff;
 }
-#entryFormOut input:focus {
+#entryFormOut input.focus {
     border: 2px solid #ef4444;
 }
 .all.active{
