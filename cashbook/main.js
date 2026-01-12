@@ -771,6 +771,33 @@ Sign out</button>
 
 loadUserFromDB()
     // get user data from DB
+    
+    
+   
+  const logSettingsChange = (oldSet, newSet) => {
+  const changes = {};
+
+  Object.keys(newSet).forEach(key => {
+    if (oldSet[key] !== newSet[key]) {
+      changes[key] = {
+        from: oldSet[key],
+        to: newSet[key]
+      };
+    }
+  });
+
+  if (!Object.keys(changes).length) return;
+
+  firebase.database()
+    .ref(`/auditLogs/users/${username}/settings`)
+    .push({
+      fullname,
+      changed: changes,
+      fullSettings: newSet,
+      changedAt: Date.now(),
+      changedAtISO: new Date().toISOString()
+    });
+};
 
   const loadSettings = () => {
   const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY));
@@ -783,10 +810,13 @@ loadUserFromDB()
 };
 
 let appSettings = loadSettings();
+let prevSettings = { ...appSettings }; 
 
 
 const saveSettings = () => {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(appSettings));
+  logSettingsChange(prevSettings, appSettings);
+  prevSettings = { ...appSettings };
 };
 
 document.querySelector('#suggestion').addEventListener('change', e => {
@@ -2492,7 +2522,7 @@ const saveData = async () => {
   const snapshot = await rootRef.get();
   const data = snapshot.val() || {};
 if(!data){alert('no data detect')}
-  console.log("Fetched:", data);
+ // console.log("Fetched:", data);
 
   const firebaseDates = Object.keys(data);
 
