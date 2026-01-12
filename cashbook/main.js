@@ -1599,7 +1599,7 @@ incomeInput.addEventListener('input', () => {
   const recent = list.slice(0, 4);
 
   suggestionBox.innerHTML = recent.length
-    ? recent.map(n => `<span class="suggest">${n}</span>`).join('')
+    ? recent.map(n => `<span class="suggest suggestion">${n}</span>`).join('')
     : '';
 
   return;
@@ -1614,16 +1614,16 @@ incomeInput.addEventListener('input', () => {
 
   suggestionBox.innerHTML = matches.length
     ? matches.slice(0, 5)
-        .map(n => `<span class="suggest">${n}</span>`)
+        .map(n => `<span class="suggest suggestion">${n}</span>`)
         .join('')
     : isNew
-      ? `<span class="hint">${lastRaw.trim()}</span>`
+      ? `<span class="hint suggestion">${lastRaw.trim()}</span>`
       : '';
 });
 
 
 suggestionBox.addEventListener('click', e => {
-  if (!e.target.classList.contains('suggest')) return;
+  if (!e.target.classList.contains('suggestion')) return;
 
   const value = incomeInput.value;
   const parts = value.split(',');
