@@ -330,6 +330,50 @@ form button{
 #entryFormOut button {
     background: #ef4444;
 }
+
+.card.entryIn{
+    position: relative;
+}
+.suggestion-container{
+    position: absolute;
+    left: 0.3rem;
+    top: 0.3rem;
+    width: 100%;
+    overflow: hidden;
+    display: flex;
+    gap: 1rem;
+    max-height: 0px;
+    color: transparent;
+    transform: translateY(-4px);
+    opacity: 0;
+    transition:
+    max-height 0.25s ease,
+    opacity 0.15s ease,
+    transform 0.15s ease;
+    overflow-x: scroll;
+}
+.suggestion-container span.suggest{
+    color: var(--accent) !important;
+    background: #DCF6FF !important;
+    font-weight: 500;
+}
+
+#entryFormIn input:focus ~ .suggestion-container{
+    padding: 0.3rem;
+    background: #FCFCFC;
+    border-radius: 10px;
+    max-height: 100px;
+    opacity: 1;
+  transform: translateY(0);
+  font-size: 14px;
+}
+
+#entryFormIn input:focus ~ .suggestion-container span{
+    padding: 0.3rem 0.5rem;
+    border-radius: 7px;
+    background: #BEBEBE;
+    color: #fff;
+}
 #entryFormOut input:focus {
     border: 2px solid #ef4444;
 }

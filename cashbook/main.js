@@ -1198,7 +1198,32 @@ function setupEventDelegation() {
       const count = snap.exists()? Object.keys(snap.val()).length:0;
       return count+1;
     }
-    
+
+const saveItemName = (raw) => {
+  if (!raw) return;
+
+  const stored = JSON.parse(localStorage.getItem('itemNames') || '[]');
+
+  const normalizedStored = stored.map(s => s.toLowerCase());
+
+  raw
+    .split(',')
+    .map(s => s.trim())
+    .filter(s => s.length > 1)
+    .forEach(name => {
+      const key = name.toLowerCase();
+
+      if (!normalizedStored.includes(key)) {
+        stored.unshift(name);
+        normalizedStored.unshift(key);
+      }
+    });
+
+  localStorage.setItem(
+    'itemNames',
+    JSON.stringify(stored.slice(0, 20))
+  );
+};
     
 var progress = false;
     entryForm.addEventListener('submit', async (e)=>{
@@ -1213,6 +1238,7 @@ var progress = false;
       const gpAmount = Number(document.querySelector('#gpAmount').value);
       const g = gpAmount ||0;
       if(!name || !amt && !gpAmount) return showTopToast('Name and amount required');
+      saveItemName(name)
       progress=true;
       document.querySelector('#addBtn').textContent='Loading...'
       $('.loader').classList.remove('off')
@@ -1461,9 +1487,66 @@ if (data.targetAmount > globalIn) {
 /// end liquid ///
 
 
+// suggestion  entry form 
+
+const incomeInput = entryForm.querySelector('#desc')
+const suggestionBox = document.querySelector('#suggestionBox')
+incomeInput.addEventListener('input', () => {
+  const raw = incomeInput.value;
+  const list = JSON.parse(localStorage.getItem('itemNames') || '[]');
+
+  const parts = raw.split(',');
+  const lastRaw = parts[parts.length - 1];
+  const lastPart = lastRaw.trim().toLowerCase();
+
+  if (!lastPart) {
+  const list = JSON.parse(localStorage.getItem('itemNames') || '[]');
+
+  const recent = list.slice(0, 4);
+
+  suggestionBox.innerHTML = recent.length
+    ? recent.map(n => `<span class="suggest">${n}</span>`).join('')
+    : '';
+
+  return;
+}
+
+  const matches = list.filter(n =>
+    n.toLowerCase().startsWith(lastPart)
+  );
+
+  // 👉 check if this is a NEW word
+  const isNew = !list.some(n => n.toLowerCase() === lastPart);
+
+  suggestionBox.innerHTML = matches.length
+    ? matches.slice(0, 5)
+        .map(n => `<span class="suggest">${n}</span>`)
+        .join('')
+    : isNew
+      ? `<span class="hint">${lastRaw.trim()}</span>`
+      : '';
+});
 
 
-// check opening Balance already or timeout 
+suggestionBox.addEventListener('click', e => {
+  if (!e.target.classList.contains('suggest')) return;
+
+  const value = incomeInput.value;
+  const parts = value.split(',');
+
+  // replace last token
+  parts[parts.length - 1] = ' ' + e.target.textContent;
+
+  incomeInput.value = parts.join(',').replace(/^ /, '');
+
+  suggestionBox.innerHTML = '';
+  incomeInput.focus()
+});
+
+
+
+
+
 
 
 
