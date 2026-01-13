@@ -1522,3 +1522,27 @@ summary.new::after{
 .feedback_container span.selected{
   outline: 2px solid currentColor;
 }
+
+
+.doc-link {
+  font-size: 0.95rem;
+  color: #0BA2FF;
+  text-decoration: none;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.doc-link:hover {
+  text-decoration: underline;
+}
+
+.doc-link::after {
+  content: "→";
+  transition: transform 0.2s ease;
+}
+
+.doc-link:hover::after {
+  transform: translateX(3px);
+}

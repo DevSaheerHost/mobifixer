@@ -803,8 +803,7 @@ const ProfilePageFeedback = (type) => {
   // mark as voted (one time)
   localStorage.setItem(FEEDBACK_KEY, 'true');
   checkUserClickFeedback()
-showToast('Thanks for your feedback');
-  
+  showToast('Thanks for your feedback');
 };
 
 positive.onclick = () => {
