@@ -360,6 +360,9 @@ form button{
 .suggestion-container span{
     padding: 0.3rem 0.5rem;
     font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 #entryFormIn input.focus ~ .suggestion-container{
