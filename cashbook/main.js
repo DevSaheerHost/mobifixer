@@ -55,7 +55,8 @@ const fullname = localStorage.getItem('CASHBOOK_FULLNAME');
 
     const defaultSettings = {
       suggestion: true,
-      vibration: true
+      vibration: true,
+      specialDayEffects: true,
     };
     // ------------------------ CONFIG ------------------------
     const firebaseConfig = {
@@ -852,6 +853,7 @@ checkUserClickFeedback()
 
   document.querySelector('#suggestion').checked = settings.suggestion;
   document.querySelector('#vibration').checked = settings.vibration;
+  document.querySelector('#specialDay').checked = settings.specialDayEffects;
 
   return settings;
 };
@@ -882,6 +884,11 @@ document.querySelector('#suggestion').addEventListener('change', e => {
     suggestionBox.innerHTML = '';
   }
 });
+
+$('#specialDay').onclick=(e)=>{
+  appSettings.specialDayEffects = e.target.checked;
+  saveSettings()
+}
 
 const vibrate = (pattern = 50) => {
   if (!appSettings.vibration) return;
@@ -3144,30 +3151,108 @@ loadRemindersForDate(todayISO);
 
 
 
-
-
-const today = new Date();
-const isBirthday = today.getDate() === 27 && today.getMonth() === 1;
-
-if (isBirthday) {
-  const overlay = document.getElementById('birthday-overlay');
-  if (!overlay) throw new Error("missing element.");
-  
-  const items = ['🎉', '🎂', '🎊'];
-  
-  setInterval(() => {
-    const el = document.createElement('div');
-    el.className = 'birthday-item';
-    el.textContent = items[Math.floor(Math.random() * items.length)];
-    el.style.left = Math.random() * 100 + 'vw';
-    el.style.animationDuration = 2 + Math.random() * 2 + 's';
-    
-    overlay.appendChild(el);
-    
-    // cleanup each item (memory leak avoid)
-    setTimeout(() => el.remove(), 4000);
-  }, 400); // 👈 slow, classy
+const EVENTS = [
+  {
+    name: 'Birthday',
+    day: 27,
+    month: 2,
+    emojis: ['🎉', '🎂', '🎊'],
+    burst: 3,
+    maxCount: 60
+  },
+  {
+    name: 'NewYear',
+    day: 1,
+    month: 1,
+    emojis: ['🎆', '🎉', '✨'],
+    burst: 4,
+    maxCount: 80
+  },
+  {
+    name: 'IndependenceDay',
+    day: 15,
+    month: 8,
+    emojis: ['🇮🇳', '🎆', '🎉'],
+    burst: 5,
+    maxCount: 100
+  },
+  {
+  name: 'ValentinesDay',
+  day: 14,
+  month: 2,
+  emojis: ['❤️', '🌹', '✨'],
+  burst: 2,
+  maxCount: 40
 }
+];
+
+
+const todayIs = ({ day, month }) => {
+  const today = new Date();
+  return (
+    today.getDate() === day &&
+    today.getMonth() === month-1
+  );
+};
+
+
+
+
+
+
+
+const startEmojiRain = ({
+  overlayId = 'birthday-overlay',
+  items,
+  interval = 400,
+  burst = 1,
+  maxCount = 40,
+  minDuration = 2,
+  maxDuration = 4,
+  cleanupAfter = 4000
+}) => {
+  const overlay = document.getElementById(overlayId);
+  if(!appSettings.specialDayEffects) return;
+  if (!overlay) throw new Error('Missing element');
+  
+
+  setInterval(() => {
+    if (overlay.children.length >= maxCount) return;
+
+    for (let i = 0; i < burst; i++) {
+      if (overlay.children.length >= maxCount) break;
+
+      const el = document.createElement('div');
+      el.className = 'birthday-item'; // 👈 unchanged
+      el.textContent =
+        items[Math.floor(Math.random() * items.length)];
+
+      el.style.left = Math.random() * 100 + 'vw';
+      el.style.animationDuration =
+        minDuration + Math.random() * (maxDuration - minDuration) + 's';
+
+      overlay.appendChild(el);
+      setTimeout(() => el.remove(), cleanupAfter);
+    }
+  }, interval);
+};
+
+
+
+
+
+EVENTS.forEach(event => {
+  if (todayIs(event)) {
+    startEmojiRain({
+      items: event.emojis,
+      burst: event.burst,
+      maxCount: event.maxCount
+    });
+  }
+});
+
+
+
 
 const syncExitStates = (pages, current) => {
   pages.forEach(page => {
@@ -3246,5 +3331,3 @@ syncExitStates(pages, current)
       const blob = new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
       const a=document.createElement('a'); a.href=url; a.download=`cashbook-${currentDate}.csv`; a.click(); URL.revokeObjectURL(url);
     });
-    
-    // ----- KEEP IT LAST ------ //
