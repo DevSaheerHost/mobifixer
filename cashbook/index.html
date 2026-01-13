@@ -102,6 +102,7 @@
 <link rel="stylesheet" href="./style.css">
 </head>
 <body>
+
   <div class="nav">
     <div class="brand">Cash Book</div>
     <div id="userArea"></div>
@@ -109,8 +110,9 @@
   <div class="card">
     <input type="search" name="search" id="search" placeholder="Search">
   </div>
+  <main class="page active home" id="home">
   <div class="container" id="app">
-    
+      
     
     
     <!-- login view -->
@@ -367,7 +369,138 @@
 
 
 
-    <!-- The FULL-SCREEN ALERT OVERLAY container -->
+   
+    
+    
+    
+    <video class="hidden" src="./assets/video/cat.mp4" height="100%" width="100%" preload="none"></video>
+    
+
+
+<div class="loader">
+  <h1 class="hidden">
+    <i class="fa-solid fa-cloud-arrow-down"></i>
+  </h1>
+<span class="loaderAnim"></span>
+  
+  <p id="loading_text">Loading...</p>
+  <div class="progress">
+    <div class="bar">
+      
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+<div id="birthday-overlay"></div>
+
+  </div> 
+  </main>
+  <main class="settings_page page" id="settings">
+  <div class="nav">
+    <span onclick="history.back()" style="display: flex; gap: 1rem;">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="4" stroke="currentColor" class="size-6">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+</svg>
+
+    <p>Settings</p>
+
+    </span>
+    
+
+  </div>
+  <div class="container">
+    
+      <p class="title" id="staff_container_title">Manage User/staff</p>
+    
+    
+    <ul id="staff_container">
+      <!-- thir we go-->
+      <p class="muted" style="display: flex; align-items: center; justify-content: center; padding: 0.5rem;">Loading...</p>
+    </ul>
+    
+    <p class="title">General</p>
+    <ul>
+      <li>
+        <label for="suggestion">Auto Suggestion</label>
+        <input type="checkbox" checked name="suggestion" id="suggestion" />
+      </li>
+      
+      <li>
+        <label for="vibration">Enable Vibration</label>
+        <input type="checkbox" checked name="vibration" id="vibration" />
+      </li>
+    </ul>
+  </div>
+</main>
+
+
+
+  <main class="profile_page page" id="profile">
+    <div class="nav">
+    <span onclick="history.back()" style="display: flex; gap: 1rem;">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="4" stroke="currentColor" class="size-6">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+      </svg>
+      
+      <p>Profile</p>
+      
+    </span>
+    
+    
+  </div>
+  
+  <div class="container">
+    <div class="col-center">
+      <div class="prof-picture">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+        </svg>
+        
+      </div>
+      <h3 id="fullname_profile"></h3>
+      <p>user@gmail.com</p>
+      <button class="edit-profile">Edit Profile</button>
+    </div>
+    
+    <div class="feedback_container" id="feedbackContainer">
+      <h4>Your feedback matters</h4>
+      <div class="row-between">
+   
+        
+        <span id="negative">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M7.498 15.25H4.372c-1.026 0-1.945-.694-2.054-1.715a12.137 12.137 0 0 1-.068-1.285c0-2.848.992-5.464 2.649-7.521C5.287 4.247 5.886 4 6.504 4h4.016a4.5 4.5 0 0 1 1.423.23l3.114 1.04a4.5 4.5 0 0 0 1.423.23h1.294M7.498 15.25c.618 0 .991.724.725 1.282A7.471 7.471 0 0 0 7.5 19.75 2.25 2.25 0 0 0 9.75 22a.75.75 0 0 0 .75-.75v-.633c0-.573.11-1.14.322-1.672.304-.76.93-1.33 1.653-1.715a9.04 9.04 0 0 0 2.86-2.4c.498-.634 1.226-1.08 2.032-1.08h.384m-10.253 1.5H9.7m8.075-9.75c.01.05.027.1.05.148.593 1.2.925 2.55.925 3.977 0 1.487-.36 2.89-.999 4.125m.023-8.25c-.076-.365.183-.75.575-.75h.908c.889 0 1.713.518 1.972 1.368.339 1.11.521 2.287.521 3.507 0 1.553-.295 3.036-.831 4.398-.306.774-1.086 1.227-1.918 1.227h-1.053c-.472 0-.745-.556-.5-.96a8.95 8.95 0 0 0 .303-.54" />
+</svg>
+
+        </span>
+        
+             <span id="positive">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282m0 0h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 0 1-2.649 7.521c-.388.482-.987.729-1.605.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 0 0-1.423-.23H5.904m10.598-9.75H14.25M5.904 18.5c.083.205.173.405.27.602.197.4-.078.898-.523.898h-.908c-.889 0-1.713-.518-1.972-1.368a12 12 0 0 1-.521-3.507c0-1.553.295-3.036.831-4.398C3.387 9.953 4.167 9.5 5 9.5h1.053c.472 0 .745.556.5.96a8.958 8.958 0 0 0-1.302 4.665c0 1.194.232 2.333.654 3.375Z" />
+</svg>
+
+        </span>
+        
+      </div>
+      
+      <small class="muted">
+          This will continue when you vote
+        </small>
+    </div>
+    
+    
+  </div>
+</main>
+
+ <!-- The FULL-SCREEN ALERT OVERLAY container -->
     <div id="alertOverlay" role="dialog" aria-modal="true" aria-labelledby="alertTitle" aria-describedby="alertMessage">
 
         <!-- ALERT CARD (Card UI/UX) -->
@@ -409,68 +542,5 @@
     
     
     
-    <video class="hidden" src="./assets/video/cat.mp4" height="100%" width="100%" preload="none"></video>
-    
-
-
-<div class="loader">
-  <h1 class="hidden">
-    <i class="fa-solid fa-cloud-arrow-down"></i>
-  </h1>
-<span class="loaderAnim"></span>
-  
-  <p id="loading_text">Loading...</p>
-  <div class="progress">
-    <div class="bar">
-      
-    </div>
-  </div>
-</div>
-
-
-<main class="page active" id="home">
-  
-</main>
-
-<main class="settings_page page" id="settings">
-  <div class="nav">
-    <span onclick="history.back()" style="display: flex; gap: 1rem;">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="4" stroke="currentColor" class="size-6">
-  <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-</svg>
-
-    <p>Settings</p>
-
-    </span>
-    
-
-  </div>
-  <div class="container">
-    
-      <p class="title" id="staff_container_title">Manage User/staff</p>
-    
-    
-    <ul id="staff_container">
-      <!-- thir we go-->
-      <p class="muted" style="display: flex; align-items: center; justify-content: center; padding: 0.5rem;">Loading...</p>
-    </ul>
-    
-    <p class="title">General</p>
-    <ul>
-      <li>
-        <label for="suggestion">Auto Suggestion</label>
-        <input type="checkbox" checked name="suggestion" id="suggestion" />
-      </li>
-      
-      <li>
-        <label for="vibration">Enable Vibration</label>
-        <input type="checkbox" checked name="vibration" id="vibration" />
-      </li>
-    </ul>
-  </div>
-</main>
-
-<div id="birthday-overlay"></div>
-
-  </div> <!-- Firebase SDKs ( project config) -->  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>  <script type="module" src="./main.js" defer></script></body>
+  <!-- Firebase SDKs ( project config) -->  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>  <script type="module" src="./main.js" defer></script></body>
 </html>

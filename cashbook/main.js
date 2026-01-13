@@ -46,7 +46,11 @@ const fullname = localStorage.getItem('CASHBOOK_FULLNAME');
     const version = localStorage.getItem('version_code');
     const reminderCache = {};
     const isOwner = localStorage.getItem('CASHBOOK_ROLL') === 'owner';
+    const positive = $('#positive');
+    const negative = $('#negative');
+    const feedbackContainer = $('#feedbackContainer')
     
+    const FEEDBACK_KEY = 'feedback.profilePage.voted';
     const SETTINGS_KEY = 'app_settings';
 
     const defaultSettings = {
@@ -64,6 +68,8 @@ const fullname = localStorage.getItem('CASHBOOK_FULLNAME');
   };
     // ------------------------ END CONFIG --------------------
 
+
+$('#fullname_profile').textContent=fullname || '';
 // helper function 
 
 function getTime() {
@@ -653,7 +659,13 @@ if(!username || !fullname)handleInvalidAuthState();
   </summary>
 
   <div class="menu-content" style='color: #fff'>
-    <div style='border-bottom: 1px solid #EFEFEF; padding: 0.5rem; padding-top: 0;'>
+    <div style='border-bottom: 1px solid #EFEFEF; padding: 0.5rem; padding-top: 0; display: flex; align-items:center; gap: 0.3rem' data-link='profile'>
+    <div class='prof-picture-sml'>
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="#777777" class="size-6">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+</svg>
+
+    </div>
       <p style='color: #000; font-weight: 500; font-size: 18px; margin:0;'>${fullname}</p>
     </div>
     <button class="link hidden">Profile</button>
@@ -773,7 +785,41 @@ Sign out</button>
 
 loadUserFromDB()
     // get user data from DB
-    
+
+const ProfilePageFeedback = (type) => {
+  // prevent double vote
+  if (localStorage.getItem(FEEDBACK_KEY)) return;
+
+  firebase.database()
+    .ref(`/feedback/users/${username}/profile`)
+    .push({
+      fullname,
+      type, // positive | negative
+      source: 'profile_page',
+      createdAt: Date.now(),
+      createdAtISO: new Date().toISOString()
+    });
+
+  // mark as voted (one time)
+  localStorage.setItem(FEEDBACK_KEY, 'true');
+  checkUserClickFeedback()
+showToast('Thanks for your feedback');
+  
+};
+
+positive.onclick = () => {
+  ProfilePageFeedback('positive');
+}
+negative.onclick = () => {
+  ProfilePageFeedback('negative');
+}
+
+const checkUserClickFeedback = ()=>{
+  if (localStorage.getItem(FEEDBACK_KEY)) feedbackContainer.classList.add('hidden');
+}
+checkUserClickFeedback()
+
+
     
    
   const logSettingsChange = (oldSet, newSet) => {
@@ -3124,7 +3170,16 @@ if (isBirthday) {
   }, 400); // 👈 slow, classy
 }
 
-
+const syncExitStates = (pages, current) => {
+  pages.forEach(page => {
+    if (page !== current) {
+      page.classList.remove('active');
+      page.classList.add('exit');
+    } else {
+      page.classList.remove('exit');
+    }
+  });
+};
 
 
 // page switching 
@@ -3149,7 +3204,7 @@ const PageRouter = (() => {
 
     current = next;
   }
-
+syncExitStates(pages, current)
   // click handler
   document.addEventListener('click', e => {
     const link = e.target.closest('[data-link]');
