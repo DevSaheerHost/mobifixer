@@ -973,6 +973,7 @@ function filterData(data, searchValue) {
     let currentDate = null;
     
     async function loadForDate(dateISO){
+      if (!username || !fullname) handleInvalidAuthState();
       globalDate = dateISO
       currentDate = dateISO;
       currentDateLabel.textContent = dateISO;
@@ -1210,7 +1211,9 @@ const isUserViewGoalAlert = localStorage.getItem('isUserViewGoalAlert')
 if (!data) throw new Error('Db is Empty')
 if (Object.values(data).length === 0) {
  // $('#setGoal').click()
- showToast("Set Today's Goal now! 👇")
+ //showToast("Set Today's Goal now! 👇")
+ 
+ 
 }
 
 $('#target').innerHTML = `
