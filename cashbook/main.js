@@ -2729,12 +2729,37 @@ function setupInactivityDetection() {
 setupInactivityDetection();
 
 
-
+const SESSION_ID =
+  sessionStorage.getItem('session_id') ||
+  (() => {
+    const id = Date.now() + '_' + Math.random().toString(36).slice(2);
+    sessionStorage.setItem('session_id', id);
+    return id;
+  })();
 
 
 // error handling 
 
 window.onerror = (message, source, lineno, colno, error) => {
+  
+  const ref = firebase.database()
+    .ref(`/logs/errors/users/${username}/${SESSION_ID}`)
+    .push();
+
+  ref.set({
+    type: 'window_error',
+    message: String(message),
+    source,
+    line: lineno,
+    column: colno,
+    stack: error?.stack || null,
+    user: {
+      username,
+      fullname
+    },
+    userAgent: navigator.userAgent,
+    createdAt: Date.now()
+  });
     
     console.error(`Error: ${message}`);
     showOverlay({title: 'Global Error', desc:`${message}. <br>
@@ -2746,6 +2771,24 @@ window.onerror = (message, source, lineno, colno, error) => {
 
 
 window.addEventListener('unhandledrejection', (event) => {
+  
+  const ref = firebase.database()
+    .ref(`/logs/errors/users/${username}/${SESSION_ID}`)
+    .push();
+
+  ref.set({
+    type: 'unhandled_promise',
+    reason: String(event.reason),
+    stack: event.reason?.stack || null,
+    user: {
+      username,
+      fullname
+    },
+    userAgent: navigator.userAgent,
+    createdAt: Date.now()
+  });
+  
+  
     // 'event' 'event.reason'.
     console.error('Promise rejection (unhandled):', event.reason);
     showOverlay({title: 'Promise rejection', desc:`${event.reason} `, important:false})
@@ -2762,8 +2805,6 @@ cancelBtn.onclick=()=>{
     // (preventing default), 'Unhandled Rejection' 
     event.preventDefault(); 
 });
-
-
 
 
 
