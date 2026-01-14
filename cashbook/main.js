@@ -57,6 +57,7 @@ const fullname = localStorage.getItem('CASHBOOK_FULLNAME');
       suggestion: true,
       vibration: true,
       specialDayEffects: true,
+      autoSetDailyGoal:false,
     };
     // ------------------------ CONFIG ------------------------
     const firebaseConfig = {
@@ -854,6 +855,7 @@ checkUserClickFeedback()
   document.querySelector('#suggestion').checked = settings.suggestion;
   document.querySelector('#vibration').checked = settings.vibration;
   document.querySelector('#specialDay').checked = settings.specialDayEffects;
+  document.querySelector('#autoGoal').checked = settings.autoSetDailyGoal;
 
   return settings;
 };
@@ -887,6 +889,10 @@ document.querySelector('#suggestion').addEventListener('change', e => {
 
 $('#specialDay').onclick=(e)=>{
   appSettings.specialDayEffects = e.target.checked;
+  saveSettings()
+}
+document.querySelector('#autoGoal').onclick=(e)=>{
+  appSettings.autoSetDailyGoal = e.target.checked;
   saveSettings()
 }
 
@@ -1212,6 +1218,7 @@ if (!data) throw new Error('Db is Empty')
 if (Object.values(data).length === 0) {
  // $('#setGoal').click()
  //showToast("Set Today's Goal now! 👇")
+ appSettings.autoSetDailyGoal?setGoalDataToDb('Auto Goal', 10000, currentDate):''
  
  
 }
@@ -2763,7 +2770,25 @@ cancelBtn.onclick=()=>{
 
 
 
+const setGoalDataToDb= async (note, amount, currentDate)=>{
+  const goalRef = db.ref(`${username}/goals/${currentDate}`);
+        await goalRef.set({
+            targetAmount: amount,
+            note: note || '',
+            setAt: new Date().toLocaleString("en-IN"),
+            lastUpdatedBy: fullname || 'unknown'
+        });
+        
+                // set to Localstorage
+        localStorage.setItem('isUserViewGoalAlert', 'no')
 
+        // 4. Success Feedback
+        showTopToast("Daily goal set successfully! 🎯");
+        
+        // Optional: Update UI to show the new goal immediately
+        // updateGoalUI(amount); 
+        $('#target').innerHTML = amount
+}
 
 $('#setGoal').onclick = async () => {
     try {
@@ -2785,24 +2810,9 @@ $('#setGoal').onclick = async () => {
 
         // 3. Define the path: username/goals/YYYY-MM-DD
         // Using set() to overwrite if a goal already exists for today
-        const goalRef = db.ref(`${username}/goals/${currentDate}`);
+        setGoalDataToDb(goalData.note, amount, currentDate)
         
-        await goalRef.set({
-            targetAmount: amount,
-            note: goalData.note || '',
-            setAt: new Date().toLocaleString("en-IN"),
-            lastUpdatedBy: fullname || 'unknown'
-        });
-        
-        // set to Localstorage
-        localStorage.setItem('isUserViewGoalAlert', 'no')
 
-        // 4. Success Feedback
-        showTopToast("Daily goal set successfully! 🎯");
-        
-        // Optional: Update UI to show the new goal immediately
-        // updateGoalUI(amount); 
-        $('#target').innerHTML = amount
 
     } catch (error) {
         console.error("Error setting goal:", error);

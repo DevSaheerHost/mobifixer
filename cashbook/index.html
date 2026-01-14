@@ -374,22 +374,6 @@
     
     
     <video class="hidden" src="./assets/video/cat.mp4" height="100%" width="100%" preload="none"></video>
-    
-
-
-<div class="loader">
-  <h1 class="hidden">
-    <i class="fa-solid fa-cloud-arrow-down"></i>
-  </h1>
-<span class="loaderAnim"></span>
-  
-  <p id="loading_text">Loading...</p>
-  <div class="progress">
-    <div class="bar">
-      
-    </div>
-  </div>
-</div>
 
 
 
@@ -429,7 +413,13 @@
     <p class="title">General</p>
     <ul>
       <li>
+        <div class="col">
         <label for="suggestion">Auto Suggestion</label>
+        <p class="muted">
+          <small>Entry name's typing suggestions</small>
+        </p>
+        </div>
+        
         <input type="checkbox" checked name="suggestion" id="suggestion" />
       </li>
       
@@ -438,6 +428,15 @@
         <input type="checkbox" checked name="vibration" id="vibration" />
       </li>
       
+      <li>
+        <div class="col">
+          <label for="autoGoal">Enable Auto Goal</label>
+          <p class="muted">
+          <small>Sets a daily goal automatically. You can change the amount later.</small>
+          </p>
+        </div>
+        <input type="checkbox" name="autoGoal" id="autoGoal" />
+      </li>
       
       <li>
         <div class="col">
@@ -564,6 +563,19 @@
     
     <div id="birthday-overlay"></div>
     
+    <div class="loader">
+  <h1 class="hidden">
+    <i class="fa-solid fa-cloud-arrow-down"></i>
+  </h1>
+<span class="loaderAnim"></span>
+  
+  <p id="loading_text">Loading...</p>
+  <div class="progress">
+    <div class="bar">
+      
+    </div>
+  </div>
+</div>
     
   <!-- Firebase SDKs ( project config) -->  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>  <script type="module" src="./main.js" defer></script></body>
 </html>
