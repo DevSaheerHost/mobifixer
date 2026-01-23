@@ -1,7 +1,7 @@
 const $ = s => document.querySelector(s)
 const username = localStorage.getItem('CASHBOOK_USER_NAME');
 const fullname = localStorage.getItem('CASHBOOK_FULLNAME');
-
+import { ref, onChildAdded, onChildChanged, onChildRemoved } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
     // UI refs
     const authView = document.getElementById('authView');
     const mainView = document.getElementById('mainView');
@@ -103,9 +103,9 @@ const handleInvalidAuthState = ()=>{
   * @param {object} user check user status on db and take access.
 **/
 const handleStaffAccessControl = (user) =>{
+  if(!user.signupInfo.fullname) throw new Error('fullname not found in signup info, please contact the developer')
   const isOwner = fullname.trim().toLowerCase() === user.signupInfo.fullname.trim().toLowerCase();
   if (!isOwner) {
-    
   
   const staffUser = user.staff?.[fullname] ?? null;
     if (!staffUser) {
@@ -447,6 +447,8 @@ function renderType(type, data) {
   const dbUser = await getUser(username);
   if (!dbUser) {
     showTopToast("User not found : 404", '#F44336');
+    const input = getAuthInput()
+    await signupUser(input)
     return;
   }
 
@@ -486,7 +488,10 @@ function renderType(type, data) {
     password,
     fullname,
     role: 'owner',
-    signupInfo: getDeviceInfo(),
+    signupInfo: {
+      device: getDeviceInfo(),
+      fullname,
+    },
     logins: {}
   });
   
@@ -779,6 +784,11 @@ Sign out</button>
     const user = snap.val();
     handleStaffAccessControl(user);
     
+    $('#dashThisMonth').click()
+    
+onChildAdded(dataRef, () => debouncedRefresh('added'));
+onChildChanged(dataRef, () => debouncedRefresh('updated'));
+onChildRemoved(dataRef, () => debouncedRefresh('deleted'));
   } catch (err) {
     console.error(err);
     showTopToast('Something went wrong. Retry.');
@@ -995,6 +1005,7 @@ function filterData(data, searchValue) {
       const snapshot = await rootRef.get();
       const data = snapshot.val() || {};
       if(!data) throw new Error('Db empty')
+      
       renderEntries(data);
       renderLiquid(data.liquid)
       const buttons = document.querySelectorAll('#in, #out, #all, #bin');
@@ -2426,7 +2437,7 @@ if (username || fullname) {
 // ------------------------ END DASHBOARD ------------------------
 
 
-import { ref, onChildAdded, onChildChanged, onChildRemoved } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+
 
 const dataRef = ref(db, `/${username}`);
 console.log(username || 'unknown user')
@@ -2513,11 +2524,42 @@ buttons.forEach(btn => {
 //document.querySelector('#in').classList.add("active");
 
 }
+
+
+
+// Debounce helper function
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+// Debounced refresh function
+const debouncedRefresh = debounce((type) => {
+  console.log(`Debounced refresh: ${type}`);
+  
+  // ഇവിടെ മാത്രം UI അപ്ഡേറ്റ് ചെയ്യുക
+  if (type === 'Deleted') {
+    showToast('Item deleted');
+  }
+}, 1500); // 1.5 seconds delay
+
+
 // realtime watchers
-if (username || fullname) {
-  onChildAdded(dataRef, () => refreshDashboard('added'));
-onChildChanged(dataRef, () => refreshDashboard("Updated"));
-onChildRemoved(dataRef, () => refreshDashboard("Deleted"));
+if (username && fullname) {
+
+//debouncedRefresh('added')
+
+// Event listeners with debounce
+
+
+
 } else {
   console.log("not signed in")
 }
@@ -3368,6 +3410,7 @@ syncExitStates(pages, current)
 
 
 
+const isUserSeeCustomAlert=''
 
 
     // Export CSV for current date
