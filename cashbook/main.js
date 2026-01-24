@@ -2785,7 +2785,7 @@ const SESSION_ID =
 window.onerror = (message, source, lineno, colno, error) => {
   
   const ref = firebase.database()
-    .ref(`/logs/errors/users/${username}/${SESSION_ID}`)
+    .ref(`/logs/errors/users/${username || 'unknkwn'}/${SESSION_ID}`)
     .push();
 
   ref.set({
@@ -2815,7 +2815,7 @@ window.onerror = (message, source, lineno, colno, error) => {
 window.addEventListener('unhandledrejection', (event) => {
   
   const ref = firebase.database()
-    .ref(`/logs/errors/users/${username}/${SESSION_ID}`)
+    .ref(`/logs/errors/users/${username || 'unknown'}/${SESSION_ID}`)
     .push();
 
   ref.set({

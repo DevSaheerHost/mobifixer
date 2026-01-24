@@ -1,0 +1,143 @@
+body {
+  font-family: Arial;
+  background: #eee;
+}
+
+.app {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+}
+
+.form {
+  width: 300px;
+  background: #fff;
+  padding: 15px;
+  border-radius: 6px;
+}
+
+.form input {
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 6px;
+}
+
+.form button {
+  width: 100%;
+  margin-top: 5px;
+  padding: 8px;
+}
+
+.export {
+  background: #0BA2FF;
+  color: #fff;
+  border: none;
+}
+
+.invoice {
+  width: 800px;
+  background: #fff;
+  padding: 20px;
+  border-radius: 6px;
+}
+
+.invoice {
+  width: 210mm;      /* A4 width */
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+}
+
+.title {
+  font-size: 26px;
+  font-weight: bold;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+th {
+  background: #f0f0f0;
+}
+
+.total {
+  text-align: right;
+  font-size: 20px;
+  margin-top: 15px;
+  font-weight: bold;
+}
+
+
+
+
+
+@media screen and (max-width: 900px) {
+  .app {
+    flex-direction: column;
+  }
+
+  .invoice {
+    width: 100%;
+    padding: 10px;
+    transform: scale(0.95);
+    transform-origin: top left;
+  }
+}
+
+
+
+
+@media screen and (max-width: 480px) {
+  .invoice {
+    font-size: 12px;
+  }
+
+  th, td {
+    padding: 6px;
+  }
+
+  .header {
+    flex-direction: column;
+    gap: 5px;
+  }
+}
+
+
+table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+th, td {
+  word-break: break-word;
+}
+
+
+@media print {
+  body {
+    background: #fff;
+  }
+
+  .form,
+  button {
+    display: none !important;
+  }
+
+  .invoice {
+    transform: none;
+    width: 210mm;
+    padding: 15mm;
+  }
+}

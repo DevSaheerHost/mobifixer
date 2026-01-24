@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>  
+  <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Invoice Creator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ===== FORM ===== -->
+  <div class="form">
+    <h2>Create Invoice</h2>
+
+    <input id="invoiceNo" placeholder="Invoice No">
+    <input id="customer" placeholder="Customer Name">
+
+    <h3>Add Item</h3>
+    <input id="itemName" placeholder="Item">
+    <input id="qty" type="number" placeholder="Qty">
+    <input id="price" type="number" placeholder="Price">
+    <button onclick="addItem()">Add</button>
+
+    <button class="export" onclick="downloadPDF()">Export PDF</button>
+    <button onclick="resetInvoice()">New Invoice</button>
+  </div>
+
+  <!-- ===== PREVIEW ===== -->
+  <div class="invoice" id="invoice">
+    <div class="header">
+      <div>
+        <div class="title">INVOICE</div>
+        <div id="pInvoiceNo">#---</div>
+        <div id="pCustomer">Customer</div>
+      </div>
+      <div>
+        <strong>Mobifixer</strong><br>
+        Kurumasseri
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Qty</th>
+          <th>Price</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody id="items"></tbody>
+    </table>
+
+    <div class="total" id="grandTotal">₹0</div>
+  </div>
+  
+  
+  
+  <div class="">
+      
+  <h3>Saved Invoices</h3>
+<ul id="invoiceList"></ul>
+  </div>
+  
+
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>

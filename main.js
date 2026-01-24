@@ -2,6 +2,7 @@ const initialTime = performance.now();
 import { cardLayout } from './cardLayout.js';
 import { searchCard } from './searchCard.js';
 import { inventoryCard} from './inventoryCard.js';
+import { generateWhatsAppLink} from './generateWhatsappLink.js';
 
 // Firebase core import
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
@@ -891,6 +892,36 @@ window.addEventListener("hashchange", router);
 // window.addEventListener("hashchange", handleHashChange);
 
 
+function generateToken4() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let token = '';
+  for (let i = 0; i < 6; i++) {
+    token += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return token;
+}
+
+
+
+// Create a promise that resolves when user confirms
+function askUserToDo(task) {
+    return new Promise((resolve, reject) => {
+        const userConfirmed = confirm(`${task}`);
+        
+        if (userConfirmed) {
+            resolve(`User completed: ${task}`);
+        } else {
+            reject(new Error(`User cancelled: ${task}`));
+        }
+    });
+}
+
+// Usage
+// askUserToDo("review the document")
+//     .then(result => console.log("Success:", result))
+//     .catch(error => console.error("Error:", error.message));
+    
+
 // helpers
 const getCurrentTime = () => {
   const now = new Date();
@@ -938,6 +969,7 @@ $('.add-data').onclick = async () => {
     showNotice({ title: 'Validation Error', body: 'All fields are required!', type: 'error', delay: 10 });
     return;
   }
+  if(number.length<10 || number.length>10)return showNotice({title: 'Validation Error', body:'Invalid Number', type: 'error', delay:10})
 
   $('.add-data').textContent = dataIsEdit ? 'Updating...' : 'Loading...';
   $('.add-data').disabled = true;
@@ -951,6 +983,8 @@ $('.add-data').onclick = async () => {
       snToUse = tx.snapshot.val();
       $('#new_sn').textContent = snToUse;
     }
+    
+    const token = generateToken4()
 
     const itemRef = ref(db, `shops/${shopName}/service/${snToUse}`);
 
@@ -969,7 +1003,7 @@ $('.add-data').onclick = async () => {
       const complaintInput = set.querySelector('.complaint-input')?.value.trim();
       const lockInput = set.querySelector('.lock-input')?.value.trim();
       if (nameInput || complaintInput || lockInput) {
-        devices.push({ model: nameInput || '', complaints: complaintInput || '', lock: lockInput || '' });
+        devices.push({ model: nameInput || '', complaints: complaintInput || '', lock: lockInput || '' , token:token || generateToken4()});
       }
     });
     devices.unshift({ model, complaints, lock });
@@ -999,7 +1033,8 @@ if(dataIsEdit){
       // 🧷 Preserve old date/time if editing
       date: dataIsEdit ? oldData.date : new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase().replace(/ /g, "-"),
       time: dataIsEdit ? oldData.time : getCurrentTime(),
-      updateInfo: {updateTime, updatedBy}
+      updateInfo: {updateTime, updatedBy},
+      token
     };
     
 
@@ -1019,7 +1054,19 @@ if(dataIsEdit){
       delay: 30
     });
     !dataIsEdit?createAlert():'';
-
+  
+//     if(!dataIsEdit){
+//       const link = generateWhatsAppLink({
+//   phone: `91${number}`, // customer WhatsApp number
+//   customerName: name,
+//   deviceName: devices,
+//   jobId: snToUse,
+//   trackingLink: `https://mobifixerservice.vercel.app/${shopName}/service/${snToUse}/${token}`
+// });
+//     askUserToDo("Do you want to Share tracking link to customer?")
+//     .then(result => window.open(link, "_blank"))
+//     .catch(error => console.error("Error:", error.message));
+// }
     if (!dataIsEdit) {
       $('#name').value = '';
       $('#number').value = '';
