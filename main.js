@@ -495,28 +495,25 @@ let activeFiltered = []; // last filtered data
 const createCards = (data, status = null, sn = null, date = null) => {
   const listContainer = $(".list");
 
-  // reset if new filter
   renderStart = 0;
   listContainer.innerHTML = "";
 
-  // apply filters
   let filtered = [...data];
 
   if (sn) filtered = filtered.filter(item => item.sn === sn);
-  if (status) filtered = filtered.filter(item => item.status === status);
+  if (status && status !== 'all') filtered = filtered.filter(item => item.status === status); // 👈 only change
   if (date) filtered = filtered.filter(item => item.date === date);
 
-  // sort latest first (by SN)
   filtered.sort((a, b) => b.sn - a.sn);
 
-  activeFiltered = filtered; // save for scroll loading
+  activeFiltered = filtered;
 
   if (filtered.length === 0) {
     listContainer.innerHTML = `<li class="empty">No data available</li>`;
     return;
   }
 
-  renderNext(); // 👈 first 3 load
+  renderNext();
 };
 
 
