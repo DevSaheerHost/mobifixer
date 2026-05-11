@@ -117,43 +117,48 @@
     
     <!-- login view -->
     <div id="authView" class="card login-box" style="display:none">
-      <h3>Sign in — Email</h3>
-      <p class="small">Use email to sign-in (new users will be created).</p>
-  
-      <div style="display:flex;gap:8px;margin-top:8px;" class="loginInputBox">
-        <h4 style="margin-bottom: 0;">User Details</h4>
 
-        
-        <input type="text" name="fullname" id="fullname" placeholder="Your Full Name"/>
-        
-      
-        <span style="display: none;border: 1px solid #ccc; border-radius: 7px;" class="radioBox">
-          
-        <h4 style="margin: 0rem;">Role</h4>
-          <span>
-            <input type="radio" name="role" id="role_woner" value="owner" />
-            <label for="role_woner">Owner</label>
-          </span>
-
-          <span>
-            <input type="radio" name="role" id="role_staff" value="staff" />
-            <label for="role_staff">Staff</label>
-          </span>
-        </span>
-        
-        
-        <p class="small" style="margin-top:10px"><b>Hint:</b> Full Name is the name of the person currently using this app.</p>
-        
-        <h4 style="margin-bottom: 0;">Shop Details</h4>
-
-        
-        
-       <input type="text" name="username" id="username" placeholder="Username / Shop name"/>
-        <input id="email" placeholder="Email" />
-        <input id="password" placeholder="Password" type="password" />
-        <button id="signInBtn">Sign in</button>
+      <!-- Mode tabs -->
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabLogin">Sign In</button>
+        <button class="auth-tab" id="tabSignup">Sign Up</button>
       </div>
-      <p class="small" style="margin-top:10px">Don't want to create account? Use single-device mode by leaving login and use local save (future).</p>
+
+      <div class="loginInputBox" style="display:flex;gap:10px;margin-top:14px;flex-direction:column;">
+
+        <!-- Signup-only block -->
+        <div id="signupOnlyFields" class="hidden">
+          <div class="auth-info-box">
+            👋 Creating a new shop account. You'll be the owner.
+          </div>
+          <p class="small auth-field-label">Your Full Name</p>
+          <input type="text" name="fullname" id="fullname" placeholder="e.g. Saheer Babu" autocomplete="name"/>
+          <p class="small auth-field-label" style="margin-top:6px;">Shop Username</p>
+          <input type="text" name="username" id="username" placeholder="e.g. mobifixer (no spaces)" autocomplete="off"/>
+        </div>
+
+        <!-- Login-only block -->
+        <div id="loginOnlyFields">
+          <p class="small auth-field-label">Your Name <span class="auth-hint">(used for role detection)</span></p>
+          <input type="text" id="fullname_login" name="fullname_login" placeholder="Your Full Name" autocomplete="name"/>
+          <p class="small auth-field-label" style="margin-top:6px;">Shop Username</p>
+          <input type="text" id="username_login" name="username_login" placeholder="Shop Username" autocomplete="off"/>
+        </div>
+
+        <!-- Common fields -->
+        <p class="small auth-field-label" style="margin-top:2px;">Email</p>
+        <input type="email" id="email" placeholder="your@email.com" autocomplete="email"/>
+        <p class="small auth-field-label">Password</p>
+        <input type="password" id="password" placeholder="Password (min 6 chars)" autocomplete="current-password"/>
+
+        <button id="signInBtn" style="margin-top:4px;">Sign In</button>
+
+        <!-- Forgot Password (login mode only) -->
+        <button id="forgotPasswordBtn" class="forgot-btn" type="button">
+          Forgot Password?
+        </button>
+
+      </div>
     </div>
     
     
@@ -373,7 +378,11 @@
     
     
     
-    <video class="hidden" src="./assets/video/cat.mp4" height="100%" width="100%" preload="none"></video>
+    <!-- Meme Video Overlay -->
+    <div id="memeOverlay" class="hidden meme-overlay">
+      <video id="memeVideo" preload="none" playsinline></video>
+      <button id="stopMemeBtn">✕ Skip</button>
+    </div>
 
 
 

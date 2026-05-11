@@ -1546,3 +1546,236 @@ summary.new::after{
 .doc-link:hover::after {
   transform: translateX(3px);
 }
+
+/* ==============================
+   AUTH — Login / Signup UI
+   ============================== */
+
+.login-box {
+  max-width: 400px;
+  margin: 50px auto;
+  padding: 20px;
+}
+
+.auth-tabs {
+  display: flex;
+  gap: 4px;
+  background: #F0F4F8;
+  border-radius: 10px;
+  padding: 4px;
+}
+
+.auth-tab {
+  flex: 1;
+  background: transparent;
+  color: var(--muted);
+  border: none;
+  padding: 9px 12px;
+  border-radius: 7px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  animation: none; /* override global scaleup */
+}
+
+.auth-tab.active {
+  background: #fff;
+  color: var(--accent);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.auth-field-label {
+  margin: 0 0 3px 2px;
+  font-weight: 500;
+  color: #444;
+  font-size: 12px;
+}
+
+.auth-hint {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.auth-info-box {
+  background: #EBF5FF;
+  color: #1a6fb5;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+#signupOnlyFields {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+#loginOnlyFields {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.forgot-btn {
+  background: transparent !important;
+  color: var(--accent) !important;
+  border: none !important;
+  font-size: 13px;
+  padding: 2px 0 !important;
+  text-align: center;
+  cursor: pointer;
+  font-weight: 500;
+  box-shadow: none !important;
+  animation: none;
+}
+
+.forgot-btn:hover {
+  text-decoration: underline;
+}
+
+
+/* ==============================
+   GOAL OVERLAY — Stats Cards
+   ============================== */
+
+.goal-overlay-card {
+  background: #F9FAFB;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin: 4px 0 10px 0;
+  border: 1px solid #E5E7EB;
+  text-align: left;
+}
+
+.goal-overlay-card.achieved {
+  border-color: #D1FAE5;
+  background: #F0FDF4;
+}
+
+.goal-overlay-card.progress {
+  border-color: #FEF3C7;
+  background: #FFFBEB;
+}
+
+.goal-overlay-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  font-size: 14px;
+}
+
+.goal-overlay-row:last-of-type {
+  border-bottom: none;
+}
+
+.goal-overlay-row.highlight {
+  font-weight: 600;
+}
+
+.goal-overlay-label {
+  color: #6B7280;
+  font-size: 13px;
+}
+
+.goal-overlay-val {
+  font-weight: 700;
+  font-size: 15px;
+  color: #111827;
+}
+
+.goal-overlay-val.green  { color: #10b981; }
+.goal-overlay-val.amber  { color: #f59e0b; }
+
+.goal-overlay-progress {
+  height: 6px;
+  background: #E5E7EB;
+  border-radius: 99px;
+  margin: 10px 0 4px 0;
+  overflow: hidden;
+}
+
+.goal-overlay-bar {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.6s ease;
+}
+
+.goal-overlay-pct {
+  font-size: 12px;
+  color: #9CA3AF;
+  margin: 2px 0 6px 0;
+  text-align: right;
+}
+
+.goal-overlay-setby {
+  font-size: 12px;
+  color: #9CA3AF;
+  margin: 4px 0 0 0;
+  text-align: center;
+}
+
+.goal-overlay-party-text,
+.goal-overlay-msg {
+  font-size: 14px;
+  color: #4B5563;
+  margin: 6px 0 10px 0;
+}
+
+.goal-done-badge {
+  font-weight: 700;
+  font-size: 13px;
+  color: #10b981;
+}
+
+
+/* ==============================
+   MEME VIDEO OVERLAY
+   ============================== */
+
+.meme-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.meme-overlay.hidden {
+  display: none !important;
+}
+
+.meme-overlay video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  max-width: unset;
+}
+
+#stopMemeBtn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 99px;
+  padding: 8px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  z-index: 100000;
+  animation: none;
+}
+
+#stopMemeBtn:hover {
+  background: rgba(255,255,255,0.28);
+}

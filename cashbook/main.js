@@ -410,17 +410,36 @@ function renderType(type, data) {
   })}
   
   const getAuthInput = () =>{
+  // Read fields based on active auth mode
+  const isLogin = authMode === 'login';
+  const fullnameEl = isLogin ? document.getElementById('fullname_login') : document.getElementById('fullname');
+  const usernameEl = isLogin ? document.getElementById('username_login') : document.getElementById('username');
   return {
     email: emailInput.value.trim(),
-    password: passInput.value.trim() || Math.random().toString(36).slice(-8),
-    username: document.getElementById("username").value.trim().toLowerCase(),
-    fullname : document.querySelector('#fullname').value.trim(),
-    selectedRole : document.querySelector('input[name="role"]:checked')?.value || null
+    password: passInput.value.trim(),
+    username: (usernameEl?.value || '').trim().toLowerCase(),
+    fullname: (fullnameEl?.value || '').trim(),
   }
 }
-  const validateAuthInput = ({ email, username, fullname }) => {
-  if (!email || !username || !fullname) {
-    showToast('Fill all fields', '#FFC107');
+  const validateAuthInput = ({ email, username, fullname, password }) => {
+  if (!email) {
+    showToast('Enter your email', '#FFC107');
+    return false;
+  }
+  if (!password) {
+    showToast('Enter your password', '#FFC107');
+    return false;
+  }
+  if (password.length < 6) {
+    showToast('Password must be at least 6 characters', '#FFC107');
+    return false;
+  }
+  if (!username) {
+    showToast('Enter shop username', '#FFC107');
+    return false;
+  }
+  if (authMode === 'signup' && !fullname) {
+    showToast('Enter your full name', '#FFC107');
     return false;
   }
   return true;
@@ -430,14 +449,6 @@ function renderType(type, data) {
   const snap = await userRef.get();
   return snap.exists() ? snap.val() : null;
 }
-  const verifyPassword=(dbUser, password)=> {
-  if (dbUser.password !== password) {
-    showTopToast("Wrong password", '#F44336');
-    vibrate([15, 80, 15]);
-    return false;
-  }
-  return true;
-}
   const detectRole=(dbUser, fullname) =>{
   return dbUser.fullname.toLowerCase().includes(fullname.toLowerCase())
     ? 'owner'
@@ -446,17 +457,14 @@ function renderType(type, data) {
   const loginUser= async({ email, password, username, fullname })=> {
   const dbUser = await getUser(username);
   if (!dbUser) {
-    showTopToast("User not found : 404", '#F44336');
-    const input = getAuthInput()
-    await signupUser(input)
+    showTopToast("Shop not found. Check username or sign up.", '#F44336');
     return;
   }
 
-  if (!verifyPassword(dbUser, password)) return;
+  // Firebase Auth handles password — no DB password check
+  await auth.signInWithEmailAndPassword(email, password);
 
   const role = detectRole(dbUser, fullname);
-
-  await auth.signInWithEmailAndPassword(email, password);
 
   await db.ref(`/users/${username}/logins/${Date.now()}_${role}_${fullname}`)
     .set(getDeviceInfo());
@@ -471,32 +479,33 @@ function renderType(type, data) {
   }
 
   persistSession(username, fullname, role);
-  showTopToast("SignIn successful : 200");
+  showTopToast("Sign in successful ✓");
   location.reload();
 }
   const signupUser = async ({ email, password, username, fullname }) => {
   const exists = await getUser(username);
   if (exists) {
-    showTopToast("Username already exists : 409", '#F44336');
+    showTopToast("Username already taken. Try another.", '#F44336');
     return;
   }
   
   await auth.createUserWithEmailAndPassword(email, password);
   
+  // ⚠️ Password is NEVER stored in the database — Firebase Auth handles it
   await db.ref(`/users/${username}`).set({
     username,
-    password,
     fullname,
     role: 'owner',
     signupInfo: {
       device: getDeviceInfo(),
       fullname,
+      email,
     },
     logins: {}
   });
   
   persistSession(username, fullname, 'owner');
-  showTopToast("Signup successful : 201");
+  showTopToast("Account created ✓");
   location.reload();
 }
   const persistSession = (username, fullname, role) => {
@@ -959,17 +968,96 @@ staffRef.on('child_changed', snap => {
   
   
   
-    // Authentication: simple email sign in (create if not exists)
+    // Authentication mode (login | signup)
+let authMode = 'login';
+
+const switchAuthMode = (mode) => {
+  authMode = mode;
+  const isLogin = mode === 'login';
+
+  // Update tabs
+  document.getElementById('tabLogin').classList.toggle('active', isLogin);
+  document.getElementById('tabSignup').classList.toggle('active', !isLogin);
+
+  // Show/hide field blocks
+  document.getElementById('signupOnlyFields').classList.toggle('hidden', isLogin);
+  document.getElementById('loginOnlyFields').classList.toggle('hidden', !isLogin);
+
+  // Button label
+  signInBtn.textContent = isLogin ? 'Sign In' : 'Create Account';
+
+  // Forgot password only makes sense in login mode
+  document.getElementById('forgotPasswordBtn').classList.toggle('hidden', !isLogin);
+};
+
+document.getElementById('tabLogin').addEventListener('click', () => switchAuthMode('login'));
+document.getElementById('tabSignup').addEventListener('click', () => switchAuthMode('signup'));
+
+// Forgot Password
+document.getElementById('forgotPasswordBtn').addEventListener('click', async () => {
+  const email = emailInput.value.trim();
+  if (!email) {
+    showToast('Enter your email first', '#FFC107');
+    emailInput.focus();
+    return;
+  }
+  try {
+    await auth.sendPasswordResetEmail(email);
+    showOverlay({
+      title: '📧 Reset Email Sent',
+      desc: `A password reset link was sent to <strong>${email}</strong>.<br><br>
+      ⚠️ <strong>Don't see it? Check your Spam / Junk folder</strong> — Gmail sometimes sends reset emails there.<br><br>
+      The link expires in 1 hour.`,
+      icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="#0BA2FF" style="width:60px">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+      </svg>`,
+    });
+  } catch (e) {
+    const msg = e.code === 'auth/user-not-found'
+      ? 'No account found with this email.'
+      : e.code === 'auth/invalid-email'
+        ? 'Invalid email address.'
+        : 'Failed to send reset email. Try again.';
+    showTopToast(msg, '#F44336');
+  }
+});
+
+// Firebase auth error messages
+function getFirebaseAuthError(code) {
+  const map = {
+    'auth/wrong-password'        : 'Wrong password. Try again.',
+    'auth/invalid-credential'    : 'Wrong email or password.',
+    'auth/user-not-found'        : 'No account found with this email.',
+    'auth/invalid-email'         : 'Invalid email address.',
+    'auth/too-many-requests'     : 'Too many attempts. Try again later.',
+    'auth/email-already-in-use'  : 'Email already registered. Try signing in.',
+    'auth/weak-password'         : 'Password too weak. Use at least 6 characters.',
+    'auth/network-request-failed': 'Network error. Check your connection.',
+  };
+  return map[code] || 'Something went wrong. Please try again.';
+}
+
+    // Sign In / Sign Up button
 signInBtn.addEventListener('click', async () => {
   const input = getAuthInput();
   if (!validateAuthInput(input)) return;
 
+  signInBtn.disabled = true;
+  signInBtn.textContent = authMode === 'login' ? 'Signing in…' : 'Creating account…';
   $('.loader')?.classList.remove('off');
+
   try {
-    await loginUser(input);
+    if (authMode === 'login') {
+      await loginUser(input);
+    } else {
+      await signupUser(input);
+    }
   } catch (e) {
-    await signupUser(input);
+    showTopToast(getFirebaseAuthError(e.code), '#F44336');
+    vibrate([15, 80, 15]);
   } finally {
+    signInBtn.disabled = false;
+    signInBtn.textContent = authMode === 'login' ? 'Sign In' : 'Create Account';
     $('.loader')?.classList.add('off');
   }
 });
@@ -1250,29 +1338,46 @@ if (isUserViewGoalAlert ==='yes') {
   return; // Or continue processing other non-alert logic
 }
 //renderEntries(data);
-if (data.targetAmount <=totalIn) {
+if (data.targetAmount <= totalIn) {
+  const setBy = data.lastUpdatedBy?.toLowerCase() === fullname.toLowerCase()
+    ? 'You'
+    : (data.lastUpdatedBy || 'Owner');
+  const overAmount = totalIn - data.targetAmount;
+  const overPct = Math.round((overAmount / data.targetAmount) * 100);
+
   showOverlay({
-  title: '🥳 Mission Accomplished! Your Daily Goal is CRUSHED!',
-  desc: `You absolutely smashed your target of <b>₹${data.targetAmount}</b>! Today's total income is a fantastic <b>₹${totalIn}</b>. Keep up the great work!
-  <br>
-  <small style="font-style: italic">Target set by: **${data.lastUpdatedBy.toLowerCase() === fullname.toLowerCase() ? "You" : data.lastUpdatedBy}**</small>
-  <br>
-  
-  <p> We have a special party 🎉</p>
-  <button class="meme_btn">Join For Free </button>
-  
-  `
-, icon:`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#10b981" class="size-2">
-  <path fill-rule="evenodd" d="M8.603 3.799A4.49 4.49 0 0 1 12 2.25c1.357 0 2.573.6 3.397 1.549a4.49 4.49 0 0 1 3.498 1.307 4.491 4.491 0 0 1 1.307 3.497A4.49 4.49 0 0 1 21.75 12a4.49 4.49 0 0 1-1.549 3.397 4.491 4.491 0 0 1-1.307 3.497 4.491 4.491 0 0 1-3.497 1.307A4.49 4.49 0 0 1 12 21.75a4.49 4.49 0 0 1-3.397-1.549 4.49 4.49 0 0 1-3.498-1.306 4.491 4.491 0 0 1-1.307-3.498A4.49 4.49 0 0 1 2.25 12c0-1.357.6-2.573 1.549-3.397a4.49 4.49 0 0 1 1.307-3.497 4.49 4.49 0 0 1 3.497-1.307Zm7.007 6.387a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" />
-</svg>
-`, btnColor:'#10b981'})
+    title: '🏆 Goal Crushed!',
+    desc: `
+      <div class="goal-overlay-card achieved">
+        <div class="goal-overlay-row">
+          <span class="goal-overlay-label">🎯 Target</span>
+          <span class="goal-overlay-val">₹${Number(data.targetAmount).toLocaleString()}</span>
+        </div>
+        <div class="goal-overlay-row highlight">
+          <span class="goal-overlay-label">💰 Earned Today</span>
+          <span class="goal-overlay-val green">₹${Number(totalIn).toLocaleString()}</span>
+        </div>
+        ${overAmount > 0 ? `
+        <div class="goal-overlay-row">
+          <span class="goal-overlay-label">📈 Over Target</span>
+          <span class="goal-overlay-val green">+₹${Number(overAmount).toLocaleString()} (+${overPct}%)</span>
+        </div>` : ''}
+        <div class="goal-overlay-progress">
+          <div class="goal-overlay-bar" style="width:100%;background:#10b981"></div>
+        </div>
+        <p class="goal-overlay-setby">Set by <b>${setBy}</b></p>
+      </div>
+      <p class="goal-overlay-party-text">We have a special surprise for you! 🎉</p>
+      <button class="meme_btn">🎬 Watch Party</button>
+    `,
+    icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#10b981" style="width:56px">
+      <path fill-rule="evenodd" d="M8.603 3.799A4.49 4.49 0 0 1 12 2.25c1.357 0 2.573.6 3.397 1.549a4.49 4.49 0 0 1 3.498 1.307 4.491 4.491 0 0 1 1.307 3.497A4.49 4.49 0 0 1 21.75 12a4.49 4.49 0 0 1-1.549 3.397 4.491 4.491 0 0 1-1.307 3.497 4.491 4.491 0 0 1-3.497 1.307A4.49 4.49 0 0 1 12 21.75a4.49 4.49 0 0 1-3.397-1.549 4.49 4.49 0 0 1-3.498-1.306 4.491 4.491 0 0 1-1.307-3.498A4.49 4.49 0 0 1 2.25 12c0-1.357.6-2.573 1.549-3.397a4.49 4.49 0 0 1 1.307-3.497 4.49 4.49 0 0 1 3.497-1.307Zm7.007 6.387a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" />
+    </svg>`,
+    btnColor: '#10b981'
+  });
 
-
-
-
-localStorage.setItem('isUserViewGoalAlert', 'yes')
-
-$('#target').innerHTML = `<p style="font-weight: bold;" class='small'>${data.targetAmount} Completed ⚡</p>`
+  localStorage.setItem('isUserViewGoalAlert', 'yes');
+  $('#target').innerHTML = `<span class="goal-done-badge">₹${Number(data.targetAmount).toLocaleString()} ✅</span>`;
 }
 
 // Local Storage Key to track the last totalIn when the overlay was shown
@@ -1299,24 +1404,43 @@ const shouldShowAgain = lastShownIncome === 0 || (totalIn >= lastShownIncome + r
 
 // 4. Combined Check
 if (
-    data.targetAmount > totalIn && // Goal is NOT reached
-    totalIn >= seventyPercentThreshold && // 70% threshold is met
-    shouldShowAgain // Show only if it's the first time OR there's a 5% income increase
+    data.targetAmount > totalIn &&
+    totalIn >= seventyPercentThreshold &&
+    shouldShowAgain
 ) {
-    // Calculate the remaining amount needed
     const remainingAmount = data.targetAmount - totalIn;
+    const progressPct = Math.min(Math.round((totalIn / data.targetAmount) * 100), 99);
+    const setBy70 = data.lastUpdatedBy?.toLowerCase() === fullname.toLowerCase()
+      ? 'You'
+      : (data.lastUpdatedBy || 'Owner');
 
-    // Show the Overlay
     showOverlay({
-        title: '🔥 You’re So Close! Just a Little Push Needed!',
-        desc: `You've already earned <b>₹${totalIn}</b>. You only need <b>₹${remainingAmount}</b> more to reach your daily goal of <b>₹${data.targetAmount}</b>. Keep the momentum going!
-        
-        <small style="font-style: italic">Target set by: **${data.lastUpdatedBy.toLowerCase() === fullname.toLowerCase() ? "You" : data.lastUpdatedBy}**</small>`
-        
+        title: '\uD83D\uDD25 Almost There!',
+        desc: `
+          <div class="goal-overlay-card progress">
+            <div class="goal-overlay-row highlight">
+              <span class="goal-overlay-label">\uD83D\uDCB0 Earned</span>
+              <span class="goal-overlay-val green">\u20B9${Number(totalIn).toLocaleString()}</span>
+            </div>
+            <div class="goal-overlay-row">
+              <span class="goal-overlay-label">\uD83C\uDFAF Target</span>
+              <span class="goal-overlay-val">\u20B9${Number(data.targetAmount).toLocaleString()}</span>
+            </div>
+            <div class="goal-overlay-row">
+              <span class="goal-overlay-label">\u23F3 Remaining</span>
+              <span class="goal-overlay-val amber">\u20B9${Number(remainingAmount).toLocaleString()}</span>
+            </div>
+            <div class="goal-overlay-progress">
+              <div class="goal-overlay-bar" style="width:${progressPct}%;background:#f59e0b"></div>
+            </div>
+            <p class="goal-overlay-pct">${progressPct}% complete</p>
+            <p class="goal-overlay-setby">Set by <b>${setBy70}</b></p>
+          </div>
+          <p class="goal-overlay-msg">One last push \u2014 you\u2019ve got this! \uD83D\uDCAA</p>
+        `,
+        btnColor: '#f59e0b'
     });
 
-    // 5. Update Local Storage AFTER showing the overlay
-    // This prevents the overlay from showing again immediately on the next check/refresh
     localStorage.setItem(LAST_SHOWN_INCOME_KEY, totalIn.toString());
 }
 
@@ -1884,191 +2008,75 @@ function askUserReason({ title, placeholder, btnText }) {
 
 
 
-// --------- CAT NEME FUNCTION -------- //
+// --------- MEME / PARTY FUNCTION -------- //
 
-// Function to start the meme process
+// Add your video files to ./assets/video/ and list them here
+const MEME_VIDEOS = [
+  './assets/video/party1.mp4',
+  './assets/video/party2.mp4',
+  './assets/video/party3.mp4',
+  './assets/video/party4.mp4',
+  './assets/video/party5.mp4',
+];
+
+let _memeTimers = [];
+
 const startMeme = () => {
-  
-  const video = document.querySelector('video')
-  video.classList.remove('hidden')
-  video.play()
-  
-  
-    // ----------------------------------------------------
-  // ADDITION: Event Listener to automatically stop the meme when the video ends
-  // ----------------------------------------------------
-  
-  // Define a function reference for the listener so we can remove it later in stopMeme
-  const videoEndHandler = () => {
-      // The video has ended, so automatically call the stopMeme function
-      stopMeme();
-      
-      // IMPORTANT: Remove the listener so it doesn't fire again unexpectedly 
-      // if the video is manually played/replayed outside the meme functions.
-      video.removeEventListener('ended', videoEndHandler);
-      
-      console.log("Video ended. stopMeme() called automatically and listener removed.");
-  };
+  const overlay  = document.getElementById('memeOverlay');
+  const videoEl  = document.getElementById('memeVideo');
+  if (!overlay || !videoEl) return;
 
-  // Add the listener to the video element
-  video.addEventListener('ended', videoEndHandler);
-  
-  // Select all input elements on the page once
-  const inputs = document.querySelectorAll('input');
-  
+  // Pick a random video each time
+  const src = MEME_VIDEOS[Math.floor(Math.random() * MEME_VIDEOS.length)];
+  videoEl.src = src;
+  videoEl.load();
 
-  
-  // --- Inner Function for Inputs ---
-  // This function handles adding/removing the '.meme' class from all inputs.
-  const manageInputMeme = (action) => {
-    // action should be 'add' or 'remove'
-    if (action === 'add') {
-      inputs.forEach(input => {
-        input.classList.add('meme');
-      });
-      console.log('Class .meme ADDED to all input elements.');
-    } else if (action === 'remove') {
-      inputs.forEach(input => {
-        input.classList.remove('meme');
-      });
-      console.log('Class .meme REMOVED from all input elements.');
-    } else {
-      console.error("Invalid action for manageInputMeme. Use 'add' or 'remove'.");
-    }
-  };
+  overlay.classList.remove('hidden');
+  videoEl.play().catch(() => {}); // ignore autoplay policy errors
 
-  // --- Inner Function for Cards ---
-  // This function handles adding/removing the '.meme' class from all cards.
-  const manageCardMeme = (action) => {
-      // Select all card elements on the page once
-  const cards = document.querySelectorAll('.card'); 
-    // action should be 'add' or 'remove'
-    if (action === 'add') {
-      cards.forEach(card => {
-        card.classList.add('meme');
-      });
-      console.log('Class .meme ADDED to all .card elements.');
-    } else if (action === 'remove') {
-      cards.forEach(card => {
-        card.classList.remove('meme');
-      });
-      console.log('Class .meme REMOVED from all .card elements.');
-    } else {
-      console.error("Invalid action for manageCardMeme. Use 'add' or 'remove'.");
-    }
-  };
+  // Auto-stop when video ends
+  videoEl.addEventListener('ended', () => stopMeme(), { once: true });
 
-  // ---------------------------------------------
-  // --- Execution Logic (Calling as per needed) ---
-  // ---------------------------------------------
+  // Add .meme to inputs immediately
+  document.querySelectorAll('input').forEach(el => el.classList.add('meme'));
 
-  // 1. Initial Step: Add classList .meme to each input element
-  manageInputMeme('add');
-  
-  // OPTIONAL: Wait 1 second and remove the class from inputs (e.g., if the shake animation ends)
-  // setTimeout(() => {
-  //   manageInputMeme('remove');
-  // }, 1000); 
+  // Add .meme to cards after 6.5 s
+  _memeTimers.push(setTimeout(() => {
+    document.querySelectorAll('.card').forEach(el => el.classList.add('meme'));
+  }, 6500));
 
-  // 2. Delayed Step: Wait 5 seconds and then add classList .meme to each .card element
-  setTimeout(() => {
-    manageCardMeme('add');
-    
-    // OPTIONAL: Wait another 1 second and remove the class from cards
-    // setTimeout(() => {
-    //   manageCardMeme('remove');
-    // }, 1000);
-
-  }, 6500); // 5000 milliseconds = 5 seconds
-  
-  setTimeout(()=>{
-    document.body.classList.add('dj')
-  }, 15000)
+  // Add .dj body class at 15 s
+  _memeTimers.push(setTimeout(() => {
+    document.body.classList.add('dj');
+  }, 15000));
 };
-
-// Example: You can call startMeme() when a button is clicked or on page load.
- //startMeme();
-
-
-
-
-
 
 const stopMeme = () => {
-  // Select the video element
-  const video = document.querySelector('video');
-  // Select all input elements on the page
-  const inputs = document.querySelectorAll('input');
-  // Select all card elements on the page (Note: You are selecting this inside manageCardMeme in startMeme, 
-  // but selecting it here is more efficient for stopMeme's logic)
-  const cards = document.querySelectorAll('.card'); 
+  const overlay = document.getElementById('memeOverlay');
+  const videoEl = document.getElementById('memeVideo');
 
-  // --- Inner Function for Inputs (Reusing logic for cleanup) ---
-  const manageInputMeme = (action) => {
-    // action should be 'add' or 'remove'
-    if (action === 'add') {
-      // Logic for adding class (not needed for stopMeme, but kept for consistency)
-      inputs.forEach(input => input.classList.add('meme'));
-      console.log('Class .meme ADDED to all input elements.');
-    } else if (action === 'remove') {
-      inputs.forEach(input => {
-        input.classList.remove('meme');
-      });
-      console.log('Class .meme REMOVED from all input elements.');
-    } else {
-      console.error("Invalid action for manageInputMeme. Use 'add' or 'remove'.");
-    }
-  };
-
-  // --- Inner Function for Cards (Reusing logic for cleanup) ---
-  const manageCardMeme = (action) => {
-    // action should be 'add' or 'remove'
-    if (action === 'add') {
-      // Logic for adding class (not needed for stopMeme)
-      cards.forEach(card => card.classList.add('meme'));
-      console.log('Class .meme ADDED to all .card elements.');
-    } else if (action === 'remove') {
-      cards.forEach(card => {
-        card.classList.remove('meme');
-      });
-      console.log('Class .meme REMOVED from all .card elements.');
-    } else {
-      console.error("Invalid action for manageCardMeme. Use 'add' or 'remove'.");
-    }
-  };
-
-  // ---------------------------------------------
-  // --- Execution Logic for Stopping ---
-  // ---------------------------------------------
-
-  // 1. Stop the video and hide it
-  if (video) {
-    video.pause();
-    // Resetting the video to the start for the next play is often good practice
-    video.currentTime = 0; 
-    video.classList.add('hidden');
-    console.log('Video paused and hidden.');
+  // Stop & reset video
+  if (videoEl) {
+    videoEl.pause();
+    videoEl.currentTime = 0;
+    videoEl.src = '';
   }
 
-  // 2. Remove .meme class from all inputs
-  manageInputMeme('remove');
-  
-  // 3. Remove .meme class from all cards
-  manageCardMeme('remove');
+  // Hide overlay
+  if (overlay) overlay.classList.add('hidden');
 
-  // 4. Remove 'dj' class from the body
+  // Clear all pending timers
+  _memeTimers.forEach(id => clearTimeout(id));
+  _memeTimers = [];
+
+  // Remove .meme and .dj classes
+  document.querySelectorAll('input, .card').forEach(el => el.classList.remove('meme'));
   document.body.classList.remove('dj');
-  console.log('Class .dj REMOVED from body.');
-
-  // IMPORTANT: Clear any pending timeouts from startMeme if needed. 
-  // You would need to store the IDs of the timeouts (e.g., const timeoutId = setTimeout(...)) 
-  // and use clearTimeout(timeoutId) here. Since you didn't store them, this is a suggestion 
-  // for future optimization.
-  
 };
 
-// Example: You can call stopMeme() when a 'Stop' button is clicked.
-// stopMeme();
+
+// Example: stopMeme() is called automatically when video ends, or via Skip button.
+document.getElementById('stopMemeBtn').addEventListener('click', () => stopMeme());
 
 
 
