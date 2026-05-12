@@ -654,7 +654,6 @@ if(!username || !fullname)handleInvalidAuthState();
     auth.onAuthStateChanged(user => {
    if (user) {
      loading_text.textContent = username;
-     $('#userEmail').textContent=user.email || '';
      progressBar.style.width = '97%'
      
      authView.style.display = 'none';
@@ -3437,43 +3436,3 @@ const isUserSeeCustomAlert=''
       const blob = new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
       const a=document.createElement('a'); a.href=url; a.download=`cashbook-${currentDate}.csv`; a.click(); URL.revokeObjectURL(url);
     });
-// ── Bottom Nav: sync active state with page navigation ──
-(function() {
-  function syncBottomNav(pageId) {
-    document.querySelectorAll('.bnav-item[data-link]').forEach(b => {
-      b.classList.toggle('active', b.dataset.link === pageId);
-    });
-  }
-
-  // Watch hash changes (history.back() from settings/profile pages)
-  window.addEventListener('popstate', () => {
-    const hash = location.hash.replace('#','') || 'home';
-    syncBottomNav(hash);
-  });
-
-  // Wire bottom nav buttons to the existing data-link navigation
-  document.querySelectorAll('.bnav-item[data-link]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const link = btn.dataset.link;
-      // Re-use existing data-link button if present (JS already handles it)
-      const existing = document.querySelector(
-        `[data-link="${link}"]:not(.bnav-item):not([style*="display:none"])`
-      );
-      if (existing) {
-        existing.click();
-      } else {
-        // Fallback: manually transition pages
-        document.querySelectorAll('.page').forEach(p => {
-          if (p.classList.contains('active')) p.classList.replace('active','exit');
-          setTimeout(() => p.classList.remove('exit'), 250);
-        });
-        const page = document.getElementById(link);
-        if (page) {
-          setTimeout(() => page.classList.add('active'), 10);
-          if (link !== 'home') history.pushState({page:link},'',`#${link}`);
-        }
-      }
-      syncBottomNav(link);
-    });
-  });
-})();

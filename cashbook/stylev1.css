@@ -51,7 +51,7 @@
     .search-wrapper{
       background:var(--card);
       padding:8px 14px;
-      position:stiky;
+      position:sticky;
       top:var(--nav-h);
       z-index:99;
       box-shadow:0 2px 8px rgba(15,23,42,0.05);
@@ -2048,7 +2048,7 @@ body{padding-bottom:76px}
 .search-wrapper{
   background:#fff;
   padding:8px 14px;
-  position:auto;
+  position:sticky;
   top:58px;
   z-index:99;
   box-shadow:0 2px 8px rgba(15,23,42,0.05);
@@ -2290,77 +2290,4 @@ form button{flex:1}
   .container{padding:0 10px;margin:10px auto}
   .card{padding:13px}
   .totals{grid-template-columns:1fr 1fr}
-}
-
-/* ═══════════════════════════════════════
-   BUG FIXES — loader / layout / summary
-   ═══════════════════════════════════════ */
-
-/* FIX 1: Small top-bar loader (not full-screen overlay) */
-.loader {
-  position: fixed;
-  top: 58px;          /* just below the nav */
-  left: 50%;
-  transform: translateX(-50%);
-  width: auto;
-  height: auto;
-  inset: unset;       /* override inset:0 */
-  background: #fff;
-  border-radius: 99px;
-  padding: 8px 16px 8px 12px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  box-shadow: 0 4px 20px rgba(15,23,42,0.14);
-  z-index: 9999;
-  backdrop-filter: none;
-  pointer-events: none;
-  white-space: nowrap;
-  font-size: 13px;
-  font-weight: 600;
-  color: #374151;
-  transition: opacity 0.2s;
-}
-.loader::after {
-  content: '';
-  width: 20px; height: 20px;
-  border: 2.5px solid #E0EBFF;
-  border-top-color: #0BA2FF;
-  border-radius: 50%;
-  animation: spin 0.65s linear infinite;
-  flex-shrink: 0;
-}
-/* keep ::after as the spinner; hide old inner markup */
-.loader > * { display: none; }
-.loader.off  { opacity: 0; pointer-events: none; }
-
-/* FIX 2: Today's summary ALWAYS on top — aside goes below on mobile */
-@media (max-width: 900px) {
-  .grid { display: flex; flex-direction: column; }
-  .grid > aside  { order: 2; }   /* Dashboard below */
-  .grid > *:not(aside) { order: 1; }  /* Summary/entries above */
-}
-
-/* FIX 3: Dashboard aside stats — 2-column grid on mobile */
-@media (max-width: 900px) {
-  /* The dashboard range-stats list */
-  .grid > aside .totals,
-  .grid > aside #rangeStats,
-  #rangeCard .totals {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-  /* Each stat pill */
-  .grid > aside .tot-row,
-  #rangeCard .tot-row {
-    padding: 10px 12px;
-    border-radius: 12px;
-  }
-  /* Chart scrolls horizontally instead of overflowing */
-  #chartBox, .grid > aside svg {
-    overflow-x: auto;
-    display: block;
-    max-width: 100%;
-  }
 }
