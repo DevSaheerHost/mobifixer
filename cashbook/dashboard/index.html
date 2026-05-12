@@ -3,15 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
-  <title>MobiFixer Dashboard</title>
-  <link rel="stylesheet" href="./style.css" />
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="./dash.css" />
 </head>
 <body>
-
   <main class="dash-container">
 
+    <!-- Top Bar -->
     <div class="top-bar">
-      <h2>📊 Dashboard : <span id="shopName"></span></h2>
+      <div class="top-bar-left">
+        <span class="dash-logo">📊</span>
+        <div>
+          <h2 class="dash-title">Dashboard</h2>
+          <p class="dash-shop" id="shopName"></p>
+        </div>
+      </div>
       <div class="picker">
         <input id="startDate" type="date">
         <input id="endDate" type="date">
@@ -19,61 +25,50 @@
       </div>
     </div>
 
-    <div class="card" style="height: 80vh;">
-      <h3>Income / Expense Chart</h3>
-      <div id="chartBox">
-
+    <!-- Summary Stats Row -->
+    <div class="stats-row" id="statsRow" style="display:none">
+      <div class="stat-card income">
+        <p class="stat-label">Total Income</p>
+        <p class="stat-value" id="statIncome">₹0</p>
       </div>
-      <div id="predictTooltip"
-     style="
-       position:fixed;
-       background:#ffffff;
-       padding:6px 10px;
-       border-radius:8px;
-       border:1px solid #ccc;
-       box-shadow:0 3px 12px #0003;
-       font-size:13px;
-       display:none;
-       pointer-events:none;
-       z-index:999999999;
-     ">
-</div>
+      <div class="stat-card expense">
+        <p class="stat-label">Total Expense</p>
+        <p class="stat-value" id="statExpense">₹0</p>
+      </div>
+      <div class="stat-card profit">
+        <p class="stat-label">Net Profit</p>
+        <p class="stat-value" id="statProfit">₹0</p>
+      </div>
+      <div class="stat-card ai">
+        <p class="stat-label">AI Forecast (Next Day)</p>
+        <p class="stat-value" id="statPrediction">—</p>
+      </div>
     </div>
-<button id="resetZoomBtn" class="resetZoom">Reset Zoom</button>
 
-<div class="card mt-1">
-  
-<h3>Legend</h3>
-<ul class="legend">
-  <li>
-    <span style="background: #0BA2FF;"></span>
-    <p>Income</p>
-  </li>  
-  
-  <li>
-    <span style="background: #FF4D4D;"></span>
-    <p>Expense</p>
-  </li>
-  
-    <li>
-    <span style="background: #6A5ACD;"></span>
-    <p>Profit</p>
-  </li>
-  
-   <li>
-    <span style="background: transparent;" class="prediction"></span>
-    <p>AI Prediction</p>
-  </li>
-</ul>
+    <!-- Chart Card -->
+    <div class="card chart-card">
+      <div class="chart-header">
+        <h3>Income · Expense · Profit</h3>
+        <button id="resetZoomBtn" class="btn-ghost">⟳ Reset</button>
+      </div>
+      <div id="chartBox"></div>
+      <div id="predictTooltip" class="predict-tooltip"></div>
+    </div>
 
-<p class="small">Your financial trend is forecasted using AI regression models and real-time confidence analysis. <b>Zeno Z3 AI </b></p>
-</div>
+    <!-- Legend -->
+    <div class="card mt-1">
+      <h3>Legend</h3>
+      <ul class="legend">
+        <li><span style="background:#0BA2FF"></span><p>Income</p></li>
+        <li><span style="background:#FF4D4D"></span><p>Expense</p></li>
+        <li><span style="background:#6A5ACD"></span><p>Profit / Balance</p></li>
+        <li><span class="prediction"></span><p>Zeno Z3 AI Forecast</p></li>
+      </ul>
+      <p class="small">Zeno Z3 uses Holt's double exponential smoothing + linear regression + weighted moving average with day-of-week seasonal adjustment.</p>
+    </div>
 
   </main>
 
-  
- <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>  <script type="module" src="./script.js"></script>
-
-
+  <script type="module" src="./script.js"></script>
 </body>
 </html>

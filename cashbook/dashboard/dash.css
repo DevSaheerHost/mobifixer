@@ -1,0 +1,271 @@
+/* =============================================
+   BASE
+   ============================================= */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  background: #ECEFFE;
+  padding: 16px;
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #1a1a2e;
+}
+
+h2, h3, h4 { margin: 0; }
+p { margin: 0; }
+ul { list-style: none; padding: 0; margin: 0; }
+
+/* =============================================
+   LAYOUT
+   ============================================= */
+.dash-container {
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* =============================================
+   TOP BAR
+   ============================================= */
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.top-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dash-logo {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.dash-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.dash-shop {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.picker {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* =============================================
+   INPUTS & BUTTONS
+   ============================================= */
+input[type="date"] {
+  border-radius: 8px;
+  background: #fff;
+  font-weight: 500;
+  font-size: 14px;
+  border: 1.5px solid #dde1f0;
+  padding: 7px 10px;
+  color: #1a1a2e;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+input[type="date"]:focus {
+  border-color: #0BA2FF;
+}
+
+button {
+  background: #0BA2FF;
+  color: #fff;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+button:hover  { background: #0090e6; }
+button:active { transform: scale(0.97); }
+
+.btn-ghost {
+  background: transparent;
+  color: #6b7280;
+  border: 1.5px solid #dde1f0;
+  font-size: 13px;
+  padding: 6px 12px;
+}
+
+.btn-ghost:hover {
+  background: #f3f4f6;
+  color: #1a1a2e;
+}
+
+/* =============================================
+   STAT CARDS ROW
+   ============================================= */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+.stat-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  border-left: 4px solid transparent;
+}
+
+.stat-card.income  { border-color: #0BA2FF; }
+.stat-card.expense { border-color: #FF4D4D; }
+.stat-card.profit  { border-color: #6A5ACD; }
+.stat-card.ai      { border-color: #00C853; }
+
+.stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #9ca3af;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.stat-card.income  .stat-value { color: #0BA2FF; }
+.stat-card.expense .stat-value { color: #FF4D4D; }
+.stat-card.profit  .stat-value { color: #6A5ACD; }
+.stat-card.ai      .stat-value { color: #00C853; }
+
+/* =============================================
+   CARD
+   ============================================= */
+.card {
+  background: #fff;
+  padding: 20px;
+  border-radius: 18px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+
+.chart-card { padding-bottom: 12px; }
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.chart-header h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.mt-1 { margin-top: 0; } /* gap handled by flex container */
+
+/* =============================================
+   CHART BOX  ← THE CRASH FIX
+   ============================================= */
+#chartBox {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  cursor: grab;
+  border-radius: 10px;
+  /* REMOVED: position:absolute, left:-50%, top:50vh,
+              width:100vh, transform:rotate(90deg) */
+}
+
+#chartBox:active { cursor: grabbing; }
+
+svg {
+  border-radius: 8px;
+  user-select: none;
+  background: #fafbff;
+  display: block;
+}
+
+/* =============================================
+   PREDICT TOOLTIP
+   ============================================= */
+.predict-tooltip {
+  display: none;
+  position: fixed;
+  background: #1a1a2e;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 7px;
+  pointer-events: none;
+  z-index: 999;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+}
+
+/* =============================================
+   LEGEND
+   ============================================= */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 10px 0;
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  font-size: 13px;
+  color: #374151;
+}
+
+.legend span {
+  height: 10px;
+  width: 10px;
+  border-radius: 100px;
+  flex-shrink: 0;
+}
+
+.legend .prediction {
+  width: 22px;
+  height: 0;
+  border-top: 2.5px dashed #FF1744;
+  border-bottom: 2.5px dashed #00C853;
+  border-radius: 0;
+  background: transparent;
+}
+
+.card p.small {
+  font-style: italic;
+  color: #9ca3af;
+  font-size: 12px;
+  margin-top: 8px;
+}
