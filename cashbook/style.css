@@ -2301,7 +2301,7 @@ form button{flex:1}
   position: fixed;
   top: 58px;          /* just below the nav */
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(50%);
   width: auto;
   height: auto;
   inset: unset;       /* override inset:0 */
