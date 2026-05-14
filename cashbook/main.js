@@ -2013,11 +2013,11 @@ function askUserReason({ title, placeholder, btnText }) {
 
 // Add your video files to ./assets/video/ and list them here
 const MEME_VIDEOS = [
-  './assets/video/party1.mp4',
-  './assets/video/party2.mp4',
-  './assets/video/party3.mp4',
-  './assets/video/party4.mp4',
-  './assets/video/party5.mp4',
+  './assets/video/cat.mp4',
+  './assets/video/blabla.mp4',
+  //'./assets/video/party3.mp4',
+  //'./assets/video/party4.mp4',
+ // './assets/video/party5.mp4',
 ];
 
 let _memeTimers = [];
@@ -2038,20 +2038,30 @@ const startMeme = () => {
   // Auto-stop when video ends
   videoEl.addEventListener('ended', () => stopMeme(), { once: true });
 
-  // Add .meme to inputs immediately
-  document.querySelectorAll('input').forEach(el => el.classList.add('meme'));
 
+
+
+if (src.includes('cat')) {
+    // Add .meme to inputs immediately
+  document.querySelectorAll('input').forEach(el => el.classList.add('meme'));
+  
   // Add .meme to cards after 6.5 s
   _memeTimers.push(setTimeout(() => {
     document.querySelectorAll('.card').forEach(el => el.classList.add('meme'));
   }, 6500));
-
+  
   // Add .dj body class at 15 s
   _memeTimers.push(setTimeout(() => {
     document.body.classList.add('dj');
   }, 15000));
+} else if (src.includes('blabla')) {
+    document.body.classList.add('blabla');
+    setTimeout(()=>{
+      document.querySelectorAll('.entry').forEach(el => el.classList.add('blabla'));
+  }, 7500)
+}
 };
-
+//document.querySelector('.nav').onclick=()=>startMeme();
 const stopMeme = () => {
   const overlay = document.getElementById('memeOverlay');
   const videoEl = document.getElementById('memeVideo');
@@ -2073,6 +2083,7 @@ const stopMeme = () => {
   // Remove .meme and .dj classes
   document.querySelectorAll('input, .card').forEach(el => el.classList.remove('meme'));
   document.body.classList.remove('dj');
+  document.body.classList.remove('blabla');
 };
 
 

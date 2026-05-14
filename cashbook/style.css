@@ -1082,8 +1082,16 @@ form button{
   90%         {transform:translate(26px);background: var(--accent);}
 }
   
+  
+#bnav-settings svg{
+    animation: rotat 10s linear infinite;
+  }
 
-
+@keyframes rotat{
+  to{
+    transform: rotate(360deg);
+  }
+}
 
 
 
@@ -1094,7 +1102,8 @@ video{
     position: fixed;
     top: 0;
     left: 0;
-    opacity: 0.8;
+    opacity: 0.3;
+    max-height: 100vh;
 }    
 
 
@@ -1955,7 +1964,6 @@ summary.new::after{
 .meme-overlay {
   position: fixed;
   inset: 0;
-  background: #000;
   z-index: 99999;
   display: flex;
   align-items: center;

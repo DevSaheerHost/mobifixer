@@ -1,0 +1,710 @@
+/* ================================================================
+   🎵  DJ BEAT-MATCHED KEYFRAMES
+   Track: 150 BPM  |  Beat: 400ms  |  Bar: 1600ms
+   Structure:
+     0–2s   → Intro  (calm, gentle)
+     2–12s  → Build  (rising intensity)
+     12–14s → Break  (sudden quiet before drop)
+     14–26s → DROP 🔥 (full intensity)
+     26–28s → Break  (second quiet)
+     28–42s → Final DROP 🔥
+   ================================================================ */
+
+/* ── TIMING TOKENS ─────────────────────────────────────────── */
+:root {
+  --bpm:   150;
+  --beat:  400ms;   /* 1 beat  = 400ms */
+  --half:  200ms;   /* ½ beat  = 200ms */
+  --qtr:   100ms;   /* ¼ beat  = 100ms */
+  --2beat: 800ms;   /* 2 beats = 800ms */
+  --bar:   1600ms;  /* 4 beats = 1 bar */
+  --2bar:  3200ms;  /* 2 bars  = 3200ms */
+  --4bar:  6400ms;  /* 4 bars  = 6400ms */
+
+  /* Drop colours */
+  --dj-blue:   #0BA2FF;
+  --dj-pink:   #FF1B8D;
+  --dj-purple: #9B30FF;
+  --dj-green:  #00F5A0;
+  --dj-yellow: #FFD600;
+  --dj-red:    #FF1744;
+  --dj-cyan:   #00E5FF;
+  --dj-white:  #FFFFFF;
+  --dj-dark:   #0A0A1E;
+}
+
+
+/* ================================================================
+   1. PULSE — scale / brightness hit on every beat
+   ================================================================ */
+
+/* Main beat pop — use on cards, buttons, any block element */
+@keyframes beatPulse {
+  0%, 100% { transform: scale(1);    filter: brightness(1); }
+  8%        { transform: scale(1.1); filter: brightness(1.3); }
+  18%       { transform: scale(1);   filter: brightness(1); }
+}
+/* Usage: animation: beatPulse var(--beat) ease-out infinite; */
+
+/* Harder pump — bass-heavy feel */
+@keyframes bassPump {
+  0%, 100% { transform: scale(1) translateY(0);   }
+  10%       { transform: scale(1.14) translateY(-5px); }
+  22%       { transform: scale(0.97) translateY(2px); }
+  34%       { transform: scale(1) translateY(0);   }
+}
+/* Usage: animation: bassPump var(--beat) cubic-bezier(.2,.8,.2,1) infinite; */
+
+/* Subtle breathe — for intro/calm sections */
+@keyframes breathe {
+  0%, 100% { transform: scale(1);    opacity: 1;   }
+  50%       { transform: scale(1.04); opacity: 0.88; }
+}
+/* Usage: animation: breathe var(--2bar) ease-in-out infinite; */
+
+/* Micro-bounce — for small elements like dots, icons */
+@keyframes microBounce {
+  0%, 100% { transform: translateY(0);   }
+  20%       { transform: translateY(-8px); }
+  40%       { transform: translateY(0);   }
+  60%       { transform: translateY(-4px); }
+  80%       { transform: translateY(0);   }
+}
+/* Usage: animation: microBounce var(--beat) ease-in-out infinite; */
+
+/* Build-up stagger (use with animation-delay per element) */
+@keyframes buildRise {
+  0%   { transform: scaleY(0.1) translateY(10px); opacity: 0.3; }
+  100% { transform: scaleY(1)   translateY(0);    opacity: 1;   }
+}
+/* Usage: animation: buildRise var(--bar) ease-out infinite alternate; */
+
+
+/* ================================================================
+   2. SHAKE / DISTORTION — bass hits, drops, impact
+   ================================================================ */
+
+/* Horizontal bass shake */
+@keyframes bassShake {
+  0%,100% { transform: translateX(0); }
+  10%      { transform: translateX(-5px) rotate(-0.4deg); }
+  20%      { transform: translateX(5px)  rotate( 0.4deg); }
+  30%      { transform: translateX(-4px); }
+  40%      { transform: translateX(4px);  }
+  55%      { transform: translateX(-2px); }
+  70%      { transform: translateX(2px);  }
+}
+/* Usage: animation: bassShake var(--beat) ease-out infinite; */
+
+/* Full-body jolt — on drop hit */
+@keyframes dropJolt {
+  0%       { transform: translate(0, 0) rotate(0deg) scale(1); }
+  5%       { transform: translate(-6px, -4px) rotate(-1deg) scale(1.04); }
+  10%      { transform: translate(6px, 3px) rotate(1deg) scale(1.04); }
+  15%      { transform: translate(-4px, -2px) scale(1.02); }
+  25%      { transform: translate(3px, 1px); }
+  35%      { transform: translate(-1px, 0); }
+  50%,100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+}
+/* Usage: animation: dropJolt var(--bar) ease-out infinite; */
+
+/* RGB chromatic aberration / glitch split */
+@keyframes rgbSplit {
+  0%, 85%, 100% {
+    text-shadow: none;
+    filter: none;
+  }
+  88% {
+    text-shadow: -4px 0 2px var(--dj-red), 4px 0 2px var(--dj-cyan);
+    filter: blur(0.4px);
+  }
+  91% {
+    text-shadow:  4px 0 2px var(--dj-pink),   -4px 0 2px var(--dj-green);
+    filter: blur(0px);
+  }
+  94% {
+    text-shadow: -3px 0 1px var(--dj-cyan),   3px 0 1px var(--dj-yellow);
+    filter: blur(0.2px);
+  }
+  97% {
+    text-shadow:  3px 0 2px var(--dj-purple), -3px 0 2px var(--dj-blue);
+  }
+}
+/* Usage: animation: rgbSplit var(--bar) steps(1) infinite; */
+
+/* Digital glitch scan — horizontal line tear */
+@keyframes glitchScan {
+  0%, 90%, 100% {
+    clip-path: none;
+    transform: skewX(0deg);
+  }
+  91% { clip-path: inset(20% 0 60% 0); transform: skewX(-3deg) translateX(6px); }
+  92% { clip-path: inset(60% 0 10% 0); transform: skewX(3deg) translateX(-6px); }
+  93% { clip-path: inset(40% 0 30% 0); transform: skewX(-1deg) translateX(3px); }
+  94% { clip-path: none; transform: skewX(0deg); }
+}
+/* Usage: animation: glitchScan var(--2bar) linear infinite; */
+
+/* VHS / scanline jitter */
+@keyframes vhsJitter {
+  0%, 100% { transform: translateY(0); filter: none; }
+  33%       { transform: translateY(-2px); filter: blur(0.5px) contrast(1.1); }
+  66%       { transform: translateY(1px); filter: brightness(1.05); }
+}
+/* Usage: animation: vhsJitter var(--half) linear infinite; */
+
+
+/* ================================================================
+   3. COLOUR — hue, flash, cycle (all beat-synced)
+   ================================================================ */
+
+/* Full hue rotation — continuous rainbow cycle */
+@keyframes hueRotate {
+  from { filter: hue-rotate(0deg); }
+  to   { filter: hue-rotate(360deg); }
+}
+/* Usage: animation: hueRotate var(--4bar) linear infinite; */
+
+/* 4-colour cycle on beat (1 colour per beat) */
+@keyframes colorCycle4 {
+  0%   { color: var(--dj-blue);   }
+  25%  { color: var(--dj-pink);   }
+  50%  { color: var(--dj-green);  }
+  75%  { color: var(--dj-yellow); }
+  100% { color: var(--dj-blue);   }
+}
+/* Usage: animation: colorCycle4 var(--bar) steps(4) infinite; */
+
+/* Same but for background */
+@keyframes bgColorCycle4 {
+  0%   { background-color: #0a0033; }
+  25%  { background-color: #33000a; }
+  50%  { background-color: #00330a; }
+  75%  { background-color: #1a001a; }
+  100% { background-color: #0a0033; }
+}
+/* Usage: animation: bgColorCycle4 var(--bar) steps(4) infinite; */
+
+/* Strobe — on/off flash, classic club effect */
+@keyframes strobe {
+  0%, 49% { opacity: 1; }
+  50%, 99% { opacity: 0; }
+}
+/* Usage: animation: strobe var(--half) steps(1) infinite; */
+
+/* Soft strobe — less harsh, good for backgrounds */
+@keyframes softStrobe {
+  0%, 100% { opacity: 1;   }
+  50%       { opacity: 0.2; }
+}
+/* Usage: animation: softStrobe var(--beat) ease-in-out infinite; */
+
+/* White flash on drop (play once on drop hit) */
+@keyframes dropFlash {
+  0%   { background: rgba(255,255,255,0);   }
+  4%   { background: rgba(255,255,255,0.92); }
+  12%  { background: rgba(255,255,255,0.3);  }
+  25%  { background: rgba(255,255,255,0);   }
+  100% { background: rgba(255,255,255,0);   }
+}
+/* Usage: animation: dropFlash var(--bar) ease-out 1; */
+
+/* Border colour pulse — per beat */
+@keyframes borderBeat {
+  0%   { border-color: var(--dj-blue);   box-shadow: 0 0 0 0 var(--dj-blue); }
+  25%  { border-color: var(--dj-pink);   box-shadow: 0 0 0 0 var(--dj-pink); }
+  50%  { border-color: var(--dj-green);  box-shadow: 0 0 0 0 var(--dj-green); }
+  75%  { border-color: var(--dj-yellow); box-shadow: 0 0 0 0 var(--dj-yellow); }
+  100% { border-color: var(--dj-blue);   box-shadow: 0 0 0 0 var(--dj-blue); }
+}
+/* Usage: animation: borderBeat var(--bar) linear infinite; */
+
+/* Neon text colour flash */
+@keyframes neonTextFlash {
+  0%, 100% { color: var(--dj-blue);   text-shadow: 0 0 20px var(--dj-blue); }
+  33%       { color: var(--dj-pink);   text-shadow: 0 0 20px var(--dj-pink); }
+  66%       { color: var(--dj-green);  text-shadow: 0 0 20px var(--dj-green); }
+}
+/* Usage: animation: neonTextFlash var(--2beat) ease infinite; */
+
+
+/* ================================================================
+   4. GLOW — neon, pulse, laser effects
+   ================================================================ */
+
+/* Neon glow pulse — synced to beat */
+@keyframes neonGlow {
+  0%, 100% {
+    box-shadow:
+      0 0 6px var(--dj-blue),
+      0 0 20px var(--dj-blue),
+      0 0 40px var(--dj-blue),
+      0 0 80px rgba(11,162,255,0.4);
+  }
+  50% {
+    box-shadow:
+      0 0 3px var(--dj-blue),
+      0 0 8px var(--dj-blue);
+  }
+}
+/* Usage: animation: neonGlow var(--beat) ease-in-out infinite; */
+
+/* Multi-colour neon — cycles colours AND pulses */
+@keyframes neonMulti {
+  0%   { box-shadow: 0 0 8px var(--dj-blue),  0 0 30px var(--dj-blue),  0 0 60px var(--dj-blue);   }
+  25%  { box-shadow: 0 0 8px var(--dj-pink),  0 0 30px var(--dj-pink),  0 0 60px var(--dj-pink);   }
+  50%  { box-shadow: 0 0 8px var(--dj-green), 0 0 30px var(--dj-green), 0 0 60px var(--dj-green);  }
+  75%  { box-shadow: 0 0 8px var(--dj-yellow),0 0 30px var(--dj-yellow),0 0 60px var(--dj-yellow); }
+  100% { box-shadow: 0 0 8px var(--dj-blue),  0 0 30px var(--dj-blue),  0 0 60px var(--dj-blue);   }
+}
+/* Usage: animation: neonMulti var(--bar) linear infinite; */
+
+/* Vignette pulse — dark edges breathe on the beat */
+@keyframes vignettePulse {
+  0%, 100% { box-shadow: inset 0 0 40px rgba(0,0,0,0.1); }
+  50%       { box-shadow: inset 0 0 180px rgba(0,0,0,0.85); }
+}
+/* Usage on a full-screen wrapper: animation: vignettePulse var(--beat) ease-in-out infinite; */
+
+/* Laser sweep — thin glow line sweeps across */
+@keyframes laserSweep {
+  0%   { background-position: -100% 0; opacity: 0; }
+  10%  { opacity: 1; }
+  100% { background-position: 200% 0; opacity: 0; }
+}
+/*
+  Usage on a pseudo-element:
+  background: linear-gradient(90deg, transparent, var(--dj-blue), transparent);
+  background-size: 50% 100%;
+  animation: laserSweep var(--bar) ease-in-out infinite;
+*/
+
+/* Spotlight bloom — radial glow expands on beat */
+@keyframes spotlightBloom {
+  0%, 100% { background-size: 30% 30%; opacity: 0.4; }
+  50%       { background-size: 90% 90%; opacity: 0.15; }
+}
+/*
+  Usage:
+  background: radial-gradient(circle at center, rgba(11,162,255,0.6), transparent 60%);
+  animation: spotlightBloom var(--beat) ease-in-out infinite;
+*/
+
+
+/* ================================================================
+   5. BACKGROUND — gradient shifts, colour washes, dark pulse
+   ================================================================ */
+
+/* Gradient position shift — use with background-size: 400% 400% */
+@keyframes bgGradientShift {
+  0%   { background-position: 0%   50%; }
+  25%  { background-position: 100% 25%; }
+  50%  { background-position: 100% 75%; }
+  75%  { background-position: 0%   75%; }
+  100% { background-position: 0%   50%; }
+}
+/*
+  Usage:
+  background: linear-gradient(135deg, #0a0033, #001a4d, #1a0033, #003322);
+  background-size: 400% 400%;
+  animation: bgGradientShift var(--4bar) ease infinite;
+*/
+
+/* Dark beat pulse — bg flashes dark then recovers */
+@keyframes darkPulse {
+  0%, 100% { filter: brightness(1); }
+  8%        { filter: brightness(0.5); }
+  16%       { filter: brightness(1); }
+}
+/* Usage: animation: darkPulse var(--beat) ease-out infinite; */
+
+/* Colour wash — full background colour tint sweeps */
+@keyframes colorWash {
+  0%   { background-color: rgba(11,162,255,0.08);   }
+  25%  { background-color: rgba(255,27,141,0.08);   }
+  50%  { background-color: rgba(0,245,160,0.08);    }
+  75%  { background-color: rgba(255,214,0,0.08);    }
+  100% { background-color: rgba(11,162,255,0.08);   }
+}
+/* Usage: animation: colorWash var(--2bar) linear infinite; */
+
+/* Scanline background — retro CRT screen moving lines */
+@keyframes scanlines {
+  from { background-position: 0 0; }
+  to   { background-position: 0 100px; }
+}
+/*
+  Usage:
+  background-image: repeating-linear-gradient(
+    transparent, transparent 3px,
+    rgba(0,0,0,0.12) 3px, rgba(0,0,0,0.12) 4px
+  );
+  animation: scanlines var(--2beat) linear infinite;
+*/
+
+/* Strobe bg — full background rapid flash */
+@keyframes strobeBg {
+  0%, 48%  { background-color: #0A0A1E; }
+  50%, 98% { background-color: #ffffff; }
+}
+/* Usage: animation: strobeBg var(--half) steps(1) infinite;  ⚠️ use sparingly */
+
+
+/* ================================================================
+   6. ICLOUD TRANSITIONS — blur dissolve, depth zoom, soft fade
+   ================================================================ */
+
+/* iCloud photo open — blurred → sharp zoom-in */
+@keyframes iCloudOpen {
+  0%   { opacity: 0; filter: blur(28px) saturate(0.5); transform: scale(1.18); }
+  30%  { opacity: 1; filter: blur(6px)  saturate(0.8); transform: scale(1.06); }
+  60%  { opacity: 1; filter: blur(0px)  saturate(1);   transform: scale(1);    }
+  100% { opacity: 1; filter: blur(0px)  saturate(1);   transform: scale(1);    }
+}
+/* Usage: animation: iCloudOpen var(--2bar) cubic-bezier(.2,.8,.2,1) both; */
+
+/* iCloud photo close — sharp → blurred zoom-out */
+@keyframes iCloudClose {
+  0%   { opacity: 1; filter: blur(0px)  saturate(1);   transform: scale(1);    }
+  40%  { opacity: 1; filter: blur(6px)  saturate(0.8); transform: scale(0.95); }
+  100% { opacity: 0; filter: blur(28px) saturate(0.4); transform: scale(0.82); }
+}
+/* Usage: animation: iCloudClose var(--bar) cubic-bezier(.8,.2,.8,.8) both; */
+
+/* iCloud slide up reveal (new page entering) */
+@keyframes iCloudSlideUp {
+  0%   { opacity: 0; transform: translateY(40px) scale(0.96); filter: blur(8px); }
+  50%  { opacity: 1; transform: translateY(8px)  scale(0.99); filter: blur(1px); }
+  100% { opacity: 1; transform: translateY(0)    scale(1);    filter: blur(0);   }
+}
+/* Usage: animation: iCloudSlideUp var(--bar) cubic-bezier(.2,.9,.3,1) both; */
+
+/* iCloud cross-dissolve between two elements */
+@keyframes iCloudDissolveIn {
+  0%   { opacity: 0; filter: blur(12px); }
+  100% { opacity: 1; filter: blur(0); }
+}
+@keyframes iCloudDissolveOut {
+  0%   { opacity: 1; filter: blur(0); }
+  100% { opacity: 0; filter: blur(12px); }
+}
+/* Usage: simultaneous—outgoing uses iCloudDissolveOut, incoming uses iCloudDissolveIn */
+
+/* Depth zoom — parallax layer zoom (closer = faster) */
+@keyframes depthZoom {
+  0%   { transform: scale(1) translateZ(0);    }
+  50%  { transform: scale(1.08) translateZ(0); }
+  100% { transform: scale(1) translateZ(0);    }
+}
+/* Usage: animation: depthZoom var(--2bar) ease-in-out infinite; */
+
+
+/* ================================================================
+   7. DJ ELEMENTS — turntable, mixer, equaliser, spotlight
+   ================================================================ */
+
+/* Turntable spin — constant vinyl rotation */
+@keyframes vinylSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+/* Usage: animation: vinylSpin var(--bar) linear infinite; */
+
+/* Beat-sync spin — jumps a quarter turn on each beat */
+@keyframes djSpin {
+  0%   { transform: rotate(0deg); }
+  25%  { transform: rotate(90deg); }
+  50%  { transform: rotate(180deg); }
+  75%  { transform: rotate(270deg); }
+  100% { transform: rotate(360deg); }
+}
+/* Usage: animation: djSpin var(--bar) steps(4) infinite; */
+
+/* Mixer fader — bounces up/down like a fader being pushed */
+@keyframes faderPush {
+  0%, 100% { transform: translateY(0); }
+  10%       { transform: translateY(-14px); }
+  25%       { transform: translateY(-10px); }
+  40%       { transform: translateY(-14px); }
+  60%       { transform: translateY(0); }
+}
+/* Usage: animation: faderPush var(--beat) cubic-bezier(.2,.8,.1,1) infinite; */
+
+/* EQ bar 1 — tallest, most energetic */
+@keyframes eqBar1 {
+  0%,100% { transform: scaleY(0.15); }
+  10%      { transform: scaleY(1);    }
+  30%      { transform: scaleY(0.4);  }
+  50%      { transform: scaleY(0.9);  }
+  70%      { transform: scaleY(0.3);  }
+  90%      { transform: scaleY(0.7);  }
+}
+
+/* EQ bar 2 — offset phase */
+@keyframes eqBar2 {
+  0%,100% { transform: scaleY(0.4); }
+  15%      { transform: scaleY(0.8); }
+  35%      { transform: scaleY(0.2); }
+  55%      { transform: scaleY(1);   }
+  75%      { transform: scaleY(0.5); }
+}
+
+/* EQ bar 3 — mid frequency */
+@keyframes eqBar3 {
+  0%,100% { transform: scaleY(0.6); }
+  20%      { transform: scaleY(0.2); }
+  40%      { transform: scaleY(0.9); }
+  60%      { transform: scaleY(0.3); }
+  80%      { transform: scaleY(0.8); }
+}
+
+/* EQ bar 4 */
+@keyframes eqBar4 {
+  0%,100% { transform: scaleY(0.3); }
+  25%      { transform: scaleY(1);   }
+  45%      { transform: scaleY(0.6); }
+  65%      { transform: scaleY(0.1); }
+  85%      { transform: scaleY(0.7); }
+}
+
+/* EQ bar 5 — bass bar, synced tightly to beat */
+@keyframes eqBar5 {
+  0%,100% { transform: scaleY(0.1); }
+  8%       { transform: scaleY(1);   }
+  25%      { transform: scaleY(0.2); }
+  50%      { transform: scaleY(0.8); }
+  75%      { transform: scaleY(0.15);}
+}
+/*
+  Usage for an EQ column: transform-origin: bottom center;
+  .eq-bar-1 { animation: eqBar1 var(--beat) ease-in-out infinite; }
+  .eq-bar-2 { animation: eqBar2 var(--beat) ease-in-out infinite; animation-delay: -80ms; }
+  .eq-bar-3 { animation: eqBar3 var(--beat) ease-in-out infinite; animation-delay: -160ms; }
+  .eq-bar-4 { animation: eqBar4 var(--beat) ease-in-out infinite; animation-delay: -240ms; }
+  .eq-bar-5 { animation: eqBar5 var(--beat) ease-in-out infinite; animation-delay: -320ms; }
+*/
+
+/* Waveform float — elements bob like sound waves */
+@keyframes waveFloat {
+  0%,100% { transform: translateY(0) scaleX(1); }
+  20%      { transform: translateY(-10px) scaleX(1.02); }
+  50%      { transform: translateY(6px)  scaleX(0.98); }
+  75%      { transform: translateY(-5px) scaleX(1.01); }
+}
+/* Usage: animation: waveFloat var(--2beat) ease-in-out infinite; */
+
+
+/* ================================================================
+   8. SECTION-BASED — animations for each track section
+   ================================================================ */
+
+/* ─ INTRO (0–2s): gentle awakening ─ */
+@keyframes introFade {
+  0%   { opacity: 0; transform: scale(0.95) translateY(8px); filter: blur(4px); }
+  100% { opacity: 1; transform: scale(1)    translateY(0);   filter: blur(0); }
+}
+/* Usage: animation: introFade 2s cubic-bezier(.2,.8,.2,1) both; */
+
+/* ─ BUILD (2–12s): rising energy, elements expand ─ */
+@keyframes buildExpand {
+  0%   { transform: scale(1)    skewX(0deg); filter: brightness(1); }
+  50%  { transform: scale(1.03) skewX(0.3deg); filter: brightness(1.1); }
+  100% { transform: scale(1)    skewX(0deg); filter: brightness(1); }
+}
+/* Usage: animation: buildExpand var(--bar) ease-in-out infinite;
+   Pair with: animation-timing-function: ease-in (gets tighter as build rises) */
+
+/* Build stutter — small glitch-steps rising to the drop */
+@keyframes buildStutter {
+  0%,100% { transform: translateX(0) scaleY(1); opacity: 1; }
+  30%      { transform: translateX(-2px) scaleY(1.01); }
+  32%      { transform: translateX(2px); }
+  34%      { transform: translateX(0); }
+  65%      { transform: translateX(2px) scaleY(0.99); }
+  67%      { transform: translateX(-2px); }
+  69%      { transform: translateX(0); }
+}
+/* Usage: animation: buildStutter var(--beat) linear infinite; */
+
+/* ─ BREAKDOWN (12–14s & 26–28s): sudden stillness ─ */
+@keyframes breakdownShrink {
+  0%   { transform: scale(1) blur(0px); opacity: 1; }
+  100% { transform: scale(0.96); filter: blur(1px); opacity: 0.6; }
+}
+/* Usage: animation: breakdownShrink var(--bar) ease-in-out alternate infinite; */
+
+/* ─ DROP (14–26s & 36–42s): maximum impact ─ */
+@keyframes dropKick {
+  0%, 100% { transform: scale(1) rotate(0deg);    filter: brightness(1); }
+  6%        { transform: scale(1.16) rotate(-1deg); filter: brightness(1.5); }
+  12%       { transform: scale(0.96) rotate(0.5deg);filter: brightness(0.9); }
+  18%       { transform: scale(1.04);              filter: brightness(1.1); }
+  28%       { transform: scale(1);                 filter: brightness(1); }
+}
+/* Usage: animation: dropKick var(--beat) cubic-bezier(.1,.9,.1,1) infinite; */
+
+/* Drop entry — elements slam into place */
+@keyframes dropEntrance {
+  0%   { transform: scale(1.4) translateY(-30px) rotate(3deg); opacity: 0; filter: blur(10px); }
+  20%  { transform: scale(0.96) translateY(5px) rotate(-0.5deg); opacity: 1; filter: blur(0); }
+  35%  { transform: scale(1.02) translateY(-2px); }
+  50%  { transform: scale(1) translateY(0) rotate(0deg); }
+  100% { transform: scale(1) translateY(0) rotate(0deg); }
+}
+/* Usage: animation: dropEntrance var(--beat) cubic-bezier(.15,.85,.15,1) both; */
+
+/* ─ OUTRO (40–42s): fade and retreat ─ */
+@keyframes outroFade {
+  0%   { opacity: 1; transform: scale(1);    filter: blur(0); }
+  100% { opacity: 0; transform: scale(0.92); filter: blur(6px); }
+}
+/* Usage: animation: outroFade 2s ease-in forwards; start at ~40s */
+
+
+/* ================================================================
+   9. 3D / DEPTH EFFECTS
+   ================================================================ */
+
+/* Card flip — 3D beat-timed rotation */
+@keyframes cardFlip {
+  0%   { transform: perspective(700px) rotateY(0deg);   }
+  50%  { transform: perspective(700px) rotateY(180deg); }
+  100% { transform: perspective(700px) rotateY(360deg); }
+}
+/* Usage: animation: cardFlip var(--2bar) ease-in-out infinite; */
+
+/* Tilt float — gentle 3D tilt, good for hero cards */
+@keyframes tiltFloat {
+  0%,100% { transform: perspective(600px) rotateX(0deg) rotateY(0deg) translateY(0); }
+  25%      { transform: perspective(600px) rotateX(4deg) rotateY(-4deg) translateY(-6px); }
+  50%      { transform: perspective(600px) rotateX(0deg) rotateY(4deg) translateY(-3px); }
+  75%      { transform: perspective(600px) rotateX(-4deg) rotateY(-2deg) translateY(-8px); }
+}
+/* Usage: animation: tiltFloat var(--2bar) ease-in-out infinite; */
+
+/* Z-depth pulse — element appears to jump out of the screen */
+@keyframes zDepth {
+  0%, 100% { transform: perspective(500px) translateZ(0)    scale(1); }
+  50%       { transform: perspective(500px) translateZ(40px) scale(1.1); }
+}
+/* Usage: animation: zDepth var(--beat) ease-in-out infinite; */
+
+
+/* ================================================================
+   10. UTILITY CLASSES — drop-in animation presets
+   ================================================================ */
+
+/* — Beat-matched utility classes — */
+.dj-beat-pulse   { animation: beatPulse   var(--beat) ease-out infinite; }
+.dj-bass-pump    { animation: bassPump    var(--beat) cubic-bezier(.2,.8,.2,1) infinite; }
+.dj-shake        { animation: bassShake   var(--beat) ease-out infinite; }
+.dj-strobe       { animation: strobe      var(--half) steps(1) infinite; }
+.dj-soft-strobe  { animation: softStrobe  var(--beat) ease-in-out infinite; }
+.dj-hue          { animation: hueRotate   var(--4bar) linear infinite; }
+.dj-neon         { animation: neonGlow    var(--beat) ease-in-out infinite; }
+.dj-neon-multi   { animation: neonMulti   var(--bar)  linear infinite; }
+.dj-rgb-split    { animation: rgbSplit    var(--bar)  steps(1) infinite; }
+.dj-glitch       { animation: glitchScan  var(--2bar) linear infinite; }
+.dj-vhs          { animation: vhsJitter   var(--half) linear infinite; }
+.dj-bounce       { animation: microBounce var(--beat) ease-in-out infinite; }
+.dj-wave         { animation: waveFloat   var(--2beat) ease-in-out infinite; }
+.dj-spin         { animation: vinylSpin   var(--bar)  linear infinite; }
+.dj-spin-step    { animation: djSpin      var(--bar)  steps(4) infinite; }
+.dj-flip         { animation: cardFlip    var(--2bar) ease-in-out infinite; }
+.dj-tilt         { animation: tiltFloat   var(--2bar) ease-in-out infinite; }
+.dj-z-depth      { animation: zDepth      var(--beat) ease-in-out infinite; }
+.dj-drop-kick    { animation: dropKick    var(--beat) cubic-bezier(.1,.9,.1,1) infinite; }
+.dj-vignette     { animation: vignettePulse var(--beat) ease-in-out infinite; }
+.dj-color-cycle  { animation: colorCycle4   var(--bar)  steps(4) infinite; }
+.dj-bg-shift     {
+  background: linear-gradient(135deg, #0a0033, #001a4d, #1a0033, #003322);
+  background-size: 400% 400%;
+  animation: bgGradientShift var(--4bar) ease infinite;
+}
+.dj-dark-pulse   { animation: darkPulse  var(--beat) ease-out infinite; }
+.dj-color-wash   { animation: colorWash  var(--2bar) linear infinite; }
+
+/* — Section helpers — */
+.section-intro    { animation: introFade       2s    cubic-bezier(.2,.8,.2,1) both; }
+.section-build    { animation: buildExpand     var(--bar)  ease-in-out infinite; }
+.section-stutter  { animation: buildStutter   var(--beat) linear infinite; }
+.section-break    { animation: breakdownShrink var(--bar)  ease-in-out alternate infinite; }
+.section-drop     { animation: dropKick       var(--beat) cubic-bezier(.1,.9,.1,1) infinite; }
+.section-drop-in  { animation: dropEntrance   var(--beat) cubic-bezier(.15,.85,.15,1) both; }
+
+/* — iCloud transitions — */
+.icloud-open     { animation: iCloudOpen     var(--2bar) cubic-bezier(.2,.8,.2,1) both; }
+.icloud-close    { animation: iCloudClose    var(--bar)  cubic-bezier(.8,.2,.8,.8) both; }
+.icloud-slide-up { animation: iCloudSlideUp  var(--bar)  cubic-bezier(.2,.9,.3,1) both; }
+.icloud-in       { animation: iCloudDissolveIn  var(--bar) ease both; }
+.icloud-out      { animation: iCloudDissolveOut var(--bar) ease both; }
+
+/* — EQ bars (set transform-origin: bottom) — */
+.eq-bar { transform-origin: bottom center; }
+.eq-bar:nth-child(1) { animation: eqBar1 var(--beat) ease-in-out infinite; animation-delay: 0ms; }
+.eq-bar:nth-child(2) { animation: eqBar2 var(--beat) ease-in-out infinite; animation-delay: -80ms; }
+.eq-bar:nth-child(3) { animation: eqBar3 var(--beat) ease-in-out infinite; animation-delay: -160ms; }
+.eq-bar:nth-child(4) { animation: eqBar4 var(--beat) ease-in-out infinite; animation-delay: -240ms; }
+.eq-bar:nth-child(5) { animation: eqBar5 var(--beat) ease-in-out infinite; animation-delay: -320ms; }
+
+/* — Stagger helpers — */
+.stagger-1 { animation-delay: calc(var(--beat) * 0.0); }
+.stagger-2 { animation-delay: calc(var(--beat) * 0.25); }
+.stagger-3 { animation-delay: calc(var(--beat) * 0.5); }
+.stagger-4 { animation-delay: calc(var(--beat) * 0.75); }
+
+/* — Speed variants — */
+.dj-slow   { animation-duration: var(--2bar) !important; }
+.dj-normal { animation-duration: var(--bar)  !important; }
+.dj-fast   { animation-duration: var(--beat) !important; }
+.dj-hyper  { animation-duration: var(--half) !important; }
+
+
+/* ================================================================
+   QUICK REFERENCE
+   ─────────────────────────────────────────────────────────────
+   BPM 150 | Beat 400ms | Bar 1600ms | 2 bar 3200ms | 4 bar 6400ms
+   ─────────────────────────────────────────────────────────────
+   PULSE      beatPulse, bassPump, breathe, microBounce, buildRise
+   SHAKE      bassShake, dropJolt, rgbSplit, glitchScan, vhsJitter
+   COLOUR     hueRotate, colorCycle4, bgColorCycle4, strobe,
+              softStrobe, dropFlash, borderBeat, neonTextFlash
+   GLOW       neonGlow, neonMulti, vignettePulse, laserSweep,
+              spotlightBloom
+   BACKGROUND bgGradientShift, darkPulse, colorWash, scanlines,
+              strobeBg
+   ICLOUD     iCloudOpen, iCloudClose, iCloudSlideUp,
+              iCloudDissolveIn, iCloudDissolveOut, depthZoom
+   DJ         vinylSpin, djSpin, faderPush,
+              eqBar1–5, waveFloat
+   SECTION    introFade, buildExpand, buildStutter,
+              breakdownShrink, dropKick, dropEntrance, outroFade
+   3D         cardFlip, tiltFloat, zDepth
+   ================================================================ */
+
+@keyframes rotating{
+  25%{
+    transform: rotate(54deg);
+  }
+  50%{
+    transform: rotate(0deg) scale(0.7) translateY(10px);
+  }
+  75%{
+    transform: rotate(-54deg);
+  }
+}
+
+.blabla #bnav-settings svg{
+    animation: rotat 1s linear infinite;
+  }
+
+
+
+body.blabla .card    { animation: dropKick var(--beat) cubic-bezier(.1,.9,.1,1) infinite; }
+body.blabla input    { animation: borderBeat var(--bar) linear infinite; }
+body.blabla .entries { animation: darkPulse var(--beat) ease-out infinite; }
+body.blabla h3       { animation: neonTextFlash var(--2beat) ease infinite; }
+
+.entry.blabla{
+  animation: rotating var(--2beat) ease infinite;
+}
