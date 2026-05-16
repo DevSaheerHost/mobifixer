@@ -1636,7 +1636,7 @@ var progress = false;
       saveItemName(name)
       progress=true;
       document.querySelector('#addBtn').textContent='Loading...'
-      $('.loader').classList.remove('off')
+      //$('.loader').classList.remove('off')
       loading_text.textContent='Updating...'
     //  const dateISO = selectDate.value || isoDate(new Date());
     const dateISO = isoDate(new Date());
@@ -1655,7 +1655,7 @@ var progress = false;
       }).then(()=>{
         
         progress=false
-        $('.loader').classList.add('off')
+        //$('.loader').classList.add('off')
         loading_text.textContent='Done'
         
          vibrate(15); // short, crisp, non-annoying
@@ -1695,7 +1695,7 @@ var progress = false;
       const g = false;
       if(!name || !amt) return showTopToast('Name and amount required');
       progress=true;
-      $('.loader').classList.remove('off')
+      //$('.loader').classList.remove('off')
       loading_text.textContent='Updating...'
       entryFormOut.querySelector('#addBtn').textContent='Loading...'
       // const dateISO = selectDate.value || isoDate(new Date());
@@ -1713,7 +1713,7 @@ var progress = false;
         userEmail: auth.currentUser ? auth.currentUser.email : 'local',
         role: localStorage.getItem('CASHBOOK_ROLL') || 'UNKNOWN',
       }).then(()=>{
-        $('.loader').classList.add('off')
+        //$('.loader').classList.add('off')
         loading_text.textContent='Done'
         progress=false;
         
