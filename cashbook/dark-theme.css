@@ -322,3 +322,14 @@ body.dark .feedback_container, .prof-picture{
 body.dark .splash-word{
   color: #fff;
 }
+
+body.dark #entryFormIn input.focus ~ .suggestion-container{
+  background: var(--card);
+}
+
+body.dark #entryFormIn input.focus ~ .suggestion-container span{
+  background: var(--green-bg) !important;
+}
+body.dark div.suggestion-container span.suggest{
+  color: var(--green) !important;
+}
