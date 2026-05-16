@@ -1126,7 +1126,7 @@ function filterData(data, searchValue) {
     // ── loadForDate: accepts optional prefetchPromise to skip redundant fetch ──
     async function loadForDate(dateISO, prefetchPromise = null){
       if (!username || !fullname) handleInvalidAuthState();
-      globalDate = dateISO;
+      globalDate = dateISO
       currentDate = dateISO;
       currentDateLabel.textContent = dateISO;
 
@@ -1140,7 +1140,6 @@ function filterData(data, searchValue) {
         entriesList.innerHTML = '<div class="small muted">Loading…</div>';
       }
 
-      // ── SPEED: Re-use prefetched promise if provided, else fetch now ──
       const rootRef = db.ref(dayRoot(dateISO));
       const snapshot = await (prefetchPromise || rootRef.get());
       const data = snapshot.val() || {};
@@ -1294,8 +1293,8 @@ function renderLiquid(liquid) {
 // Updated renderEntries function with target support
 function renderEntries(data, target = entriesList) {
   document.querySelector('.loader').classList.add('off');
-  
-  // Clear the target container
+  // Reveal real summary totals, hide skeleton (direct call — no MutationObserver)
+  hideSkeleton();
   target.innerHTML = '';
   
   const rows = [];
@@ -3566,3 +3565,64 @@ const isUserSeeCustomAlert=''
     });
   });
 })();
+
+// ═══════════════════════════════════════════════════════════════
+// SKELETON LOADER HELPERS
+// ═══════════════════════════════════════════════════════════════
+
+// Call this when data arrives — swaps skeleton → real entries
+function hideSkeleton() {
+  // Hide summary skeleton, show real totals
+  const skelTotals  = document.getElementById('skelTotals');
+  const realTotals  = document.getElementById('realTotals');
+  if (skelTotals) skelTotals.classList.add('hidden');
+  if (realTotals) realTotals.style.display = '';
+}
+
+// Show entry skeletons (while loadForDate is fetching)
+function showEntrySkeleton(count = 5) {
+  const list = document.getElementById('entriesList');
+  if (!list) return;
+  // Only show if list is empty or already showing skeletons
+  if (list.querySelector('.entry')) return; // real data already visible
+  const skels = Array.from({length: count}, (_, i) => {
+    const ws  = [70,55,80,60,75];
+    const ws2 = [45,35,50,40,45];
+    const wa  = [50,45,55,40,40];
+    return `<div class="skel-entry">
+      <div class="skel-left-bar"></div>
+      <div class="skel-meta">
+        <div class="skel-line w${ws[i]}"></div>
+        <div class="skel-line w${ws2[i]} thin"></div>
+      </div>
+      <div class="skel-amount">
+        <div class="skel-line w${wa[i]}"></div>
+        <div class="skel-line w30 thin"></div>
+      </div>
+    </div>`;
+  }).join('');
+  list.innerHTML = skels;
+}
+
+// Patch: show skeleton at start of every loadForDate
+const _origLoadForDate = window.loadForDate;
+// Show summary skeleton when switching dates
+document.addEventListener('DOMContentLoaded', () => {
+  // Reveal real totals once renderEntries has fired
+  const _origRenderEntries = window.renderEntries;
+
+  // Intercept date changes to show skeleton
+  const selectDate = document.getElementById('selectDate');
+  if (selectDate) {
+    selectDate.addEventListener('change', () => {
+      showEntrySkeleton();
+      // Show summary skeleton again
+      const sk = document.getElementById('skelTotals');
+      const rt = document.getElementById('realTotals');
+      if (sk) sk.classList.remove('hidden');
+      if (rt) rt.style.display = 'none';
+    });
+  }
+});
+
+// Skeleton reveal handled directly in renderEntries — no observer needed

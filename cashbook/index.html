@@ -1,19 +1,10 @@
-<link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" crossorigin="anonymous">
-<noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" crossorigin="anonymous"></noscript><!doctype html>
+<!doctype html>
 
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-  <!-- Network speed: pre-warm Firebase + CDN connections -->
-  <link rel="preconnect" href="https://firestore.googleapis.com">
-  <link rel="preconnect" href="https://firebasestorage.googleapis.com">
-  <link rel="preconnect" href="https://identitytoolkit.googleapis.com">
-  <link rel="preconnect" href="https://www.gstatic.com">
-  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-  <link rel="dns-prefetch" href="https://recat-auth-test-default-rtdb.firebaseio.com">
-
   <title>Mobifixer Cashbook</title>
-
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <meta name="title" content="Mobifixer Cashbook — Smart Daily Cash & GPay Tracker for Mobile Service Shops">
 <meta name="description" content="Mobifixer Cashbook helps mobile service shops manage daily income, expenses, and GPay transactions with automatic date-time logs, daily summaries, and live dashboard 📈📉.">
 <meta name="keywords" content="Mobifixer, Cashbook, Mobile Service Shop, Daily Accounts, Cash In, Cash Out, GPay Tracker, Expense Manager, Income Tracker, Shop Management, Firebase App, Malayalam, Kerala, Phone Repair Shop, Business Ledger, Sales Record, Daily Summary, Dashboard">
@@ -108,8 +99,7 @@
   rel="stylesheet"
   href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
 />
-<link rel="modulepreload" href="./main.js">
-  <link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="./style.css">
 <link rel="stylesheet" href="./dj-keyframes.css">
 </head>
 <body>
@@ -253,8 +243,13 @@
 
 <div id="parrent">
   <div class="entries" id="entriesList" style="margin-top:12px">
-          <!-- entry cards -->
-        </div>
+    <!-- Skeleton loaders — shown until real data arrives -->
+    <div class="skel-entry"><div class="skel-left-bar"></div><div class="skel-meta"><div class="skel-line w70"></div><div class="skel-line w45 thin"></div></div><div class="skel-amount"><div class="skel-line w50"></div><div class="skel-line w30 thin"></div></div></div>
+    <div class="skel-entry"><div class="skel-left-bar"></div><div class="skel-meta"><div class="skel-line w55"></div><div class="skel-line w35 thin"></div></div><div class="skel-amount"><div class="skel-line w45"></div><div class="skel-line w25 thin"></div></div></div>
+    <div class="skel-entry"><div class="skel-left-bar"></div><div class="skel-meta"><div class="skel-line w80"></div><div class="skel-line w50 thin"></div></div><div class="skel-amount"><div class="skel-line w55"></div><div class="skel-line w30 thin"></div></div></div>
+    <div class="skel-entry"><div class="skel-left-bar"></div><div class="skel-meta"><div class="skel-line w60"></div><div class="skel-line w40 thin"></div></div><div class="skel-amount"><div class="skel-line w50"></div><div class="skel-line w28 thin"></div></div></div>
+    <div class="skel-entry"><div class="skel-left-bar"></div><div class="skel-meta"><div class="skel-line w75"></div><div class="skel-line w45 thin"></div></div><div class="skel-amount"><div class="skel-line w40"></div></div></div>
+  </div>
 </div>
         
       </div>
@@ -263,7 +258,14 @@
     <aside>
       <div class="card" id="today_summery_card">
         <h3>Today summary</h3>
-        <div class="totals">
+        <!-- Skeleton grid — fades out when real totals arrive -->
+        <div class="skel-totals" id="skelTotals">
+          <div class="skel-stat"><div class="skel-line w55 thin"></div><div class="skel-line w70" style="margin-top:6px;height:22px;border-radius:6px"></div></div>
+          <div class="skel-stat"><div class="skel-line w55 thin"></div><div class="skel-line w70" style="margin-top:6px;height:22px;border-radius:6px"></div></div>
+          <div class="skel-stat"><div class="skel-line w55 thin"></div><div class="skel-line w70" style="margin-top:6px;height:22px;border-radius:6px"></div></div>
+          <div class="skel-stat"><div class="skel-line w55 thin"></div><div class="skel-line w70" style="margin-top:6px;height:22px;border-radius:6px"></div></div>
+        </div>
+        <div class="totals" id="realTotals" style="display:none">
           <div class="tot-row"><div class="small">Total IN</div><div id="totalIn">₹0</div></div>
           <div class="tot-row hidden"><div class="small">without Opening Balance</div><div id="noOb">₹0</div></div>
 
@@ -282,7 +284,7 @@
           
           
           <div class="tot-row"><div class="small">Target 🎯</div><div id="target"><a style="color:#09a0ff;" onclick="document.querySelector('#setGoal').click()">Set now</a></div></div>
-        </div>
+        </div><!-- end #realTotals -->
         <div style="margin-top:12px;display:flex;gap:8px">
           <button id="exportCSV">Export CSV</button>
           <button id="clearDay">Clear Day</button>
@@ -584,18 +586,34 @@
     <div id="birthday-overlay"></div>
     
     <div class="loader">
-  <h1 class="hidden">
-    <i class="fa-solid fa-cloud-arrow-down"></i>
-  </h1>
-<span class="loaderAnim"></span>
-  
-  <p id="loading_text">Loading...</p>
-  <div class="progress">
-    <div class="bar">
-      
+      <!-- Animated background orbs -->
+      <div class="splash-orbs">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+      </div>
+
+      <!-- Main splash content -->
+      <div class="splash-body">
+        <div class="splash-icon-wrap">
+          <div class="splash-icon">💳</div>
+          <div class="splash-ring"></div>
+        </div>
+        <h1 class="splash-title">
+          <span class="splash-word">Mobifixer</span>
+          <span class="splash-word accent">Cashbook</span>
+        </h1>
+        <p class="splash-sub" id="loading_text">Starting up…</p>
+      </div>
+
+      <!-- Bottom: progress + version -->
+      <div class="splash-footer">
+        <div class="progress">
+          <div class="bar"></div>
+        </div>
+        <p class="splash-version">Smart Cash · GPay · Reports</p>
+      </div>
     </div>
-  </div>
-</div>
     
   <!-- Firebase SDKs ( project config) -->  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>  <script type="module" src="./main.js" defer></script>  <!-- Bottom Navigation -->
   <nav class="bottom-nav" id="bottomNav">

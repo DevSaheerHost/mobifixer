@@ -432,7 +432,7 @@ background: linear-gradient(0deg, rgba(255, 255, 255, 0.6) 81%, rgba(11, 162, 25
     transform: translateX(50%);
     right: 50%;
     backdrop-filter: blur(3px);
-    border-radius: 7px;
+    border-radius: 0px;
     z-index: 9;
     background: rgba(255, 255, 255, 0.96);
     overflow: hidden;
@@ -2314,7 +2314,6 @@ form button{flex:1}
   height: auto;
   inset: unset;       /* override inset:0 */
   background: #fff;
-  border-radius: 99px;
   padding: 8px 16px 8px 12px;
   display: flex;
   align-items: center;
@@ -2373,127 +2372,352 @@ form button{flex:1}
   }
 }
 
-/* ═══════════════════════════════════════════
-   MAXIMUM SPEED — paint/layout containment
-   ═══════════════════════════════════════════ */
 
-/* Contain layout recalcs to the entries list only */
-.entries {
-  contain: layout style;
-  will-change: contents;
-}
+/* ═══════════════════════════════════════════════════════════════
+   SPLASH SCREEN — full-screen initial load animation
+   ═══════════════════════════════════════════════════════════════ */
 
-/* GPU-accelerate individual entry cards */
-.entry {
-  contain: layout style;
-  will-change: transform;
-  /* Snap animation to 1 frame — feels instant */
-  animation-duration: 0.18s !important;
-}
-
-/* Speed all transitions from 0.3s → 0.13s */
-button,
-input,
-.card,
-.auth-tab,
-.bnav-item,
-.filter-tab,
-#all, #in, #out, #bin {
-  transition-duration: 0.13s !important;
-}
-
-/* Prevent layout shift during loader hide */
-.loader { contain: strict; }
-
-/* Sticky search bar — no reflow on scroll */
-.search-wrapper {
-  contain: layout;
-  will-change: transform;
-}
-
-/* Bottom nav — paint on its own layer */
-.bottom-nav {
-  will-change: transform;
-  contain: layout style;
-}
-
-/* Nav — own compositing layer */
-.nav {
-  will-change: transform;
-  contain: layout;
-}
-
-/* Overlay — GPU composited */
-#alertOverlay {
-  will-change: opacity, transform;
-}
-
-/* Page transitions — composited */
-.page {
-  will-change: opacity, transform;
-}
-
-/* Reduce filter tab animation to feel snappier */
-#all.active, #in.active, #out.active, #bin.active {
-  transition: background 0.1s, color 0.1s, box-shadow 0.1s !important;
-}
-
-/* Entry delete button — instant tap response */
-.deleteBtn {
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* All tap targets — prevent 300ms tap delay on mobile */
-button, input, a, [onclick], .bnav-item, .entry {
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Empty state — centered and clean */
-.entries > .small.muted {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 32px 16px;
-  font-size: 14px;
-  color: #9ca3af;
-  text-align: center;
-}
-
-/* Loader — contain to avoid full reflow */
 .loader {
   position: fixed;
-  top: 58px;
-  left: 50%;
-  transform: translateX(-50%);
-  inset: unset;
-  width: auto;
-  height: auto;
-  background: #fff;
-  border-radius: 99px;
-  padding: 8px 16px 8px 12px;
+  inset: 0;
+  z-index: 99999;
+  background: #060B18;
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: opacity 0.55s cubic-bezier(.4,0,.2,1),
+              transform 0.55s cubic-bezier(.4,0,.2,1);
+}
+
+.loader.off {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(1.04);
+}
+
+/* ── Background animated orbs ── */
+.splash-orbs {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(72px);
+  opacity: 0.45;
+  animation: orbFloat 6s ease-in-out infinite alternate;
+}
+
+.orb-1 {
+  width: 320px; height: 320px;
+  background: radial-gradient(circle, #0BA2FF, #0040AA);
+  top: -80px; left: -60px;
+  animation-delay: 0s;
+  animation-duration: 7s;
+}
+
+.orb-2 {
+  width: 280px; height: 280px;
+  background: radial-gradient(circle, #6A5ACD, #2D1B69);
+  bottom: -60px; right: -40px;
+  animation-delay: -3s;
+  animation-duration: 8s;
+}
+
+.orb-3 {
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, #00C8FF, #005580);
+  top: 45%; left: 60%;
+  animation-delay: -1.5s;
+  animation-duration: 5.5s;
+  opacity: 0.25;
+}
+
+@keyframes orbFloat {
+  0%   { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(20px, 30px) scale(1.12); }
+}
+
+/* ── Main content ── */
+.splash-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  z-index: 1;
+  text-align: center;
+  animation: splashBodyIn 0.7s cubic-bezier(.2,.8,.2,1) both;
+}
+
+@keyframes splashBodyIn {
+  from { opacity: 0; transform: translateY(24px) scale(0.94); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+/* ── Icon with pulsing ring ── */
+.splash-icon-wrap {
+  position: relative;
+  width: 88px; height: 88px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 6px;
+}
+
+.splash-icon {
+  font-size: 52px;
+  line-height: 1;
+  z-index: 1;
+  filter: drop-shadow(0 0 20px rgba(11,162,255,0.7));
+  animation: iconPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+  0%,100% { transform: scale(1);    filter: drop-shadow(0 0 20px rgba(11,162,255,0.7)); }
+  50%      { transform: scale(1.06); filter: drop-shadow(0 0 32px rgba(11,162,255,1)); }
+}
+
+.splash-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2.5px solid rgba(11,162,255,0.35);
+  animation: ringPing 2.4s ease-out infinite;
+}
+
+@keyframes ringPing {
+  0%   { transform: scale(0.9);  opacity: 1; }
+  80%  { transform: scale(1.7);  opacity: 0; }
+  100% { transform: scale(0.9);  opacity: 0; }
+}
+
+/* ── Title ── */
+.splash-title {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1.15;
+}
+
+.splash-word {
+  color: #ffffff;
+  display: block;
+  animation: wordSlide 0.6s cubic-bezier(.2,.8,.2,1) both;
+}
+
+.splash-word.accent {
+  color: #0BA2FF;
+  animation-delay: 0.1s;
+  font-size: 30px;
+  letter-spacing: -0.8px;
+}
+
+@keyframes wordSlide {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Sub-text / loading message ── */
+.splash-sub {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.5);
+  margin: 4px 0 0;
+  letter-spacing: 0.02em;
+  min-height: 18px;
+  animation: wordSlide 0.6s cubic-bezier(.2,.8,.2,1) 0.2s both;
+}
+
+/* ── Footer: progress bar ── */
+.splash-footer {
+  position: absolute;
+  bottom: 36px;
+  left: 0; right: 0;
+  padding: 0 32px;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 10px;
-  box-shadow: 0 4px 20px rgba(15,23,42,0.14);
-  z-index: 9999;
-  backdrop-filter: none;
-  pointer-events: none;
-  font-size: 13px;
-  font-weight: 600;
-  color: #374151;
-  transition: opacity 0.15s;
-  contain: strict;
+  z-index: 1;
+  animation: wordSlide 0.6s cubic-bezier(.2,.8,.2,1) 0.3s both;
 }
-.loader::after {
-  content: '';
-  width: 18px; height: 18px;
-  border: 2.5px solid #E0EBFF;
-  border-top-color: #0BA2FF;
-  border-radius: 50%;
-  animation: spin 0.6s linear infinite;
+
+.splash-footer .progress {
+  width: 100%;
+  height: 3px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.splash-footer .progress .bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #0BA2FF, #00E5FF);
+  border-radius: 99px;
+  transition: width 0.4s cubic-bezier(.4,0,.2,1);
+  box-shadow: 0 0 10px rgba(11,162,255,0.6);
+}
+
+.splash-version {
+  font-size: 11px;
+  color: rgba(255,255,255,0.22);
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   SKELETON / WIREFRAME LOADERS — YouTube-style shimmer
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Core shimmer animation ── */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+
+.skel-line,
+.skel-left-bar,
+.skel-stat > div {
+  background: linear-gradient(
+    90deg,
+    #EAECF0 0%,
+    #F5F7FA 40%,
+    #EAECF0 80%
+  );
+  background-size: 400px 100%;
+  animation: shimmer 1.3s ease-in-out infinite;
+  border-radius: 6px;
+}
+
+/* ── Entry skeleton ── mirrors .entry layout ── */
+.skel-entry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 6px rgba(15,23,42,0.05);
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+/* Left coloured bar (mirrors border-left on .entry) */
+.skel-left-bar {
+  width: 4px;
+  height: 44px;
+  border-radius: 4px;
   flex-shrink: 0;
 }
-.loader > * { display: none; }
-.loader.off  { opacity: 0; pointer-events: none; }
+
+/* Meta text lines */
+.skel-meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+/* Amount on right */
+.skel-amount {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+/* Width utilities */
+.skel-line { height: 13px; }
+.skel-line.thin { height: 10px; opacity: 0.7; }
+.skel-line.w80 { width: 80%; }
+.skel-line.w75 { width: 75%; }
+.skel-line.w70 { width: 70%; }
+.skel-line.w60 { width: 60%; }
+.skel-line.w55 { width: 55%; }
+.skel-line.w50 { width: 50%; }
+.skel-line.w45 { width: 45%; }
+.skel-line.w40 { width: 40%; }
+.skel-line.w35 { width: 35%; }
+.skel-line.w30 { width: 30%; }
+.skel-line.w28 { width: 28%; }
+.skel-line.w25 { width: 25%; }
+
+/* Stagger shimmer delay per entry for a wave effect */
+.skel-entry:nth-child(1) .skel-line,
+.skel-entry:nth-child(1) .skel-left-bar { animation-delay: 0ms; }
+.skel-entry:nth-child(2) .skel-line,
+.skel-entry:nth-child(2) .skel-left-bar { animation-delay: 80ms; }
+.skel-entry:nth-child(3) .skel-line,
+.skel-entry:nth-child(3) .skel-left-bar { animation-delay: 160ms; }
+.skel-entry:nth-child(4) .skel-line,
+.skel-entry:nth-child(4) .skel-left-bar { animation-delay: 240ms; }
+.skel-entry:nth-child(5) .skel-line,
+.skel-entry:nth-child(5) .skel-left-bar { animation-delay: 320ms; }
+
+/* ── Today's summary skeleton — mirrors 2×2 grid ── */
+.skel-totals {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.skel-stat {
+  background: #F8FAFF;
+  border-radius: 12px;
+  padding: 12px;
+  border: 1px solid #EEF2FF;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.skel-stat:nth-child(1) .skel-line { animation-delay: 0ms; }
+.skel-stat:nth-child(2) .skel-line { animation-delay: 70ms; }
+.skel-stat:nth-child(3) .skel-line { animation-delay: 140ms; }
+.skel-stat:nth-child(4) .skel-line { animation-delay: 210ms; }
+
+/* Smooth reveal transition when real data replaces skeleton */
+#skelTotals {
+  transition: opacity 0.2s ease;
+}
+
+#skelTotals.hidden {
+  display: none;
+}
+
+#realTotals {
+  animation: skelFadeIn 0.25s ease both;
+}
+
+@keyframes skelFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── SPLASH FIX: override old small-loader transform/width/top that shifts it off-screen ── */
+.loader {
+  transform: none !important;
+  width: 100% !important;
+  height: 100% !important;
+  top: 0 !important;
+  left: 0 !important;
+  inset: 0 !important;
+}
+/* Only on exit do we apply the scale transform */
+.loader.off {
+  opacity: 0 !important;
+  transform: scale(1.04) !important;
+  pointer-events: none !important;
+}
