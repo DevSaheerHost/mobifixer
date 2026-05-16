@@ -113,6 +113,44 @@ import { ref, onChildAdded, onChildChanged, onChildRemoved } from "https://www.g
     // ------------------------ END CONFIG --------------------
 
 
+
+// ── Theme toggle ──────────────────────────────────────────────
+// ── Theme toggle ──────────────────────────────────────────────
+(function () {
+  const lightBtn       = document.getElementById('theme_light');
+  const lightBtnParent = document.getElementById('for_theme_light');
+  const darkBtn        = document.getElementById('theme_dark');
+  const darkBtnParent  = document.getElementById('for_theme_dark');
+
+  // Apply saved theme on load
+  const saved = localStorage.getItem('theme') || 'light';
+  applyTheme(saved);
+
+  // Listeners for radio buttons
+  lightBtn.addEventListener('change', () => applyTheme('light'));
+  darkBtn.addEventListener('change',  () => applyTheme('dark'));
+
+  // Listeners for parent elements (Triggers theme change on parent click)
+  if (lightBtnParent) lightBtnParent.addEventListener('click', () => applyTheme('light'));
+  if (darkBtnParent)  darkBtnParent.addEventListener('click',  () => applyTheme('dark'));
+
+  function applyTheme(theme) {
+    if (theme === 'dark') {
+      document.body.classList.add('dark');
+      darkBtn.checked  = true;
+      lightBtn.checked = false;
+    } else {
+      document.body.classList.remove('dark');
+      lightBtn.checked = true;
+      darkBtn.checked  = false;
+    }
+    localStorage.setItem('theme', theme);
+  }
+})();
+
+
+
+
 $('#fullname_profile').textContent=fullname || '';
 // helper function 
 
