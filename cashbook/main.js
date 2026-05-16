@@ -1338,7 +1338,7 @@ let outCount = 0
         </div>
       </div>
       <div style="text-align:right">
-        <div><strong>₹${Number(r.amount).toLocaleString()}</strong></div>
+        <div><strong class='cash'>₹${Number(r.amount).toLocaleString()}</strong></div>
         <div><strong class='gpay'>₹${Number(r.gpay || 0).toLocaleString()}</strong></div>
         <div class="actions gpay">
           ${r.gpay ? '<span><i class="fa-brands fa-google-pay"></i></span>' : ''} 
@@ -2237,11 +2237,11 @@ function renderDashboard(dayTotals, aggs){
   dashSummary.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:6px">
       <div class="small">Range days: ${dayTotals.length}</div>
-      <div class="tot-row"><div class="small">Range IN</div><div>₹${aggIn.toLocaleString()}</div></div>
-      <div class="tot-row"><div class="small">OB</div><div>₹${ob.toLocaleString()}</div></div>
-      <div class="tot-row"><div class="small">Range OUT</div><div>₹${aggOut.toLocaleString()}</div></div>
-      <div class="tot-row"><div class="small">Range GPay (IN)</div><div>₹${aggG.toLocaleString()}</div></div>
-      <div class="tot-row"><div class="small">Net (IN - OUT - GPay - OB)</div><div>₹${(aggIn-aggOut-aggG-ob).toLocaleString()}</div></div>
+      <div class="tot-row"><div class="small">Range IN</div><div class='tod-in'>₹${aggIn.toLocaleString()}</div></div>
+      <div class="tot-row"><div class="small">OB</div><div class='tod-ob'>₹${ob.toLocaleString()}</div></div>
+      <div class="tot-row"><div class="small">Range OUT</div><div class='tod-out'>₹${aggOut.toLocaleString()}</div></div>
+      <div class="tot-row"><div class="small">Range GPay (IN)</div><div class='tod-gp-in'>₹${aggG.toLocaleString()}</div></div>
+      <div class="tot-row"><div class="small">Net (IN - OUT - GPay - OB)</div><div class='tod-tot'>₹${(aggIn-aggOut-aggG-ob).toLocaleString()}</div></div>
     </div>
   `;
 
