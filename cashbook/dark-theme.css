@@ -319,3 +319,6 @@ body.dark .menu-content button, body.dark .menu-content p{
 body.dark .feedback_container, .prof-picture{
   background: var(--card) !important;
 }
+body.dark .splash-word{
+  color: #fff;
+}
