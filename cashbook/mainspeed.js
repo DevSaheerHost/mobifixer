@@ -1,48 +1,6 @@
 const $ = s => document.querySelector(s)
 const username = localStorage.getItem('CASHBOOK_USER_NAME');
 const fullname = localStorage.getItem('CASHBOOK_FULLNAME');
-
-// ── NETWORK SPEED: Data cache ──────────────────────────────────
-// In-memory cache: instant re-render when switching back to same date
-const _memCache = {};
-// localStorage cache key
-const _cacheKey = (date) => `cb_${username}_${date}`;
-// Max localStorage cache entries to keep (prevents bloat)
-const _MAX_CACHE = 7;
-
-function _saveToCache(dateISO, data) {
-  // Memory
-  _memCache[dateISO] = data;
-  // LocalStorage (best-effort, non-blocking)
-  try {
-    const key = _cacheKey(dateISO);
-    localStorage.setItem(key, JSON.stringify(data));
-    // Prune old cache entries beyond _MAX_CACHE
-    const allKeys = Object.keys(localStorage).filter(k => k.startsWith(`cb_${username}_`));
-    if (allKeys.length > _MAX_CACHE) {
-      allKeys.sort().slice(0, allKeys.length - _MAX_CACHE)
-        .forEach(k => localStorage.removeItem(k));
-    }
-  } catch(_) {}
-}
-
-function _loadFromCache(dateISO) {
-  // Memory first (fastest)
-  if (_memCache[dateISO]) return _memCache[dateISO];
-  // Then localStorage
-  try {
-    const raw = localStorage.getItem(_cacheKey(dateISO));
-    if (raw) { const d = JSON.parse(raw); _memCache[dateISO] = d; return d; }
-  } catch(_) {}
-  return null;
-}
-
-// Invalidate cache for a date (call after any write)
-function _invalidateCache(dateISO) {
-  delete _memCache[dateISO];
-  try { localStorage.removeItem(_cacheKey(dateISO)); } catch(_) {}
-}
-
 import { ref, onChildAdded, onChildChanged, onChildRemoved } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
     // UI refs
     const authView = document.getElementById('authView');
@@ -789,14 +747,10 @@ Sign out</button>
        auth.signOut();
        localStorage.clear()
      });
-     // ── SPEED: Prefetch today's data immediately on auth confirm ──
-     // Kick off the network request BEFORE any UI work below finishes
+     // set default date to today
      const today = new Date();
-     const todayISO = isoDate(today);
-     selectDate.value = todayISO;
-     // Start fetching in background instantly (don't await — parallel with UI setup)
-     const _prefetchPromise = db.ref(dayRoot(todayISO)).get();
-     loadForDate(todayISO, _prefetchPromise);
+     selectDate.value = isoDate(today);
+     loadForDate(selectDate.value);
      
    } else {
      authView.style.display = 'block';
@@ -1123,158 +1077,110 @@ function filterData(data, searchValue) {
     // Load all entries for date
     let currentDate = null;
     
-    // ── loadForDate: accepts optional prefetchPromise to skip redundant fetch ──
-    async function loadForDate(dateISO, prefetchPromise = null){
+// ── Module-level state (shared across calls) ──
+let currentData = {};
+let _searchSetupDone = false;
+let _filterSetupDone = false;
+let _searchDebounce;
+let _isSearchActive = false;
+let _scrollTimer;
+let _entriesListClone = null;
+
+    async function loadForDate(dateISO){
       if (!username || !fullname) handleInvalidAuthState();
-      globalDate = dateISO;
+      globalDate = dateISO
       currentDate = dateISO;
-      currentDateLabel.textContent = dateISO;
-
-      // ── SPEED: Show cached data instantly (zero network wait) ──
-      const cached = _loadFromCache(dateISO);
-      if (cached) {
-        renderEntries(cached);
-        renderLiquid(cached.liquid);
-        // Still fetch fresh in background to catch any new entries
-      } else {
-        entriesList.innerHTML = '<div class="small muted">Loading…</div>';
-      }
-
-      // ── SPEED: Re-use prefetched promise if provided, else fetch now ──
-      const rootRef = db.ref(dayRoot(dateISO));
-      const snapshot = await (prefetchPromise || rootRef.get());
-      const data = snapshot.val() || {};
-
-      // ── SPEED: Only re-render if data differs from cache ──
-      const cachedStr = cached ? JSON.stringify(cached) : null;
-      const freshStr  = JSON.stringify(data);
-      if (freshStr !== cachedStr) {
-        renderEntries(data);
-        renderLiquid(data.liquid);
-      }
-
-      // Save to cache (memory + localStorage)
-      _saveToCache(dateISO, data);
-
-      // ── SPEED: Prefetch adjacent dates in background (zero-cost) ──
-      // When user taps prev/next day, data is already cached
-      requestIdleCallback(() => {
-        const d = new Date(dateISO);
-        const prev = new Date(d); prev.setDate(d.getDate() - 1);
-        const next = new Date(d); next.setDate(d.getDate() + 1);
-        [isoDate(prev), isoDate(next)].forEach(adj => {
-          if (!_memCache[adj]) {
-            db.ref(dayRoot(adj)).get().then(s => {
-              if (s.exists()) _saveToCache(adj, s.val());
-            }).catch(() => {});
-          }
-        });
-      }, { timeout: 2000 });
-
-      renderEntries(data);
-      renderLiquid(data.liquid)
-      const buttons = document.querySelectorAll('#in, #out, #all, #bin');
-
-buttons.forEach(btn => {
-  btn.onclick = async (e) => {
-    
-  vibrate(10); // short, crisp, non-annoying
-
-    buttons.forEach(b => b.classList.remove("active"));
-    e.target.classList.add("active");
-document.querySelector('#today_summery_card').style.display='block'
-    if (e.target.id === 'in') renderType('in', data);
-    if (e.target.id === 'out') renderType('out', data);
-    if (e.target.id === 'all') renderEntries(data);
-    if (e.target.id === 'bin') {
-      
-      function dayRoot(dateISO){ return `${username}/recycleBin/${dateISO}`; }
-      
-      currentDate = dateISO;
-      
       currentDateLabel.textContent = dateISO;
       entriesList.innerHTML = '<div class="small muted">Loading...</div>';
-      
+    const  today = new Date();
+    //  alert(isoDate(today))
+    
+    if(currentDate != isoDate(today)){
+      // hereee
+    }
+
       const rootRef = db.ref(dayRoot(dateISO));
       const snapshot = await rootRef.get();
-      const data = snapshot.val() ||{};
-      if(!data)throw new Error('Db is Empty')
+      const data = snapshot.val() || {};
+
+      // Store in module-level var so filter/search/bin can access it
+      currentData = data;
+
       renderEntries(data);
-      document.querySelector('#today_summery_card').style.display='none'
+      renderLiquid(data.liquid);
+
+      // Set up filter buttons and search exactly ONCE (not on every date change)
+      if (!_filterSetupDone) { _setupFilterButtons(); _filterSetupDone = true; }
+      if (!_searchSetupDone) { _setupSearch();        _searchSetupDone = true; }
+
+      // Reset to ALL tab
+      document.querySelectorAll('#in,#out,#all,#bin').forEach(b => b.classList.remove('active'));
+      document.querySelector('#all').classList.add('active');
     }
 
+// ── One-time filter button setup (called once after first data load) ──
+function _setupFilterButtons() {
+  const btns = document.querySelectorAll('#in, #out, #all, #bin');
+  btns.forEach(btn => {
+    btn.onclick = async (e) => {
+      vibrate(10);
+      btns.forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      const id = e.target.id;
+      document.querySelector('#today_summery_card').style.display = id === 'bin' ? 'none' : 'block';
+      if (id === 'in')  { renderType('in',  currentData); return; }
+      if (id === 'out') { renderType('out', currentData); return; }
+      if (id === 'all') { renderEntries(currentData); return; }
+      if (id === 'bin') {
+        entriesList.innerHTML = '<div class="small muted">Loading…</div>';
+        const binSnap = await db.ref(`${username}/recycleBin/${currentDate}`).get();
+        renderEntries(binSnap.val() || {});
+      }
+    };
+  });
+}
+
+// ── One-time search + scroll setup ──
+function _setupSearch() {
+  const search = $('#search');
+  const dboard = $('.dboard');
+
+  _entriesListClone = entriesList.cloneNode(true);
+  _entriesListClone.id = 'entriesListSearch';
+  search.parentElement.appendChild(_entriesListClone);
+  _entriesListClone.style.display = 'none';
+
+  search.oninput = e => {
+    if (!fullname) return;
+    clearTimeout(_searchDebounce);
+    const value = e.target.value.trim();
+    _isSearchActive = !!value;
+    _searchDebounce = setTimeout(() => {
+      if (!value) {
+        dboard && dboard.classList.remove('hidden');
+        _entriesListClone.style.display = 'none';
+        renderEntries(currentData);
+        return;
+      }
+      dboard && dboard.classList.add('hidden');
+      _entriesListClone.style.display = 'block';
+      renderEntries(filterData(currentData, value), _entriesListClone);
+    }, 140);
   };
-});
 
-
-
-
-
-// SEARCH 🔍 🔎 
-const search = $('#search');
-const parrent = $('#parrent');
-//const entriesList = $('#entriesList');
-const dboard = $('.dboard');
-
-// Create a clone for search results
-const entriesListClone = entriesList.cloneNode(true);
-entriesListClone.id = 'entriesListSearch';
-search.parentElement.appendChild(entriesListClone);
-entriesListClone.style.display = 'none';
-
-let scrollTimer;
-let isSearchActive = false;
-
-// Update search input to track state
-search.oninput = e => {
-  if(!fullname)return;
-  const value = e.target.value.trim();
-  isSearchActive = !!value;
-
-  if (!value) {
-    dboard.classList.remove('hidden');
-    //entriesList.style.display = 'block';
-    entriesListClone.style.display = 'none';
-    renderEntries(data);
-    return;
-  }
-
-  dboard.classList.add('hidden');
-  //entriesList.style.display = 'none';
-  entriesListClone.style.display = 'block';
-  
-  const filtered = filterData(data, value);
-  renderEntries(filtered, entriesListClone);
-};
-
-window.onscroll = () => {
-  // Only hide search results if they're active
-  if (!isSearchActive) return;
-  
-  clearTimeout(scrollTimer);
-  scrollTimer = setTimeout(() => {
-    if (entriesListClone.style.display !== 'none') {
-      entriesListClone.style.display = 'none';
-     // entriesList.style.display = 'block';
-      dboard.classList.remove('hidden');
-      isSearchActive = false;
-      search.value = ''; // Optional: clear search input
-    }
-  }, 100);
-};  
-
-  
-
-
-//const buttons = document.querySelectorAll('#in, #out, #all, #bin');
-
-      buttons.forEach(btn => {
-        btn.classList.remove("active");
-      });
-      
-      document.querySelector('#all').classList.add("active");
-
-    }
+  window.addEventListener('scroll', () => {
+    if (!_isSearchActive) return;
+    clearTimeout(_scrollTimer);
+    _scrollTimer = setTimeout(() => {
+      if (_entriesListClone && _entriesListClone.style.display !== 'none') {
+        _entriesListClone.style.display = 'none';
+        dboard && dboard.classList.remove('hidden');
+        _isSearchActive = false;
+        search.value = '';
+      }
+    }, 100);
+  }, { passive: true });
+}
 
 
 
@@ -1292,89 +1198,84 @@ function renderLiquid(liquid) {
 
 
 // Updated renderEntries function with target support
+// ── renderEntries: single innerHTML write, counters outside loop ──
 function renderEntries(data, target = entriesList) {
   document.querySelector('.loader').classList.add('off');
-  
-  // Clear the target container
-  target.innerHTML = '';
-  
+
   const rows = [];
   ['in','out'].forEach(type => {
     const group = data[type] || {};
-    Object.keys(group).forEach(key => {
-      rows.push({...group[key], _type: type, _key: key});
-    });
+    Object.keys(group).forEach(key => rows.push({...group[key], _type:type, _key:key}));
   });
-  
+  rows.sort((a,b) => b.ts - a.ts);
 
-  // 🔁 sort by timestamp (latest first)
-  rows.sort((a, b) => b.ts - a.ts);
-
-  let totalIn = 0, totalOut = 0, totalGpay = 0;
-  
   if (rows.length === 0) {
-    target.innerHTML = '<div class="small muted">No entries found.</div>'; 
-    
-    // Reset totals when no data
-    totalInEl.textContent = '₹0';
-    totalOutEl.textContent = '₹0';
-    totalGpayEl.textContent = '₹0';
-    netBalEl.textContent = '₹0';
+    target.innerHTML = '<div class="small muted" style="padding:16px;text-align:center">No entries yet.</div>';
+    totalInEl.textContent = totalOutEl.textContent = totalGpayEl.textContent = netBalEl.textContent = '₹0';
+    ['#all','#in','#out'].forEach(s => { document.querySelector(s).textContent = s.slice(1).toUpperCase(); });
     return;
   }
-  let ob = 0
-let count = 0;
-let inCount =0
-let outCount = 0
+
+  let totalIn=0, totalOut=0, totalGpay=0;
+  let count=0, inCount=0, outCount=0, ob=0;
+  let html = '';
+
   rows.forEach(r => {
-    if(r.name === 'Opening Balance') ob = r.amount;
-    const el = document.createElement('div');
-    el.className = `entry ${r._type === 'in' ? 'in' : 'out'}${r.gpay ? ' gp' : ''} ${ r.name==='Opening Balance'?' ob':''}`;
-    el.innerHTML = `
+    const isOb    = r.name?.toLowerCase() === 'opening balance';
+    const gpClass = r.gpay  ? ' gp' : '';
+    const obClass = isOb    ? ' ob' : '';
+    const typeStr = r._type === 'in' ? 'IN' : 'OUT';
+
+    html += `<div class="entry ${r._type}${gpClass}${obClass}">
       <div class="meta">
-        <div><strong>${r._type.toUpperCase()} — ${r.name}</strong></div>
-        <div class="small">${formatDT(r.ts)} • ${r.userEmail || ''} <br> ${r.staffName || ''} ${r.writer ? ` : ${r.writer} (${r.role ||'_'})` : ` (${r.role||'_'})`}<br> ${r.deletedBy ? `${r.deletedBy} Deleted This Transaction` : ''}<br>
-        
-       ${r.deleteReason?`Reason: ${r.deleteReason}`:''}
-        </div>
+        <div><strong>${typeStr} \u2014 ${r.name}</strong></div>
+        <div class="small">${formatDT(r.ts)} \u2022 ${r.userEmail||''}<br>${r.staffName||''} ${r.writer ? `: ${r.writer} (${r.role||'_'})` : `(${r.role||'_'})`}${r.deletedBy?`<br>\uD83D\uDDD1 ${r.deletedBy} deleted`:''}${r.deleteReason?`<br>Reason: ${r.deleteReason}`:''}</div>
       </div>
       <div style="text-align:right">
-        <div><strong>₹${Number(r.amount).toLocaleString()}</strong></div>
-        <div><strong class='gpay'>₹${Number(r.gpay || 0).toLocaleString()}</strong></div>
-        <div class="actions gpay">
-          ${r.gpay ? '<span><i class="fa-brands fa-google-pay"></i></span>' : ''} 
-          <button data-key='${r._key}' class='deleteBtn'>Delete</button>
-        </div>
-      </div>`;
-    target.appendChild(el);
-    
-    if(r.name.toLowerCase()!='opening balance')count ++;
-document.querySelector('#all').innerHTML=`ALL <span>${count}</span>`
+        <div><strong>\u20b9${Number(r.amount).toLocaleString()}</strong></div>
+        ${r.gpay ? `<div><strong class="gpay">\u20b9${Number(r.gpay).toLocaleString()}</strong></div>` : ''}
+        <div class="actions">${r.gpay?'<span><i class="fa-brands fa-google-pay"></i></span>':''}<button data-key="${r._key}" class="deleteBtn">Del</button></div>
+      </div></div>`;
+
+    if (isOb) { ob = Number(r.amount||0); }
+    else       { count++; }
+
     if (r._type === 'in') {
-      
-      if(r.name.toLowerCase()!='opening balance')inCount++;
-      totalIn += Number(r.amount || 0) + Number(r.gpay || 0);
-      document.querySelector('#in').innerHTML=`IN <span>${inCount}</span>`
+      if (!isOb) inCount++;
+      totalIn  += Number(r.amount||0) + Number(r.gpay||0);
     } else {
-      outCount++
-      totalOut += Number(r.amount || 0);
-      document.querySelector('#out').innerHTML=`OUT <span>${outCount}</span>`
+      outCount++;
+      totalOut += Number(r.amount||0);
     }
-    if (r.gpay) totalGpay += Number(r.gpay || 0);
+    if (r.gpay) totalGpay += Number(r.gpay||0);
   });
 
-  // Update totals (shared for both views)
-  const withoutOb = `₹${totalIn - ob.toLocaleString()}`
-  totalInEl.textContent = `₹${totalIn.toLocaleString()}`;
-  totalOutEl.textContent = `₹${totalOut.toLocaleString()}`;
-  totalGpayEl.textContent = `₹${totalGpay.toLocaleString()}`;
-  const net = totalIn - totalOut - totalGpay;
-  netBalEl.textContent = `₹${net.toLocaleString()}`;
-  // total - ob
-  
-  globalIn = totalIn
-  checkGoals(totalIn)
-  
+  // Single DOM write for all entries
+  target.innerHTML = html;
+
+  // Wire delete buttons (event delegation would be better, but keep existing pattern)
+  target.querySelectorAll('.deleteBtn').forEach(btn => {
+    btn.onclick = () => {
+      const key = btn.dataset.key;
+      // find row
+      const row = rows.find(r => r._key === key);
+      if (row) handleDelete(row, key);
+    };
+  });
+
+  // Update counters ONCE (not inside forEach)
+  document.querySelector('#all').innerHTML = `ALL <span>${count}</span>`;
+  document.querySelector('#in').innerHTML  = `IN <span>${inCount}</span>`;
+  document.querySelector('#out').innerHTML = `OUT <span>${outCount}</span>`;
+
+  // Update totals
+  totalInEl.textContent   = `\u20b9${totalIn.toLocaleString()}`;
+  totalOutEl.textContent  = `\u20b9${totalOut.toLocaleString()}`;
+  totalGpayEl.textContent = `\u20b9${totalGpay.toLocaleString()}`;
+  netBalEl.textContent    = `\u20b9${(totalIn - totalOut - totalGpay).toLocaleString()}`;
+
+  globalIn = totalIn;
+  checkGoals(totalIn);
 }
 // check goal function 
 
@@ -1691,8 +1592,8 @@ var progress = false;
       desc.focus()
     });
 
-    selectDate.addEventListener('change', () => loadForDate(selectDate.value));
-    reloadBtn.addEventListener('click', () => { _invalidateCache(selectDate.value); loadForDate(selectDate.value); });
+    selectDate.addEventListener('change', ()=> loadForDate(selectDate.value));
+    reloadBtn.addEventListener('click', ()=> loadForDate(selectDate.value));
     
     
     
@@ -1811,7 +1712,6 @@ if (data.targetAmount > globalIn) {
 
   const liquidRef = db.ref(dayRoot(dateISO) + '/liquid');
 
-  _invalidateCache(currentDate);
   await liquidRef.set({
     serial: s,
     name: 'Liquid Amount',
@@ -2002,7 +1902,6 @@ document.addEventListener('click', async (e) => {
 
     // 3. MOVE TO RECYCLE BIN with Reason
     const recycleRef = db.ref(`${username}/recycleBin/${currentDate}/${type}/${key}`);
-    _invalidateCache(currentDate);
     await recycleRef.set({
       ...data,
       deleteReason: deletionReason || 'No reason provided', // Save the input
