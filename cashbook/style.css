@@ -2911,7 +2911,7 @@ body.dark .dash-skel-bar {
   animation: skelFadeIn 0.2s ease both;
 }
 
-.fliter-btns .link{
+.fliter-btns .link, #reloadBtn{
   background: rgba(11,162,255,0.12);
   border-color: rgba(11,162,255,0.25);
   color: var(--accent);
