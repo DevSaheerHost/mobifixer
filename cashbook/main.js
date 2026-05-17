@@ -2245,6 +2245,33 @@ function datesBetween(startISO, endISO){
 
 // Fetch totals for a date range and render dashboard
 async function fetchRangeTotals(startISO, endISO){
+  // ── Show skeleton immediately while fetching ──
+  const dashSummaryEl = document.getElementById('dashSummary');
+  const dashChartEl   = document.getElementById('dashChart');
+  if (dashSummaryEl) {
+    dashSummaryEl.innerHTML = `
+      <div class="dash-skel-grid">
+        <div class="dash-skel-stat"><div class="skel-line w55 thin"></div><div class="skel-line w70" style="height:22px;margin-top:6px;border-radius:6px"></div></div>
+        <div class="dash-skel-stat"><div class="skel-line w55 thin"></div><div class="skel-line w70" style="height:22px;margin-top:6px;border-radius:6px"></div></div>
+        <div class="dash-skel-stat"><div class="skel-line w55 thin"></div><div class="skel-line w70" style="height:22px;margin-top:6px;border-radius:6px"></div></div>
+        <div class="dash-skel-stat"><div class="skel-line w55 thin"></div><div class="skel-line w70" style="height:22px;margin-top:6px;border-radius:6px"></div></div>
+        <div class="dash-skel-stat dash-skel-full"><div class="skel-line w45 thin"></div><div class="skel-line w80" style="height:22px;margin-top:6px;border-radius:6px"></div></div>
+      </div>`;
+  }
+  if (dashChartEl) {
+    dashChartEl.innerHTML = `
+      <div class="dash-skel-chart">
+        <div class="dash-skel-bars">
+          ${[55,80,40,90,65,75,50,85,45,70,95,60].map(h =>
+            `<div class="dash-skel-bar" style="height:${h}%"></div>`
+          ).join('')}
+        </div>
+        <div class="dash-skel-xaxis">
+          ${Array.from({length:6},()=>`<div class="skel-line" style="width:20px;height:8px"></div>`).join('')}
+        </div>
+      </div>`;
+  }
+
   const days = datesBetween(startISO,endISO);
   const dayTotals = [];
   let aggIn=0, aggOut=0, aggG=0, ob=0;
@@ -2272,14 +2299,31 @@ function renderDashboard(dayTotals, aggs){
   const dashSummary = document.getElementById('dashSummary');
   const dashChart = document.getElementById('dashChart');
   const {aggIn, aggOut, aggG, ob} = aggs;
+  const net = aggIn - aggOut - aggG - ob;
+
   dashSummary.innerHTML = `
-    <div style="display:flex;flex-direction:column;gap:6px">
-      <div class="small">Range days: ${dayTotals.length}</div>
-      <div class="tot-row"><div class="small">Range IN</div><div class='tod-in'>₹${aggIn.toLocaleString()}</div></div>
-      <div class="tot-row"><div class="small">OB</div><div class='tod-ob'>₹${ob.toLocaleString()}</div></div>
-      <div class="tot-row"><div class="small">Range OUT</div><div class='tod-out'>₹${aggOut.toLocaleString()}</div></div>
-      <div class="tot-row"><div class="small">Range GPay (IN)</div><div class='tod-gp-in'>₹${aggG.toLocaleString()}</div></div>
-      <div class="tot-row"><div class="small">Net (IN - OUT - GPay - OB)</div><div class='tod-tot'>₹${(aggIn-aggOut-aggG-ob).toLocaleString()}</div></div>
+    <div class="dash-range-label">Range: ${dayTotals.length} day${dayTotals.length !== 1 ? 's' : ''}</div>
+    <div class="dash-stats-grid">
+      <div class="dash-stat-box in">
+        <div class="dash-stat-label">RANGE IN</div>
+        <div class="dash-stat-val tod-in">₹${aggIn.toLocaleString()}</div>
+      </div>
+      <div class="dash-stat-box out">
+        <div class="dash-stat-label">RANGE OUT</div>
+        <div class="dash-stat-val tod-out">₹${aggOut.toLocaleString()}</div>
+      </div>
+      <div class="dash-stat-box ob">
+        <div class="dash-stat-label">OB</div>
+        <div class="dash-stat-val tod-ob">₹${ob.toLocaleString()}</div>
+      </div>
+      <div class="dash-stat-box gpay">
+        <div class="dash-stat-label">GPAY (IN)</div>
+        <div class="dash-stat-val tod-gp-in">₹${aggG.toLocaleString()}</div>
+      </div>
+      <div class="dash-stat-box net full">
+        <div class="dash-stat-label">NET (IN − OUT − GPay − OB)</div>
+        <div class="dash-stat-val tod-tot">₹${net.toLocaleString()}</div>
+      </div>
     </div>
   `;
 
@@ -2543,8 +2587,29 @@ if (username || fullname) {
       <button id='dashThisMonth' class='link'>This Month</button>
     </div>
     <div style='display:flex;gap:12px;align-items:flex-start'>
-      <div id='dashSummary' style='flex:1'></div>
-      <div id='dashChart' style='width:420px;height:120px'></div>
+      <div id='dashSummary' style='flex:1'>
+      <div class="dash-skel-grid">
+        <div class="dash-skel-stat"><div class="skel-line w55 thin"></div><div class="skel-line w70" style="height:22px;margin-top:6px;border-radius:6px"></div></div>
+        <div class="dash-skel-stat"><div class="skel-line w55 thin"></div><div class="skel-line w70" style="height:22px;margin-top:6px;border-radius:6px"></div></div>
+        <div class="dash-skel-stat"><div class="skel-line w55 thin"></div><div class="skel-line w70" style="height:22px;margin-top:6px;border-radius:6px"></div></div>
+        <div class="dash-skel-stat"><div class="skel-line w55 thin"></div><div class="skel-line w70" style="height:22px;margin-top:6px;border-radius:6px"></div></div>
+        <div class="dash-skel-stat dash-skel-full"><div class="skel-line w45 thin"></div><div class="skel-line w80" style="height:22px;margin-top:6px;border-radius:6px"></div></div>
+      </div>
+      </div>
+      <div id='dashChart' style='width:420px;height:120px'>
+      
+      <div class="dash-skel-chart">
+        <div class="dash-skel-bars">
+          ${[55,80,40,90,65,75,50,85,45,70,95,60].map(h =>
+            `<div class="dash-skel-bar" style="height:${h}%"></div>`
+          ).join('')}
+        </div>
+        <div class="dash-skel-xaxis">
+          ${Array.from({length:6},()=>`<div class="skel-line" style="width:20px;height:8px"></div>`).join('')}
+        </div>
+      </div>
+      
+      </div>
     </div>
   `;
   container.insertBefore(dashCard, container.firstChild);

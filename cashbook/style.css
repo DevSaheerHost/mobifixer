@@ -209,6 +209,7 @@
     #totalOut {color:var(--red)}
     #totalGpay{color:#1a73e8}
     #netBal   {color:var(--purple)}
+    #liquidMoneyLabel{color: var(--green);}
     
     /* ── FILTER TABS ── */
     .filter{display:flex;gap:8px;align-items:center}
@@ -2720,4 +2721,192 @@ form button{flex:1}
   opacity: 0 !important;
   transform: scale(1.04) !important;
   pointer-events: none !important;
+}
+
+/* ═══════════════════════════════════════════════════
+   DASHBOARD — 2×2 responsive stat grid
+   ═══════════════════════════════════════════════════ */
+   
+#dashSummary .skel-line{
+  width: 50%;
+}
+
+.dash-range-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* 2-column grid: [IN][OUT] / [OB][GPAY] / [NET full-width] */
+.dash-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+}
+
+.dash-stat-box {
+  background: #F8FAFF;
+  border-radius: 12px;
+  padding: 11px 13px;
+  border: 1px solid #EEF2FF;
+  border-left: 3px solid transparent;
+    display: flex;
+    flex-flow: column;
+    width: 46%;
+
+}
+
+.dash-stat-box.in   { border-left-color: var(--green); }
+.dash-stat-box.out  { border-left-color: var(--red); }
+.dash-stat-box.ob   { border-left-color: var(--accent); }
+.dash-stat-box.gpay { border-left-color: #1a73e8; }
+.dash-stat-box.net  { border-left-color: var(--purple); }
+
+/* Net row spans both columns */
+.dash-stat-box.full {
+  grid-column: 1 / -1;
+}
+
+.dash-stat-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.dash-stat-val {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.tod-in     { color: var(--green); }
+.tod-out    { color: var(--red); }
+.tod-ob     { color: var(--accent); }
+.tod-gp-in  { color: #1a73e8; }
+.tod-tot    { color: var(--purple); }
+
+/* Dark theme overrides */
+body.dark .dash-stat-box {
+  background: #0A1220;
+  border-color: #1A2640;
+}
+
+
+/* ═══════════════════════════════════════════════════
+   DASHBOARD — skeleton loaders (YouTube-style)
+   ═══════════════════════════════════════════════════ */
+
+/* Skeleton 2×2 grid — same layout as real stats */
+.dash-skel-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+}
+
+.dash-skel-stat {
+  background: #F8FAFF;
+  border-radius: 12px;
+  padding: 11px 13px;
+  border: 1px solid #EEF2FF;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dash-skel-stat.dash-skel-full {
+  grid-column: 1 / -1;
+}
+
+body.dark .dash-skel-stat {
+  background: #0A1220;
+  border-color: #1A2640;
+}
+
+/* Skeleton chart placeholder */
+.dash-skel-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 0;
+  height: 100%;
+  min-height: 80px;
+}
+
+.dash-skel-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  flex: 1;
+  padding: 0 4px;
+}
+
+.dash-skel-bar {
+  flex: 1;
+  background: linear-gradient(
+    90deg,
+    #EAECF0 0%, #F5F7FA 40%, #EAECF0 80%
+  );
+  background-size: 400px 100%;
+  animation: shimmer 1.3s ease-in-out infinite;
+  border-radius: 4px 4px 2px 2px;
+  min-height: 8px;
+}
+
+body.dark .dash-skel-bar {
+  background: linear-gradient(
+    90deg,
+    #111D30 0%, #1A2A42 40%, #111D30 80%
+  );
+  background-size: 400px 100%;
+  animation: shimmer 1.3s ease-in-out infinite;
+}
+
+/* Stagger bar animations for wave effect */
+.dash-skel-bar:nth-child(1)  { animation-delay: 0ms; }
+.dash-skel-bar:nth-child(2)  { animation-delay: 50ms; }
+.dash-skel-bar:nth-child(3)  { animation-delay: 100ms; }
+.dash-skel-bar:nth-child(4)  { animation-delay: 150ms; }
+.dash-skel-bar:nth-child(5)  { animation-delay: 200ms; }
+.dash-skel-bar:nth-child(6)  { animation-delay: 250ms; }
+.dash-skel-bar:nth-child(7)  { animation-delay: 300ms; }
+.dash-skel-bar:nth-child(8)  { animation-delay: 350ms; }
+.dash-skel-bar:nth-child(9)  { animation-delay: 400ms; }
+.dash-skel-bar:nth-child(10) { animation-delay: 450ms; }
+.dash-skel-bar:nth-child(11) { animation-delay: 500ms; }
+.dash-skel-bar:nth-child(12) { animation-delay: 550ms; }
+
+.dash-skel-xaxis {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 4px;
+  width: 500px;
+  max-width: 100%;
+}
+
+/* Stagger grid skeleton too */
+.dash-skel-stat:nth-child(1) .skel-line { animation-delay: 0ms;
+  width: 150px !important;}
+.dash-skel-stat:nth-child(2) .skel-line { animation-delay: 60ms; 
+  width: 150px !important; }
+.dash-skel-stat:nth-child(3) .skel-line { animation-delay: 120ms; 
+  width: 150px !important;
+}
+.dash-skel-stat:nth-child(4) .skel-line { animation-delay: 180ms; 
+  width: 150px !important;
+}
+.dash-skel-stat:nth-child(5) .skel-line { animation-delay: 240ms; 
+  width: 150px !important;
+}
+
+/* Smooth reveal when real data replaces skeleton */
+.dash-stats-grid {
+  animation: skelFadeIn 0.2s ease both;
 }
