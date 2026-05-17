@@ -2579,7 +2579,7 @@ if (username || fullname) {
   dashCard.style.marginTop='12px'
   dashCard.innerHTML = `
     <h3>Dashboard</h3>
-    <div style='display:flex;gap:8px;align-items:center;margin-bottom:8px'>
+    <div style='display:flex;gap:8px;align-items:center;margin-bottom:8px' class='fliter-btns'>
       <label class='small'>Start: <input type='date' id='dashStart' /></label>
       <label class='small'>End: <input type='date' id='dashEnd' /></label>
       <button id='dashLoad' style='padding:8px 10px; display:none;'>Load</button>

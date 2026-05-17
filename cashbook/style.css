@@ -2910,3 +2910,13 @@ body.dark .dash-skel-bar {
 .dash-stats-grid {
   animation: skelFadeIn 0.2s ease both;
 }
+
+.fliter-btns .link{
+  background: rgba(11,162,255,0.12);
+  border-color: rgba(11,162,255,0.25);
+  color: var(--accent);
+}
+
+.bottom-nav button:hover{
+  background: transparent;
+}
