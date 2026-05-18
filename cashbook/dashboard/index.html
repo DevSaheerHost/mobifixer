@@ -45,14 +45,51 @@
       </div>
     </div>
 
-    <!-- Chart Card -->
+    <!-- Today vs Yesterday Comparison -->
+    <div class="card comp-card" id="todayYestCard" style="display:none">
+      <div class="chart-header">
+        <h3>📅 Today vs Yesterday</h3>
+        <span class="comp-date" id="compDateLabel"></span>
+      </div>
+      <div id="todayYestContent"></div>
+    </div>
+
+    <!-- Monthly Comparison -->
+    <div class="card comp-card" id="monthlyCard" style="display:none">
+      <div class="chart-header">
+        <h3>📆 This Month vs Last Month</h3>
+        <span class="comp-date" id="monthlyDateLabel"></span>
+      </div>
+      <div id="monthlyContent"></div>
+      <div id="monthlyBarBox" style="margin-top:16px"></div>
+    </div>
+
+    <!-- Main Line Chart -->
     <div class="card chart-card">
       <div class="chart-header">
-        <h3>Income · Expense · Profit</h3>
+        <h3>📈 Income · Expense · Profit</h3>
         <button id="resetZoomBtn" class="btn-ghost">⟳ Reset</button>
       </div>
       <div id="chartBox"></div>
       <div id="predictTooltip" class="predict-tooltip"></div>
+    </div>
+
+    <!-- Daily Bar Chart -->
+    <div class="card chart-card" id="barChartCard" style="display:none">
+      <div class="chart-header">
+        <h3>📊 Daily Income vs Expense</h3>
+        <span class="chart-sub">Tap a bar for details</span>
+      </div>
+      <div id="barChartBox"></div>
+      <div id="barTooltip" class="predict-tooltip"></div>
+    </div>
+
+    <!-- Breakdown Donut -->
+    <div class="card" id="donutCard" style="display:none">
+      <div class="chart-header">
+        <h3>🥧 Income / Expense Breakdown</h3>
+      </div>
+      <div id="donutBox"></div>
     </div>
 
     <!-- Legend -->

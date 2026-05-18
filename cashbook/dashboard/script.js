@@ -503,20 +503,340 @@ function drawChart(data) {
 
 
 // ─────────────────────────────────────────────────────────────
+// DATE HELPERS
+// ─────────────────────────────────────────────────────────────
+function isoDate(d) { return d.toISOString().split("T")[0]; }
+
+function deltaLabel(current, previous) {
+  if (!previous || previous === 0) return { pct: null, up: true };
+  const pct = ((current - previous) / Math.abs(previous)) * 100;
+  return { pct: Math.abs(pct).toFixed(1), up: pct >= 0 };
+}
+
+function arrowHtml(current, previous, higherIsBetter = true) {
+  const { pct, up } = deltaLabel(current, previous);
+  if (pct === null) return '<span class="delta neutral">—</span>';
+  const positive = higherIsBetter ? up : !up;
+  const cls  = positive ? 'delta up' : 'delta down';
+  const sign = up ? '↑' : '↓';
+  return `<span class="${cls}">${sign} ${pct}%</span>`;
+}
+
+function sumData(rows) {
+  const income  = rows.reduce((a, r) => a + r.income,  0);
+  const expense = rows.reduce((a, r) => a + r.expense, 0);
+  return { income, expense, profit: income - expense };
+}
+
+
+// ─────────────────────────────────────────────────────────────
 // UI HANDLERS
 // ─────────────────────────────────────────────────────────────
 document.getElementById("loadBtn").addEventListener("click", async () => {
   const s = document.getElementById("startDate").value;
   const e = document.getElementById("endDate").value;
   if (!s || !e) return;
-  const data = await loadRange(s, e);
+
+  // Compute comparison date ranges
+  const now          = new Date();
+  const todayISO     = isoDate(now);
+  const yday         = new Date(now); yday.setDate(now.getDate() - 1);
+  const yesterdayISO = isoDate(yday);
+
+  const firstThisMonth = isoDate(new Date(now.getFullYear(), now.getMonth(), 1));
+  const lastLastMonth  = isoDate(new Date(now.getFullYear(), now.getMonth(), 0));
+  const firstLastMonth = isoDate(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+
+  // All fetches in parallel — no sequential waiting
+  const [data, todayData, yData, thisMonthData, lastMonthData] = await Promise.all([
+    loadRange(s, e),
+    loadRange(todayISO, todayISO),
+    loadRange(yesterdayISO, yesterdayISO),
+    loadRange(firstThisMonth, todayISO),
+    loadRange(firstLastMonth, lastLastMonth),
+  ]);
+
   drawChart(data);
+  drawBarChart(data);
+  drawDonutChart(data);
+  renderTodayVsYesterday(todayData, yData);
+  renderMonthlyComparison(thisMonthData, lastMonthData, now);
 });
 
 // Auto-reload on date change
 document.querySelector('.top-bar').addEventListener('input',
   () => document.getElementById("loadBtn").click()
 );
+
+
+// ─────────────────────────────────────────────────────────────
+// TODAY vs YESTERDAY COMPARISON
+// ─────────────────────────────────────────────────────────────
+function renderTodayVsYesterday(todayRows, yRows) {
+  const card = document.getElementById('todayYestCard');
+  const cont = document.getElementById('todayYestContent');
+  card.style.display = 'block';
+
+  const t = sumData(todayRows);
+  const y = sumData(yRows);
+
+  const todayLabel    = new Date().toLocaleDateString('en-IN', { weekday:'short', day:'numeric', month:'short' });
+  const yLabel        = new Date(Date.now() - 86400000).toLocaleDateString('en-IN', { weekday:'short', day:'numeric', month:'short' });
+  document.getElementById('compDateLabel').textContent = `${yLabel} → ${todayLabel}`;
+
+  const rows = [
+    { label:'Income',  today:t.income,  yest:y.income,  higherBetter:true,  color:'#0BA2FF' },
+    { label:'Expense', today:t.expense, yest:y.expense, higherBetter:false, color:'#FF4D4D' },
+    { label:'Profit',  today:t.profit,  yest:y.profit,  higherBetter:true,  color:'#6A5ACD' },
+  ];
+
+  cont.innerHTML = `
+    <div class="comp-header-row">
+      <div class="comp-col-label"></div>
+      <div class="comp-col comp-col-yest">Yesterday</div>
+      <div class="comp-col comp-col-today">Today</div>
+      <div class="comp-col comp-col-delta">Change</div>
+    </div>
+    ${rows.map(r => `
+      <div class="comp-row">
+        <div class="comp-col-label">
+          <span class="comp-dot" style="background:${r.color}"></span>
+          ${r.label}
+        </div>
+        <div class="comp-col comp-col-yest">${fmt(r.yest)}</div>
+        <div class="comp-col comp-col-today" style="color:${r.color};font-weight:700">${fmt(r.today)}</div>
+        <div class="comp-col comp-col-delta">${arrowHtml(r.today, r.yest, r.higherBetter)}</div>
+      </div>
+    `).join('')}
+  `;
+}
+
+
+// ─────────────────────────────────────────────────────────────
+// MONTHLY COMPARISON
+// ─────────────────────────────────────────────────────────────
+function renderMonthlyComparison(thisMonthRows, lastMonthRows, now) {
+  const card    = document.getElementById('monthlyCard');
+  const cont    = document.getElementById('monthlyContent');
+  const barBox  = document.getElementById('monthlyBarBox');
+  card.style.display = 'block';
+
+  const tm = sumData(thisMonthRows);
+  const lm = sumData(lastMonthRows);
+
+  const thisLabel = now.toLocaleDateString('en-IN', { month:'long', year:'numeric' });
+  const lastLabel = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    .toLocaleDateString('en-IN', { month:'long', year:'numeric' });
+  document.getElementById('monthlyDateLabel').textContent = `${lastLabel} → ${thisLabel}`;
+
+  const rows = [
+    { label:'Income',  cur:tm.income,  prev:lm.income,  higherBetter:true,  color:'#0BA2FF' },
+    { label:'Expense', cur:tm.expense, prev:lm.expense, higherBetter:false, color:'#FF4D4D' },
+    { label:'Profit',  cur:tm.profit,  prev:lm.profit,  higherBetter:true,  color:'#6A5ACD' },
+  ];
+
+  cont.innerHTML = `
+    <div class="comp-header-row">
+      <div class="comp-col-label"></div>
+      <div class="comp-col comp-col-yest">${lastLabel.split(' ')[0]}</div>
+      <div class="comp-col comp-col-today">${thisLabel.split(' ')[0]}</div>
+      <div class="comp-col comp-col-delta">Change</div>
+    </div>
+    ${rows.map(r => `
+      <div class="comp-row">
+        <div class="comp-col-label">
+          <span class="comp-dot" style="background:${r.color}"></span>
+          ${r.label}
+        </div>
+        <div class="comp-col comp-col-yest">${fmt(r.prev)}</div>
+        <div class="comp-col comp-col-today" style="color:${r.color};font-weight:700">${fmt(r.cur)}</div>
+        <div class="comp-col comp-col-delta">${arrowHtml(r.cur, r.prev, r.higherBetter)}</div>
+      </div>
+    `).join('')}
+  `;
+
+  // Monthly mini-bar chart: compare day-by-day totals for each month
+  drawMonthlyMiniBar(barBox, thisMonthRows, lastMonthRows, lastLabel.split(' ')[0], thisLabel.split(' ')[0]);
+}
+
+function drawMonthlyMiniBar(container, thisRows, lastRows, lastLabel, thisLabel) {
+  const maxDays = Math.max(thisRows.length, lastRows.length, 1);
+  const w = container.clientWidth || 320;
+  const h = 100;
+  const pad = { t:10, b:28, l:8, r:8 };
+  const barW = Math.max(4, (w - pad.l - pad.r) / (maxDays * 2 + maxDays + 2));
+  const gap  = barW;
+
+  const allVals = [...thisRows.map(d=>d.income), ...lastRows.map(d=>d.income), 1];
+  const maxV = Math.max(...allVals);
+
+  const sy = v => pad.t + (1 - v / maxV) * (h - pad.t - pad.b);
+
+  let bars = '';
+  for (let i = 0; i < maxDays; i++) {
+    const x0 = pad.l + i * (barW * 2 + gap);
+    const lv  = lastRows[i]?.income || 0;
+    const tv  = thisRows[i]?.income || 0;
+    const lh  = (h - pad.t - pad.b) * (lv / maxV);
+    const th  = (h - pad.t - pad.b) * (tv / maxV);
+    bars += `<rect x="${x0}"        y="${sy(lv)}" width="${barW}" height="${lh}" fill="#CBD5E1" rx="2"/>`;
+    bars += `<rect x="${x0+barW+1}" y="${sy(tv)}" width="${barW}" height="${th}" fill="#0BA2FF" rx="2"/>`;
+  }
+
+  container.innerHTML = `
+    <svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="overflow:visible">
+      <rect x="0" y="0" width="${w}" height="${h}" fill="#fafbff" rx="6"/>
+      ${bars}
+      <text x="${pad.l}"   y="${h - 6}" font-size="9" fill="#94a3b8">${lastLabel}</text>
+      <text x="${pad.l+14}" y="${h - 6}" font-size="9" fill="#0BA2FF">${thisLabel}</text>
+      <rect x="${pad.l}"   y="${h-14}" width="8" height="6" fill="#CBD5E1" rx="1"/>
+      <rect x="${pad.l+8}" y="${h-14}" width="8" height="6" fill="#0BA2FF" rx="1"/>
+    </svg>`;
+}
+
+
+// ─────────────────────────────────────────────────────────────
+// BAR CHART — daily grouped income vs expense
+// ─────────────────────────────────────────────────────────────
+function drawBarChart(data) {
+  if (!data?.length) return;
+  const card = document.getElementById('barChartCard');
+  const box  = document.getElementById('barChartBox');
+  card.style.display = 'block';
+
+  const n    = data.length;
+  const barW = Math.max(14, Math.min(32, 460 / n));
+  const gap  = barW * 0.35;
+  const padL = 50, padR = 20, padT = 20, padB = 40;
+  const w    = Math.max(500, n * (barW * 2 + gap + 6) + padL + padR);
+  const h    = 220;
+
+  const maxV = Math.max(...data.map(d => Math.max(d.income, d.expense)), 1);
+
+  function sy(v) { return padT + (1 - v / maxV) * (h - padT - padB); }
+  function sx(i) { return padL + i * (barW * 2 + gap + 4); }
+
+  // Y-axis grid
+  let gridSvg = '';
+  for (let i = 0; i <= 4; i++) {
+    const v = maxV * (1 - i / 4);
+    const y = padT + (i / 4) * (h - padT - padB);
+    gridSvg += `<line x1="${padL-4}" y1="${y}" x2="${w - padR}" y2="${y}" stroke="#e8eaf0" stroke-width="1"/>`;
+    gridSvg += `<text x="${padL-6}" y="${y+4}" font-size="9" text-anchor="end" fill="#9ca3af">${fmt(v)}</text>`;
+  }
+
+  // Bars + tooltips
+  let barsSvg = '';
+  data.forEach((d, i) => {
+    const x  = sx(i);
+    const ih = Math.max(2, (h - padT - padB) * (d.income  / maxV));
+    const eh = Math.max(2, (h - padT - padB) * (d.expense / maxV));
+    const day = new Date(d.date).getDate();
+
+    // Income bar
+    barsSvg += `
+      <rect class="bar-income" x="${x}" y="${sy(d.income)}" width="${barW}" height="${ih}"
+        fill="#0BA2FF" rx="3" opacity="0.85"
+        data-val="${d.income}" data-label="Income ${d.date}"/>`;
+    // Expense bar
+    barsSvg += `
+      <rect class="bar-expense" x="${x + barW + 2}" y="${sy(d.expense)}" width="${barW}" height="${eh}"
+        fill="#FF4D4D" rx="3" opacity="0.85"
+        data-val="${d.expense}" data-label="Expense ${d.date}"/>`;
+    // Day label
+    barsSvg += `<text x="${x + barW + 1}" y="${h - padB + 14}" font-size="10" text-anchor="middle" fill="#9ca3af">${day}</text>`;
+  });
+
+  const svgStr = `
+    <svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display:block;background:#fafbff;border-radius:8px;cursor:default">
+      ${gridSvg}${barsSvg}
+    </svg>`;
+
+  box.innerHTML = svgStr;
+
+  // Tap/hover tooltips on bars
+  const tip = document.getElementById('barTooltip');
+  box.querySelectorAll('.bar-income, .bar-expense').forEach(rect => {
+    rect.addEventListener('click', e => {
+      tip.textContent    = `${rect.dataset.label}: ${fmt(Number(rect.dataset.val))}`;
+      tip.style.left     = (e.clientX + 10) + 'px';
+      tip.style.top      = (e.clientY - 30) + 'px';
+      tip.style.display  = 'block';
+      clearTimeout(tip._t);
+      tip._t = setTimeout(() => { tip.style.display = 'none'; }, 2000);
+    });
+    rect.style.cursor = 'pointer';
+  });
+}
+
+
+// ─────────────────────────────────────────────────────────────
+// DONUT CHART — income vs expense breakdown
+// ─────────────────────────────────────────────────────────────
+function drawDonutChart(data) {
+  if (!data?.length) return;
+  const card = document.getElementById('donutCard');
+  const box  = document.getElementById('donutBox');
+  card.style.display = 'block';
+
+  const totalIncome  = data.reduce((a, d) => a + d.income,  0);
+  const totalExpense = data.reduce((a, d) => a + d.expense, 0);
+  const total        = totalIncome + totalExpense || 1;
+
+  const cx = 120, cy = 120, R = 90, r = 56;
+  const profitPct = Math.round((totalIncome - totalExpense) / (totalIncome || 1) * 100);
+
+  function arc(startAngle, endAngle, color, label, value) {
+    const s = (startAngle - 90) * Math.PI / 180;
+    const e = (endAngle   - 90) * Math.PI / 180;
+    const x1 = cx + R * Math.cos(s), y1 = cy + R * Math.sin(s);
+    const x2 = cx + R * Math.cos(e), y2 = cy + R * Math.sin(e);
+    const xi1 = cx + r * Math.cos(s), yi1 = cy + r * Math.sin(s);
+    const xi2 = cx + r * Math.cos(e), yi2 = cy + r * Math.sin(e);
+    const large = endAngle - startAngle > 180 ? 1 : 0;
+    const pct = Math.round((endAngle - startAngle) / 360 * 100);
+    // Label position (midpoint of arc)
+    const mid = ((startAngle + endAngle) / 2 - 90) * Math.PI / 180;
+    const lx = cx + (R + 18) * Math.cos(mid);
+    const ly = cy + (R + 18) * Math.sin(mid);
+    return `
+      <path d="M ${x1} ${y1} A ${R} ${R} 0 ${large} 1 ${x2} ${y2}
+               L ${xi2} ${yi2} A ${r} ${r} 0 ${large} 0 ${xi1} ${yi1} Z"
+            fill="${color}" opacity="0.9"/>
+      <text x="${lx}" y="${ly}" font-size="11" text-anchor="middle" fill="${color}" font-weight="700">${pct}%</text>
+    `;
+  }
+
+  const incomeAngle  = (totalIncome  / total) * 360;
+  const expenseAngle = (totalExpense / total) * 360;
+
+  const svgW = 320;
+  const svg = `
+    <svg width="${svgW}" height="240" viewBox="0 0 ${svgW} 240" style="display:block;margin:0 auto">
+      <rect width="${svgW}" height="240" fill="#fafbff" rx="8"/>
+      ${arc(0, incomeAngle, '#0BA2FF', 'Income', totalIncome)}
+      ${arc(incomeAngle, incomeAngle + expenseAngle, '#FF4D4D', 'Expense', totalExpense)}
+      <!-- Centre hole -->
+      <circle cx="${cx}" cy="${cy}" r="${r - 2}" fill="#fafbff"/>
+      <text x="${cx}" y="${cy - 8}"  font-size="11" text-anchor="middle" fill="#6b7280">Profit</text>
+      <text x="${cx}" y="${cy + 10}" font-size="18" text-anchor="middle" fill="${profitPct >= 0 ? '#6A5ACD' : '#FF4D4D'}" font-weight="700">${profitPct}%</text>
+
+      <!-- Legend -->
+      <rect x="210" y="60"  width="12" height="12" fill="#0BA2FF" rx="2"/>
+      <text x="226" y="71"  font-size="11" fill="#374151">Income</text>
+      <text x="226" y="84"  font-size="10" fill="#6b7280">${fmt(totalIncome)}</text>
+
+      <rect x="210" y="100" width="12" height="12" fill="#FF4D4D" rx="2"/>
+      <text x="226" y="111" font-size="11" fill="#374151">Expense</text>
+      <text x="226" y="124" font-size="10" fill="#6b7280">${fmt(totalExpense)}</text>
+
+      <rect x="210" y="140" width="12" height="12" fill="#6A5ACD" rx="2"/>
+      <text x="226" y="151" font-size="11" fill="#374151">Profit</text>
+      <text x="226" y="164" font-size="10" fill="#6b7280">${fmt(totalIncome - totalExpense)}</text>
+    </svg>`;
+
+  box.innerHTML = svg;
+}
 
 
 // ─────────────────────────────────────────────────────────────

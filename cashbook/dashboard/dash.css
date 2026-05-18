@@ -269,3 +269,115 @@ svg {
   font-size: 12px;
   margin-top: 8px;
 }
+
+
+/* =============================================
+   COMPARISON CARDS
+   ============================================= */
+.comp-card .chart-header {
+  margin-bottom: 12px;
+}
+
+.comp-date {
+  font-size: 11px;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.chart-sub {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.comp-header-row {
+  display: flex;
+  align-items: center;
+  padding: 0 0 6px;
+  border-bottom: 1px solid #f0f2f8;
+  margin-bottom: 4px;
+}
+
+.comp-row {
+  display: flex;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid #f8f9fc;
+}
+
+.comp-row:last-child { border-bottom: none; }
+
+.comp-col-label {
+  flex: 1.4;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.comp-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.comp-col {
+  flex: 1;
+  text-align: right;
+  font-size: 13px;
+}
+
+.comp-col-yest  { color: #9ca3af; }
+.comp-col-today { font-size: 14px; }
+.comp-col-delta { flex: 0.9; }
+
+/* ── Delta badges ── */
+.delta {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.delta.up      { background: #DCFCE7; color: #15803d; }
+.delta.down    { background: #FEE2E2; color: #b91c1c; }
+.delta.neutral { background: #F3F4F6; color: #6b7280; }
+
+/* Comparison header columns */
+.comp-header-row .comp-col-label { font-size: 11px; font-weight: 600; color: #9ca3af; }
+.comp-header-row .comp-col       { font-size: 11px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.04em; }
+
+
+/* =============================================
+   CHART CARDS — bar + donut
+   ============================================= */
+#barChartBox,
+#donutBox {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 8px;
+}
+
+#barChartBox svg,
+#donutBox svg {
+  min-width: 100%;
+}
+
+#donutBox svg {
+  min-width: unset;
+  width: 100%;
+  max-width: 340px;
+  display: block;
+  margin: 0 auto;
+}
+
+/* Monthly mini bar */
+#monthlyBarBox {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fafbff;
+}
