@@ -411,161 +411,270 @@
   </div> 
   </main>
   <main class="settings_page page" id="settings">
-  <div class="nav">
-    <span onclick="history.back()" style="display: flex; gap: 1rem;">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="4" stroke="currentColor" class="size-6">
-  <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-</svg>
+    <div class="nav">
+      <span onclick="history.back()" style="display:flex;gap:0.75rem;align-items:center;cursor:pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:20px;height:20px"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
+        <span style="font-weight:600;font-size:16px">Settings</span>
+      </span>
+    </div>
 
-    <p>Settings</p>
+    <div class="settings-body">
 
-    </span>
-    
+      <!-- ── STAFF ── -->
+      <p class="settings-section-title" id="staff_container_title">Team / Staff</p>
+      <ul id="staff_container" class="settings-group">
+        <p class="muted" style="text-align:center;padding:12px">Loading…</p>
+      </ul>
 
-  </div>
-  <div class="container">
-    
-      <p class="title" id="staff_container_title">Manage User/staff</p>
-    
-    
-    <ul id="staff_container">
-      <!-- thir we go-->
-      <p class="muted" style="display: flex; align-items: center; justify-content: center; padding: 0.5rem;">Loading...</p>
-    </ul>
-    
-    <p class="title">General</p>
-    <ul>
-      <li>
-        <div class="col">
-        <label for="suggestion">Auto Suggestion</label>
-        <p class="muted">
-          <small>Entry name's typing suggestions</small>
-        </p>
+      <!-- ── PREFERENCES ── -->
+      <p class="settings-section-title">Preferences</p>
+      <div class="settings-group">
+        <div class="settings-field">
+          <div class="field-icon">💡</div>
+          <div class="field-body">
+            <div class="field-label">Auto Suggestion</div>
+            <div class="field-hint">Entry name typing suggestions</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" checked name="suggestion" id="suggestion"/>
+            <span class="toggle-track"></span>
+          </label>
         </div>
-        
-        <input type="checkbox" checked name="suggestion" id="suggestion" />
-      </li>
-      
-      <li>
-        <label for="vibration">Enable Vibration</label>
-        <input type="checkbox" checked name="vibration" id="vibration" />
-      </li>
-      
-      <li>
-        <div class="col">
-          <label for="autoGoal">Enable Auto Goal</label>
-          <p class="muted">
-          <small>Sets a daily goal automatically. You can change the amount later.</small>
-          </p>
+        <div class="settings-field">
+          <div class="field-icon">📳</div>
+          <div class="field-body">
+            <div class="field-label">Enable Vibration</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" checked name="vibration" id="vibration"/>
+            <span class="toggle-track"></span>
+          </label>
         </div>
-        <input type="checkbox" name="autoGoal" id="autoGoal" />
-      </li>
-      
-      <li>
-        <div class="col">
-           <label for="specialDay">Special Day Effects</label>
-        <p class="muted">
-          <small>
-            Enable festive emoji effects on important days
-          </small>
-        </p>
+        <div class="settings-field">
+          <div class="field-icon">🎯</div>
+          <div class="field-body">
+            <div class="field-label">Auto Daily Goal</div>
+            <div class="field-hint">Sets a goal automatically each day</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" name="autoGoal" id="autoGoal"/>
+            <span class="toggle-track"></span>
+          </label>
         </div>
-       
-        <input type="checkbox" checked name="specialDay" id="specialDay" />
-      </li>
+        <div class="settings-field">
+          <div class="field-icon">🎉</div>
+          <div class="field-body">
+            <div class="field-label">Special Day Effects</div>
+            <div class="field-hint">Festive effects on holidays</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" checked name="specialDay" id="specialDay"/>
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+      </div>
 
-    </ul>
-    
-    <p class="title">Theme</p>
-    
-    <ul>
-      <li id="for_theme_light">
-        <div class="col">
-        <label for="theme_light">Light</label>
-        <p class="muted">
-          <small>System Default</small>
-        </p>
+      <!-- ── THEME ── -->
+      <p class="settings-section-title">Appearance</p>
+      <div class="settings-group">
+        <div class="settings-field" id="for_theme_light">
+          <div class="field-icon">☀️</div>
+          <div class="field-body">
+            <div class="field-label">Light</div>
+            <div class="field-hint">System default</div>
+          </div>
+          <input type="radio" checked name="theme" id="theme_light" style="width:18px;height:18px;accent-color:var(--accent)"/>
         </div>
-        
-        <input type="radio" checked name="theme" id="theme_light" />
-      </li>
-      <li id="for_theme_dark">
-        <div class="col">
-          <label for="theme_dark">Dark</label>
-          <p class="muted">
-            <small>Good for eyes</small>
-          </p>
+        <div class="settings-field" id="for_theme_dark">
+          <div class="field-icon">🌙</div>
+          <div class="field-body">
+            <div class="field-label">Dark</div>
+            <div class="field-hint">Easy on the eyes</div>
+          </div>
+          <input type="radio" name="theme" id="theme_dark" style="width:18px;height:18px;accent-color:var(--accent)"/>
         </div>
-        
-        <input type="radio" name="theme" id="theme_dark" />
-      </li>
-    </ul>
-<p>
-  Want to see how this helps your business?
-  <a class="doc-link" href="https://github.com/DevSaheerHost/mobifixer/blob/main/cashbook/README.md" target="_blank" rel="noopener">
-    View full documentation →
-  </a>
-</p>  </div>
-</main>
+      </div>
+
+      <!-- ── ABOUT ── -->
+      <p class="settings-section-title">About</p>
+      <div class="settings-group">
+        <div class="settings-field">
+          <div class="field-icon">📖</div>
+          <div class="field-body">
+            <div class="field-label">Documentation</div>
+            <div class="field-hint">How-to guides and feature list</div>
+          </div>
+          <a class="field-chevron-link" href="https://github.com/DevSaheerHost/mobifixer/blob/main/cashbook/README.md" target="_blank" rel="noopener">
+            <svg class="field-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+          </a>
+        </div>
+        <div class="settings-field">
+          <div class="field-icon">ℹ️</div>
+          <div class="field-body">
+            <div class="field-label">App Version</div>
+            <div class="field-hint">Mobifixer Cashbook</div>
+          </div>
+          <span class="field-locked-badge" style="background:#EEF2FF;color:#6A5ACD">v2.0</span>
+        </div>
+      </div>
+
+    </div>
+  </main>
 
 
 
   <main class="profile_page page" id="profile">
+
+    <!-- Nav -->
     <div class="nav">
-    <span onclick="history.back()" style="display: flex; gap: 1rem;">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="4" stroke="currentColor" class="size-6">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-      </svg>
-      
-      <p>Profile</p>
-      
-    </span>
-    
-    
-  </div>
-  
-  <div class="container">
-    <div class="col-center">
-      <div class="prof-picture">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-        </svg>
-        
-      </div>
-      <h3 id="fullname_profile"></h3>
-      <p id="userEmail">user@gmail.com</p>
-      <button class="edit-profile">Edit Profile</button>
+      <span onclick="history.back()" style="display:flex;gap:0.75rem;align-items:center;cursor:pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:20px;height:20px"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
+        <span style="font-weight:600;font-size:16px">Profile</span>
+      </span>
     </div>
-    
-    <div class="feedback_container" id="feedbackContainer">
-      <h4>Your feedback matters</h4>
-      <div class="row-between">
-   
-        
-        <span id="negative">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-  <path stroke-linecap="round" stroke-linejoin="round" d="M7.498 15.25H4.372c-1.026 0-1.945-.694-2.054-1.715a12.137 12.137 0 0 1-.068-1.285c0-2.848.992-5.464 2.649-7.521C5.287 4.247 5.886 4 6.504 4h4.016a4.5 4.5 0 0 1 1.423.23l3.114 1.04a4.5 4.5 0 0 0 1.423.23h1.294M7.498 15.25c.618 0 .991.724.725 1.282A7.471 7.471 0 0 0 7.5 19.75 2.25 2.25 0 0 0 9.75 22a.75.75 0 0 0 .75-.75v-.633c0-.573.11-1.14.322-1.672.304-.76.93-1.33 1.653-1.715a9.04 9.04 0 0 0 2.86-2.4c.498-.634 1.226-1.08 2.032-1.08h.384m-10.253 1.5H9.7m8.075-9.75c.01.05.027.1.05.148.593 1.2.925 2.55.925 3.977 0 1.487-.36 2.89-.999 4.125m.023-8.25c-.076-.365.183-.75.575-.75h.908c.889 0 1.713.518 1.972 1.368.339 1.11.521 2.287.521 3.507 0 1.553-.295 3.036-.831 4.398-.306.774-1.086 1.227-1.918 1.227h-1.053c-.472 0-.745-.556-.5-.96a8.95 8.95 0 0 0 .303-.54" />
-</svg>
 
-        </span>
-        
-             <span id="positive">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-  <path stroke-linecap="round" stroke-linejoin="round" d="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282m0 0h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 0 1-2.649 7.521c-.388.482-.987.729-1.605.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 0 0-1.423-.23H5.904m10.598-9.75H14.25M5.904 18.5c.083.205.173.405.27.602.197.4-.078.898-.523.898h-.908c-.889 0-1.713-.518-1.972-1.368a12 12 0 0 1-.521-3.507c0-1.553.295-3.036.831-4.398C3.387 9.953 4.167 9.5 5 9.5h1.053c.472 0 .745.556.5.96a8.958 8.958 0 0 0-1.302 4.665c0 1.194.232 2.333.654 3.375Z" />
-</svg>
-
-        </span>
-        
-      </div>
-      
-      <small class="muted">
-          This will continue when you vote
-        </small>
+    <!-- Hero gradient header -->
+    <div class="profile-hero-banner">
+      <div class="profile-hero-avatar" id="settingsAvatar">?</div>
+      <div class="profile-hero-name" id="settingsAvatarName">Loading…</div>
+      <div class="profile-hero-sub" id="settingsAvatarSub">—</div>
+      <span class="role-badge role-owner" id="settingsRoleBadge">—</span>
+      <!-- Legacy IDs kept for JS compatibility -->
+      <span id="fullname_profile" style="display:none"></span>
+      <span id="userEmail"        style="display:none"></span>
     </div>
-    
-    
-  </div>
-</main>
+
+    <!-- Body -->
+    <div class="settings-body" style="margin-top:-24px">
+
+      <!-- ── ACCOUNT DETAILS ── -->
+      <p class="settings-section-title">Account Details</p>
+      <div class="settings-group">
+
+        <!-- Editable: Full Name -->
+        <div class="settings-field" id="sf-fullname">
+          <div class="field-icon">👤</div>
+          <div class="field-body">
+            <div class="field-label">Full Name</div>
+            <div class="field-val" id="disp-fullname">—</div>
+            <div class="field-edit-row hidden" id="edit-fullname">
+              <input class="field-input" id="input-fullname" placeholder="Your full name" autocomplete="name"/>
+              <button class="field-save-btn">Save</button>
+              <button class="field-cancel-btn">✕</button>
+            </div>
+          </div>
+          <button class="edit-icon-btn" title="Edit" id="editbtn-fullname">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+        </div>
+
+        <!-- Editable: Shop Display Name -->
+        <div class="settings-field" id="sf-shopName">
+          <div class="field-icon">🏪</div>
+          <div class="field-body">
+            <div class="field-label">Shop Display Name</div>
+            <div class="field-val" id="disp-shopName">—</div>
+            <div class="field-edit-row hidden" id="edit-shopName">
+              <input class="field-input" id="input-shopName" placeholder="e.g. Mobifixer Repairs" autocomplete="off"/>
+              <button class="field-save-btn">Save</button>
+              <button class="field-cancel-btn">✕</button>
+            </div>
+          </div>
+          <button class="edit-icon-btn" id="editbtn-shopName">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+        </div>
+
+        <!-- Editable: Phone -->
+        <div class="settings-field" id="sf-phone">
+          <div class="field-icon">📞</div>
+          <div class="field-body">
+            <div class="field-label">Phone / WhatsApp</div>
+            <div class="field-val muted" id="disp-phone">Not set</div>
+            <div class="field-edit-row hidden" id="edit-phone">
+              <input class="field-input" id="input-phone" placeholder="+91 9876543210" type="tel" autocomplete="tel"/>
+              <button class="field-save-btn">Save</button>
+              <button class="field-cancel-btn">✕</button>
+            </div>
+          </div>
+          <button class="edit-icon-btn" id="editbtn-phone">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+        </div>
+
+        <!-- Read-only: Shop Username -->
+        <div class="settings-field">
+          <div class="field-icon">🔑</div>
+          <div class="field-body">
+            <div class="field-label">Shop Username</div>
+            <div class="field-val" id="disp-username">—</div>
+            <div class="field-hint">Cannot be changed</div>
+          </div>
+          <span class="field-locked-badge">Fixed</span>
+        </div>
+
+        <!-- Read-only: Email -->
+        <div class="settings-field">
+          <div class="field-icon">📧</div>
+          <div class="field-body">
+            <div class="field-label">Email</div>
+            <div class="field-val" id="disp-email">—</div>
+            <div class="field-hint">Managed by FB Auth</div>
+          </div>
+        </div>
+
+        <!-- Read-only: Member Since -->
+        <div class="settings-field">
+          <div class="field-icon">📅</div>
+          <div class="field-body">
+            <div class="field-label">Member Since</div>
+            <div class="field-val" id="disp-joined">—</div>
+          </div>
+        </div>
+
+      </div><!-- /account group -->
+
+
+      <!-- ── SECURITY ── -->
+      <p class="settings-section-title">Security</p>
+      <div class="settings-group">
+
+        <div class="settings-field clickable" id="changePasswordRow">
+          <div class="field-icon">🔒</div>
+          <div class="field-body">
+            <div class="field-label">Change Password</div>
+            <div class="field-hint">Send a reset link to your email</div>
+          </div>
+          <svg class="field-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+        </div>
+
+        <div class="settings-field clickable danger-row" id="signOutRow">
+          <div class="field-icon">🚪</div>
+          <div class="field-body">
+            <div class="field-label danger-label">Sign Out</div>
+            <div class="field-hint">You can sign back in anytime</div>
+          </div>
+          <svg class="field-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+        </div>
+
+      </div>
+
+
+      <!-- ── FEEDBACK ── -->
+      <p class="settings-section-title">Feedback</p>
+      <div class="settings-group">
+        <div class="settings-field" id="feedbackContainer" style="flex-direction:column;align-items:flex-start;gap:10px">
+          <div class="field-label" style="margin-bottom:4px">Was this app helpful?</div>
+          <div style="display:flex;gap:20px;align-items:center">
+            <span id="negative" style="cursor:pointer;opacity:0.5;font-size:28px;transition:opacity 0.15s">👎</span>
+            <span id="positive" style="cursor:pointer;opacity:0.5;font-size:28px;transition:opacity 0.15s">👍</span>
+          </div>
+          <div class="field-hint">Your feedback helps improve the app</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
 
  <!-- The FULL-SCREEN ALERT OVERLAY container -->
     <div id="alertOverlay" role="dialog" aria-modal="true" aria-labelledby="alertTitle" aria-describedby="alertMessage">

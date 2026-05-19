@@ -3729,3 +3729,204 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Skeleton reveal handled directly in renderEntries — no observer needed
+
+
+// ═══════════════════════════════════════════════════════════════
+// PROFILE PAGE — load data, inline edit, save to Firebase
+// No onclick in HTML — all wired here via event delegation
+// Uses firebase.auth() / firebase.database() directly (compat SDK)
+// ═══════════════════════════════════════════════════════════════
+
+// ── Helpers ──
+function _setText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
+}
+
+// ── Load profile data from Firebase ──
+async function loadSettingsProfile() {
+  try {
+    const _auth = firebase.auth();
+    const _db   = firebase.database();
+    const _user = _auth.currentUser;
+
+    const snap = await _db.ref(`/users/${username}`).get();
+    if (!snap.exists()) return;
+    const data = snap.val();
+
+    // Avatar initials
+    const name     = fullname || username || '?';
+    const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    _setText('settingsAvatar',     initials);
+    _setText('settingsAvatarName', name);
+    _setText('settingsAvatarSub',  `@${username}`);
+    // Keep legacy IDs in sync
+    _setText('fullname_profile', name);
+    _setText('userEmail', _user?.email || '');
+
+    // Role badge
+    const isOwner = (data.fullname || '').toLowerCase() === (name).toLowerCase()
+                    || data.role === 'owner';
+    const roleBadge = document.getElementById('settingsRoleBadge');
+    if (roleBadge) {
+      roleBadge.textContent = isOwner ? 'Owner' : 'Staff';
+      roleBadge.className   = `role-badge ${isOwner ? 'role-owner' : 'role-staff'}`;
+    }
+
+    // Field values
+    _setText('disp-fullname',  name);
+    _setText('disp-username',  username || '—');
+    _setText('disp-email',     _user?.email || data.signupInfo?.email || '—');
+    _setText('disp-shopName',  data.shopName || username || '—');
+    _setText('disp-phone',     data.phone || 'Not set');
+
+    // Input defaults
+    const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+    setVal('input-fullname',  name);
+    setVal('input-shopName',  data.shopName || '');
+    setVal('input-phone',     data.phone || '');
+
+    // Member Since
+    if (data.signupInfo?.date) {
+      _setText('disp-joined', data.signupInfo.date);
+    } else {
+      const keys = Object.keys(data.logins || {});
+      if (keys.length) {
+        const earliest = Math.min(...keys.map(k => parseInt(k)));
+        _setText('disp-joined', new Date(earliest).toLocaleDateString('en-IN', {
+          day: 'numeric', month: 'long', year: 'numeric'
+        }));
+      } else {
+        _setText('disp-joined', '—');
+      }
+    }
+  } catch (e) {
+    console.error('loadSettingsProfile error:', e.message || e);
+  }
+}
+
+// ── Inline edit flow ──
+function startEdit(field) {
+  document.getElementById(`disp-${field}`)?.classList.add('hidden');
+  document.getElementById(`edit-${field}`)?.classList.remove('hidden');
+  document.getElementById(`editbtn-${field}`)?.classList.add('hidden');
+  document.getElementById(`input-${field}`)?.focus();
+}
+
+function cancelField(field) {
+  document.getElementById(`edit-${field}`)?.classList.add('hidden');
+  document.getElementById(`disp-${field}`)?.classList.remove('hidden');
+  document.getElementById(`editbtn-${field}`)?.classList.remove('hidden');
+}
+
+async function saveField(field) {
+  const inputEl = document.getElementById(`input-${field}`);
+  const dispEl  = document.getElementById(`disp-${field}`);
+  if (!inputEl || !dispEl) return;
+
+  const value = inputEl.value.trim();
+  if (!value) { showToast('Field cannot be empty', '#FFC107'); return; }
+
+  const saveBtn = inputEl.parentElement?.querySelector('.field-save-btn');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '…'; }
+
+  try {
+    const _db = firebase.database();
+    const updates = {};
+
+    if (field === 'fullname') {
+      updates.fullname = value;
+      updates['signupInfo/fullname'] = value;
+      await _db.ref(`/users/${username}`).update(updates);
+      localStorage.setItem('CASHBOOK_FULLNAME', value);
+      _setText('settingsAvatarName', value);
+      const av = document.getElementById('settingsAvatar');
+      if (av) av.textContent = value.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+
+    } else if (field === 'shopName') {
+      await _db.ref(`/users/${username}`).update({ shopName: value });
+
+    } else if (field === 'phone') {
+      await _db.ref(`/users/${username}`).update({ phone: value });
+    }
+
+    dispEl.textContent = value;
+    cancelField(field);
+    showTopToast('Saved ✓', '#10b981');
+
+  } catch (e) {
+    showTopToast('Save failed: ' + (e.message || 'Try again'), '#ef4444');
+  } finally {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save'; }
+  }
+}
+
+// ── Event delegation — all profile page clicks handled here ──
+document.getElementById('profile')?.addEventListener('click', e => {
+  const target = e.target;
+
+  // Edit pencil button
+  const editBtn = target.closest('[id^="editbtn-"]');
+  if (editBtn) { startEdit(editBtn.id.replace('editbtn-', '')); return; }
+
+  // Save button
+  if (target.classList.contains('field-save-btn')) {
+    const row = target.closest('[id^="edit-"]');
+    if (row) saveField(row.id.replace('edit-', ''));
+    return;
+  }
+
+  // Cancel button
+  if (target.classList.contains('field-cancel-btn')) {
+    const row = target.closest('[id^="edit-"]');
+    if (row) cancelField(row.id.replace('edit-', ''));
+    return;
+  }
+
+  // Change Password row
+  if (target.closest('#changePasswordRow')) {
+    const email = firebase.auth().currentUser?.email;
+    if (!email) { showTopToast('No email on record', '#FFC107'); return; }
+    firebase.auth().sendPasswordResetEmail(email)
+      .then(() => showTopToast('Reset email sent — check Spam too ✓', '#10b981'))
+      .catch(err => showTopToast('Failed: ' + err.message, '#ef4444'));
+    return;
+  }
+
+  // Sign Out row
+  if (target.closest('#signOutRow')) {
+    showOverlay({
+      title: '🚪 Sign Out?',
+      desc:  'You will be signed out of this device.',
+      btnColor: '#ef4444',
+    });
+    // Override the overlay confirm button to call signOut
+    const btn = document.getElementById('alertBtn');
+    if (btn) {
+      btn.onclick = () => {
+        firebase.auth().signOut()
+          .then(() => location.reload())
+          .catch(err => showTopToast(err.message, '#ef4444'));
+      };
+    }
+    return;
+  }
+});
+
+// ── Enter key saves active field ──
+document.getElementById('profile')?.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const active = document.activeElement;
+  if (!active?.classList.contains('field-input')) return;
+  const row = active.closest('[id^="edit-"]');
+  if (row) saveField(row.id.replace('edit-', ''));
+});
+
+// ── MutationObserver — trigger load when profile page becomes active ──
+(function () {
+  const page = document.getElementById('profile');
+  if (!page) return;
+  new MutationObserver(() => {
+    if (page.classList.contains('active')) loadSettingsProfile();
+  }).observe(page, { attributes: true, attributeFilter: ['class'] });
+})();

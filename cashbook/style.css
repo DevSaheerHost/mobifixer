@@ -2920,3 +2920,352 @@ body.dark .dash-skel-bar {
 .bottom-nav button:hover{
   background: transparent;
 }
+/* ═══════════════════════════════════════════════════════
+   SETTINGS PAGE — complete redesign
+   ═══════════════════════════════════════════════════════ */
+
+.settings_page { background: var(--bg, #EEF2FF); overflow-y: auto; }
+.settings_page .nav { background: var(--accent, #0BA2FF); color: #fff; }
+
+.settings-body {
+  padding: 14px 14px calc(var(--bnav-h, 64px) + 20px);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+/* Section titles */
+.settings-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted, #6b7280);
+  padding: 14px 4px 4px;
+  margin: 0;
+}
+
+/* White grouped sections */
+.settings-group {
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(15,23,42,0.06);
+}
+
+/* ── Profile strip ── */
+.settings-profile-strip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid #F3F4F6;
+}
+
+.settings-avatar {
+  width: 52px; height: 52px;
+  background: linear-gradient(135deg, #0BA2FF, #6A5ACD);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; font-weight: 700; color: #fff;
+  flex-shrink: 0;
+}
+
+.settings-avatar-info { flex: 1; min-width: 0; }
+.settings-avatar-name {
+  font-size: 16px; font-weight: 700; color: #111;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.settings-avatar-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+/* Role badge */
+.role-badge {
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.role-owner { background: #EEF2FF; color: #6A5ACD; }
+.role-staff  { background: #ECFDF5; color: #10b981; }
+
+/* ── Individual field rows ── */
+.settings-field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+  border-bottom: 1px solid #F8F9FC;
+  min-height: 60px;
+}
+.settings-field:last-child { border-bottom: none; }
+
+.settings-field.clickable { cursor: pointer; }
+.settings-field.clickable:hover { background: #F8FAFF; }
+.settings-field.clickable:active { background: #EEF4FF; }
+
+.settings-field.danger-row:hover { background: #FFF5F5; }
+
+/* Field icon */
+.field-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  width: 28px;
+  text-align: center;
+}
+
+/* Field text body */
+.field-body { flex: 1; min-width: 0; }
+
+.field-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111;
+  line-height: 1.3;
+}
+
+.field-val {
+  font-size: 13px;
+  color: #374151;
+  margin-top: 2px;
+  word-break: break-all;
+}
+
+.field-val.muted { color: var(--muted); }
+
+.field-hint {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.danger-label { color: #ef4444 !important; }
+
+/* ── Inline edit row ── */
+.field-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.field-edit-row.hidden { display: none; }
+
+.field-val.hidden { display: none; }
+
+.field-input {
+  flex: 1;
+  min-width: 0;
+  border: 1.5px solid var(--accent, #0BA2FF) !important;
+  border-radius: 8px !important;
+  padding: 7px 10px !important;
+  font-size: 14px;
+  background: #F0F8FF !important;
+  color: #111 !important;
+  outline: none;
+}
+
+.field-save-btn {
+  background: var(--accent, #0BA2FF);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.field-cancel-btn {
+  background: #F3F4F6;
+  color: #6b7280;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* Edit pencil icon button */
+.edit-icon-btn {
+  background: #F0F4FF;
+  border: none;
+  border-radius: 8px;
+  padding: 7px;
+  cursor: pointer;
+  color: var(--accent);
+  display: flex; align-items: center;
+  flex-shrink: 0;
+}
+.edit-icon-btn svg { width: 16px; height: 16px; }
+.edit-icon-btn:hover { background: #E0EAFF; }
+.edit-icon-btn.hidden { display: none; }
+
+/* Locked / version badge */
+.field-locked-badge {
+  font-size: 11px;
+  font-weight: 600;
+  background: #F3F4F6;
+  color: var(--muted);
+  padding: 3px 9px;
+  border-radius: 99px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Chevron arrow */
+.field-chevron {
+  width: 18px; height: 18px;
+  color: #D1D5DB;
+  flex-shrink: 0;
+}
+.field-chevron-link {
+  display: flex; align-items: center;
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ── Toggle switch (replaces raw checkbox) ── */
+.toggle-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.toggle-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+
+.toggle-track {
+  width: 44px; height: 24px;
+  background: #D1D5DB;
+  border-radius: 99px;
+  transition: background 0.2s;
+  position: relative;
+}
+
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 18px; height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+
+.toggle-switch input:checked ~ .toggle-track {
+  background: var(--accent, #0BA2FF);
+}
+
+.toggle-switch input:checked ~ .toggle-track::after {
+  transform: translateX(20px);
+}
+
+/* Dark mode overrides */
+body.dark .settings-group     { background: var(--card, #0D1626); box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+body.dark .settings-field     { border-bottom-color: #1A2640; }
+body.dark .settings-field.clickable:hover { background: #111D30; }
+body.dark .settings-profile-strip { border-bottom-color: #1A2640; }
+body.dark .field-label        { color: #D8E8F8; }
+body.dark .field-val          { color: #A8B8D0; }
+body.dark .settings-avatar-name { color: #D8E8F8; }
+body.dark .field-locked-badge { background: #111D30; color: #8B9CB8; }
+body.dark .field-chevron      { color: #1A2640; }
+body.dark .edit-icon-btn      { background: #111D30; }
+body.dark .edit-icon-btn:hover{ background: #1A2640; }
+body.dark .field-input        { background: #0A1220 !important; border-color: var(--accent) !important; color: #E8EFF8 !important; }
+body.dark .field-cancel-btn   { background: #1A2640; color: #8B9CB8; }
+body.dark .toggle-track       { background: #1A2640; }
+body.dark .settings-section-title { color: #8B9CB8; }
+
+
+/* ═══════════════════════════════════════════════════════
+   PROFILE PAGE — hero banner
+   ═══════════════════════════════════════════════════════ */
+
+.profile_page { background: var(--bg, #EEF2FF); overflow-y: auto; }
+.profile_page .nav { background: var(--accent, #0BA2FF); color: #fff; }
+
+/* Full-width gradient hero */
+.profile-hero-banner {
+  background: linear-gradient(145deg, #0BA2FF 0%, #6A5ACD 100%);
+  padding: 36px 20px 52px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  position: relative;
+}
+
+/* Large avatar with initials */
+.profile-hero-avatar {
+  width: 80px;
+  height: 80px;
+  background: rgba(255,255,255,0.22);
+  border: 3px solid rgba(255,255,255,0.45);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.5px;
+  margin-bottom: 4px;
+  backdrop-filter: blur(4px);
+}
+
+.profile-hero-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.3px;
+}
+
+.profile-hero-sub {
+  font-size: 13px;
+  color: rgba(255,255,255,0.75);
+  font-weight: 500;
+}
+
+/* Role badge inside hero */
+.profile-hero-banner .role-badge {
+  margin-top: 4px;
+  background: rgba(255,255,255,0.22);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.3);
+}
+
+/* The settings-body pulls up over the hero bottom curve */
+.profile_page .settings-body {
+  background: transparent;
+}
+
+/* Card pull-up effect */
+.profile_page .settings-section-title:first-child {
+  margin-top: 0;
+}
+
+/* Dark mode */
+body.dark .profile-hero-banner {
+  background: linear-gradient(145deg, #08101E 0%, #130D28 100%);
+  border-bottom: 1px solid #1A2640;
+}
+
+body.dark .profile-hero-avatar {
+  background: rgba(11,162,255,0.18);
+  border-color: rgba(11,162,255,0.3);
+}
+
+body.dark .profile-hero-banner .role-badge {
+  background: rgba(11,162,255,0.15);
+  border-color: rgba(11,162,255,0.25);
+}
