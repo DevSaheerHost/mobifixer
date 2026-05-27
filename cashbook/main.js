@@ -3479,6 +3479,14 @@ const EVENTS = [
   emojis: ['❤️', '🌹', '✨'],
   burst: 2,
   maxCount: 40
+},
+{
+  name: "eidAlFitr",
+  day: 28,
+  month: 5,
+  emojis: ["🌙", "🕌", "✨"], 
+  burst: 2,
+  maxCount: 40
 }
 ];
 
