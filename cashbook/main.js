@@ -2130,13 +2130,12 @@ function askUserReason({ title, placeholder, btnText }) {
 const MEME_VIDEOS = [
   './assets/video/cat.mp4',
   './assets/video/blabla.mp4',
-  //'./assets/video/party3.mp4',
+  './assets/video/manual_override.mp4',
   //'./assets/video/party4.mp4',
  // './assets/video/party5.mp4',
 ];
 
 let _memeTimers = [];
-
 const startMeme = () => {
   const overlay  = document.getElementById('memeOverlay');
   const videoEl  = document.getElementById('memeVideo');
@@ -2174,9 +2173,39 @@ if (src.includes('cat')) {
     setTimeout(()=>{
       document.querySelectorAll('.entry').forEach(el => el.classList.add('blabla'));
   }, 7500)
+} else if (src.includes('manual_override')){
+  // Function to apply Phonk effect to elements
+
+
+applyPhonkEffect()
+
 }
 };
-//document.querySelector('.nav').onclick=()=>startMeme();
+// Optimized Phonk Effect
+let phonkInterval
+function applyPhonkEffect() {
+    const selectors = 'button, .card, input, h1, p, select, .nav';
+    const elements = document.querySelectorAll(selectors);
+
+    if (elements.length === 0) return;
+
+    // Trigger an effect on a random element every 300ms
+    phonkInterval = setInterval(() => {
+        const randomElement = elements[Math.floor(Math.random() * elements.length)];
+        const effect = Math.random() > 0.5 ? 'manual_override-shake' : 'manual_override-glitch';
+
+        randomElement.classList.add(effect);
+
+        // Remove the effect after 100ms
+        
+
+    }, 300); // Adjust this speed as needed
+}
+
+
+
+
+// document.querySelector('.nav').onclick=()=>startMeme();
 const stopMeme = () => {
   const overlay = document.getElementById('memeOverlay');
   const videoEl = document.getElementById('memeVideo');
@@ -2199,6 +2228,15 @@ const stopMeme = () => {
   document.querySelectorAll('input, .card').forEach(el => el.classList.remove('meme'));
   document.body.classList.remove('dj');
   document.body.classList.remove('blabla');
+  
+  
+  clearInterval(phonkInterval);
+  const selectors = 'button, .card, input, h1, p, select, .nav';
+    const elements = document.querySelectorAll(selectors);
+    
+    elements.forEach(el => {
+        el.classList.remove('manual_override-shake', 'manual_override-glitch');
+    });
 };
 
 
