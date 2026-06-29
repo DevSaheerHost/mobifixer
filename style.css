@@ -4882,6 +4882,10 @@ nav.status-naveeeeeeess{
   padding: 2rem 1rem 5rem;
 }
 
+.print-receipt-overlay.hidden {
+  display: none;
+}
+
 /* Receipt card — narrow for 58mm thermal paper */
 .print-receipt-card {
   background: #ffffff;
