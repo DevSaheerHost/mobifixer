@@ -1649,8 +1649,83 @@ document.addEventListener('scroll', () => {
 //   }
 // });
 
+const openPrintReceipt = (service) => {
+  const sName = localStorage.getItem('shopName') || 'Service Center';
+  const author = localStorage.getItem('author') || '';
+
+  document.getElementById('pr-shop-name').textContent = sName.toUpperCase();
+  document.getElementById('pr-sn').textContent = '#' + service.sn;
+  document.getElementById('pr-date').textContent = `${service.date || ''} ${service.time || ''}`.trim();
+  document.getElementById('pr-name').textContent = service.name || '';
+  document.getElementById('pr-phone').textContent = service.number ? '+91 ' + service.number : '';
+
+  const altRow = document.querySelector('.pr-alt-row');
+  if (service.altNumber) {
+    document.getElementById('pr-alt-phone').textContent = '+91 ' + service.altNumber;
+    altRow.classList.remove('hidden');
+  } else {
+    altRow.classList.add('hidden');
+  }
+
+  // Devices
+  const devContainer = document.getElementById('pr-devices-container');
+  devContainer.innerHTML = '';
+  if (Array.isArray(service.devices) && service.devices.length > 0) {
+    service.devices.forEach((d, i) => {
+      devContainer.innerHTML += `
+        <div class="pr-row"><span class="pr-label">Device ${i + 1}</span><span class="pr-value">${d.model || ''}</span></div>
+        <div class="pr-row"><span class="pr-label">Issue</span><span class="pr-value">${d.complaints || ''}</span></div>
+        ${d.lock ? `<div class="pr-row"><span class="pr-label">Lock</span><span class="pr-value">${d.lock}</span></div>` : ''}
+      `;
+    });
+  } else {
+    devContainer.innerHTML = `
+      <div class="pr-row"><span class="pr-label">Device</span><span class="pr-value">${service.model || ''}</span></div>
+      <div class="pr-row"><span class="pr-label">Issue</span><span class="pr-value">${service.complaints || ''}</span></div>
+      ${service.lock ? `<div class="pr-row"><span class="pr-label">Lock</span><span class="pr-value">${service.lock}</span></div>` : ''}
+    `;
+  }
+
+  document.getElementById('pr-status').textContent = (service.status || '').toUpperCase();
+
+  const amt = Number(service.amount) || 0;
+  const adv = Number(service.advance) || 0;
+  const bal = amt - adv;
+
+  const amtRow = document.querySelector('.pr-amount-row');
+  const advRow = document.querySelector('.pr-advance-row');
+  const balRow = document.querySelector('.pr-balance-row');
+
+  if (amt) {
+    document.getElementById('pr-amount').textContent = '₹' + amt.toLocaleString('en-IN');
+    amtRow.classList.remove('hidden');
+  } else { amtRow.classList.add('hidden'); }
+
+  if (adv) {
+    document.getElementById('pr-advance').textContent = '₹' + adv.toLocaleString('en-IN');
+    advRow.classList.remove('hidden');
+  } else { advRow.classList.add('hidden'); }
+
+  if (adv && amt) {
+    document.getElementById('pr-balance').textContent = '₹' + bal.toLocaleString('en-IN');
+    balRow.classList.remove('hidden');
+  } else { balRow.classList.add('hidden'); }
+
+  const notesSection = document.getElementById('pr-notes-section');
+  if (service.notes && service.notes.trim()) {
+    document.getElementById('pr-notes').textContent = service.notes;
+    notesSection.classList.remove('hidden');
+  } else {
+    notesSection.classList.add('hidden');
+  }
+
+  document.getElementById('pr-technician').textContent = service.author ? 'Technician: ' + service.author : '';
+
+  document.getElementById('printReceiptModal').classList.remove('hidden');
+};
+
 document.addEventListener('click', e => {
-  
+
 
   //////////
 if (e.target.tagName.toLowerCase() === 'nav') {
@@ -1658,9 +1733,15 @@ if (e.target.tagName.toLowerCase() === 'nav') {
 //  alert(parent)
   if (parent) parent.classList.toggle('collapse');
 }
-  
-  
-  
+
+  const printBtn = e.target.closest('.print-btn');
+  if (printBtn) {
+    const sn = printBtn.dataset.sn;
+    const service = data.find(d => String(d.sn) === String(sn));
+    if (service) openPrintReceipt(service);
+    return;
+  }
+
   const btn = e.target.closest('.call-btn');
   if (!btn) return;
 

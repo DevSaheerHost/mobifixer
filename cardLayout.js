@@ -146,12 +146,14 @@ export const cardLayout = ({
     </button>
   </div>
   
-  <div class='flex-center'>
-
+  <div class='flex-center card-actions-row'>
+    <button class='print-btn' data-sn='${sn}'>
+      <i class='fa-solid fa-print'></i> Print
+    </button>
 
 <p class="author_name">
-  ${author === me 
-    ? '<span class="you"><i class="fa-solid fa-user"></i> You</span>' 
+  ${author === me
+    ? '<span class="you"><i class="fa-solid fa-user"></i> You</span>'
     : `<span>${author || 'Unknown'}</span>`}
 </p>
     </div>

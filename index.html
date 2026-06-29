@@ -1822,5 +1822,88 @@ Stable Access</h3>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
   <script type="module" src="./main.js"></script>
+
+<!-- ########## PRINT RECEIPT MODAL ########## -->
+<div id="printReceiptModal" class="print-receipt-overlay hidden">
+  <div class="print-receipt-card" id="printContent">
+
+    <div class="pr-header">
+      <h2 id="pr-shop-name"></h2>
+      <p class="pr-subtitle">Service Receipt</p>
+      <div class="pr-divider"></div>
+    </div>
+
+    <div class="pr-row">
+      <span class="pr-label">SN</span>
+      <span class="pr-value" id="pr-sn"></span>
+    </div>
+    <div class="pr-row">
+      <span class="pr-label">Date</span>
+      <span class="pr-value" id="pr-date"></span>
+    </div>
+
+    <div class="pr-divider"></div>
+
+    <div class="pr-row">
+      <span class="pr-label">Customer</span>
+      <span class="pr-value" id="pr-name"></span>
+    </div>
+    <div class="pr-row">
+      <span class="pr-label">Phone</span>
+      <span class="pr-value" id="pr-phone"></span>
+    </div>
+    <div class="pr-row pr-alt-row hidden">
+      <span class="pr-label">Alt Phone</span>
+      <span class="pr-value" id="pr-alt-phone"></span>
+    </div>
+
+    <div class="pr-divider"></div>
+
+    <div id="pr-devices-container"></div>
+
+    <div class="pr-divider"></div>
+
+    <div class="pr-row">
+      <span class="pr-label">Status</span>
+      <span class="pr-value pr-status" id="pr-status"></span>
+    </div>
+    <div class="pr-row pr-amount-row hidden">
+      <span class="pr-label">Approx Amount</span>
+      <span class="pr-value" id="pr-amount"></span>
+    </div>
+    <div class="pr-row pr-advance-row hidden">
+      <span class="pr-label">Advance Paid</span>
+      <span class="pr-value pr-green" id="pr-advance"></span>
+    </div>
+    <div class="pr-row pr-balance-row hidden">
+      <span class="pr-label">Balance Due</span>
+      <span class="pr-value pr-red" id="pr-balance"></span>
+    </div>
+
+    <div id="pr-notes-section" class="hidden">
+      <div class="pr-divider"></div>
+      <div class="pr-notes-label">Notes</div>
+      <div class="pr-notes-value" id="pr-notes"></div>
+    </div>
+
+    <div class="pr-divider"></div>
+
+    <div class="pr-footer">
+      <p>Thank you for trusting us!</p>
+      <p class="pr-footer-sub" id="pr-technician"></p>
+    </div>
+
+  </div>
+
+  <div class="print-receipt-actions no-print">
+    <button class="pr-btn-print" onclick="window.print()">
+      <i class="fa-solid fa-print"></i> Print
+    </button>
+    <button class="pr-btn-close" onclick="document.getElementById('printReceiptModal').classList.add('hidden')">
+      <i class="fa-solid fa-xmark"></i> Close
+    </button>
+  </div>
+</div>
+
 </body>
 </html>
