@@ -223,6 +223,20 @@ input:focus {
 
 
 
+.auth-page .form p.reset-desc{
+  text-align: center;
+  font-style: normal;
+  color: #777;
+  font-size: 13px;
+  max-width: 320px;
+  line-height: 1.5;
+  margin: 0 auto 1.25rem;
+}
+
+#forgot-link{
+  color: #cf556c;
+}
+
 /*#################### END #################*/
 .hidden{
   display: none;

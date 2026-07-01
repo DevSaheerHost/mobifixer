@@ -44,8 +44,20 @@
     <input type="text" id="login_businessName" placeholder="Business Name" /><br>
     <input type="password" id="login_businessPass" placeholder="Password" /><br>
     <button id="login">Login</button>
+              <p><a href="#/reset" id="forgot-link">Forgot password?</a></p>
               <p>Open new shop? <a href="#/signup">SignUp</a></p>
 <button id="google-login" class="google-btn hidden" disabled>Sign in with Google</button>
+  </div>
+</main>
+
+
+<main class="auth-page hidden" id="reset-page">
+  <h1>Reset Password</h1>
+  <div class="form">
+    <p class="reset-desc">Enter your Business Name and we'll email a password reset link to the shop's registered email.</p>
+    <input type="text" id="reset_businessName" placeholder="Business Name" /><br>
+    <button id="reset-btn">Send reset link</button>
+    <p>Remembered it? <a href="#/login">Back to Login</a></p>
   </div>
 </main>
 
