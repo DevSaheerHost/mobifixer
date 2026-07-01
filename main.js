@@ -808,37 +808,6 @@ if (hash === '#changelog') {
       document.getElementById("changelog").textContent = "⚠️ Unable to load changelog.";
       console.error(err);
     });
-
-  // 🔹 2️⃣ GitHub commits fetch ചെയ്യുക
-  const commitsList = document.querySelector("#commits");
-  commitsList.innerHTML = "<li>Loading latest commits...</li>"; // loader text
-
-  fetch("https://api.github.com/repos/DevSaheerHost/mobifixer/commits")
-    .then(res => {
-      if (!res.ok) throw new Error(`GitHub API error: ${res.status}`);
-      return res.json();
-    })
-    .then(data => {
-      commitsList.innerHTML = ""; // clear loader
-      data.slice(0, 5).forEach(commit => {
-        const li = document.createElement("li");
-        const msg = commit.commit.message;
-        const author = commit.commit.author.name;
-        const date = new Date(commit.commit.author.date).toLocaleString();
-        const link = commit.html_url;
-
-        li.innerHTML = `
-          <strong>${author}</strong>: 
-          <a href="${link}" target="_blank">${msg}</a>
-          <br><small>${date}</small>
-        `;
-        commitsList.appendChild(li);
-      });
-    })
-    .catch(err => {
-      commitsList.innerHTML = `<li>⚠️ Unable to load commits.</li>`;
-      console.error(err);
-    });
 }
   
   $('#totalData').textContent = data.length;
