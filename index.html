@@ -121,6 +121,12 @@
   </a>
 </span>
 
+<span>
+  <a href="#payments" title="Payments / Balance Due">
+    <i class="fa-solid fa-wallet"></i>
+  </a>
+</span>
+
 <span class="active myshop" onclick="location.hash=''">
   <h3><a href="" id="shopname"></a></h3>
 </span>
@@ -672,6 +678,22 @@ Loading changelog...
     Records & Data</h4>
   
    <ul class="settings_list">
+    <li class="list-item" onclick="location.hash='#payments'">
+      <div class="list-item-content">
+        <p class="list-item-title">Payments / Balance Due</p>
+        <p class="list-item-desc">Outstanding balances and collections</p>
+      </div>
+      <i class="fa-solid fa-chevron-right"></i>
+    </li>
+
+    <li class="list-item" onclick="location.hash='#activity'">
+      <div class="list-item-content">
+        <p class="list-item-title">Activity Log</p>
+        <p class="list-item-desc">Who added, edited, or changed records</p>
+      </div>
+      <i class="fa-solid fa-chevron-right"></i>
+    </li>
+
     <li class="list-item" onclick="location.hash='#bacuprestore'">
       <div class="list-item-content">
         <p class="list-item-title">Backup & Restore Data</p>
@@ -1813,6 +1835,47 @@ Stable Access</h3>
 </div>
 
   
+<!-- ########## PAYMENTS / BALANCE DUE ########## -->
+<main class="payments-page hidden">
+  <div class="page_header">
+    <div class="flex">
+      <i class="fa-solid fa-arrow-left" onclick="window.history.back()"></i>
+      <h3><i class="fa-solid fa-wallet"></i> Payments</h3>
+    </div>
+  </div>
+
+  <div class="pay-summary">
+    <div class="pay-card pay-card-danger">
+      <p class="pay-card-value" id="pay-outstanding">₹0</p>
+      <p class="pay-card-label">Outstanding</p>
+    </div>
+    <div class="pay-card">
+      <p class="pay-card-value" id="pay-due-count">0</p>
+      <p class="pay-card-label">Jobs Due</p>
+    </div>
+    <div class="pay-card pay-card-success">
+      <p class="pay-card-value" id="pay-today">₹0</p>
+      <p class="pay-card-label">Collected Today</p>
+    </div>
+  </div>
+
+  <h4 class="page_title">Balance Due</h4>
+  <ul class="payments-list"></ul>
+</main>
+
+<!-- ########## STAFF ACTIVITY LOG ########## -->
+<main class="activity-log-page hidden">
+  <div class="page_header">
+    <div class="flex">
+      <i class="fa-solid fa-arrow-left" onclick="window.history.back()"></i>
+      <h3><i class="fa-solid fa-clock-rotate-left"></i> Activity Log</h3>
+    </div>
+  </div>
+
+  <p class="activity-note">Recent actions by you and your staff (last 100).</p>
+  <ul class="activity-list"></ul>
+</main>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
   <script type="module" src="./main.js"></script>
