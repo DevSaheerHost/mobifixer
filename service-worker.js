@@ -1,5 +1,5 @@
 // Service Worker Version for cache busting
-const CACHE_NAME = 'mobifixer-cache-v5';
+const CACHE_NAME = 'mobifixer-cache-v6';
 
 // List all files to cache (app shell)
 const urlsToCache = [
@@ -9,6 +9,10 @@ const urlsToCache = [
     '/script.js',
     '/manifest.json',
     '/assets/images/logo_s_no_bg.png',
+    '/assets/images/icon-192.png',
+    '/assets/images/icon-512.png',
+    '/assets/images/favicon-32.png',
+    '/assets/images/favicon-16.png',
     // Add Firebase SDK URLs if you want them cached:
     // 'https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js',
     // 'https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js'
