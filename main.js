@@ -277,7 +277,9 @@ const scheduleListRefresh = () => {
     filterByStatus(activeStatus);
     showUnseenCount();
     setAutoHeightTextArea();
-    if (data.length) $('#new_sn').textContent = Math.max(...data.map(d => Number(d.sn) || 0)) + 1;
+    // Approximate preview for other contexts; the #add router reads the authoritative
+    // counter, so don't overwrite it while the add form is open.
+    if (data.length && location.hash !== '#add') $('#new_sn').textContent = Math.max(...data.map(d => Number(d.sn) || 0)) + 1;
     checkDoneDevices(data);
     if ($('#staticText')) $('#staticText').textContent = 'No Pending works';
     timerElement?.remove(); // drop the debug timer once load settles
@@ -671,8 +673,8 @@ $('.delete_page .delete').onclick = async () => {
   try {
     await remove(itemsRef);
     logActivity('delete', { sn, customer: deletedCustomer });
-    const lastSnRef = ref(db, `shops/${shopName}/lastServiceSn`);
-      const tx = await runTransaction(lastSnRef, (current) => (current === null ? 1 : current - 1));
+    // NOTE: do NOT touch lastServiceSn here. A serial number is a permanent
+    // identity — once issued it is never reused, even after the record is deleted.
     $('.loader').classList.add('hidden');
    showNotice({title: 'Deleted', body: ` Customer Data ${sn} deleted successfully.`, type:'info'});
    
@@ -819,8 +821,13 @@ $('header').classList.toggle('slide-up', hash!='');
   }
 else {
   $('.page-title').textContent = 'Add Service';
-$('#new_sn').textContent = Number(data[data.length - 1]?.sn) + 1 || 1;
-
+  // Show the TRUE next SN (max of stored counter and highest existing SN) + 1,
+  // so the preview matches what will actually be assigned even after deletes.
+  const floor = Math.max(0, ...data.map(d => Number(d.sn) || 0));
+  $('#new_sn').textContent = floor + 1; // instant fallback
+  get(ref(db, `shops/${shopName}/lastServiceSn`))
+    .then(s => { $('#new_sn').textContent = Math.max(Number(s.val()) || 0, floor) + 1; })
+    .catch(() => {});
 }
   }
   
@@ -1050,8 +1057,13 @@ $('.add-data').onclick = async () => {
   try {
     if (!wasEdit) {
       const lastSnRef = ref(db, `shops/${shopName}/lastServiceSn`);
+      // Allocate above BOTH the stored counter and the true highest existing SN,
+      // so a new SN can never collide with (overwrite) an existing record — even if
+      // the counter was left corrupted by an older delete. `data` is loaded newest-
+      // first, so its max SN is the global max.
+      const floor = Math.max(0, ...data.map(d => Number(d.sn) || 0));
       const tx = await withTimeout(
-        runTransaction(lastSnRef, (current) => (current === null ? 1 : current + 1)),
+        runTransaction(lastSnRef, (current) => Math.max(Number(current) || 0, floor) + 1),
         SAVE_TIMEOUT, 'sn'
       );
       snToUse = tx.snapshot.val();
