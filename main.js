@@ -135,7 +135,10 @@ get(backupRef).then(snapshot => {
 });
 
 
-const itemsRef = ref(db, `shops/${shopName}/service`)
+// Load only the most recent N services on startup (keeps load fast and memory bounded).
+// Service keys are numeric SN strings, which RTDB orders numerically, so limitToLast returns the newest N.
+const SERVICE_LOAD_LIMIT = 500;
+const itemsRef = query(ref(db, `shops/${shopName}/service`), orderByKey(), limitToLast(SERVICE_LOAD_LIMIT))
 
 // first check if folder exists
 get(itemsRef).then(snapshot => {
@@ -263,8 +266,26 @@ $('#todayEntry').onclick=()=>{
 
 
 
+// 🔁 Debounced list refresh — coalesces the initial burst (and rapid live updates)
+// into a SINGLE re-render instead of one full filterByStatus() per record. This is
+// the main fix for slow loading, and it hides the loader only AFTER the burst settles.
+let refreshTimer = null;
+const scheduleListRefresh = () => {
+  clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(() => {
+    const activeStatus = document.querySelector("nav a.active")?.dataset.text.toLowerCase() || "pending";
+    filterByStatus(activeStatus);
+    showUnseenCount();
+    setAutoHeightTextArea();
+    if (data.length) $('#new_sn').textContent = Math.max(...data.map(d => Number(d.sn) || 0)) + 1;
+    checkDoneDevices(data);
+    if ($('#staticText')) $('#staticText').textContent = 'No Pending works';
+    timerElement?.remove(); // drop the debug timer once load settles
+    $('.loader').classList.add('hidden');
+  }, 80);
+};
+
 onChildAdded(itemsRef, (snapshot) => {
-  $('.loader').classList.add('hidden')
   const item = snapshot.val();
   // Duplicate check → push or replace
   const existingIndex = data.findIndex(d => d.sn === item.sn);
@@ -273,45 +294,22 @@ onChildAdded(itemsRef, (snapshot) => {
   } else {
     data[existingIndex] = item;
   }
-  
-  // current active status tab
+
+  // unseen counter for items not on the currently active tab
   const activeStatus = document.querySelector("nav a.active")?.dataset.text.toLowerCase() || "pending";
-  
-  // refresh list if active
-  if (item.status === activeStatus) {
-    filterByStatus(activeStatus);
-  } else {
-    // unseen counter +
+  if (item.status !== activeStatus) {
     unseen[item.status] = (unseen[item.status] || 0) + 1;
-    showUnseenCount();
   }
-  
-  // play sound
+
+  // 🔊 sound (kept for parity; playback currently disabled)
   const audio = document.getElementById("newSound");
   if (audio) {
     audio.currentTime = 0;
     //audio.play().catch(err => console.log("Audio play blocked:", err));
   }
-  
-  // update last SN
-  $('#new_sn').textContent = Number(data[data.length - 1].sn) + 1;
-  
-  // ----------------------
-  // Notify if multiple customers not collected their phones
-  setTimeout(()=>checkDoneDevices(data), 2000)
-  
-  
-  setAutoHeightTextArea()
 
-
-
-  timerElement.textContent = Math.floor(performance.now() - initialTime) + " ms";
-  
-  
-  if($('#staticText')) $('#staticText').textContent='No Pending works'
-setTimeout(()=>timerElement.remove(), 2000)
-
-
+  // one coalesced render for the whole burst
+  scheduleListRefresh();
 });
 
 const showUnseenCount = () => {
@@ -367,11 +365,9 @@ onChildChanged(itemsRef, (snapshot) => {
     showUnseenCount();
   }
 
-  // ✅ current active tab refresh
-  const activeStatus = document.querySelector("nav a.active")?.dataset.text.toLowerCase() || "pending";
-  filterByStatus(activeStatus);
-  setAutoHeightTextArea()
-  
+  // ✅ current active tab refresh (coalesced)
+  scheduleListRefresh();
+
 });
 
 // Navigation switcher
@@ -942,11 +938,20 @@ const getCurrentDate=()=>{
 import { set, get, runTransaction }
   from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
+// Firebase RTDB write promises never reject on a bad connection — they queue and
+// stay pending forever. Race them against a timeout so the UI never hangs silently.
+const SAVE_TIMEOUT = 15000;
+const withTimeout = (p, ms, label) => Promise.race([
+  p,
+  new Promise((_, rej) => setTimeout(() => rej(new Error('TIMEOUT:' + label)), ms))
+]);
+
 let dataIsEdit = false;
 let editDataSn = 0;
 
 $('.add-data').onclick = async () => {
   const dataAddingTime = performance.now();
+  const wasEdit = dataIsEdit; // snapshot mode — safe for deferred completion
   const name = $('#name').value.trim();
   const number = $('#number').value.trim();
   const altNumber = $('#alt_number').value.trim();
@@ -968,27 +973,97 @@ $('.add-data').onclick = async () => {
   }
   if(number.length<10 || number.length>10)return showNotice({title: 'Validation Error', body:'Invalid Number', type: 'error', delay:10})
 
-  $('.add-data').textContent = dataIsEdit ? 'Updating...' : 'Loading...';
+  let snToUse = editDataSn;
+
+  const resetAddButton = () => {
+    $('.loader').classList.add('hidden');
+    $('.add-data').disabled = false;
+    $('.add-data').style.background = '';
+    $('.add-data').textContent = wasEdit ? 'Update' : 'Add to List';
+  };
+
+  const onSaveError = (err) => {
+    $('.loader').classList.add('hidden');
+    $('.add-data').disabled = false;
+    $('.add-data').textContent = (err && err.message) || 'Error';
+    $('.add-data').style.background = 'red';
+    console.error("❌ Error saving data:", err);
+    showNotice({ title: 'ERROR', body: `Operation failed: ${err.message}`, type: 'error', delay: 6 });
+  };
+
+  // deferred=true → the write completed AFTER a slow-connection timeout; the card
+  // already lands via onChildAdded, so skip navigation to avoid yanking the user around.
+  const onSaveSuccess = (deferred = false) => {
+    $('.loader').classList.add('hidden');
+    $('.add-data').disabled = false;
+    $('.add-data').style.background = '';
+    $('.add-data').textContent = wasEdit ? 'Update' : 'Add to List';
+
+    showNotice({
+      title: snToUse,
+      body: wasEdit
+        ? 'Data updated successfully'
+        : `Data added successfully${deferred ? '' : ` (${Math.floor(performance.now() - dataAddingTime)}ms)`}`,
+      type: 'success',
+      delay: 30
+    });
+    if (!wasEdit) createAlert();
+
+    if (!wasEdit) {
+      $('#name').value = '';
+      $('#number').value = '';
+      $('#alt_number').value = '';
+      $('#complaint').value = '';
+      $('#model').value = '';
+      $('#lock').value = '';
+      $('#advance').value = '';
+      $('#amount').value = '';
+      $('#notes').value = '';
+      $('#sim').checked = false;
+      $('#total_device_count').value = 1;
+      $('#more_device_input_container').innerHTML = '';
+    }
+
+    dataIsEdit = false;
+    editDataSn = 0;
+
+    if (!deferred) {
+      history.back();
+      $$('nav a').forEach(elem => elem.classList.remove('active'));
+      filterBySn(snToUse);
+    }
+  };
+
+  $('.add-data').textContent = wasEdit ? 'Updating...' : 'Loading...';
   $('.add-data').disabled = true;
   $('.loader').classList.remove('hidden');
 
+  // Don't even attempt a write while offline — it would silently queue and hang.
+  if (!navigator.onLine) {
+    showNotice({ title: 'Offline', body: 'No internet connection. Connect and try again.', type: 'error', delay: 8 });
+    resetAddButton();
+    return;
+  }
+
   try {
-    let snToUse = editDataSn;
-    if (!dataIsEdit) {
+    if (!wasEdit) {
       const lastSnRef = ref(db, `shops/${shopName}/lastServiceSn`);
-      const tx = await runTransaction(lastSnRef, (current) => (current === null ? 1 : current + 1));
+      const tx = await withTimeout(
+        runTransaction(lastSnRef, (current) => (current === null ? 1 : current + 1)),
+        SAVE_TIMEOUT, 'sn'
+      );
       snToUse = tx.snapshot.val();
       $('#new_sn').textContent = snToUse;
     }
-    
+
     const token = generateToken4()
 
     const itemRef = ref(db, `shops/${shopName}/service/${snToUse}`);
 
     // 🧠 Get old record if editing (to preserve date/time)
     let oldData = {};
-    if (dataIsEdit) {
-      const snap = await get(itemRef);
+    if (wasEdit) {
+      const snap = await withTimeout(get(itemRef), SAVE_TIMEOUT, 'sn');
       if (snap.exists()) oldData = snap.val();
     }
 
@@ -1008,10 +1083,10 @@ $('.add-data').onclick = async () => {
 // get updating date and author
 let updateTime = null
 let updatedBy=null
-if(dataIsEdit){
+if(wasEdit){
   updateTime ={date: getCurrentDate(), time: getCurrentTime()}
   updatedBy = {
-    name: localStorage.getItem('author') || 'None author', 
+    name: localStorage.getItem('author') || 'None author',
     role: localStorage.getItem('role') || 'No rules'}
 }
 
@@ -1028,70 +1103,43 @@ if(dataIsEdit){
       author: localStorage.getItem('author'),
       devices,
       // 🧷 Preserve old date/time if editing
-      date: dataIsEdit ? oldData.date : new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase().replace(/ /g, "-"),
-      time: dataIsEdit ? oldData.time : getCurrentTime(),
+      date: wasEdit ? oldData.date : new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase().replace(/ /g, "-"),
+      time: wasEdit ? oldData.time : getCurrentTime(),
       updateInfo: {updateTime, updatedBy},
       token
     };
-    
 
-    // ✅ Save
-    await set(itemRef, newData);
-
-    $('.loader').classList.add('hidden');
-    $('.add-data').disabled = false;
-    $('.add-data').textContent = 'Add to List';
-
-    showNotice({
-      title: snToUse,
-      body: dataIsEdit
-        ? 'Data updated successfully'
-        : `Data added successfully (${Math.floor(performance.now() - dataAddingTime)}ms)`,
-      type: 'success',
-      delay: 30
-    });
-    !dataIsEdit?createAlert():'';
-  
-//     if(!dataIsEdit){
-//       const link = generateWhatsAppLink({
-//   phone: `91${number}`, // customer WhatsApp number
-//   customerName: name,
-//   deviceName: devices,
-//   jobId: snToUse,
-//   trackingLink: `https://mobifixerservice.vercel.app/${shopName}/service/${snToUse}/${token}`
-// });
-//     askUserToDo("Do you want to Share tracking link to customer?")
-//     .then(result => window.open(link, "_blank"))
-//     .catch(error => console.error("Error:", error.message));
-// }
-    if (!dataIsEdit) {
-      $('#name').value = '';
-      $('#number').value = '';
-      $('#alt_number').value = '';
-      $('#complaint').value = '';
-      $('#model').value = '';
-      $('#lock').value = '';
-      $('#advance').value = '';
-      $('#amount').value = '';
-      $('#notes').value = '';
-      $('#sim').checked = false;
-      $('#total_device_count').value = 1;
-      $('#more_device_input_container').innerHTML = '';
+    // ✅ Save — race against a timeout so the button never hangs on a bad connection.
+    const savePromise = set(itemRef, newData);
+    try {
+      await withTimeout(savePromise, SAVE_TIMEOUT, 'save');
+      onSaveSuccess(false);
+    } catch (saveErr) {
+      if (String(saveErr.message).startsWith('TIMEOUT')) {
+        // The write is still queued and WILL commit when the connection returns.
+        // Keep the button LOCKED (re-submitting would create a duplicate SN) and
+        // finish up when the real write resolves.
+        $('.loader').classList.add('hidden');
+        $('.add-data').textContent = 'Saving… do not refresh';
+        showNotice({
+          title: 'Weak connection',
+          body: 'Still saving. Keep the app open — it will finish automatically. Please do NOT refresh or re-submit.',
+          type: 'warn',
+          delay: 12
+        });
+        savePromise.then(() => onSaveSuccess(true)).catch(onSaveError);
+      } else {
+        throw saveErr;
+      }
     }
 
-    dataIsEdit = false;
-    editDataSn = 0;
-    history.back();
-    $$('nav a').forEach(elem => elem.classList.remove('active'));
-    filterBySn(snToUse);
-
   } catch (err) {
-    $('.loader').classList.add('hidden');
-    $('.add-data').textContent = err.message;
-    $('.add-data').style.background = 'red';
-    console.error("❌ Error saving data:", err);
-    showNotice({ title: 'ERROR', body: `Operation failed: ${err.message}`, type: 'error', delay: 6 });
-    $('.add-data').disabled = false;
+    if (String(err.message).startsWith('TIMEOUT')) {
+      // SN reservation / read timed out → nothing was written, safe to retry.
+      onSaveError(new Error('Weak connection — please try again.'));
+    } else {
+      onSaveError(err);
+    }
   }
 };
 
