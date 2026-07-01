@@ -3,12 +3,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebas
 // Realtime Database import
 import { getDatabase, ref, onChildAdded, onChildChanged, update, query, limitToLast, orderByKey , set }
 from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
-import { 
-  getAuth, 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
-  GoogleAuthProvider, 
-  signInWithPopup 
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
+  sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 
 
@@ -55,6 +56,9 @@ const router = () => {
       break;
     case "#/signup":
       target = $("#signup-page");
+      break;
+    case "#/reset":
+      target = $("#reset-page");
       break;
     default:
       target = $("#home-page");
@@ -182,6 +186,61 @@ $('#login').onclick = async (e) => {
   } catch (err) {
     console.error(err);
     alert("❌ Error: " + err.message);
+  } finally {
+    $('.loader').classList.add('hidden');
+  }
+};
+
+
+// 🔐 Forgot password → send Firebase reset email to the shop's registered email
+$('#reset-btn').onclick = async (e) => {
+  e.preventDefault();
+
+  const identifier = $('#reset_businessName').value.trim().toLowerCase();
+
+  if (!identifier) {
+    alert("Please enter your Business Name.");
+    return;
+  }
+
+  $('.loader').classList.remove('hidden');
+
+  try {
+    const snapshot = await get(child(shopRef, identifier));
+
+    if (!snapshot.exists()) {
+      alert("❌ Shop not found! Check the business name and try again.");
+      return;
+    }
+
+    const shopData = snapshot.val();
+    // Login uses Firebase Auth; the email lives on the shop record.
+    const email = shopData?.owner?.email || shopData?.email;
+
+    if (!email) {
+      alert("⚠️ No email is registered for this shop, so a reset link can't be sent. Please contact support.");
+      return;
+    }
+
+    await sendPasswordResetEmail(auth, email);
+
+    // mask the email a little for privacy
+    const [user, domain] = email.split('@');
+    const masked = `${user.slice(0, 2)}***@${domain || ''}`;
+    alert(`✅ Password reset link sent to ${masked}. Check your inbox (and spam folder).`);
+    location.hash = "#/login";
+
+  } catch (err) {
+    console.error(err);
+    if (err.code === "auth/user-not-found") {
+      alert("⚠️ This shop hasn't been activated for password reset yet. Please log in once with your current password first, then try again.");
+    } else if (err.code === "auth/invalid-email") {
+      alert("❌ The email on record is invalid. Please contact support.");
+    } else if (err.code === "auth/too-many-requests") {
+      alert("⚠️ Too many attempts. Please wait a few minutes and try again.");
+    } else {
+      alert("❌ Error: " + err.message);
+    }
   } finally {
     $('.loader').classList.add('hidden');
   }
