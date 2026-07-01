@@ -5028,3 +5028,149 @@ nav.status-naveeeeeeess{
     margin: 4mm;
   }
 }
+
+
+/* ============================================================
+   💰 PAYMENTS / BALANCE DUE PAGE
+   ============================================================ */
+.pay-summary {
+  display: flex;
+  gap: 0.6rem;
+  padding: 1rem;
+}
+.pay-card {
+  flex: 1;
+  background: var(--card-bg, rgba(255,255,255,0.05));
+  border: 1px solid var(--card-border, rgba(255,255,255,0.08));
+  border-radius: 14px;
+  padding: 0.9rem 0.5rem;
+  text-align: center;
+}
+.pay-card-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-color, #fff);
+  white-space: nowrap;
+}
+.pay-card-label {
+  font-size: 11px;
+  margin-top: 0.25rem;
+  color: var(--text-muted, #9aa4b2);
+}
+.pay-card-danger .pay-card-value { color: #ff6b6b; }
+.pay-card-success .pay-card-value { color: #34c759; }
+
+.payments-list {
+  list-style: none;
+  padding: 0 1rem 6rem;
+  margin: 0;
+}
+.pay-item {
+  background: var(--card-bg, rgba(255,255,255,0.05));
+  border: 1px solid var(--card-border, rgba(255,255,255,0.08));
+  border-radius: 14px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.7rem;
+}
+.pay-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.pay-name {
+  font-weight: 600;
+  color: var(--text-color, #fff);
+}
+.pay-sn {
+  font-size: 12px;
+  color: var(--text-muted, #9aa4b2);
+  font-weight: 500;
+}
+.pay-sub {
+  font-size: 12px;
+  color: var(--text-muted, #9aa4b2);
+  margin-top: 0.15rem;
+}
+.pay-bal {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #ff6b6b;
+  white-space: nowrap;
+}
+.pay-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  justify-content: flex-end;
+}
+.pay-actions .pay-call {
+  padding: 0.5rem 0.9rem;
+  min-height: 40px;
+}
+.pay-collect-btn {
+  background: #34c759;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 0.55rem 1.1rem;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  min-height: 40px;
+}
+.pay-collect-btn:disabled { opacity: 0.5; }
+
+
+/* ============================================================
+   📝 ACTIVITY LOG PAGE
+   ============================================================ */
+.activity-note {
+  padding: 0.5rem 1rem 0;
+  color: var(--text-muted, #9aa4b2);
+  font-size: 13px;
+}
+.activity-list {
+  list-style: none;
+  padding: 0.75rem 1rem 6rem;
+  margin: 0;
+}
+.act-item {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--card-border, rgba(255,255,255,0.06));
+}
+.act-icon {
+  flex: 0 0 34px;
+  height: 34px;
+  width: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-glass, rgba(11,162,255,0.15));
+  color: var(--accent-color, #0ba2ff);
+  font-size: 13px;
+}
+.act-delete .act-icon { background: rgba(255,107,107,0.15); color: #ff6b6b; }
+.act-collect .act-icon { background: rgba(52,199,89,0.15); color: #34c759; }
+.act-body { flex: 1; min-width: 0; }
+.act-text {
+  font-size: 14px;
+  color: var(--text-color, #fff);
+  line-height: 1.4;
+}
+.act-role {
+  font-size: 11px;
+  color: var(--text-muted, #9aa4b2);
+  border: 1px solid var(--card-border, rgba(255,255,255,0.12));
+  border-radius: 6px;
+  padding: 0 0.35rem;
+}
+.act-when {
+  font-size: 12px;
+  color: var(--text-muted, #9aa4b2);
+  margin-top: 0.2rem;
+}

@@ -628,7 +628,33 @@ $('.delete_page').onclick=e=>{
 
 $('.delete_page .cancel').onclick=()=>$('.delete_page').classList.add('hidden')
 
+// 📝 Fire-and-forget audit log. Never let logging break the actual action.
+const logActivity = (action, opts = {}) => {
+  try {
+    push(ref(db, `shops/${shopName}/activity`), {
+      action,                                   // create | edit | delete | status | note | bulk | collect
+      sn: opts.sn ?? null,
+      customer: opts.customer ?? null,
+      detail: opts.detail ?? null,
+      by: localStorage.getItem('author') || 'Unknown',
+      role: localStorage.getItem('role') || '',
+      at: new Date().toISOString()
+    });
+  } catch (e) {
+    console.error('activity log failed:', e);
+  }
+};
+
+// Only the shop owner may delete records (guardrail against accidental staff deletes).
+const isOwner = () => (localStorage.getItem('role') || '').toLowerCase() === 'shop owner';
+
 $('.delete_page .delete').onclick = async () => {
+  if (!isOwner()) {
+    $('.delete_page').classList.add('hidden');
+    showNotice({ title: 'Not allowed', body: 'Only the Shop Owner can delete records.', type: 'warn', delay: 6 });
+    return;
+  }
+
   $('.loader').classList.remove('hidden')
   const sn = $('.delete_page').dataset.sn;
   $('.delete_page').classList.add('hidden');
@@ -640,9 +666,11 @@ $('.delete_page .delete').onclick = async () => {
   }
 
   const itemsRef = ref(db, `shops/${shopName}/service/${sn}`);
+  const deletedCustomer = data.find(d => String(d.sn) === String(sn))?.name || null;
 
   try {
     await remove(itemsRef);
+    logActivity('delete', { sn, customer: deletedCustomer });
     const lastSnRef = ref(db, `shops/${shopName}/lastServiceSn`);
       const tx = await runTransaction(lastSnRef, (current) => (current === null ? 1 : current - 1));
     $('.loader').classList.add('hidden');
@@ -740,6 +768,8 @@ const routes = {
   '#bacuprestore':'.bacup_restore_page',
   '#creditPage': '.creditPage',
   '#shop-details': '.shop_details_page',
+  '#payments': '.payments-page',
+  '#activity': '.activity-log-page',
   '#full_screen_alert': '.full_screen_alert_page'
 };
 
@@ -795,6 +825,8 @@ $('#new_sn').textContent = Number(data[data.length - 1]?.sn) + 1 || 1;
   }
   
   if(hash==='#inventorySearch') $('#search_pouch').focus()
+  if(hash==='#payments') renderPayments();
+  if(hash==='#activity') renderActivity();
   if(hash==='') shopSwitcher();
 if (hash === '#changelog') {
   // 🔹 1️⃣ CHANGELOG.md load ചെയ്യുക
@@ -976,6 +1008,7 @@ $('.add-data').onclick = async () => {
       type: 'success',
       delay: 30
     });
+    logActivity(wasEdit ? 'edit' : 'create', { sn: snToUse, customer: name });
     if (!wasEdit) createAlert();
 
     if (!wasEdit) {
@@ -1124,14 +1157,17 @@ if (e.target.matches("input[type=radio][name^='status-']")) {
 const sn = e.target.name.split("-")[1];
 const newStatus = e.target.id.split("-")[0];
 
-const itemRef = ref(db, `shops/${shopName}/service/${sn}`);  
-    update(itemRef, { status: newStatus })  
-      .then(() => showNotice({  
-        title: sn,  
-        body: `Status Updated To, ${newStatus.toUpperCase()}`,  
-        type: 'info',  
-        delay: 5000  
-      }))  
+const itemRef = ref(db, `shops/${shopName}/service/${sn}`);
+    update(itemRef, { status: newStatus })
+      .then(() => {
+        logActivity('status', { sn, detail: newStatus });
+        showNotice({
+        title: sn,
+        body: `Status Updated To, ${newStatus.toUpperCase()}`,
+        type: 'info',
+        delay: 5000
+      });
+      })
       .catch(err => {  
         console.error("❌ Error updating status:", err)  
         showNotice({  
@@ -1167,7 +1203,10 @@ document.onclick=e=>{
     const itemRef = ref(db, `shops/${shopName}/service/${sn}`);
     
     update(itemRef, { notes: newNote })
-      .then(() => showNotice({title: sn, body:`Notes added to ${sn}` , type: 'success', delay: 5000}))
+      .then(() => {
+        logActivity('note', { sn });
+        showNotice({title: sn, body:`Notes added to ${sn}` , type: 'success', delay: 5000});
+      })
       .catch(err => {
         console.error("❌ Error adding notes:", err)
         showNotice({title:'ERROR', body:`Data didn't add the notes!, Please Trying again later. REASON: ${err.message}`, type:'error', delay: 6})
@@ -2021,10 +2060,12 @@ $('#applyStatus').onclick = async () => {
   });
 
   try {
+    const bulkCount = selectedItems.size;
     await update(ref(db), updates);
+    logActivity('bulk', { detail: newStatus, count: bulkCount });
     showNotice({
       title: '✅ Updated',
-      body: `${selectedItems.size} items updated to ${newStatus}`,
+      body: `${bulkCount} items updated to ${newStatus}`,
       type: 'success'
     });
     selectedItems.clear();
@@ -2040,6 +2081,139 @@ $('#applyStatus').onclick = async () => {
   }
 };
 
+
+/* ============================================================
+   💰 PAYMENTS / BALANCE DUE
+   ============================================================ */
+const inr = (n) => '₹' + (Number(n) || 0).toLocaleString('en-IN');
+const serviceBalance = (d) => (Number(d.amount) || 0) - (Number(d.advance) || 0);
+
+const renderPayments = () => {
+  const listEl = $('.payments-list');
+  if (!listEl) return;
+
+  // outstanding = jobs still owing money that aren't already handed over
+  const due = data
+    .filter(d => serviceBalance(d) > 0 && d.status !== 'collected' && d.status !== 'return')
+    .sort((a, b) => serviceBalance(b) - serviceBalance(a));
+
+  const outstanding = due.reduce((s, d) => s + serviceBalance(d), 0);
+
+  // today's collected (uses payment date if present, else creation date)
+  const months = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+  const dt = new Date();
+  const today = `${String(dt.getDate()).padStart(2,'0')}-${months[dt.getMonth()]}-${dt.getFullYear()}`;
+  const collectedToday = data
+    .filter(d => d.status === 'collected' && ((d.paidInfo?.date || d.date || '').toUpperCase() === today))
+    .reduce((s, d) => s + (Number(d.amount) || 0), 0);
+
+  const setTxt = (id, v) => { const el = $('#' + id); if (el) el.textContent = v; };
+  setTxt('pay-outstanding', inr(outstanding));
+  setTxt('pay-due-count', due.length);
+  setTxt('pay-today', inr(collectedToday));
+
+  if (!due.length) {
+    listEl.innerHTML = `<li class="empty">🎉 No pending balances. All settled!</li>`;
+    return;
+  }
+
+  listEl.innerHTML = due.map(d => {
+    const device = Array.isArray(d.devices) && d.devices[0]?.model ? d.devices[0].model : (d.model || '');
+    return `
+      <li class="pay-item" data-sn="${d.sn}">
+        <div class="pay-main">
+          <div class="pay-who">
+            <p class="pay-name">${d.name || 'Unknown'} <span class="pay-sn">#${d.sn}</span></p>
+            <p class="pay-sub">${device ? device + ' · ' : ''}${(d.status || '').toUpperCase()}</p>
+          </div>
+          <p class="pay-bal">${inr(serviceBalance(d))}</p>
+        </div>
+        <div class="pay-actions">
+          ${d.number ? `<button class="call-btn pay-call" data-num="+91${d.number}"><i class="fa-solid fa-phone"></i></button>` : ''}
+          <button class="pay-collect-btn" data-sn="${d.sn}"><i class="fa-solid fa-indian-rupee-sign"></i> Collect</button>
+        </div>
+      </li>`;
+  }).join('');
+};
+
+// Mark a job fully paid & collected
+document.addEventListener('click', async (e) => {
+  const btn = e.target.closest('.pay-collect-btn');
+  if (!btn) return;
+
+  const sn = btn.dataset.sn;
+  const svc = data.find(d => String(d.sn) === String(sn));
+  if (!svc) return;
+
+  const amt = Number(svc.amount) || 0;
+  const bal = serviceBalance(svc);
+  if (!confirm(`Mark #${sn} (${svc.name || ''}) as fully paid & collected?\nBalance ${inr(bal)} will be cleared.`)) return;
+
+  btn.disabled = true;
+  try {
+    const paidInfo = { date: getCurrentDate(), time: getCurrentTime(), by: localStorage.getItem('author') || 'Unknown', amount: amt };
+    await update(ref(db, `shops/${shopName}/service/${sn}`), { advance: amt, status: 'collected', paidInfo });
+    // optimistic local update so the list refreshes instantly
+    svc.advance = amt; svc.status = 'collected'; svc.paidInfo = paidInfo;
+    logActivity('collect', { sn, customer: svc.name, detail: inr(bal) });
+    showNotice({ title: 'Collected', body: `#${sn} marked paid & collected`, type: 'success' });
+    renderPayments();
+  } catch (err) {
+    btn.disabled = false;
+    showNotice({ title: 'Error', body: err.message, type: 'error', delay: 6 });
+  }
+});
+
+
+/* ============================================================
+   📝 STAFF ACTIVITY LOG
+   ============================================================ */
+const ACTIVITY_META = {
+  create:  { icon: 'fa-plus',            verb: 'added' },
+  edit:    { icon: 'fa-pen',             verb: 'edited' },
+  delete:  { icon: 'fa-trash',           verb: 'deleted' },
+  status:  { icon: 'fa-arrows-rotate',   verb: 'changed status of' },
+  note:    { icon: 'fa-note-sticky',     verb: 'noted on' },
+  bulk:    { icon: 'fa-layer-group',     verb: 'bulk-updated' },
+  collect: { icon: 'fa-indian-rupee-sign', verb: 'collected payment for' }
+};
+
+const renderActivity = async () => {
+  const listEl = $('.activity-list');
+  if (!listEl) return;
+  listEl.innerHTML = `<li class="empty">Loading…</li>`;
+
+  try {
+    const snap = await get(query(ref(db, `shops/${shopName}/activity`), limitToLast(100)));
+    if (!snap.exists()) {
+      listEl.innerHTML = `<li class="empty">No activity yet.</li>`;
+      return;
+    }
+
+    const entries = Object.values(snap.val())
+      .sort((a, b) => String(b.at).localeCompare(String(a.at)));
+
+    listEl.innerHTML = entries.map(en => {
+      const meta = ACTIVITY_META[en.action] || { icon: 'fa-circle-info', verb: en.action };
+      let when = en.at;
+      try { when = new Date(en.at).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch (_) {}
+      const target = en.sn ? `#${en.sn}` : '';
+      const cust = en.customer ? ` (${en.customer})` : '';
+      const detail = en.detail ? ` → <b>${en.detail}</b>` : '';
+      return `
+        <li class="act-item act-${en.action}">
+          <span class="act-icon"><i class="fa-solid ${meta.icon}"></i></span>
+          <div class="act-body">
+            <p class="act-text"><b>${en.by || 'Unknown'}</b>${en.role ? ` <span class="act-role">${en.role}</span>` : ''} ${meta.verb} ${target}${cust}${detail}</p>
+            <p class="act-when">${when}</p>
+          </div>
+        </li>`;
+    }).join('');
+  } catch (err) {
+    console.error('activity load failed:', err);
+    listEl.innerHTML = `<li class="empty">⚠️ Couldn't load activity.</li>`;
+  }
+};
 
 
 const nameInput = $('.form #name');
