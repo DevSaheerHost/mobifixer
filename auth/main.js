@@ -222,12 +222,25 @@ $('#reset-btn').onclick = async (e) => {
       return;
     }
 
+    // ⚠️ Firebase (with Email Enumeration Protection, on by default) resolves
+    // sendPasswordResetEmail successfully even when the email has NO Auth account,
+    // so it would silently claim "sent" and no mail arrives. Legacy shops keep a
+    // plaintext password in the DB and only get a Firebase Auth account after their
+    // first login (migration). Detect that here and give honest guidance instead.
+    const hasAuthAccount = !!(shopData?.owner?.uid || shopData?.uid);
+    const legacyPlaintext = typeof shopData?.password === 'string' && shopData.password.length > 0;
+
+    if (!hasAuthAccount || legacyPlaintext) {
+      alert("⚠️ This shop isn't linked to email login yet, so no reset email can be sent.\n\nPlease log in ONCE with your current password (that activates email login), then use Forgot Password. If you don't remember the password, contact support.");
+      return;
+    }
+
     await sendPasswordResetEmail(auth, email);
 
     // mask the email a little for privacy
     const [user, domain] = email.split('@');
     const masked = `${user.slice(0, 2)}***@${domain || ''}`;
-    alert(`✅ Password reset link sent to ${masked}. Check your inbox (and spam folder).`);
+    alert(`✅ If an account exists for ${masked}, a password reset link has been sent. Check your inbox and spam folder.`);
     location.hash = "#/login";
 
   } catch (err) {
