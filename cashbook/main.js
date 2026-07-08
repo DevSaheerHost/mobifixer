@@ -100,7 +100,7 @@ import { ref, onChildAdded, onChildChanged, onChildRemoved } from "https://www.g
       vibration: true,
       specialDayEffects: true,
       autoSetDailyGoal:false,
-      enableAI:false,
+      enableAI:true,
     };
     // ------------------------ CONFIG ------------------------
     const firebaseConfig = {
@@ -4007,7 +4007,9 @@ let aiMessages = [];               // [{role:'user'|'model', text}]
 let _aiLedgerText = null;          // cached context block
 let _aiLedgerAt = 0;               // cache timestamp
 
-const aiKey = () => localStorage.getItem('CASHBOOK_GEMINI_KEY') || '';
+// Shared default key so AI works out of the box; a user's own key (Settings) overrides it.
+const AI_DEFAULT_KEY = 'AIzaSyD8iQZBQiEsTEH2kbVdW3xamhJ3RVG5HCo';
+const aiKey = () => localStorage.getItem('CASHBOOK_GEMINI_KEY') || AI_DEFAULT_KEY;
 const aiEnabled = () => !!(appSettings && appSettings.enableAI) && !!aiKey();
 
 // Show/hide the bottom-nav "Ask AI" entry based on settings + key
@@ -4104,7 +4106,28 @@ You have TWO modes and you pick automatically per message:
    Be concise, show the ₹ figures, never invent numbers, and if the data doesn't cover it, say so plainly. You may add a light emoji like 📈💰.
 2) FUN MODE — when the user is just greeting, chatting, joking or venting: be a warm, playful shop buddy 😄. Use emojis, light banter and encouragement (e.g. "big sales today, keep it up! 🚀"). Keep it friendly and appropriate for a shopkeeper — never rude, offensive, or personal-attacking.
 
-Keep replies short and mobile-friendly. Today's date and the ledger follow.`;
+Keep replies short and mobile-friendly. Reply in the user's language (Malayalam or English) to match how they wrote.
+
+=== ABOUT THIS APP & ITS DEVELOPER ===
+- This app (Mobifixer Cashbook, part of the Mobifixer suite) was created by **Saheer Babu**.
+- If the user asks who made / created / developed / designed this app, or asks about the app, credit **Saheer Babu**.
+- Right after crediting him, warmly OFFER once: "Would you like to know more about the developer, Saheer Babu? 🙂". Only share the detailed profile below if the user says yes / shows interest — don't dump it unprompted.
+
+DEVELOPER PROFILE — Saheer Babu (share only when the user wants to know more):
+📱 Mobile Hardware & Repair
+- Works at Cell Palace, Electronic City, Bangalore.
+- Skills: advanced smartphone motherboard repair, CPU reballing, schematic tracing (especially Samsung & iPhone models), and replacing faulty components. Strong hands-on experience.
+💻 Software Development & Web Design
+- Builds web projects & apps with JavaScript, HTML, CSS, and Firebase Realtime Database.
+- Key projects: a professional Monthly Service Report generator (PDF) + stock-management database for Cell Palace; PocketDrive v2, a Flask-based web file-server app; and the Mobifixer service app & this Cashbook.
+- Runs a verified business profile offering software development & web design services, based in Kondotty (Elamkulapparamba), Kerala.
+🖥️ Server Management & IT Systems
+- Handles Linux distros: Ubuntu, Debian, Lubuntu, Termux.
+- Networking with SSH & Tailscale; manages large server setups with resource management up to 128GB RAM.
+🔗 Portfolio: https://saheerbabu.vercel.app · GitHub: DevSaheerHost · Email: sheerbabu549@gmail.com
+(You may answer this profile in Malayalam if the user writes in Malayalam.)
+
+Today's date and the ledger follow.`;
 
 async function aiAsk() {
   const key = aiKey();
