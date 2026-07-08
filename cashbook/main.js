@@ -100,6 +100,7 @@ import { ref, onChildAdded, onChildChanged, onChildRemoved } from "https://www.g
       vibration: true,
       specialDayEffects: true,
       autoSetDailyGoal:false,
+      enableAI:false,
     };
     // ------------------------ CONFIG ------------------------
     const firebaseConfig = {
@@ -960,6 +961,10 @@ checkUserClickFeedback()
   document.querySelector('#vibration').checked = settings.vibration;
   document.querySelector('#specialDay').checked = settings.specialDayEffects;
   document.querySelector('#autoGoal').checked = settings.autoSetDailyGoal;
+  const aiToggle = document.querySelector('#enableAI');
+  if (aiToggle) aiToggle.checked = !!settings.enableAI;
+  const keyInput = document.querySelector('#geminiKey');
+  if (keyInput) keyInput.value = localStorage.getItem('CASHBOOK_GEMINI_KEY') || '';
 
   return settings;
 };
@@ -979,6 +984,19 @@ const saveSettings = () => {
 document.querySelector('#vibration').addEventListener('change', e => {
   appSettings.vibration = e.target.checked;
   saveSettings();
+});
+
+document.querySelector('#enableAI')?.addEventListener('change', e => {
+  appSettings.enableAI = e.target.checked;
+  saveSettings();
+  if (typeof updateAiNavVisibility === 'function') updateAiNavVisibility();
+});
+
+document.querySelector('#geminiKey')?.addEventListener('change', e => {
+  const v = e.target.value.trim();
+  if (v) localStorage.setItem('CASHBOOK_GEMINI_KEY', v);
+  else localStorage.removeItem('CASHBOOK_GEMINI_KEY');
+  if (typeof updateAiNavVisibility === 'function') updateAiNavVisibility();
 });
 
 document.querySelector('#suggestion').addEventListener('change', e => {
@@ -3975,4 +3993,255 @@ document.getElementById('profile')?.addEventListener('keydown', e => {
   new MutationObserver(() => {
     if (page.classList.contains('active')) loadSettingsProfile();
   }).observe(page, { attributes: true, attributeFilter: ['class'] });
+})();
+
+
+/* ============================================================
+   ✨ ASK-YOUR-CASHBOOK — AI chat (Gemini free tier, dual-mode)
+   ============================================================ */
+const AI_MODEL = 'gemini-2.0-flash';
+const AI_CHAT_KEY = 'CASHBOOK_AI_CHAT';
+let aiMessages = [];               // [{role:'user'|'model', text}]
+let _aiLedgerText = null;          // cached context block
+let _aiLedgerAt = 0;               // cache timestamp
+
+const aiKey = () => localStorage.getItem('CASHBOOK_GEMINI_KEY') || '';
+const aiEnabled = () => !!(appSettings && appSettings.enableAI) && !!aiKey();
+
+// Show/hide the bottom-nav "Ask AI" entry based on settings + key
+function updateAiNavVisibility() {
+  const item = document.getElementById('bnav-chat');
+  if (!item) return;
+  item.classList.toggle('hidden', !aiEnabled());
+  // if the AI page is open but got disabled, bounce home
+  if (!aiEnabled() && location.hash === '#chat') location.hash = 'home';
+}
+
+// ---- Ledger → context text (cached per session) ----
+async function aiFetchLedger() {
+  const user = localStorage.getItem('CASHBOOK_USER_NAME');
+  if (!user) throw new Error('NO_USER');
+  const snap = await firebase.database().ref(user).get();
+  const raw = snap.val() || {};
+  const entries = [];
+  Object.keys(raw).forEach(dateKey => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return; // skip goals/reminders/recycleBin
+    const day = raw[dateKey] || {};
+    ['in', 'out'].forEach(type => {
+      const group = day[type] || {};
+      Object.values(group).forEach(r => {
+        if (!r || typeof r !== 'object') return;
+        entries.push({
+          date: dateKey,
+          type,
+          name: r.name || '',
+          cash: Number(r.amount) || 0,
+          gpay: Number(r.gpay) || 0,
+          staff: r.staffName || r.writer || '',
+          ts: Number(r.ts) || 0
+        });
+      });
+    });
+  });
+  entries.sort((a, b) => a.ts - b.ts);
+  return entries;
+}
+
+function aiBuildContext(entries) {
+  const byMonth = {};
+  let tIn = 0, tOut = 0, tGpay = 0;
+  entries.forEach(e => {
+    const m = e.date.slice(0, 7);
+    (byMonth[m] = byMonth[m] || { in: 0, out: 0, gpay: 0 });
+    if (e.type === 'in') { byMonth[m].in += e.cash + e.gpay; tIn += e.cash + e.gpay; }
+    else { byMonth[m].out += e.cash; tOut += e.cash; }
+    if (e.gpay) { byMonth[m].gpay += e.gpay; tGpay += e.gpay; }
+  });
+  const net = tIn - tOut - tGpay;
+  const monthLines = Object.keys(byMonth).sort().map(m => {
+    const g = byMonth[m];
+    return `${m}: IN ₹${g.in}  OUT ₹${g.out}  GPay ₹${g.gpay}  Net ₹${g.in - g.out - g.gpay}`;
+  }).join('\n');
+
+  const CAP = 1000;
+  const recent = entries.slice(-CAP);
+  const truncated = entries.length > CAP;
+  const rows = recent.map(e => {
+    const t = e.ts ? new Date(e.ts) : null;
+    const hm = t ? t.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '';
+    return `${e.date} ${hm} | ${e.type.toUpperCase()} | ${e.name} | cash ₹${e.cash} | gpay ₹${e.gpay}${e.staff ? ' | ' + e.staff : ''}`;
+  }).join('\n');
+
+  return `TODAY: ${isoDate(new Date())}
+OVERALL TOTALS: IN ₹${tIn}  OUT ₹${tOut}  GPay ₹${tGpay}  Net(cash-in-hand) ₹${net}
+
+MONTHLY TOTALS:
+${monthLines || '(none)'}
+
+${truncated ? `ENTRIES (most recent ${CAP} of ${entries.length}; older ones roll up into the monthly totals above):` : `ALL ENTRIES (${entries.length}):`}
+${rows || '(no entries yet)'}`;
+}
+
+async function aiGetLedgerText(force) {
+  const fresh = _aiLedgerText && (Date.now() - _aiLedgerAt < 180000);
+  if (fresh && !force) return _aiLedgerText;
+  const entries = await aiFetchLedger();
+  _aiLedgerText = aiBuildContext(entries);
+  _aiLedgerAt = Date.now();
+  return _aiLedgerText;
+}
+
+const AI_SYSTEM = `You are "Cashbook Buddy", a friendly AI assistant inside a mobile-repair shop's cashbook app in India.
+
+You have TWO modes and you pick automatically per message:
+1) FINANCE MODE — when the user asks about money/cash/GPay/profit/expenses/entries: answer using ONLY the CASHBOOK DATA provided below. Currency is Indian Rupees ₹ (format like ₹1,250). Definitions you MUST use so your numbers match the app exactly:
+   - Total IN = sum over IN entries of (cash + gpay)   [IN includes GPay]
+   - Total OUT = sum over OUT entries of cash
+   - Total GPay = sum of gpay across all entries
+   - Net / cash-in-hand = Total IN − Total OUT − Total GPay  (physical cash)
+   Be concise, show the ₹ figures, never invent numbers, and if the data doesn't cover it, say so plainly. You may add a light emoji like 📈💰.
+2) FUN MODE — when the user is just greeting, chatting, joking or venting: be a warm, playful shop buddy 😄. Use emojis, light banter and encouragement (e.g. "big sales today, keep it up! 🚀"). Keep it friendly and appropriate for a shopkeeper — never rude, offensive, or personal-attacking.
+
+Keep replies short and mobile-friendly. Today's date and the ledger follow.`;
+
+async function aiAsk() {
+  const key = aiKey();
+  if (!key) { showTopToast('Add your Gemini API key in Settings', '#ef4444'); location.hash = 'settings'; return null; }
+  let ledger = '';
+  try { ledger = await aiGetLedgerText(false); } catch (e) { ledger = '(ledger unavailable)'; }
+  const contents = aiMessages.slice(-10).map(m => ({ role: m.role, parts: [{ text: m.text }] }));
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODEL}:generateContent?key=${encodeURIComponent(key)}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      system_instruction: { parts: [{ text: AI_SYSTEM + '\n\n=== CASHBOOK DATA ===\n' + ledger }] },
+      contents,
+      generationConfig: { temperature: 0.5 }
+    })
+  });
+  if (!res.ok) {
+    if (res.status === 429) throw new Error('RATE');
+    if (res.status === 400 || res.status === 403) throw new Error('BADKEY');
+    throw new Error('HTTP_' + res.status);
+  }
+  const data = await res.json();
+  const text = (data && data.candidates && data.candidates[0] && data.candidates[0].content
+    && data.candidates[0].content.parts || []).map(p => p.text || '').join('').trim();
+  if (!text) throw new Error('EMPTY');
+  return text;
+}
+
+// ---- Chat UI ----
+function aiEscape(t) {
+  return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function aiFormat(t) {
+  return aiEscape(t)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>');
+}
+function aiRenderMessages() {
+  const box = document.getElementById('aiMessages');
+  if (!box) return;
+  if (!aiMessages.length) {
+    box.innerHTML = `<div class="ai-empty">👋 Hi! I'm your Cashbook Buddy.<br>Ask me about your cash, GPay or profit — or just say hi 😄</div>`;
+  } else {
+    box.innerHTML = aiMessages.map(m =>
+      `<div class="ai-msg ai-${m.role}"><div class="ai-bubble">${aiFormat(m.text)}</div></div>`
+    ).join('');
+  }
+  box.scrollTop = box.scrollHeight;
+}
+function aiSaveChat() {
+  try { localStorage.setItem(AI_CHAT_KEY, JSON.stringify(aiMessages.slice(-40))); } catch (e) {}
+}
+function aiLoadChat() {
+  try { aiMessages = JSON.parse(localStorage.getItem(AI_CHAT_KEY)) || []; } catch (e) { aiMessages = []; }
+}
+function aiShowTyping() {
+  const box = document.getElementById('aiMessages');
+  if (!box) return null;
+  const el = document.createElement('div');
+  el.className = 'ai-msg ai-model ai-typing';
+  el.innerHTML = `<div class="ai-bubble"><span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span></div>`;
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+  return el;
+}
+
+async function aiSendMessage(text) {
+  text = (text || '').trim();
+  if (!text) return;
+  const suggestions = document.getElementById('aiSuggestions');
+  if (suggestions) suggestions.style.display = 'none';
+
+  aiMessages.push({ role: 'user', text });
+  aiRenderMessages();
+  aiSaveChat();
+
+  const typing = aiShowTyping();
+  const sendBtn = document.getElementById('aiSend');
+  if (sendBtn) sendBtn.disabled = true;
+  try {
+    const reply = await aiAsk();
+    if (typing) typing.remove();
+    if (reply == null) return;               // no key (already handled)
+    aiMessages.push({ role: 'model', text: reply });
+    aiRenderMessages();
+    aiSaveChat();
+  } catch (err) {
+    if (typing) typing.remove();
+    let msg = 'Something went wrong. Please try again.';
+    if (err.message === 'RATE') msg = 'AI is busy right now (rate limit) — wait a moment and retry. ⏳';
+    else if (err.message === 'BADKEY') msg = 'Invalid API key. Check it in Settings. 🔑';
+    else if (err.message === 'NO_USER') msg = 'Please sign in first.';
+    else if (!navigator.onLine) msg = 'You appear to be offline. 📴';
+    showTopToast(msg, '#ef4444');
+  } finally {
+    if (sendBtn) sendBtn.disabled = false;
+  }
+}
+
+// ---- Wire up chat UI ----
+(function initAiChat() {
+  aiLoadChat();
+  updateAiNavVisibility();
+
+  const form = document.getElementById('aiForm');
+  const input = document.getElementById('aiInput');
+  if (form && input) {
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const v = input.value;
+      input.value = '';
+      aiSendMessage(v);
+    });
+  }
+
+  document.querySelectorAll('#aiSuggestions .ai-chip').forEach(chip => {
+    chip.addEventListener('click', () => aiSendMessage(chip.textContent));
+  });
+
+  const clearBtn = document.getElementById('aiClearChat');
+  if (clearBtn) clearBtn.addEventListener('click', () => {
+    aiMessages = [];
+    aiSaveChat();
+    const s = document.getElementById('aiSuggestions');
+    if (s) s.style.display = '';
+    aiRenderMessages();
+  });
+
+  // Refresh ledger cache + render whenever the chat page opens
+  const page = document.getElementById('chat');
+  if (page) {
+    new MutationObserver(() => {
+      if (page.classList.contains('active')) {
+        _aiLedgerAt = 0;           // force fresh ledger on next question
+        aiRenderMessages();
+      }
+    }).observe(page, { attributes: true, attributeFilter: ['class'] });
+  }
+
+  aiRenderMessages();
 })();
