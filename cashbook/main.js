@@ -4090,6 +4090,44 @@ async function aiGetLedgerText(force) {
   return _aiLedgerText;
 }
 
+// ---- Shop / user profile context (cached per session) ----
+let _aiProfileText = null;
+let _aiProfileAt = 0;
+
+async function aiGetProfileText(force) {
+  if (_aiProfileText && !force && (Date.now() - _aiProfileAt < 180000)) return _aiProfileText;
+  const user = localStorage.getItem('CASHBOOK_USER_NAME');
+  try {
+    const snap = await firebase.database().ref('/users/' + user).get();
+    const d = snap.val() || {};
+    // member since: signupInfo.date, else earliest login key timestamp
+    let since = d.signupInfo && d.signupInfo.date ? d.signupInfo.date : '';
+    if (!since && d.logins) {
+      const ts = Object.keys(d.logins).map(k => Number(String(k).split('_')[0])).filter(Boolean).sort((a, b) => a - b)[0];
+      if (ts) { try { since = new Date(ts).toLocaleDateString('en-IN'); } catch (_) {} }
+    }
+    const staff = d.staff ? Object.values(d.staff).map(s =>
+      `${s.fullname || '?'} (${s.role || 'staff'}${s.status ? ', ' + s.status : ''})`).join('; ') : '';
+    _aiProfileText =
+`SHOP PROFILE:
+- Shop name: ${d.shopName || user || '—'}
+- Owner: ${d.fullname || '—'}
+- Phone: ${d.phone || 'not set'}
+- Email: ${(d.signupInfo && d.signupInfo.email) || 'not set'}
+- Member since: ${since || 'unknown'}
+- Staff: ${staff || 'none listed'}`;
+  } catch (e) {
+    _aiProfileText = '';
+  }
+  _aiProfileAt = Date.now();
+  return _aiProfileText;
+}
+
+// Current user identity — always fresh from localStorage
+function aiCurrentUserLine() {
+  return `CURRENT USER (the person chatting with you): ${localStorage.getItem('CASHBOOK_FULLNAME') || 'Unknown'} — role: ${localStorage.getItem('CASHBOOK_ROLL') || 'unknown'}; shop username: ${localStorage.getItem('CASHBOOK_USER_NAME') || '—'}.`;
+}
+
 const AI_SYSTEM = `You are "Cashbook Buddy", a friendly AI assistant inside a mobile-repair shop's cashbook app in India.
 
 You have TWO modes and you pick automatically per message:
@@ -4100,6 +4138,8 @@ You have TWO modes and you pick automatically per message:
    - Net / cash-in-hand = Total IN − Total OUT − Total GPay  (physical cash)
    Be concise, show the ₹ figures, never invent numbers, and if the data doesn't cover it, say so plainly. You may add a light emoji like 📈💰.
 2) FUN MODE — when the user is just greeting, chatting, joking or venting: be a warm, playful shop buddy 😄. Use emojis, light banter and encouragement (e.g. "big sales today, keep it up! 🚀"). Keep it friendly and appropriate for a shopkeeper — never rude, offensive, or personal-attacking.
+
+You KNOW who you're talking to and the shop's details — the CURRENT USER line and SHOP PROFILE are provided below with the data. If the user asks "what is my name" / "who am I", answer with their name from CURRENT USER. Use the SHOP PROFILE to answer questions about the shop name, owner, staff, phone, email, or how long they've been a member.
 
 Keep replies short and mobile-friendly. Reply in the user's language (Malayalam or English) to match how they wrote.
 
@@ -4129,9 +4169,16 @@ async function aiAsk() {
   if (!key) { showTopToast('Add your Gemini API key in Settings', '#ef4444'); location.hash = 'settings'; return null; }
   let ledger = '';
   try { ledger = await aiGetLedgerText(false); } catch (e) { ledger = '(ledger unavailable)'; }
+  let profile = '';
+  try { profile = await aiGetProfileText(false); } catch (e) { profile = ''; }
   const contents = aiMessages.slice(-10).map(m => ({ role: m.role, parts: [{ text: m.text }] }));
+  const context = [
+    aiCurrentUserLine(),
+    profile,
+    '=== CASHBOOK DATA ===\n' + ledger
+  ].filter(Boolean).join('\n\n');
   const body = {
-    system_instruction: { parts: [{ text: AI_SYSTEM + '\n\n=== CASHBOOK DATA ===\n' + ledger }] },
+    system_instruction: { parts: [{ text: AI_SYSTEM + '\n\n' + context }] },
     contents,
     generationConfig: { temperature: 0.5 }
   };
