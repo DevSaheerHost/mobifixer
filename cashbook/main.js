@@ -3999,8 +3999,10 @@ document.getElementById('profile')?.addEventListener('keydown', e => {
 /* ============================================================
    ✨ ASK-YOUR-CASHBOOK — AI chat (Gemini free tier, dual-mode)
    ============================================================ */
-const AI_MODEL = 'gemini-2.0-flash';
+const AI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+let _aiWorkingModel = null;         // first model that succeeded this session
 const AI_CHAT_KEY = 'CASHBOOK_AI_CHAT';
+const aiSleep = (ms) => new Promise(r => setTimeout(r, ms));
 let aiMessages = [];               // [{role:'user'|'model', text}]
 let _aiLedgerText = null;          // cached context block
 let _aiLedgerAt = 0;               // cache timestamp
@@ -4110,26 +4112,109 @@ async function aiAsk() {
   let ledger = '';
   try { ledger = await aiGetLedgerText(false); } catch (e) { ledger = '(ledger unavailable)'; }
   const contents = aiMessages.slice(-10).map(m => ({ role: m.role, parts: [{ text: m.text }] }));
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODEL}:generateContent?key=${encodeURIComponent(key)}`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      system_instruction: { parts: [{ text: AI_SYSTEM + '\n\n=== CASHBOOK DATA ===\n' + ledger }] },
-      contents,
-      generationConfig: { temperature: 0.5 }
-    })
-  });
-  if (!res.ok) {
-    if (res.status === 429) throw new Error('RATE');
-    if (res.status === 400 || res.status === 403) throw new Error('BADKEY');
-    throw new Error('HTTP_' + res.status);
+  const body = {
+    system_instruction: { parts: [{ text: AI_SYSTEM + '\n\n=== CASHBOOK DATA ===\n' + ledger }] },
+    contents,
+    generationConfig: { temperature: 0.5 }
+  };
+  return aiGenerate(key, body);
+}
+
+// Low-level call with real-error surfacing, 429 backoff, and model fallback.
+async function aiGenerate(key, body) {
+  const models = _aiWorkingModel ? [_aiWorkingModel, ...AI_MODELS.filter(m => m !== _aiWorkingModel)] : AI_MODELS.slice();
+  let lastErr = null;
+
+  for (const model of models) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+    const backoffs = [0, 1500, 4000]; // initial try + 2 retries for transient 429s
+
+    for (let attempt = 0; attempt < backoffs.length; attempt++) {
+      if (backoffs[attempt]) await aiSleep(backoffs[attempt]);
+      let res;
+      try {
+        res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      } catch (netErr) {
+        lastErr = new AiError(navigator.onLine ? 'NETWORK' : 'OFFLINE', netErr.message);
+        break; // network failure → try next model won't help much, but break retry loop
+      }
+
+      if (res.ok) {
+        const data = await res.json();
+        const text = ((data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [])
+          .map(p => p.text || '').join('').trim();
+        if (!text) { lastErr = new AiError('EMPTY', 'Model returned an empty response.'); break; }
+        _aiWorkingModel = model;
+        return text;
+      }
+
+      // Non-OK: read Google's real error
+      let status = 'HTTP_' + res.status, message = '';
+      try { const j = await res.json(); if (j && j.error) { status = j.error.status || status; message = j.error.message || ''; } }
+      catch (_) {}
+      console.error(`Gemini error [${model}] ${res.status} ${status}: ${message}`);
+      lastErr = new AiError(status, message, res.status);
+
+      if (res.status === 429) continue;                 // transient → retry with backoff
+      if (res.status === 404 || status === 'NOT_FOUND') break; // model unavailable → next model
+      break; // other errors (permission/invalid) → don't retry this model
+    }
+    // move to next model on 429-exhausted or NOT_FOUND
   }
-  const data = await res.json();
-  const text = (data && data.candidates && data.candidates[0] && data.candidates[0].content
-    && data.candidates[0].content.parts || []).map(p => p.text || '').join('').trim();
-  if (!text) throw new Error('EMPTY');
-  return text;
+  throw lastErr || new AiError('UNKNOWN', 'Unknown error');
+}
+
+// Typed error carrying Google's real status + message
+class AiError extends Error {
+  constructor(status, message, httpCode) {
+    super(message || status);
+    this.aiStatus = status;
+    this.aiMessage = message || '';
+    this.httpCode = httpCode;
+  }
+}
+
+// Map a status to friendly guidance (shown with the raw message)
+function aiGuidance(status) {
+  switch (status) {
+    case 'RESOURCE_EXHAUSTED':
+      return "Free-tier quota/limit hit for this key. Wait a minute and retry — or your key's project/region may have no free Gemini quota. Try a key from a fresh Google account at aistudio.google.com.";
+    case 'PERMISSION_DENIED':
+      return "Key rejected. Enable the ‘Generative Language API’ for the key's project, and if the key has an HTTP-referrer restriction, make sure it allows this site.";
+    case 'INVALID_ARGUMENT':
+      return "The key looks malformed — re-copy it from aistudio.google.com.";
+    case 'OFFLINE':
+      return "You appear to be offline. 📴";
+    case 'NETWORK':
+      return "Couldn't reach Gemini. Check your connection and retry.";
+    default:
+      return '';
+  }
+}
+
+// Settings diagnostic: ping the API and report the real outcome
+async function aiTestKey() {
+  const key = aiKey();
+  if (!key) { showTopToast('Enter your Gemini API key first', '#ef4444'); return; }
+  showTopToast('Testing key…', '#0BA2FF');
+  try {
+    const reply = await aiGenerate(key, { contents: [{ role: 'user', parts: [{ text: 'Reply with just: ok' }] }] });
+    showTopToast(`✅ Working${_aiWorkingModel ? ' (' + _aiWorkingModel + ')' : ''}`, '#34A853');
+    updateAiNavVisibility();
+  } catch (err) {
+    const status = err.aiStatus || err.message || 'UNKNOWN';
+    const guide = aiGuidance(status);
+    if (typeof showOverlay === 'function') {
+      showOverlay({
+        title: '❌ Key test failed',
+        desc: `<b>${status}</b><br>${(err.aiMessage || '').replace(/</g, '&lt;')}${guide ? '<br><br>' + guide : ''}`,
+        icon: '🔑', btnColor: '#ef4444', important: true
+      });
+    } else {
+      showTopToast(`❌ ${status}`, '#ef4444');
+    }
+    console.error('Gemini key test failed:', status, err.aiMessage);
+  }
 }
 
 // ---- Chat UI ----
@@ -4192,12 +4277,14 @@ async function aiSendMessage(text) {
     aiSaveChat();
   } catch (err) {
     if (typing) typing.remove();
-    let msg = 'Something went wrong. Please try again.';
-    if (err.message === 'RATE') msg = 'AI is busy right now (rate limit) — wait a moment and retry. ⏳';
-    else if (err.message === 'BADKEY') msg = 'Invalid API key. Check it in Settings. 🔑';
-    else if (err.message === 'NO_USER') msg = 'Please sign in first.';
-    else if (!navigator.onLine) msg = 'You appear to be offline. 📴';
-    showTopToast(msg, '#ef4444');
+    const status = err.aiStatus || err.message || 'UNKNOWN';
+    const guide = aiGuidance(status);
+    const raw = err.aiMessage ? `\n\n_${status}: ${err.aiMessage}_` : (guide ? '' : `\n\n_${status}_`);
+    // Show the real reason as a chat bubble so it's readable and copyable
+    aiMessages.push({ role: 'model', text: `⚠️ ${guide || 'Something went wrong — please try again.'}${raw}` });
+    aiRenderMessages();
+    aiSaveChat();
+    showTopToast(guide ? status.replace(/_/g, ' ').toLowerCase() : 'AI error — see chat', '#ef4444');
   } finally {
     if (sendBtn) sendBtn.disabled = false;
   }
@@ -4222,6 +4309,9 @@ async function aiSendMessage(text) {
   document.querySelectorAll('#aiSuggestions .ai-chip').forEach(chip => {
     chip.addEventListener('click', () => aiSendMessage(chip.textContent));
   });
+
+  const testBtn = document.getElementById('aiTestKeyBtn');
+  if (testBtn) testBtn.addEventListener('click', aiTestKey);
 
   const clearBtn = document.getElementById('aiClearChat');
   if (clearBtn) clearBtn.addEventListener('click', () => {
