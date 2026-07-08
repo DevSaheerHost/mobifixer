@@ -3974,8 +3974,28 @@ document.getElementById('profile')?.addEventListener('keydown', e => {
 /* ============================================================
    ✨ ASK-YOUR-CASHBOOK — AI chat (Gemini free tier, dual-mode)
    ============================================================ */
-const AI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+const AI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash-lite'];
 let _aiWorkingModel = null;         // first model that succeeded this session
+let _aiDiscoveredModels = null;     // models discovered via ListModels (fallback)
+
+// Pick the most informative error so a fallback NOT_FOUND never masks the real cause.
+const AI_ERR_RANK = { RESOURCE_EXHAUSTED: 7, PERMISSION_DENIED: 6, INVALID_ARGUMENT: 5, OFFLINE: 4, NETWORK: 3, EMPTY: 2, NOT_FOUND: 1 };
+const aiRank = (e) => (e && AI_ERR_RANK[e.aiStatus]) || 0;
+
+// Discover flash models this key can actually use (self-heals against model renames).
+async function aiDiscoverModels(key) {
+  if (_aiDiscoveredModels) return _aiDiscoveredModels;
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(key)}`);
+    if (!res.ok) return (_aiDiscoveredModels = []);
+    const data = await res.json();
+    _aiDiscoveredModels = (data.models || [])
+      .filter(m => (m.supportedGenerationMethods || []).includes('generateContent') && /flash/i.test(m.name || ''))
+      .map(m => (m.name || '').replace(/^models\//, ''))
+      .filter(Boolean);
+  } catch (_) { _aiDiscoveredModels = []; }
+  return _aiDiscoveredModels;
+}
 const AI_CHAT_KEY = 'CASHBOOK_AI_CHAT';
 const aiSleep = (ms) => new Promise(r => setTimeout(r, ms));
 let aiMessages = [];               // [{role:'user'|'model', text}]
@@ -4118,48 +4138,58 @@ async function aiAsk() {
   return aiGenerate(key, body);
 }
 
-// Low-level call with real-error surfacing, 429 backoff, and model fallback.
+// Low-level call with real-error surfacing, 429 backoff, model fallback + discovery.
 async function aiGenerate(key, body) {
-  const models = _aiWorkingModel ? [_aiWorkingModel, ...AI_MODELS.filter(m => m !== _aiWorkingModel)] : AI_MODELS.slice();
-  let lastErr = null;
+  let bestErr = null;
+  const consider = (e) => { if (!bestErr || aiRank(e) >= aiRank(bestErr)) bestErr = e; };
 
-  for (const model of models) {
+  const tryModel = async (model) => {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
     const backoffs = [0, 1500, 4000]; // initial try + 2 retries for transient 429s
-
     for (let attempt = 0; attempt < backoffs.length; attempt++) {
       if (backoffs[attempt]) await aiSleep(backoffs[attempt]);
       let res;
       try {
         res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       } catch (netErr) {
-        lastErr = new AiError(navigator.onLine ? 'NETWORK' : 'OFFLINE', netErr.message);
-        break; // network failure → try next model won't help much, but break retry loop
+        consider(new AiError(navigator.onLine ? 'NETWORK' : 'OFFLINE', netErr.message));
+        return null;
       }
-
       if (res.ok) {
         const data = await res.json();
         const text = ((data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [])
           .map(p => p.text || '').join('').trim();
-        if (!text) { lastErr = new AiError('EMPTY', 'Model returned an empty response.'); break; }
+        if (!text) { consider(new AiError('EMPTY', 'Model returned an empty response.')); return null; }
         _aiWorkingModel = model;
         return text;
       }
-
-      // Non-OK: read Google's real error
       let status = 'HTTP_' + res.status, message = '';
       try { const j = await res.json(); if (j && j.error) { status = j.error.status || status; message = j.error.message || ''; } }
       catch (_) {}
       console.error(`Gemini error [${model}] ${res.status} ${status}: ${message}`);
-      lastErr = new AiError(status, message, res.status);
-
-      if (res.status === 429) continue;                 // transient → retry with backoff
-      if (res.status === 404 || status === 'NOT_FOUND') break; // model unavailable → next model
-      break; // other errors (permission/invalid) → don't retry this model
+      consider(new AiError(status, message, res.status));
+      if (res.status === 429) continue;   // transient → retry with backoff
+      return null;                        // NOT_FOUND / permission / invalid → next model
     }
-    // move to next model on 429-exhausted or NOT_FOUND
+    return null;                          // 429 attempts exhausted → next model
+  };
+
+  const primary = _aiWorkingModel ? [_aiWorkingModel, ...AI_MODELS.filter(m => m !== _aiWorkingModel)] : AI_MODELS.slice();
+  for (const m of primary) {
+    const out = await tryModel(m);
+    if (out != null) return out;
   }
-  throw lastErr || new AiError('UNKNOWN', 'Unknown error');
+
+  // If the only trouble was "model not found", ask Google what this key CAN use, then retry.
+  if (!bestErr || bestErr.aiStatus === 'NOT_FOUND') {
+    const discovered = (await aiDiscoverModels(key)).filter(m => !primary.includes(m));
+    for (const m of discovered) {
+      const out = await tryModel(m);
+      if (out != null) return out;
+    }
+  }
+
+  throw bestErr || new AiError('UNKNOWN', 'Unknown error');
 }
 
 // Typed error carrying Google's real status + message
@@ -4176,7 +4206,7 @@ class AiError extends Error {
 function aiGuidance(status) {
   switch (status) {
     case 'RESOURCE_EXHAUSTED':
-      return "Free-tier quota/limit hit for this key. Wait a minute and retry — or your key's project/region may have no free Gemini quota. Try a key from a fresh Google account at aistudio.google.com.";
+      return "The app's shared AI key is busy / out of free quota right now. Wait a minute and retry — or add your OWN free Gemini key in Settings (tap ‘Test key’) for reliable access. Get one at aistudio.google.com.";
     case 'PERMISSION_DENIED':
       return "Key rejected. Enable the ‘Generative Language API’ for the key's project, and if the key has an HTTP-referrer restriction, make sure it allows this site.";
     case 'INVALID_ARGUMENT':
