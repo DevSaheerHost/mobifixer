@@ -965,6 +965,8 @@ checkUserClickFeedback()
   if (aiToggle) aiToggle.checked = !!settings.enableAI;
   const keyInput = document.querySelector('#geminiKey');
   if (keyInput) keyInput.value = localStorage.getItem('CASHBOOK_GEMINI_KEY') || '';
+  const groqInput = document.querySelector('#groqKey');
+  if (groqInput) groqInput.value = localStorage.getItem('CASHBOOK_GROQ_KEY') || '';
 
   return settings;
 };
@@ -997,6 +999,12 @@ document.querySelector('#geminiKey')?.addEventListener('change', e => {
   if (v) localStorage.setItem('CASHBOOK_GEMINI_KEY', v);
   else localStorage.removeItem('CASHBOOK_GEMINI_KEY');
   if (typeof updateAiNavVisibility === 'function') updateAiNavVisibility();
+});
+
+document.querySelector('#groqKey')?.addEventListener('change', e => {
+  const v = e.target.value.trim();
+  if (v) localStorage.setItem('CASHBOOK_GROQ_KEY', v);
+  else localStorage.removeItem('CASHBOOK_GROQ_KEY');
 });
 
 document.querySelector('#suggestion').addEventListener('change', e => {
@@ -4007,6 +4015,12 @@ const AI_DEFAULT_KEY = 'AIzaSyD8iQZBQiEsTEH2kbVdW3xamhJ3RVG5HCo';
 const aiKey = () => localStorage.getItem('CASHBOOK_GEMINI_KEY') || AI_DEFAULT_KEY;
 const aiEnabled = () => !!(appSettings && appSettings.enableAI) && !!aiKey();
 
+// Groq fallback — used when all Gemini models are rate-limited/exhausted (Gemini's
+// free tier limits fast; Groq's free tier is far more generous). OpenAI-compatible.
+const AI_GROQ_DEFAULT_KEY = ''; // TODO: paste shared default Groq key here
+const groqApiKey = () => localStorage.getItem('CASHBOOK_GROQ_KEY') || AI_GROQ_DEFAULT_KEY;
+const AI_GROQ_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
+
 // Show/hide the bottom-nav "Ask AI" entry based on settings + key
 function updateAiNavVisibility() {
   const item = document.getElementById('bnav-chat');
@@ -4177,12 +4191,29 @@ async function aiAsk() {
     profile,
     '=== CASHBOOK DATA ===\n' + ledger
   ].filter(Boolean).join('\n\n');
+  const systemText = AI_SYSTEM + '\n\n' + context;
   const body = {
-    system_instruction: { parts: [{ text: AI_SYSTEM + '\n\n' + context }] },
+    system_instruction: { parts: [{ text: systemText }] },
     contents,
     generationConfig: { temperature: 0.5 }
   };
-  return aiGenerate(key, body);
+
+  try {
+    return await aiGenerate(key, body);           // primary: Gemini
+  } catch (err) {
+    // Gemini exhausted/unavailable → fall back to Groq if a key exists
+    const gk = groqApiKey();
+    const canFallback = err.httpCode === 429 ||
+      ['RESOURCE_EXHAUSTED', 'NOT_FOUND', 'EMPTY', 'UNKNOWN', 'HTTP_500', 'HTTP_503'].includes(err.aiStatus);
+    if (gk && canFallback) {
+      try {
+        return await aiGroqGenerate(gk, systemText, aiMessages.slice(-10));  // fallback: Groq
+      } catch (gerr) {
+        throw (aiRank(gerr) >= aiRank(err) ? gerr : err); // surface the more meaningful error
+      }
+    }
+    throw err;
+  }
 }
 
 // Low-level call with real-error surfacing, 429 backoff, model fallback + discovery.
@@ -4237,6 +4268,49 @@ async function aiGenerate(key, body) {
   }
 
   throw bestErr || new AiError('UNKNOWN', 'Unknown error');
+}
+
+// Groq fallback (OpenAI-compatible chat completions). Throws AiError on failure.
+async function aiGroqGenerate(key, systemText, messages) {
+  const oaMsgs = [{ role: 'system', content: systemText }].concat(
+    messages.map(m => ({ role: m.role === 'model' ? 'assistant' : 'user', content: m.text }))
+  );
+  let bestErr = null;
+  const consider = (e) => { if (!bestErr || aiRank(e) >= aiRank(bestErr)) bestErr = e; };
+
+  for (const model of AI_GROQ_MODELS) {
+    for (const wait of [0, 1500]) {           // initial try + 1 retry for transient 429
+      if (wait) await aiSleep(wait);
+      let res;
+      try {
+        res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+          body: JSON.stringify({ model, messages: oaMsgs, temperature: 0.5 })
+        });
+      } catch (netErr) { consider(new AiError(navigator.onLine ? 'NETWORK' : 'OFFLINE', netErr.message)); break; }
+
+      if (res.ok) {
+        const d = await res.json();
+        const text = ((d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content) || '').trim();
+        if (!text) { consider(new AiError('EMPTY', 'Groq returned an empty response.')); break; }
+        return text;
+      }
+
+      let msg = '';
+      try { const j = await res.json(); msg = (j.error && j.error.message) || ''; } catch (_) {}
+      const status = res.status === 429 ? 'RESOURCE_EXHAUSTED'
+        : (res.status === 401 || res.status === 403) ? 'PERMISSION_DENIED'
+        : res.status === 400 ? 'INVALID_ARGUMENT'
+        : res.status === 404 ? 'NOT_FOUND'
+        : 'HTTP_' + res.status;
+      console.error(`Groq error [${model}] ${res.status} ${status}: ${msg}`);
+      consider(new AiError(status, msg, res.status));
+      if (res.status === 429) continue;   // retry with backoff
+      break;                              // next model
+    }
+  }
+  throw bestErr || new AiError('UNKNOWN', 'Groq failed');
 }
 
 // Typed error carrying Google's real status + message
