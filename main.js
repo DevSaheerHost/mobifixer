@@ -148,7 +148,9 @@ const saveLogToDatabase = (title, description, type) => {
 const createPopUp = (title, description, buttonAction = null, type = 'success') => {
   
   // ---> Fire the logging function immediately when popup is called <---
-  saveLogToDatabase(title, description, type);
+  if (typeof saveLogToDatabase === 'function') {
+    saveLogToDatabase(title, description, type);
+  }
 
   let container = document.querySelector('.android-popup-container');
   if (!container) {
@@ -175,21 +177,36 @@ const createPopUp = (title, description, buttonAction = null, type = 'success') 
     <div class="popup-desc">${description}</div>
   `;
 
-  const btn = document.createElement('button');
-  btn.className = 'popup-btn';
-  
+  // Create a container for buttons
+  const actionsContainer = document.createElement('div');
+  actionsContainer.className = 'popup-actions';
+
+  // Create the Dismiss button
+  const dismissBtn = document.createElement('button');
+  dismissBtn.className = 'popup-btn popup-btn-secondary';
+  dismissBtn.innerText = 'DISMISS';
+  dismissBtn.addEventListener('click', removePopup);
+
+  // If there is an action, show both Dismiss and Action buttons
   if (buttonAction && typeof buttonAction === 'function') {
-    btn.innerText = 'DOWNLOAD BACKUP'; // Adjusted to your requirement
-    btn.addEventListener('click', () => {
+    const actionBtn = document.createElement('button');
+    actionBtn.className = 'popup-btn';
+    actionBtn.innerText = 'DOWNLOAD BACKUP'; 
+    actionBtn.addEventListener('click', () => {
       buttonAction();
       removePopup();
     });
+    
+    actionsContainer.appendChild(dismissBtn);
+    actionsContainer.appendChild(actionBtn);
   } else {
-    btn.innerText = 'GOT IT';
-    btn.addEventListener('click', removePopup);
+    // If no action, just show one button (e.g., GOT IT)
+    dismissBtn.innerText = 'GOT IT';
+    dismissBtn.classList.remove('popup-btn-secondary'); // Remove secondary styling so it uses theme color
+    actionsContainer.appendChild(dismissBtn);
   }
   
-  popup.appendChild(btn);
+  popup.appendChild(actionsContainer);
   container.appendChild(popup);
 
   // Trigger animations

@@ -5189,15 +5189,11 @@ nav.status-naveeeeeeess{
   height: 100vh;
   z-index: 99999;
   display: flex;
-  align-items: center;    /* Center vertically */
-  justify-content: center; /* Center horizontally */
-  
-  /* Blur Effect */
+  align-items: center;    
+  justify-content: center; 
   background-color: rgba(0, 0, 0, 0.4); 
   backdrop-filter: blur(5px); 
-  -webkit-backdrop-filter: blur(5px); /* For Safari support */
-  
-  /* Ensure it fades in */
+  -webkit-backdrop-filter: blur(5px); 
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -5206,7 +5202,7 @@ nav.status-naveeeeeeess{
   opacity: 1;
 }
 
-/* Base popup style - Adjusted for center display */
+/* Base popup style */
 .android-popup {
   background-color: #1e1e1e;
   color: #ffffff;
@@ -5219,11 +5215,7 @@ nav.status-naveeeeeeess{
   display: flex;
   flex-direction: column;
   gap: 16px;
-  
-  /* Theme border indicator on top for centered dialogs */
   border-top: 6px solid transparent; 
-  
-  /* Initial state for pop-out animation */
   transform: scale(0.9) translateY(10px);
   opacity: 0;
   transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
@@ -5235,17 +5227,9 @@ nav.status-naveeeeeeess{
 }
 
 /* Themes based on type */
-.android-popup.success {
-  border-top-color: #4CAF50; 
-}
-
-.android-popup.warn {
-  border-top-color: #FF9800; 
-}
-
-.android-popup.error {
-  border-top-color: #F44336; 
-}
+.android-popup.success { border-top-color: #4CAF50; }
+.android-popup.warn { border-top-color: #FF9800; }
+.android-popup.error { border-top-color: #F44336; }
 
 /* Content styles */
 .popup-header {
@@ -5266,9 +5250,15 @@ nav.status-naveeeeeeess{
   line-height: 1.5;
 }
 
-/* Android style text button - Positioned at bottom right */
+/* --- NEW BUTTON STYLES --- */
+.popup-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px; /* Space between buttons */
+  margin-top: 4px;
+}
+
 .popup-btn {
-  align-self: flex-end;
   background: none;
   border: none;
   color: #a8c7fa; 
@@ -5280,13 +5270,22 @@ nav.status-naveeeeeeess{
   text-transform: uppercase;
   letter-spacing: 0.8px;
   transition: background-color 0.2s;
-  margin-top: 4px;
 }
 
 .popup-btn:hover {
   background-color: rgba(168, 199, 250, 0.1);
 }
 
-.android-popup.error .popup-btn { color: #ffb4ab; }
-.android-popup.warn .popup-btn { color: #ffb866; }
-.android-popup.success .popup-btn { color: #b4eed0; }
+/* Secondary button (Dismiss) styling */
+.popup-btn-secondary {
+  color: #a0a0a0 !important; /* Neutral grey color */
+}
+
+.popup-btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Theme colors for primary action button */
+.android-popup.error .popup-btn:not(.popup-btn-secondary) { color: #ffb4ab; }
+.android-popup.warn .popup-btn:not(.popup-btn-secondary) { color: #ffb866; }
+.android-popup.success .popup-btn:not(.popup-btn-secondary) { color: #b4eed0; }
