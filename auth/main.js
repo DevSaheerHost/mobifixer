@@ -279,6 +279,12 @@ $('#signup').onclick = async (e) => {
     const userCredential = await createUserWithEmailAndPassword(auth, businessEmail, businessPass);
     const user = userCredential.user;
 
+const existing = await get(child(shopRef, businessName));
+if (existing.exists()) {
+  alert("❌ This business name is already taken. Please choose another.");
+  return;
+}
+
     // 2️⃣ Save shop details (no password)
     await set(child(shopRef, businessName), {
       shop: businessName,

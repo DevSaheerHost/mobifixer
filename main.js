@@ -13,34 +13,42 @@ import { getDatabase, ref, onChildAdded, onChildChanged, update, query, limitToL
 from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
 
-const GetLocalData = ()=>{
-  // Get the data from localStorage (using lowercase 'const')
-const backupData = JSON.parse(localStorage.getItem('backupData') || '{}');
+const getLocalDataOnce = () => {
+  // Check if the file has already been downloaded
+  if (localStorage.getItem('isBackupDownloaded') === 'true') {
+    console.log('Backup already downloaded. Skipping.');
+    return;
+  }
 
-// 1. Convert the JSON object back into a formatted string
-const jsonString = JSON.stringify(backupData, null, 2);
 
-// 2. Create a Blob object representing the data as a JSON file
-const blob = new Blob([jsonString], { type: 'application/json' });
+  const backupData = JSON.parse(localStorage.getItem('backupData') || '{}');
 
-// 3. Create a temporary anchor element for the download
-const downloadLink = document.createElement('a');
+  // Optional: Prevent downloading an empty file if there is no data
+  if (Object.keys(backupData).length === 0) {
+    console.log('No backup data found to export.');
+    return; 
+  }
 
-// 4. Create a URL for the Blob and set it as the href
-downloadLink.href = URL.createObjectURL(blob);
+  // Convert and create Blob
+  const jsonString = JSON.stringify(backupData, null, 2);
+  const blob = new Blob([jsonString], { type: 'application/json' });
 
-// 5. Set the default file name for the downloaded file
-downloadLink.download = 'backup.json';
+  // Create anchor and trigger download
+  const downloadLink = document.createElement('a');
+  downloadLink.href = URL.createObjectURL(blob);
+  downloadLink.download = 'backup.json';
 
-// 6. Append the link to the body, trigger the click, and remove it
-document.body.appendChild(downloadLink);
-downloadLink.click();
-document.body.removeChild(downloadLink);
+  document.body.appendChild(downloadLink);
+  downloadLink.click();
+  document.body.removeChild(downloadLink);
+  URL.revokeObjectURL(downloadLink.href);
 
-// 7. Clean up the object URL to free up memory
-URL.revokeObjectURL(downloadLink.href);
+  //Set the flag in localStorage so it never runs again
+  localStorage.setItem('isBackupDownloaded', 'true');
 }
-GetLocalData()
+
+getLocalDataOnce();
+
 const getDateLabel=(dateString) =>{
   const date = new Date(dateString);
   const today = new Date();
