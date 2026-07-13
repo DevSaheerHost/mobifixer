@@ -100,8 +100,56 @@ const $$ = s => document.querySelectorAll(s);
 // Reference to your data
 const backupRef = ref(db, `shops/${shopName}`);
 
+// Function to generate key format: MM-DD-YYYY-HH-MM-SS-AM/PM
+const getFormattedLogKey = () => {
+  const date = new Date();
+  const pad = (n) => n.toString().padStart(2, '0');
+  
+  const MM = pad(date.getMonth() + 1);
+  const DD = pad(date.getDate());
+  const YYYY = date.getFullYear();
+  
+  let hours = date.getHours();
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12; // Convert 0 to 12 for 12-hour format
+  const HH = pad(hours);
+  
+  const MIN = pad(date.getMinutes());
+  const SS = pad(date.getSeconds());
+  
+  return `${DD}-${MM}-${YYYY}-${HH}-${MIN}-${SS}-${ampm}`;
+};
+
+// Function to push logs to Firebase with custom key
+const saveLogToDatabase = (title, description, type) => {
+  // Assuming 'db' is already initialized using getDatabase()
+  // const db = getDatabase();
+  
+  const customKey = getFormattedLogKey();
+  const logsRef = ref(db, `shops/${shopName}/logs`);
+  
+  const logData = {
+    title: title,
+    description: description, // This will save your HTML string exactly as passed
+    type: type,
+    author:localStorage.getItem('author') || '',
+    timestamp: Date.now() // Useful if you need exact sorting later
+  };
+
+  // We use 'update' so it adds the new key without overwriting the 'logs' node
+  update(logsRef, {
+    [customKey]: logData
+  })
+  .then(() => console.log(`Log saved to: logs/${customKey}`))
+  .catch((err) => console.error('Error saving log:', err));
+};
 
 const createPopUp = (title, description, buttonAction = null, type = 'success') => {
+  
+  // ---> Fire the logging function immediately when popup is called <---
+  saveLogToDatabase(title, description, type);
+
   let container = document.querySelector('.android-popup-container');
   if (!container) {
     container = document.createElement('div');
@@ -131,7 +179,7 @@ const createPopUp = (title, description, buttonAction = null, type = 'success') 
   btn.className = 'popup-btn';
   
   if (buttonAction && typeof buttonAction === 'function') {
-    btn.innerText = 'DOWNLOAD BACKUP'; // this text
+    btn.innerText = 'DOWNLOAD BACKUP'; // Adjusted to your requirement
     btn.addEventListener('click', () => {
       buttonAction();
       removePopup();
@@ -150,11 +198,7 @@ const createPopUp = (title, description, buttonAction = null, type = 'success') 
     popup.classList.add('show');       
   }, 10);
 
-  // Auto dismiss after 5 seconds (Optional: Remove this if you want it to stay until clicked)
-  //const autoDismiss = setTimeout(removePopup, 5000);
-
   function removePopup() {
-   // clearTimeout(autoDismiss);
     popup.classList.remove('show');
     
     // Check if this is the last popup to remove the background blur
@@ -172,6 +216,9 @@ const createPopUp = (title, description, buttonAction = null, type = 'success') 
 };
 
 // createPopUp('Sync Complete', 'All your data has been successfully saved to cloud.', null, 'success');
+
+
+
 
 
 
@@ -238,7 +285,7 @@ get(backupRef).then(snapshot => {
   `Cloud data is missing <b>${localCount-cloudCount} items</b>. Backup not updated! <b>Please Download ${localCount} current Backup instantly.</b><br><br>
   <small><i>Avoid this message if you already Downloaded the backup. This Message will Stop within 48hrs<i><small>
   `, 
-  () => { downloadLocalData(); }, 
+  () => { downloadLocalData();saveLogToDatabase('Data downloaded', 'Uswr clicked Download Btn', 'Success'); }, 
   'error'
 );
   } else {
