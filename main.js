@@ -12,6 +12,35 @@ import { onAuthStateChanged, getAuth } from "https://www.gstatic.com/firebasejs/
 import { getDatabase, ref, onChildAdded, onChildChanged, update, query, limitToLast, orderByKey, remove , onValue, push, goOffline}
 from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
+
+const GetLocalData = ()=>{
+  // Get the data from localStorage (using lowercase 'const')
+const backupData = JSON.parse(localStorage.getItem('backupData') || '{}');
+
+// 1. Convert the JSON object back into a formatted string
+const jsonString = JSON.stringify(backupData, null, 2);
+
+// 2. Create a Blob object representing the data as a JSON file
+const blob = new Blob([jsonString], { type: 'application/json' });
+
+// 3. Create a temporary anchor element for the download
+const downloadLink = document.createElement('a');
+
+// 4. Create a URL for the Blob and set it as the href
+downloadLink.href = URL.createObjectURL(blob);
+
+// 5. Set the default file name for the downloaded file
+downloadLink.download = 'backup.json';
+
+// 6. Append the link to the body, trigger the click, and remove it
+document.body.appendChild(downloadLink);
+downloadLink.click();
+document.body.removeChild(downloadLink);
+
+// 7. Clean up the object URL to free up memory
+URL.revokeObjectURL(downloadLink.href);
+}
+GetLocalData()
 const getDateLabel=(dateString) =>{
   const date = new Date(dateString);
   const today = new Date();
