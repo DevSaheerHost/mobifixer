@@ -13,12 +13,8 @@ import { getDatabase, ref, onChildAdded, onChildChanged, update, query, limitToL
 from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
 
-const getLocalDataOnce = () => {
-  // Check if the file has already been downloaded
-  if (localStorage.getItem('isBackupDownloaded') === 'true') {
-    console.log('Backup already downloaded. Skipping.');
-    return;
-  }
+const downloadLocalData = () => {
+ 
 
 
   const backupData = JSON.parse(localStorage.getItem('backupData') || '{}');
@@ -43,11 +39,19 @@ const getLocalDataOnce = () => {
   document.body.removeChild(downloadLink);
   URL.revokeObjectURL(downloadLink.href);
 
-  //Set the flag in localStorage so it never runs again
-  localStorage.setItem('isBackupDownloaded', 'true');
+  
 }
 
-getLocalDataOnce();
+// // Check if the file has already been downloaded
+//   if (localStorage.getItem('isBackupDownloaded') === 'true') {
+//     console.log('Backup already downloaded. Skipping.');
+//     return;
+//   } else {
+//     downloadLocalData();
+//     //Set the flag in localStorage so it never runs again
+//   localStorage.setItem('isBackupDownloaded', 'true');
+//   }
+
 
 const getDateLabel=(dateString) =>{
   const date = new Date(dateString);
@@ -95,6 +99,81 @@ const $$ = s => document.querySelectorAll(s);
 
 // Reference to your data
 const backupRef = ref(db, `shops/${shopName}`);
+
+
+const createPopUp = (title, description, buttonAction = null, type = 'success') => {
+  let container = document.querySelector('.android-popup-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.className = 'android-popup-container';
+    document.body.appendChild(container);
+  }
+
+  const popup = document.createElement('div');
+  popup.className = `android-popup ${type}`;
+
+  const icons = {
+    success: '✅',
+    warn: '⚠️',
+    error: '🛑'
+  };
+  const icon = icons[type] || 'ℹ️';
+
+  popup.innerHTML = `
+    <div class="popup-header">
+      <span style="font-size: 24px;">${icon}</span>
+      <div class="popup-title">${title}</div>
+    </div>
+    <div class="popup-desc">${description}</div>
+  `;
+
+  const btn = document.createElement('button');
+  btn.className = 'popup-btn';
+  
+  if (buttonAction && typeof buttonAction === 'function') {
+    btn.innerText = 'DOWNLOAD BACKUP'; // this text
+    btn.addEventListener('click', () => {
+      buttonAction();
+      removePopup();
+    });
+  } else {
+    btn.innerText = 'GOT IT';
+    btn.addEventListener('click', removePopup);
+  }
+  
+  popup.appendChild(btn);
+  container.appendChild(popup);
+
+  // Trigger animations
+  setTimeout(() => {
+    container.classList.add('active'); 
+    popup.classList.add('show');       
+  }, 10);
+
+  // Auto dismiss after 5 seconds (Optional: Remove this if you want it to stay until clicked)
+  //const autoDismiss = setTimeout(removePopup, 5000);
+
+  function removePopup() {
+   // clearTimeout(autoDismiss);
+    popup.classList.remove('show');
+    
+    // Check if this is the last popup to remove the background blur
+    if (container.children.length <= 1) {
+       container.classList.remove('active');
+    }
+
+    popup.addEventListener('transitionend', () => {
+      popup.remove();
+      if (container.children.length === 0) {
+        container.remove();
+      }
+    });
+  }
+};
+
+// createPopUp('Sync Complete', 'All your data has been successfully saved to cloud.', null, 'success');
+
+
 
 get(backupRef).then(snapshot => {
   if (!snapshot.exists()) {
@@ -151,9 +230,17 @@ get(backupRef).then(snapshot => {
     console.error("⚠️ Data loss detected! Cloud data smaller than local.");
     showNotice({
       title: 'Backup Error',
-      body: '⚠️ Data loss detected — Backup not updated! Please Inform to the Developer!!!',
+      body: `⚠️ ${localCount-cloudCount}Data loss detected — Backup not updated! Please Inform to the Developer!!!`,
       type: 'error'
     });
+    createPopUp(
+  'Data Loss Detected', 
+  `Cloud data is missing <b>${localCount-cloudCount} items</b>. Backup not updated! <b>Please Download ${localCount} current Backup instantly.</b><br><br>
+  <small><i>Avoid this message if you already Downloaded the backup. This Message will Stop within 48hrs<i><small>
+  `, 
+  () => { downloadLocalData(); }, 
+  'error'
+);
   } else {
     // Equal → no changes
     // showNotice({
