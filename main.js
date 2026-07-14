@@ -1313,6 +1313,7 @@ if(wasEdit){
 
     // ✅ Save — race against a timeout so the button never hangs on a bad connection.
     const savePromise = set(itemRef, newData);
+    
     try {
       await withTimeout(savePromise, SAVE_TIMEOUT, 'save');
       onSaveSuccess(false);
@@ -1334,7 +1335,24 @@ if(wasEdit){
         throw saveErr;
       }
     }
-
+    const existingBackupString = localStorage.getItem('backupData');
+    const existingBackupData = existingBackupString ?JSON.parse(existingBackupString) : {};
+    
+    if (existingBackupData.service.length <= data.length) {
+      existingBackupData.service[snToUse] = newData;
+      existingBackupData.lastServiceSn = snToUse;
+      console.log(existingBackupData)
+      localStorage.setItem('backupData', JSON.stringify(existingBackupData));
+    }else {
+      showNotice({
+      title: 'Backup Missmatch',
+      body:'CoudData and localData is Different',
+      type: 'error',
+      })
+      createPopUp('⚠️ Data Lose warning', `Your Backuped Datas : ${existingBackupData.service.length}. And Cloud Datas: ${data.length}. See difference?!. So Please Download Your Back-up datas NOW`, ()=>{downloadLocalData()}, 'error')
+    }
+    
+    
   } catch (err) {
     if (String(err.message).startsWith('TIMEOUT')) {
       // SN reservation / read timed out → nothing was written, safe to retry.
@@ -1343,6 +1361,8 @@ if(wasEdit){
       onSaveError(err);
     }
   }
+  
+  
 };
 
 
