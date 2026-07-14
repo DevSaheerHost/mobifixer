@@ -259,7 +259,7 @@ get(backupRef).then(snapshot => {
   
   const cloudData = snapshot.val();
   const cloudServices = cloudData.service ?
-    (Array.isArray(cloudData.service) ? cloudData.service : Object.values(cloudData.service)) :
+    (Array.isArray(cloudData.service) ? cloudData.service.filter(item => item !== null) : Object.values(cloudData.service).filter(item => item !== null)) :
     [];
   
   const author = localStorage.getItem('author') || ''
@@ -271,14 +271,16 @@ get(backupRef).then(snapshot => {
    
   const localData = JSON.parse(localStorage.getItem('backupData') || '{}');
   const localServices = localData.service ?
-    (Array.isArray(localData.service) ? localData.service : Object.values(localData.service)) :
+    (Array.isArray(localData.service) ? localData.service.filter(item=>item!=null) : Object.values(localData.service)) :
     [];
   
   const cloudCount = cloudServices.length;
   const localCount = localServices.length;
   
   console.log(`Local: ${localCount} | Cloud: ${cloudCount}`);
-  
+  //const cloudServicesCount = Object.keys(cloudData.service).length;
+ // console.log(cloudCount)
+  console.log(localServices)
   // 🧠 Compare logic
   if (localCount < cloudCount) {
     // Cloud has more data → update local
@@ -1335,21 +1337,47 @@ if(wasEdit){
         throw saveErr;
       }
     }
+   
+   //____ 
+  //   const localServices = localData.service ?
+  //   (Array.isArray(localData.service) ? localData.service.filter(item=>item!=null) : Object.values(localData.service)) :
+  //   [];
+  
+  // const cloudCount = cloudServices.length;
+  // const localCount = localServices.length;
+  //_____
     const existingBackupString = localStorage.getItem('backupData');
     const existingBackupData = existingBackupString ?JSON.parse(existingBackupString) : {};
+    const Data = existingBackupData || [];
+    const ValidData = Object.values(Data.service || {}).filter(i => i != null);
+
     
-    if (existingBackupData.service.length <= data.length) {
-      existingBackupData.service[snToUse] = newData;
-      existingBackupData.lastServiceSn = snToUse;
-      console.log(existingBackupData)
-      localStorage.setItem('backupData', JSON.stringify(existingBackupData));
+    
+    
+    if (ValidData.length <= data.length) {
+        // Convert the filtered array back into an Object to prevent nulls forever
+      const cleanServiceObject = {};
+      ValidData.forEach(item => {
+        // Use the 'sn' inside your data as the object key
+        if (item && item.sn) {
+          cleanServiceObject[item.sn] = item;
+        }
+      });
+      
+      Data.service = cleanServiceObject;
+      Data.service[snToUse] = newData;
+      Data.lastServiceSn = snToUse;
+      console.log('updated service : ', Data.service)
+      localStorage.setItem('backupData', JSON.stringify(Data));
     }else {
+            console.log(Data)
+
       showNotice({
       title: 'Backup Missmatch',
       body:'CoudData and localData is Different',
       type: 'error',
       })
-      createPopUp('⚠️ Data Lose warning', `Your Backuped Datas : ${existingBackupData.service.length}. And Cloud Datas: ${data.length}. See difference?!. So Please Download Your Back-up datas NOW`, ()=>{downloadLocalData()}, 'error')
+      createPopUp('⚠️ Data Lose warning', `Your Backuped Datas : ${ValidData.length}. And Cloud Datas: ${data.length}. See difference?!. So Please Download Your Back-up datas NOW`, ()=>{downloadLocalData()}, 'error')
     }
     
     
@@ -3456,7 +3484,7 @@ const getStaff = async () => {
   if (!snapshot.exists()) return;
 
   const data = snapshot.val();
-  // console.log(data);
+   
 
   const staffList = $('.staff_list'); // for example <div id="staff-list"></div>
   staffList.innerHTML = ''; // clear old data
