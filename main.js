@@ -630,7 +630,7 @@ const createCardsyyyy = (data, status, sn) => {
     const nav = document.createElement('nav')
     listItem.classList.add('list-item');
     listItem.setAttribute("data-sn", item.sn);
-    nav.innerHTML=`<h3>${item.name}</h4> <h3 class='sn'>${item.sn} </h4> `;
+    nav.innerHTML=`<h3>${item.name} </h4> <h3 class='sn'>${item.sn} </h4> `;
     listItem.appendChild(nav)
     listItem.innerHTML += cardLayout(item);
     listContainer.appendChild(listItem);
@@ -754,6 +754,9 @@ const renderNext = () => {
   let dateGroups = {}; // 🔹 To count entries per dateLabel
   
   nextSlice.forEach(item => {
+    // Skip rendering if the item is marked as deleted
+if (item.isDeleted === true) return; 
+
     const dateLabel = getDateLabel(item.date);
     
     // Count each date’s entries
@@ -861,7 +864,11 @@ $('.delete_page .delete').onclick = async () => {
   const deletedCustomer = data.find(d => String(d.sn) === String(sn))?.name || null;
 
   try {
-    await remove(itemsRef);
+    await update(itemsRef, { 
+      isDeleted: true, 
+      deletedAt: Date.now(),
+      deletedBy: localStorage.getItem('author') || 'Unknown'
+    });
         const localBackup = JSON.parse(localStorage.getItem('backupData') || '{}');
     if (localBackup.service && localBackup.service[sn]) {
       delete localBackup.service[sn];
