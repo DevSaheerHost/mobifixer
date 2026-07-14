@@ -258,9 +258,9 @@ get(backupRef).then(snapshot => {
   
   
   const cloudData = snapshot.val();
-  const cloudServices = cloudData.service ?
-    (Array.isArray(cloudData.service) ? cloudData.service.filter(item => item !== null) : Object.values(cloudData.service).filter(item => item !== null)) :
-    [];
+  const cloudServices = cloudData.service ? Object.fromEntries(Object.entries(cloudData.service).filter(([key, value]) => value != null)) : {};
+
+  
   
   const author = localStorage.getItem('author') || ''
   !author?$('.customInput').classList.remove('hidden'): '';
@@ -270,17 +270,17 @@ get(backupRef).then(snapshot => {
   $('#author_name_p').textContent=author || 'Unknown';
    
   const localData = JSON.parse(localStorage.getItem('backupData') || '{}');
-  const localServices = localData.service ?
-    (Array.isArray(localData.service) ? localData.service.filter(item=>item!=null) : Object.values(localData.service)) :
-    [];
+  const localServices = localData.service ? Object.fromEntries(Object.entries(localData.service).filter(([key, value]) => value != null)) : {};
+
   
-  const cloudCount = cloudServices.length;
-  const localCount = localServices.length;
+  const cloudCount = Object.keys(cloudServices).length;
+  const localCount = Object.keys(localServices).length;
+
   
   console.log(`Local: ${localCount} | Cloud: ${cloudCount}`);
   //const cloudServicesCount = Object.keys(cloudData.service).length;
  // console.log(cloudCount)
-  console.log(localServices)
+  console.log('local', localServices)
   // 🧠 Compare logic
   if (localCount < cloudCount) {
     // Cloud has more data → update local
@@ -862,6 +862,12 @@ $('.delete_page .delete').onclick = async () => {
 
   try {
     await remove(itemsRef);
+        const localBackup = JSON.parse(localStorage.getItem('backupData') || '{}');
+    if (localBackup.service && localBackup.service[sn]) {
+      delete localBackup.service[sn];
+      localStorage.setItem('backupData', JSON.stringify(localBackup));
+    }
+
     logActivity('delete', { sn, customer: deletedCustomer });
     // NOTE: do NOT touch lastServiceSn here. A serial number is a permanent
     // identity — once issued it is never reused, even after the record is deleted.
