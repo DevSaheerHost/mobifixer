@@ -48,6 +48,7 @@ $('#exportJson').onclick=()=>downloadLocalData()
 $('#clearLocalData').onclick=()=>{
   const isConfirmed = confirm('Are you sure you want to delete the backup data? This action cannot be undone.')
     if(isConfirmed){
+      saveLogToDatabase('LocalData Cleared From settings', 'user cleared all local data from settings', 'warning' )
       localStorage.removeItem('backupData')
       showNotice({title:'LocalData Clearing', body:`Running command...`, type:'warn'})
       history.back();
@@ -151,6 +152,9 @@ if (homeContainer) {
 logoutBtn.onclick=()=>{
   const isConfirmed = confirm('Are you sure you want to LOG-OUT?')
   if(isConfirmed){
+    showNotice({title: 'Logging Out', body:'Running command...', type:'warn'})
+    saveLogToDatabase('User Logged out', 'User logged out by clicking logout btn from settings', 'info' )
+
     history.go(-2);
     const homeContainer = document.querySelector('main.home');
 
