@@ -5175,6 +5175,16 @@ nav.status-naveeeeeeess{
   margin-top: 0.2rem;
 }
 
+.logout_btn{
+  width: 80%;
+  margin: auto;
+  display: block;
+  background: var(--glass-bg);
+  color: var(--text-color);
+  backdrop-filter: blur(3px);
+  border: 1px solid var(--border-color);
+  font-weight: bold;
+}
 
 
 

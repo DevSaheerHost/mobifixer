@@ -148,6 +148,106 @@ if (homeContainer) {
   
 }
 
+logoutBtn.onclick=()=>{
+  const isConfirmed = confirm('Are you sure you want to LOG-OUT?')
+  if(isConfirmed){
+    history.go(-2);
+    const homeContainer = document.querySelector('main.home');
+
+  if (homeContainer) {
+    // 1. Instantly clean the stream canvas and prep the target view
+    homeContainer.innerHTML = `
+      <style>
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        .term-blink { animation: blink 1s infinite; color: #f7768e; }
+        .log-line { margin-bottom: 4px; font-size: 13px; line-height: 1.4; }
+      </style>
+      <div id="console-stream"></div>
+    `;
+
+    const streamTarget = document.getElementById('console-stream');
+
+    // 2. Specialized pool of shutdown and destructive console events
+    const logoutPool = [
+      { type: 'AUTH', label: 'REVOKING_BEARER_TOKEN', val: 'DEGRADED', color: '#f7768e' },
+      { type: 'SESSION', label: 'TERMINATING_WS_THREAD', val: 'DISCONNECTED (0.00s)', color: '#e0af68' },
+      { type: 'DEVICE', label: 'FLUSHING_SECURE_ENCLAVE', val: 'WIPED_OK', color: '#bb9af3' },
+      { type: 'CASH', label: 'CLOSE_LEDGER_CHANNEL', val: 'ID_99218A_CLOSED', color: '#565f89' },
+      { type: 'MEMORY', label: 'GARBAGE_COLLECTION', val: 'Heap: 0.0MB / 128MB', color: '#9ece6a' },
+      { type: 'CACHE', label: 'DELETING_INDEXED_DB', val: 'SUCCESS', color: '#9ece6a' },
+      { type: 'NET', label: 'CLOSING_INBOUND_SOCKET', val: 'PORT_STATUS_CLOSED', color: '#f7768e' }
+    ];
+
+    let currentLogIndex = 0;
+    const totalShutdownLogs = 15; // Exact total amount of logs to print before final action
+
+    // 3. Recursive logging stream function
+    function appendLogoutLog() {
+      // Safety threshold check: If we have shown enough text, execute hard data wipe
+      if (currentLogIndex >= totalShutdownLogs) {
+        executeFinalDataWipe(streamTarget);
+        return;
+      }
+
+      const timestamp = new Date().toLocaleTimeString();
+      const item = logoutPool[Math.floor(Math.random() * logoutPool.length)];
+      
+      let tagColor = "#7dcfff";
+      if (item.type === 'CASH') tagColor = '#9ece6a';
+      if (item.type === 'SESSION' || item.type === 'AUTH') tagColor = '#f7768e';
+
+      const logHTML = `
+        <div class="log-line">
+          <span style="color: #444b6a;">[${timestamp}]</span> 
+          <span style="color: ${tagColor}; font-weight: bold;">[${item.type}]</span> 
+          <span style="color: #c0caf5;">${item.label}</span> 
+          <span style="color: #444b6a;">=&gt;</span> 
+          <span style="color: ${item.color};">${item.val}</span>
+        </div>
+      `;
+
+      // Remove the old blinking cursor element
+      const oldCursor = document.getElementById('term-cursor');
+      if (oldCursor) oldCursor.remove();
+
+      // Append new row and anchor the layout to the bottom
+      streamTarget.insertAdjacentHTML('beforeend', logHTML);
+      streamTarget.insertAdjacentHTML('beforeend', `<span id="term-cursor" class="term-blink">█</span>`);
+
+      homeContainer.scrollTop = homeContainer.scrollHeight;
+      currentLogIndex++;
+
+      // Rapidly print logout lines (10ms to 90ms intervals for a high-speed crash effect)
+      const randomDelay = Math.floor(Math.random() * 80) + 10;
+      setTimeout(appendLogoutLog, randomDelay);
+    }
+
+    // 4. Final destructive sequence executor
+    function executeFinalDataWipe(target) {
+      const timestamp = new Date().toLocaleTimeString();
+      
+      // Inject terminal confirmation statement directly
+      const finalHTML = `
+        <div class="log-line" style="margin-top: 10px; border-top: 1px dashed #f7768e; padding-top: 10px;">
+          <span style="color: #f7768e; font-weight: bold;">[SYSTEM_CRITICAL] ALL LOCAL STORAGE DATA FLUSHED...</span>
+        </div>
+      `;
+      target.insertAdjacentHTML('beforeend', finalHTML);
+      homeContainer.scrollTop = homeContainer.scrollHeight;
+
+      // Allow the user to see the confirmation for a brief split second, then clear storage completely
+      setTimeout(() => {
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.replace('./auth')
+      }, 400);
+    }
+
+    // Start processing active logout logs
+    appendLogoutLog();
+  }
+  }
+}
 
 
 // // Check if the file has already been downloaded
