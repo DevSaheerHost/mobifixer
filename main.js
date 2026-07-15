@@ -11,7 +11,9 @@ import { onAuthStateChanged, getAuth } from "https://www.gstatic.com/firebasejs/
 // Realtime Database import
 import { getDatabase, ref, onChildAdded, onChildChanged, update, query, limitToLast, orderByKey, remove , onValue, push, goOffline}
 from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
-
+// DOM helpers
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
 
 const downloadLocalData = () => {
  
@@ -41,6 +43,112 @@ const downloadLocalData = () => {
 
   
 }
+
+$('#exportJson').onclick=()=>downloadLocalData()
+$('#clearLocalData').onclick=()=>{
+  const isConfirmed = confirm('Are you sure you want to delete the backup data? This action cannot be undone.')
+    if(isConfirmed){
+      localStorage.removeItem('backupData')
+      showNotice({title:'LocalData Clearing', body:`Running command...`, type:'warn'})
+      history.back();
+      setTimeout(()=>location.reload(), 2000)
+    
+  
+
+const homeContainer = document.querySelector('main.home');
+
+if (homeContainer) {
+  // 1. Core styles injected to create the terminal container
+  homeContainer.style.background = "#0c0f12";
+  homeContainer.style.color = "#a9b1d6";
+  homeContainer.style.fontFamily = "'Fira Code', 'Courier New', monospace";
+  homeContainer.style.padding = "20px";
+  homeContainer.style.height = "80%";
+  homeContainer.style.overflowY = "scroll";
+  homeContainer.style.borderRadius = "6px";
+  homeContainer.style.boxShadow = "inset 0 0 10px #000";
+  homeContainer.style.scrollBehavior = "smooth";
+
+  // 2. Inject basic skeleton with CSS Keyframes for the blinking cursor
+  homeContainer.innerHTML = `
+    <style>
+      @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+      .term-blink { animation: blink 1s infinite; color: #7aa2f7; }
+      .log-line { margin-bottom: 4px; font-size: 13px; line-height: 1.4; }
+    </style>
+    <div id="console-stream"></div>
+  `;
+
+  const streamTarget = document.getElementById('console-stream');
+
+  // 3. Pool of high-density fake app variables to loop through
+  const dataPool = [
+    { type: 'CASH', label: 'TRANSACTION_RECONCILED', val: 'ENCRYPED', color: '#9ece6a' },
+    { type: 'CASH', label: 'ESCROW_LOCK_ENGAGED', val: 'ID_99218A', color: '#e0af68' },
+    { type: 'CASH', label: 'LEDGER_SETTLEMENT_BATCH', val: 'SUCCESS (0.003s)', color: '#9ece6a' },
+    { type: 'DEVICE', label: 'HARDWARE_ATTESTATION', val: 'PASS_CRYPTO_TOKEN', color: '#7aa2f7' },
+    { type: 'DEVICE', label: 'GEOLOCATION_PING', val: '40.7128° N, 74.0060° W', color: '#bb9af3' },
+    { type: 'DEVICE', label: 'MEM_ALLOCATION', val: 'Heap: 42.1MB / 128MB', color: '#565f89' },
+    { type: 'LOGS', label: 'KERNEL_WS_CONNECT', val: 'wss://api.internal/v3', color: '#2ac3de' },
+    { type: 'LOGS', label: 'RATE_LIMIT_CHECK', val: '0.04% capacity utilized', color: '#9ece6a' },
+    { type: 'LOGS', label: 'SYNC_COMPLETED', val: 'Fetched 142 remote records', color: '#9ece6a' },
+    { type: 'LOGS', label: 'THROTTLING_WARNING', val: 'DB pool connection near threshold', color: '#f7768e' }
+  ];
+
+  let lineCount = 0;
+
+  // 4. Function to feed lines dynamically into the container
+  function appendLog() {
+    const timestamp = new Date().toLocaleTimeString();
+    const item = dataPool[Math.floor(Math.random() * dataPool.length)];
+    
+    let tagColor = "#7dcfff";
+    if (item.type === 'CASH') tagColor = '#9ece6a';
+    if (item.type === 'DEVICE') tagColor = '#bb9af3';
+
+    const logHTML = `
+      <div class="log-line">
+        <span style="color: #444b6a;">[${timestamp}]</span> 
+        <span style="color: ${tagColor}; font-weight: bold;">[${item.type}]</span> 
+        <span style="color: #c0caf5;">${item.label}</span> 
+        <span style="color: #444b6a;">=&gt;</span> 
+        <span style="color: ${item.color};">${item.val}</span>
+      </div>
+    `;
+
+    // Remove old cursor
+    const oldCursor = document.getElementById('term-cursor');
+    if (oldCursor) oldCursor.remove();
+
+    // Append new line and reposition cursor
+    streamTarget.insertAdjacentHTML('beforeend', logHTML);
+    streamTarget.insertAdjacentHTML('beforeend', `<span id="term-cursor" class="term-blink">█</span>`);
+
+    // Clean memory if lines grow too dense
+    lineCount++;
+    if (lineCount > 100) {
+      streamTarget.removeChild(streamTarget.firstChild);
+    }
+
+    // Direct downward anchor scrolling
+    homeContainer.scrollTop = homeContainer.scrollHeight;
+
+    // 5. CRITICAL UPDATE: Calculate a totally randomized delay strictly below 500ms
+    // Math.random() * 490 generates a value from 0 to 490, adding 10 keeps it between 10ms and 500ms
+    const randomDelay = Math.floor(Math.random() * 130) + 10;
+    
+    // Call the next iteration with the unique timing gap
+    setTimeout(appendLog, randomDelay);
+  }
+
+  // Kickstart the recursive cycle
+  appendLog();
+    }
+  }
+  
+}
+
+
 
 // // Check if the file has already been downloaded
 //   if (localStorage.getItem('isBackupDownloaded') === 'true') {
@@ -93,9 +201,7 @@ if(!shopName) location='./auth/index.html'
 
 document.title=`${shopName} - Smart Mobile Service Management App`
 
-// DOM helpers
-const $ = s => document.querySelector(s);
-const $$ = s => document.querySelectorAll(s);
+
 
 // Reference to your data
 const backupRef = ref(db, `shops/${shopName}`);
