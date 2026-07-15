@@ -1402,7 +1402,8 @@ document.querySelector('#all').innerHTML=`ALL <span>${count}</span>`
 
   // Update totals (shared for both views)
   const withoutOb = `₹${totalIn - ob.toLocaleString()}`
-  totalInEl.textContent = `₹${totalIn.toLocaleString()}`;
+  //totalInEl.textContent = `₹${totalIn.toLocaleString()}`;
+  totalInEl.textContent = withoutOb
   totalOutEl.textContent = `₹${totalOut.toLocaleString()}`;
   totalGpayEl.textContent = `₹${totalGpay.toLocaleString()}`;
   const net = totalIn - totalOut - totalGpay;
@@ -2336,9 +2337,10 @@ async function fetchRangeTotals(startISO, endISO){
 function renderDashboard(dayTotals, aggs){
   const dashSummary = document.getElementById('dashSummary');
   const dashChart = document.getElementById('dashChart');
-  const {aggIn, aggOut, aggG, ob} = aggs;
+  let {aggIn, aggOut, aggG, ob} = aggs;
   const net = aggIn - aggOut - aggG - ob;
-
+  // to remove OB from In
+      aggIn = aggIn - ob ////////
   dashSummary.innerHTML = `
     <div class="dash-range-label">Range: ${dayTotals.length} day${dayTotals.length !== 1 ? 's' : ''}</div>
     <div class="dash-stats-grid">
