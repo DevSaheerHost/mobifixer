@@ -1408,6 +1408,7 @@ document.querySelector('#all').innerHTML=`ALL <span>${count}</span>`
   totalGpayEl.textContent = `₹${totalGpay.toLocaleString()}`;
   const net = totalIn - totalOut - totalGpay;
   netBalEl.textContent = `₹${net.toLocaleString()}`;
+  $('#todayOB').textContent=`₹${ob.toLocaleString() || 0}`
   // total - ob
   
   globalIn = totalIn
@@ -1960,7 +1961,7 @@ suggestionBox.addEventListener('click', e => {
 
 
 function checkOBBox() {
-  console.log('checking ob')
+  console.log('checking ob time to show input box')
   const now = new Date();
   const hour = now.getHours(); // 0–23
   

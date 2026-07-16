@@ -277,14 +277,30 @@
           
           
           
-                    <div class="tot-row"><div class="small">
-                  Cash in Hand</div><div id="liquidMoneyLabel">
-                    0
-                  </div></div>
+                    <div class="tot-row">
+                      <div class="small">
+                        Cash in Hand
+                      </div>
+                      <div id="liquidMoneyLabel">
+                        0
+                      </div>
+                    </div>
                     
+          <div class="tot-row">
+            <div class="small">
+              Opening Balance
+            </div>
+            <div id="todayOB" style="color:var(--accent);">
+              0
+            </div>
+          </div>
           
-          
-          <div class="tot-row"><div class="small">Target 🎯</div><div id="target"><a style="color:#09a0ff;" onclick="document.querySelector('#setGoal').click()">Set now</a></div></div>
+          <div class="tot-row">
+              <div class="small">Target 🎯</div>
+                <div id="target">
+                  <a style="color:#09a0ff;" onclick="document.querySelector('#setGoal').click()">Set now</a>
+                </div>
+          </div>
         </div><!-- end #realTotals -->
         <div style="margin-top:12px;display:flex;gap:8px">
           <button id="exportCSV">Export CSV</button>
