@@ -246,6 +246,7 @@ async function loadRange(start, end) {
     let income = 0;
     if (node.in) {
       Object.values(node.in).forEach(e => {
+        if(e.name ==='Opening Balance') return
         income += Number(e.amount || 0) + Number(e.gpay || 0);
       });
     }
