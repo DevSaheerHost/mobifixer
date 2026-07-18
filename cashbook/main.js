@@ -1401,9 +1401,9 @@ document.querySelector('#all').innerHTML=`ALL <span>${count}</span>`
   });
 
   // Update totals (shared for both views)
-  const withoutOb = `₹${totalIn - ob.toLocaleString()}`
+  const withoutOb = totalIn - ob
   //totalInEl.textContent = `₹${totalIn.toLocaleString()}`;
-  totalInEl.textContent = withoutOb
+  totalInEl.textContent = `₹${withoutOb.toLocaleString()}`
   totalOutEl.textContent = `₹${totalOut.toLocaleString()}`;
   totalGpayEl.textContent = `₹${totalGpay.toLocaleString()}`;
   const net = totalIn - totalOut - totalGpay;
