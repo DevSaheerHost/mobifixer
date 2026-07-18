@@ -1718,18 +1718,18 @@ Stable Access</h3>
 
 <!-- ########## EDIT SHOP DETAILS MODAL ########## -->
 <div class="edit-shop-modal hidden" id="editShopModal">
-  <div class="modal-overlay" onclick="closeEditShopModal()"></div>
+  <div class="modal-overlay" id="modalOverlay"></div>
   
   <div class="modal-content">
     <div class="modal-header">
       <h3>Edit Shop Details</h3>
-      <button class="modal-close" onclick="closeEditShopModal()">
+      <button class="modal-close" id="modalClose">
         <i class="fa-solid fa-times"></i>
       </button>
     </div>
 
     <div class="modal-body">
-      <form id="editShopForm" onsubmit="saveShopDetails(event)">
+      <form id="editShopForm">
         
         <!-- Shop Basic Info Section -->
         <div class="form-section">
@@ -1739,7 +1739,7 @@ Stable Access</h3>
 
           <div class="form-group">
             <label for="editShopName">Shop Name *</label>
-            <input type="text" id="editShopName" placeholder="MobiFixer Service Center" required>
+            <input type="text" id="editShopName" disabled placeholder="MobiFixer Service Center" required>
           </div>
 
           <div class="form-group">
@@ -1823,7 +1823,7 @@ Stable Access</h3>
 
         <!-- Form Actions -->
         <div class="form-actions">
-          <button type="button" class="btn-cancel" onclick="closeEditShopModal()">
+          <button type="button" class="btn-cancel" id="cancelModalClose">
             <i class="fa-solid fa-times"></i> Cancel
           </button>
           <button type="submit" class="btn-save">

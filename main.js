@@ -458,7 +458,6 @@ get(backupRef).then(snapshot => {
     
     const email = Main.email || null;
     const userName = Main.username || null;
-    console.log(email, userName);
   }
   
   
@@ -490,7 +489,7 @@ get(backupRef).then(snapshot => {
   console.log(`Local: ${localCount} | Cloud: ${cloudCount}`);
   //const cloudServicesCount = Object.keys(cloudData.service).length;
  // console.log(cloudCount)
-  console.log('local', localServices)
+  
   // 🧠 Compare logic
   if (localCount < cloudCount) {
     // Cloud has more data → update local
@@ -827,7 +826,7 @@ const createCardsyyyy = (data, status, sn) => {
   const filtered = data.filter(item => sn === item.sn);
   
   
-  console.log('DEBUGGGG')
+  
    if (filtered.length === 0) {
    listContainer.innerHTML = `<li class="empty">No data available</li>`;
    return;
@@ -1593,7 +1592,7 @@ if(wasEdit){
       console.log('updated service : ', Data.service)
       localStorage.setItem('backupData', JSON.stringify(Data));
     }else {
-            console.log(Data)
+            
 
       showNotice({
       title: 'Backup Missmatch',
@@ -3697,6 +3696,13 @@ $$('[data-close-sheet]').forEach(btn => {
 // ###### Bottom sheet Functions END ###### //
 
 
+//################################################
+// To set ShopDetails on Settings Page
+const setShopInfo = (owner) =>{
+  const shopOwnerName = owner.name || 'UnKnOwN'
+  $('#ownerName').textContent= shopOwnerName;
+}
+//################################################
 // stafref for each data show //
 
 
@@ -3753,7 +3759,7 @@ $('.profile_page .profile_container .mail').textContent=owner.email || '(null)';
   `;
 }
 }
-
+setShopInfo(owner)
 owner()
 
 
@@ -3961,6 +3967,22 @@ $('.percentage_count').textContent =`${percent}%`;
 //  console.log(backupData)
 $('#customers').textContent=`${serviceCount ||'No'} Clients`;
 $('#stocks').textContent=`${stockCount || 'No'} Stocks`;
+
+ // Helper function to format bytes into KB or MB
+  function formatBytes(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    if (bytes < 1024) {
+      return bytes + ' Bytes';
+    } else if (bytes < 1024 * 1024) {
+      return (bytes / 1024).toFixed(2) + ' KB';
+    } else {
+      return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    }
+  }
+
+  // Set the formatted text content for used and total storage
+  $('#usedStorage').textContent = formatBytes(used);
+  $('#totalStorage').textContent = formatBytes(max); // Fixed: changed 'used' to 'max'
 }
 logStorageStatus()
 
@@ -4097,6 +4119,9 @@ function closeEditShopModal() {
     console.error('Error closing modal:', error);
   }
 }
+$('#modalOverlay').onclick=closeEditShopModal
+$('#modalClose').onclick=closeEditShopModal
+$('#cancelModalClose').onclick=closeEditShopModal
 
 // Save shop details
 function saveShopDetails(event) {
@@ -4199,6 +4224,7 @@ function saveShopDetails(event) {
     });
   }
 }
+$('#editShopForm').onsubmit=(event)=>saveShopDetails(event)
 
 // Load shop details from localStorage/Firebase
 function loadShopDetails() {
@@ -4345,7 +4371,7 @@ function calculateTodayRevenue(dataArray) {
     .reduce((sum, it) => sum + parseAmount(it.amount), 0);
 }
   
-    console.log(data)
+    
     const totalCustomers = Object.keys(data|| {}).length || 124;
     const activeJobs = total_not_included|| 0; // Would come from job status
     const todayRevenue = calculateTodayRevenue(data)||0; // Would be calculated from today's transactions
@@ -4537,6 +4563,8 @@ document.querySelector('#toggle_fullscreen_notification *').onclick = async () =
         console.error("Logging failed:", err.message);
     }
 };
+
+
 
 
 
