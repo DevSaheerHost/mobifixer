@@ -2232,12 +2232,65 @@ input.uppercase{
   transform: translateY(0);
 }
 
-.bottom-sheet button.add_customer{
-    background: var(--card-bg);
-    color: var(--text-muted);
-    border-top: 1px solid var(--border-color);
+
+
+
+.bottom-sheet button.add_customer {
+  transition:.15s ease;
+  background: var(--bg-secondary);
+  border-radius: 50px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.18);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 15px 15px;
+  border: 1px solid var(--border-color);
+}
+.bottom-sheet button.add_customer:active{
+  transform:scale(.96);
 }
 
+  .bottom-sheet button.add_customer.yes{
+      border: 1px solid var(--accent-color);
+      border-color: #2B8FFF;
+  }
+  .bottom-sheet button.add_customer.yes a{
+    color: #3EA6FF;
+
+}
+
+.bottom-sheet .button_wraper{
+  display: grid;
+grid-template-columns: repeat(3, 1fr);
+gap: 16px;
+}
+
+.bottom-sheet button.add_customer a{
+  display: flex;
+align-items: center;
+justify-content: center;
+flex-flow: column;
+gap: 1rem;
+}
+.bottom-sheet button.add_customer a i{
+  font-size: 18px;
+}
+
+.bottom-sheet button.add_customer:focus {
+  outline: none;
+  box-shadow: inset 2px 2px 5px #bcbcbc, inset -2px -2px 5px #ffffff, 2px 2px 5px #bcbcbc, -2px -2px 5px #ffffff;
+  transform: translateY(-2px);
+}
+.sheet-handle{
+    width: 42px;
+    height: 5px;
+    background: rgba(255,255,255,.18);
+    border-radius: 999px;
+    margin: 10px auto 20px;
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+}
 
 .bottom_sheet_overlay{
     position: fixed;
