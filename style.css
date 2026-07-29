@@ -203,9 +203,19 @@ a{
     color: var(--text-color);
 }
 input, button, select{
-    border-radius: 10px;
+    border-radius: 12px !important;
     padding: .5rem 1rem;
 }
+input{
+  background: #3b3d43 !important;
+}
+button, .status span{
+  border-radius: 14px !important;
+}
+.list-item .status{
+  border-radius: 14px !important;
+}
+
 button:disabled {
     background: #C7C7C7;
     color: #ababab;
@@ -259,6 +269,10 @@ header .search-bar{
     transform: translateX(50%);
     width: 80%;
 }
+.search-bar input{
+  height: 44px !important;
+}
+
 input, textarea, select.status{
     box-shadow: 0 0 7px rgba(0, 0, 0, 0.7);
     background: rgba(162, 162, 162, 0.27);
@@ -494,10 +508,10 @@ li nav span i{
 
 
 button.add {
-    border-radius: 50px;
+    
     font-size: 1em;
     font-weight: 500;
-    padding: 1rem 1.2rem;
+    padding: 1.4rem 1.2rem;
     height: 50px;
 
     display: flex;
@@ -516,6 +530,7 @@ button.add {
     overflow: hidden;
     white-space: nowrap;
     z-index: 8;
+    transition: width 0.2s ease, height 0.2s ease, border-radius 0.2s ease;
     
 }
 button.add a{
@@ -869,7 +884,8 @@ white-space: nowrap;
 }
 .sn-flex .sub_flex{
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
+    width: 60%;
     align-items: center;
     gap: .5rem;
 }
@@ -1245,6 +1261,16 @@ select option {
   transform: scale(0.8);
   opacity: 0;
   transition: transform 0.4s ease, opacity 0.4s ease;
+  height: 40px;
+  width: 40px;
+  border-radius: 50px;
+  color: var(--text-color) !important;
+  background: #39393B59;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(57, 57, 59, 0.63);
+  
 }
 
 .intro-anim.animate {
@@ -1300,9 +1326,6 @@ select option {
 
 /*######### INVENTORY STYLE ############*/
 
-main.inventory-page{
-    
-}
 
 .header, header{
   background: var(--accent-gradient);
@@ -1509,7 +1532,6 @@ main.delete_page .card{
 
 
 .settings_page, .profile_page, .theme_page, .sound_page{
-   // background-image: url(./assets/images/bg.jpeg);
    background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('./assets/images/bg.jpeg');
     height: 100dvh;
     backdrop-filter: blur(var(--glass-blur));
@@ -1845,7 +1867,7 @@ color: var(--text-muted);
 
 /* ########## LIST AND LIST ITEM ##########*/
 
-// home page list
+/*home page list*/
 .list{
     background: var(--card-bg) !important;
     backdrop-filter: blur(var(--glass-blur));
@@ -1914,7 +1936,7 @@ color: var(--text-muted);
 
 .home .list .list-item{
     display: block;
-    border-radius: 10px;
+    border-radius: 16px !important;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-large);
     padding: 1.6rem;

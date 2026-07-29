@@ -2153,11 +2153,16 @@ document.addEventListener('scroll', () => {
   if (currentScroll < lastScroll) {
     addBtn.classList.remove('smallAddBtn');
     addBtn.style.width = addBtnWidth
+    addBtn.style.height='50px'
     addBtn.innerHTML='<a>New</a>'
+    addBtn.style.setProperty('border-radius', '14px', 'important'); 
   } else {
     addBtn.classList.add('smallAddBtn');
-    addBtn.style.width = '50px'
-    addBtn.innerHTML='<a>+</a>'
+    addBtn.style.width = '60px'
+    addBtn.style.height = '60px'
+    addBtn.innerHTML='<a><i class="fa-solid fa-plus"></i></a>'
+    addBtn.style.setProperty('border-radius', '50px', 'important'); 
+
   }
 
   lastScroll = currentScroll;
