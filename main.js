@@ -150,7 +150,9 @@ if (homeContainer) {
 }
 
 logoutBtn.onclick=()=>{
-  const isConfirmed = confirm('Are you sure you want to LOG-OUT?')
+  const isConfirmed = confirm(
+  "Warning!\n\nIf you haven't downloaded your backup, your data may be lost after logging out.\n\nContinue?"
+);
   if(isConfirmed){
     showNotice({title: 'Logging Out', body:'Running command...', type:'warn'})
     saveLogToDatabase('User Logged out', 'User logged out by clicking logout btn from settings', 'info' )
