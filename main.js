@@ -2721,12 +2721,13 @@ nameInput.oninput = (e) => {
   // show suggestions
   uniqueMatches.forEach(item => {
     const div = document.createElement('div');
-    div.textContent = `${item.name}, ${item.number}, ${item.model}`;
+    div.textContent = `${item.name || ''}, ${item.number || ''}, ${item.devices[0].model||''}`;
     div.classList.add('suggest-item');
 
     div.onclick = () => {
-      nameInput.value = item.name;
-      numberInput.value = item.number;
+      nameInput.value = item.name || '';
+      numberInput.value = item.number || '';
+      modelInput.value = item.devices[0].model || '';
       nameSuggestContainer.innerHTML = '';
     };
 
@@ -3158,7 +3159,7 @@ prodNameInput.oninput=(e)=>{
   // show suggestions
   uniqueMatches.forEach(item => {
     const div = document.createElement('div');
-    div.textContent = `${item.prodName}, ${item.prodModel}`;
+    div.textContent = `${item.prodName || ''}, ${item.prodModel ||''}`;
     div.classList.add('suggest-item');
 
     div.onclick = () => {
