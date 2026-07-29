@@ -3479,29 +3479,60 @@ const updateInputs = (count) => {
   for (let i = existingSets + 2; i <= count; i++) {
     const set = document.createElement('div');
     set.className = 'device-set';
-    
 
-    // Device name input
+    // Device name input field
+    const nameWrapper = document.createElement('div');
+    nameWrapper.className = 'input_field';
+
     const nameInput = document.createElement('input');
     nameInput.type = 'text';
-    nameInput.placeholder = `Device ${i} Model Name`;
+    nameInput.placeholder = '';
     nameInput.className = 'device-input name-input';
+    nameInput.required=true
 
-    // Complaint input
+    const nameLabel = document.createElement('label');
+    nameLabel.textContent = `Device ${i} Model Name`;
+
+    nameWrapper.appendChild(nameInput);
+    nameWrapper.appendChild(nameLabel);
+
+    // Complaint input field
+    const complaintWrapper = document.createElement('div');
+    complaintWrapper.className = 'input_field';
+
     const complaintInput = document.createElement('input');
     complaintInput.type = 'text';
-    complaintInput.placeholder = `Device ${i} complaint`;
+    complaintInput.placeholder = '';
+    complaintInput.required=true
+
     complaintInput.className = 'device-input complaint-input';
 
-    // Lock input
+    const complaintLabel = document.createElement('label');
+    complaintLabel.textContent = `Device ${i} complaint`;
+
+    complaintWrapper.appendChild(complaintInput);
+    complaintWrapper.appendChild(complaintLabel);
+
+    // Lock input field
+    const lockWrapper = document.createElement('div');
+    lockWrapper.className = 'input_field';
+
     const lockInput = document.createElement('input');
     lockInput.type = 'text';
-    lockInput.placeholder = `Device ${i} lock`;
+    lockInput.placeholder = '';
+    lockInput.required=true
     lockInput.className = 'device-input lock-input';
 
-    set.appendChild(nameInput);
-    set.appendChild(complaintInput);
-    set.appendChild(lockInput);
+    const lockLabel = document.createElement('label');
+    lockLabel.textContent = `Device ${i} lock`;
+
+    lockWrapper.appendChild(lockInput);
+    lockWrapper.appendChild(lockLabel);
+
+    // Append input fields to device set
+    set.appendChild(nameWrapper);
+    set.appendChild(complaintWrapper);
+    set.appendChild(lockWrapper);
 
     more_device_input_container.appendChild(set);
   }
@@ -3511,6 +3542,7 @@ const updateInputs = (count) => {
     more_device_input_container.lastElementChild.remove();
   }
 };
+
 
 handleDeviceCountChange();
 

@@ -217,75 +217,99 @@
  <h3 id="new_sn">0</h3>
      </div>
       <div class="input-group">
-        <div class="input_and_suggest_wrapper">
-          <input type="text" name="name" id="name" placeholder="Name" />
-          <div id="name_suggest_container" class="hidden"></div>
-        </div>
-        
-        <div class="input_and_suggest_wrapper">
-          <input type="number" name="number" id="number" placeholder="Number " />
-          <div id="number_suggest_container" class="hidden"></div>
-        </div>
+       <div class="input-group">
+  <div class="input_and_suggest_wrapper">
+    <div class="input_field">
+      <input type="text" required name="name" id="name" placeholder="" />
+      <label for="name">Customer Name</label>
+    </div>
+    <div id="name_suggest_container" class="hidden"></div>
+  </div>
 
-        <div class="input_and_suggest_wrapper">
-          <input type="number" name="alt_number" id="alt_number" placeholder="Alternative Number" />
-          <div id="alt_number_suggest_container" class="hidden"></div>
-        </div>
+  <div class="input_and_suggest_wrapper">
+    <div class="input_field">
+      <input type="number" required name="number" id="number" placeholder="" />
+      <label for="number">Number</label>
+    </div>
+    <div id="number_suggest_container" class="hidden"></div>
+  </div>
 
-        <div class="input_and_suggest_wrapper">
-          <input type="text" name="model" id="model" placeholder="Device 1 Model Name" />
-            <div id="model_suggest_container" class="hidden"></div>
-        </div>
-        
-        <div class="input_and_suggest_wrapper">
-          <input type="text" name="complaint" id="complaint" placeholder="Complaints" />
-          <div id="complaint_suggest_container" class="hidden"></div>
-        </div>
+  <div class="input_and_suggest_wrapper">
+    <div class="input_field">
+      <input type="number" required name="alt_number" id="alt_number" placeholder="" />
+      <label for="alt_number">Alternative Number</label>
+    </div>
+    <div id="alt_number_suggest_container" class="hidden"></div>
+  </div>
 
-        <input type="text" name="lock" id="lock" placeholder="Lock"/>
+  <div class="input_and_suggest_wrapper">
+    <div class="input_field">
+      <input type="text" required name="model" id="model" placeholder="" />
+      <label for="model">Device 1 Model Name</label>
+    </div>
+    <div id="model_suggest_container" class="hidden"></div>
+  </div>
 
+  <div class="input_and_suggest_wrapper">
+    <div class="input_field">
+      <input type="text" required name="complaint" id="complaint" placeholder="" />
+      <label for="complaint">Complaints</label>
+    </div>
+    <div id="complaint_suggest_container" class="hidden"></div>
+  </div>
 
+  <div class="input_field">
+    <input type="text" required name="lock" id="lock" placeholder="" />
+    <label for="lock">Lock</label>
+  </div>
 
-        <div id="more_device_input_container"></div>
-        
-        <div class="total_device">
-        <span id="decrease_device">
-          <i class="fa-solid fa-minus"></i>
-        </span>
-        <input type="number" name="total_device_count" disabled id="total_device_count" placeholder="Total Devices" value="1">
-        <span id="increase_device">
-          <i class="fa-solid fa-plus"></i>
-        </span>
-      </div>
-      
-      
-        
-        
-        
-        
-        
-        
+  <div id="more_device_input_container"></div>
 
-          <input type="number" name="amount" id="amount" placeholder="Approx Amount" />
-        <input type="number" name="advance" id="advance" placeholder="Advance" />
+<h4>Devices</h4>
+  <div class="total_device">
+    <span id="decrease_device">
+      <i class="fa-solid fa-minus"></i>
+    </span>
+    <input type="number" name="total_device_count" disabled id="total_device_count" placeholder="Total Devices" value="1">
+    <span id="increase_device">
+      <i class="fa-solid fa-plus"></i>
+    </span>
+  </div>
 
-<textarea name="notes" id=notes rows="4" cols="40" placeholder="Notes (Optional)"></textarea>
-        
-        <select name="status" id="status">
-          <option value="pending">Pending</option>
-          <option value="progress">In Progress</option>
-          <option value="done">Done</option>
-          <option value="collected">Collected</option>
-          <option value="spare">Waiting For Spare</option>
+  <div class="input_field">
+    <input type="number" required name="amount" id="amount" placeholder="" />
+    <label for="amount">Approx Amount</label>
+  </div>
 
-          
-        </select>
-        
+  <div class="input_field">
+    <input type="number" required name="advance" id="advance" placeholder="" />
+    <label for="advance">Advance</label>
+  </div>
+
+  <textarea name="notes" id=notes rows="4" cols="40" placeholder="Notes (Optional)"></textarea>
+
+  <select name="status" id="status">
+    <option value="pending">Pending</option>
+    <option value="progress">In Progress</option>
+    <option value="done">Done</option>
+    <option value="collected">Collected</option>
+    <option value="spare">Waiting For Spare</option>
+  </select>
+
+  <div class="checkBox-container hidden">
+    <input type="checkbox" name="sim" id="sim" />
+    <label for="sim">Hand over SIM & accessories to Customer</label>
+  </div>
+</div>
+
         
       <div class="checkBox-container hidden">
           <input type="checkbox" name="sim" id="sim" />
   <label for="sim">Hand over SIM & accessories to Customer</label>
       </div>
+      
+      
+      
       </div>
       
       

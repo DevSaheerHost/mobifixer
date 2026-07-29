@@ -1101,14 +1101,14 @@ pre {
   }
   
   main.form input{
-      animation: slideUp 1s;
+      animation: slideUp 0.5s;
   }
   main.form .total_device{
       display: flex;
       align-items: center;
       justify-content: flex-end;
       gap: 1rem;
-      margin-top: 2rem;
+      margin-top: 0rem;
   }
   main.form .total_device input{
       max-width: 70px;
@@ -1288,6 +1288,7 @@ select option {
   
   
 }
+
   
 
 .input_and_suggest_wrapper{
@@ -1298,6 +1299,7 @@ select option {
 #number_suggest_container,
 #complaint_suggest_container,
 .universal_input_suggest_container{
+  transition: all 0.3s ease;
   position: absolute;
   background: var(--glass-bg);
   backdrop-filter: blur(var(--glass-blur));
@@ -1311,16 +1313,37 @@ select option {
   left: 2rem;
   margin-top: 0.5rem;
   transform: translateX(-10%);
-  
+  opacity: 1;
   
   white-space: nowrap;
   overflow: auto;
   text-overflow: ellipsis;
 }
+#name_suggest_container.hidden, 
+#model_suggest_container.hidden,
+#category_suggest_container.hidden,
+#number_suggest_container.hidden,
+#complaint_suggest_container.hidden,
+.universal_input_suggest_container.hidden{
+  opacity: 0;
+  display: block !important;
+}
+
 
 .suggest-item {
   padding: 0.5rem;
   cursor: pointer;
+  opacity: 1;
+  animation: suggestItem 0.3s;
+}
+@keyframes suggestItem{
+  0%, 10%{
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+  15%{
+    transform: translateY(-100%);
+  }
 }
 
 .suggest-item:hover {
@@ -3542,6 +3565,30 @@ nav.status-naveeeeeeess{
   padding-bottom: 1.2rem;
   border-bottom: 1px solid var(--border-color);
 }
+
+.input_field{
+  position: relative;
+}
+.input_field label{
+  position: absolute;
+  pointer-events: none;
+  left: 15px;
+  top: 55%;
+  font-size: 16px !important;
+  transition: all 0.2s ease;
+  color: var(--text-muted) !important;
+}
+.input_field input:focus ~ label,
+.input_field input:valid ~ label{
+  top: 8%;
+  background: var(--bg-color);
+  
+  border-radius: 0px 0 5px 5px;
+  border-top: none;
+}
+
+
+
 
 .input-group:last-child {
   border-bottom: none;
