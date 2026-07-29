@@ -1599,7 +1599,7 @@ if(wasEdit){
       body:'CoudData and localData is Different',
       type: 'error',
       })
-      createPopUp('⚠️ Data Lose warning', `Your Backuped Datas : ${ValidData.length}. And Cloud Datas: ${data.length}. See difference?!. So Please Download Your Back-up datas NOW`, ()=>{downloadLocalData()}, 'error')
+      createPopUp('⚠️ Data Lose warning', `Your Backuped Datas : ${ValidData.length}. And Cloud Datas: ${data.length}. See difference?!. So Please Download Your Back-up datas NOW, and relogin to fix this issue (settings -> manage profile -> logout)`, ()=>{downloadLocalData()}, 'error')
     }
     
     
