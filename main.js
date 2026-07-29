@@ -1809,7 +1809,7 @@ const searchOut = $('.search-out');
 
 // focus → show
 search.addEventListener("focus", () => {
-  searchOut.classList.remove("hidden");
+  //searchOut.classList.remove("hidden");
 });
 
 // click outside → hide

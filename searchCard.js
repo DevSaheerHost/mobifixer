@@ -3,10 +3,17 @@ export const searchCard = data => {
   let deviceInfo = '';
   
   if (Array.isArray(data.devices) && data.devices.length > 0) {
-    deviceInfo = data.devices.map((d, i) => `
-      <p>M ${i + 1}: ${d.model || '<i>unknown</i>'}</p>
-      <p>C : ${d.complaints || '<i>none</i>'}</p>
-    `).join('');
+    deviceInfo = data.devices.map(d=>`
+
+<div class="device">
+
+<p class="model">${d.model}</p>
+
+<p class="complaint">${d.complaints}</p>
+
+</div>
+
+`).join("");
   } else {
     // fallback to old structure
     deviceInfo = `
@@ -16,11 +23,36 @@ export const searchCard = data => {
   }
   
   return `
-    <p class='s_status'>${data.sn}</p>
-    <p>${data.name} : ${data.number}</p>
-    ${deviceInfo}
-    <p>${data.advance || ''}</p>
-    <p class='status'>${data.status}</p>
-    <p>${data.date || ''}</p>
+<div class="search-card">
+
+<div class="top">
+
+<span class="sn">#${data.sn}</span>
+
+<span class="status ${data.isDeleted?'deleted':data.status}">
+${data.isDeleted?'DELETED': data.status}
+</span>
+
+
+</div>
+
+<h3>${data.name}</h3>
+
+<p class="phone">
+${data.number}
+</p>
+
+${deviceInfo}
+
+<div class="bottom">
+
+<span>₹${data.advance}</span>
+
+<span>${data.date}</span>
+
+</div>
+
+</div>
+
   `;
 };
