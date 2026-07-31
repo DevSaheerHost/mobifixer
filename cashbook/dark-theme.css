@@ -112,17 +112,17 @@ body.dark button {
   background: var(--accent);
   color: #fff;
 }
-body.dark button:hover { background: var(--accent-dark); }
+body.dark button:active { background: var(--accent-dark); }
 body.dark #entryFormIn  button        { background: var(--green); }
-body.dark #entryFormIn  button:hover  { background: #0da572; }
+body.dark #entryFormIn  button:active  { background: #0da572; }
 body.dark #entryFormOut button        { background: var(--red); }
-body.dark #entryFormOut button:hover  { background: #dc2626; }
+body.dark #entryFormOut button:active  { background: #dc2626; }
 body.dark .deleteBtn {
   background: #150A0A;
   color: var(--red);
   border-color: #3A1010;
 }
-body.dark .deleteBtn:hover { background: #200D0D; }
+body.dark .deleteBtn:active { background: #200D0D; }
 body.dark .in.ob .deleteBtn {
   background: #0A1520;
   color: var(--accent);
@@ -216,8 +216,14 @@ body.dark .bnav-item       {
   color: #8B9CB8; 
   background: #08101E;
 }
-body.dark .bnav-item.active{ color: var(--accent); }
-body.dark .bnav-item:hover{
+body.dark .bnav-item.active{ 
+  color: var(--accent); 
+  background: rgba(11, 162, 255, 0.12);
+  border: 2px solid rgba(11, 162, 255, 0.25);
+}
+body.dark .bnav-item.active svg path,
+body.dark .bnav-item.active svg circle{stroke: var(--accent)}
+body.dark .bnav-item:active{
   background: #08101E;
 }
 
@@ -230,7 +236,7 @@ body.dark .settings_item {
   background: var(--card);
   box-shadow: 0 1px 8px rgba(0,0,0,0.3);
 }
-body.dark .settings_item:hover { background: #111D30; }
+body.dark .settings_item:active { background: #111D30; }
 body.dark .settings_item .item-icon { background: #111D30; }
 body.dark .settings_item .item-label{ color: #D8E8F8; }
 

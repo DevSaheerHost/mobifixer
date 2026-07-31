@@ -174,7 +174,7 @@
         <h3>Opening Balance</h3>
         <form id="obForm" style="margin-top: 20px;">
           <input type="number" name="obAmount" id="obAmount" placeholder="OB Amount" />
-          <button type="submit" style="margin-left: 10px;">Done</button>
+          <button type="submit" style="margin-left: 10px;">Add OB</button>
         </form>
         <p class="small muted">Visible only from 5 PM to 11 PM. Adding the opening balance will remove this box automatically. </p>
       </div>
@@ -198,13 +198,13 @@
           <input id="gpAmount" placeholder="Gpay Amount" type="number" style="width: 80px;" />
 
           
-          <input type="text" name="staff" id="staff" placeholder="Staff">
+          <input type="text" name="staff" id="staff" placeholder="Staff Name">
           
           <label style="display:none;align-items:center;gap:6px"><input type="checkbox" id="isGpay" /> 
           <i class="fa-brands fa-google-pay gpay big"></i>
           </label>
           <button type="submit" id="addBtn">
-          Done
+          Add Income
           </button>
         </form>
         <div style="margin-top:10px" class="small muted">Auto date/time recorded. Serial number auto increments per-day.</div>
@@ -218,17 +218,17 @@
           <input id="desc" placeholder="Name: e.g. iPhone 6s battery replacement" style="flex:1; min-width: 30%" />
           <input id="amount" placeholder="Amount" type="number" style="width: 80px;" />
           
-          <button type="submit" id="addBtn">Done</button>
+          <button type="submit" id="addBtn">Add Expense</button>
         </form>
         <div style="margin-top:10px" class="small muted">Auto date/time recorded. Serial number auto increments per-day.</div>
       </div>
 
-      <div style="margin-top:12px" class="card">
+      <div style="margin-top:23px" class="card">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <h3>Entries — <span id="currentDateLabel"></span></h3>
           <div class="filter">
             <input type="date" id="selectDate" />
-            <button id="reloadBtn" class="link">Reload</button>
+            <button id="reloadBtn" class="link">Refresh</button>
           </div>
         </div>
         
@@ -243,7 +243,7 @@
         </div>
 
 <div id="parrent">
-  <div class="entries" id="entriesList" style="margin-top:12px">
+  <div class="entries" id="entriesList" style="margin-top:23px">
     <!-- Skeleton loaders — shown until real data arrives -->
     <div class="skel-entry"><div class="skel-left-bar"></div><div class="skel-meta"><div class="skel-line w70"></div><div class="skel-line w45 thin"></div></div><div class="skel-amount"><div class="skel-line w50"></div><div class="skel-line w30 thin"></div></div></div>
     <div class="skel-entry"><div class="skel-left-bar"></div><div class="skel-meta"><div class="skel-line w55"></div><div class="skel-line w35 thin"></div></div><div class="skel-amount"><div class="skel-line w45"></div><div class="skel-line w25 thin"></div></div></div>
@@ -302,7 +302,7 @@
                 </div>
           </div>
         </div><!-- end #realTotals -->
-        <div style="margin-top:12px;display:flex;gap:8px">
+        <div style="margin-top:23px;display:flex;gap:8px">
           <button id="exportCSV">Export CSV</button>
           <button id="clearDay">Clear Day</button>
         </div>
@@ -332,9 +332,9 @@
 
 
 
-      <div style="margin-top:12px" class="card">
+      <div style="margin-top:23px" class="card">
         <h3>Shop-level tools</h3>
-        <div class="small">Filter by date above. This structure stores entries per-day in the DB, easy to aggregate for reports.</div>
+        <div class="small">Download entries for the selected day.</div>
         <div style="margin-top:8px;display:flex;gap:8px">
           <button id="downloadAll">Download Day CSV</button>
         </div>
@@ -342,7 +342,7 @@
       
       
       
-      <div class="card" style="margin-top:12px">
+      <div class="card" style="margin-top:23px">
   <div class="dash-chart" style="margin-top:10px; width:100%; overflow-x:auto;">
     <h3>Actions</h3>
     

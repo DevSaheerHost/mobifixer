@@ -1264,6 +1264,10 @@ let isSearchActive = false;
 
 // Update search input to track state
 search.oninput = e => {
+  window.scrollTo({
+  top: 0,
+  behavior: 'smooth' // Remove this line if you want an instant jump
+});
   if(!fullname)return;
   const value = e.target.value.trim();
   isSearchActive = !!value;
@@ -1637,7 +1641,7 @@ var progress = false;
       if(!name || !amt && !gpAmount) return showTopToast('Name and amount required');
       saveItemName(name)
       progress=true;
-      document.querySelector('#addBtn').textContent='Loading...'
+        document.querySelector('#addBtn').textContent='Loading...'
       //$('.loader').classList.remove('off')
       loading_text.textContent='Updating...'
     //  const dateISO = selectDate.value || isoDate(new Date());
@@ -1658,7 +1662,7 @@ var progress = false;
         
         progress=false
         //$('.loader').classList.add('off')
-        loading_text.textContent='Done'
+        loading_text.textContent='done'
         
          vibrate(15); // short, crisp, non-annoying
         
@@ -1676,7 +1680,7 @@ var progress = false;
       
 
       // clear
-      document.querySelector('#addBtn').textContent='Done'
+      document.querySelector('#addBtn').textContent='Add Income'
       document.getElementById('dashThisMonth').click()
       desc.value=''; amount.value=''; isGpay.checked=false;document.querySelector('#gpAmount').value =''
       document.querySelector('#staff').value=''
@@ -2354,7 +2358,7 @@ function renderDashboard(dayTotals, aggs){
         <div class="dash-stat-val tod-out">₹${aggOut.toLocaleString()}</div>
       </div>
       <div class="dash-stat-box ob">
-        <div class="dash-stat-label">OB</div>
+        <div class="dash-stat-label">Opening Balance</div>
         <div class="dash-stat-val tod-ob">₹${ob.toLocaleString()}</div>
       </div>
       <div class="dash-stat-box gpay">
@@ -2583,6 +2587,7 @@ function drawSparklineFullscreen(container, valuesIn, valuesOut, labels) {
       <text x='${x}' y='${y - 10}' font-size='24' text-anchor='middle' fill='#0BA2FF' font-weight='bold'>${v}</text>
     `);
   });
+  
   safeOut.forEach((v, i) => {
     const x = scaleX(i), y = scaleY(v);
     dots.push(`
@@ -2590,7 +2595,7 @@ function drawSparklineFullscreen(container, valuesIn, valuesOut, labels) {
       <text x='${x}' y='${y - 10}' font-size='24' text-anchor='middle' fill='#FF4D4D' font-weight='bold'>${v}</text>
     `);
   });
-
+  
   const svg = `
     <svg width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}" xmlns="http://www.w3.org/2000/svg">
       <rect x="0" y="0" width="${svgW}" height="${svgH}" fill="transparent"/>
@@ -2619,15 +2624,31 @@ if (username || fullname) {
   dashCard.style.marginBottom='12px';
   dashCard.style.marginTop='12px'
   dashCard.innerHTML = `
-    <h3>Dashboard</h3>
-    <div style='display:flex;gap:8px;align-items:center;margin-bottom:8px' class='fliter-btns'>
-      <label class='small'>Start: <input type='date' id='dashStart' /></label>
-      <label class='small'>End: <input type='date' id='dashEnd' /></label>
-      <button id='dashLoad' style='padding:8px 10px; display:none;'>Load</button>
-      <button id='dashToday' class='link'>Today</button>
-      <button id='dashThisMonth' class='link'>This Month</button>
-    </div>
-    <div style='display:flex;gap:12px;align-items:flex-start'>
+    <h3 style='margin-bottom: 20px;'>Dashboard</h3>
+<div class="fliter-btns">
+  <div class="date-row">
+    <label class="small">
+      Start:
+      <input type="date" id="dashStart">
+    </label>
+
+    <label class="small">
+      End:
+      <input type="date" id="dashEnd">
+    </label>
+  </div>
+
+  <div class="quick-row">
+    <button id="dashLoad" style="padding:8px 10px; display:none;">Load</button>
+
+    <button id="dashToday" class="link">Today</button>
+
+    <button id="dashThisMonth" class="link">This Month</button>
+  </div>
+</div>
+
+
+    <div style='display:flex;gap:12px;align-items:flex-start; margin-top: 14px'>
       <div id='dashSummary' style='flex:1'>
       <div class="dash-skel-grid">
         <div class="dash-skel-stat"><div class="skel-line w55 thin"></div><div class="skel-line w70" style="height:22px;margin-top:6px;border-radius:6px"></div></div>
@@ -3521,14 +3542,14 @@ const EVENTS = [
   burst: 2,
   maxCount: 40
 },
-{
-  name: "eidAlFitr",
-  day: 28,
-  month: 5,
-  emojis: ["🌙", "🕌", "✨"], 
-  burst: 2,
-  maxCount: 40
-}
+ {
+   name: "appAnniversary",
+   day: 15,
+   month: 9,
+   emojis: ["✨", "🎉", "🎊", "🏆"],
+   burst: 2,
+   maxCount: 40
+ }
 ];
 
 
@@ -3657,7 +3678,10 @@ syncExitStates(pages, current)
 //PageRouter.show('#about');
 //PageRouter.show('#settings');
 
-
+$('input#search').onfocus=()=>window.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+  });
 
 const isUserSeeCustomAlert=''
 
@@ -3979,3 +4003,5 @@ document.getElementById('profile')?.addEventListener('keydown', e => {
     if (page.classList.contains('active')) loadSettingsProfile();
   }).observe(page, { attributes: true, attributeFilter: ['class'] });
 })();
+
+
