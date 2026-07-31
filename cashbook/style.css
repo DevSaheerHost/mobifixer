@@ -422,7 +422,9 @@ span.active{
 
 
 #clearDay{
-    background: #ef4444;
+    background: #ffcdd2;
+    border: solid 1px rgba(239, 68, 68, 0.5);
+    color: #ef4444;
 }
 
 .deleteBtn{
