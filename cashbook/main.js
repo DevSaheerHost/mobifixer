@@ -43,7 +43,6 @@ function _invalidateCache(dateISO) {
   try { localStorage.removeItem(_cacheKey(dateISO)); } catch(_) {}
 }
 
-import { ref, onChildAdded, onChildChanged, onChildRemoved } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
     // UI refs
     const authView = document.getElementById('authView');
     const mainView = document.getElementById('mainView');
@@ -879,10 +878,9 @@ Sign out</button>
     handleStaffAccessControl(user);
     
     $('#dashThisMonth').click()
-    
-onChildAdded(dataRef, () => debouncedRefresh('added'));
-onChildChanged(dataRef, () => debouncedRefresh('updated'));
-onChildRemoved(dataRef, () => debouncedRefresh('deleted'));
+    // Realtime listeners are now attached range-scoped, inside the
+    // dashboard Today/This Month/Load handlers (see attachRangeListeners
+    // below) — the click() above triggers that on load.
   } catch (err) {
     console.error(err);
     showTopToast('Something went wrong. Retry.');
@@ -2681,17 +2679,20 @@ if (username || fullname) {
     const s = document.getElementById('dashStart').value;
     const e = document.getElementById('dashEnd').value;
     if(!s||!e) return showTopToast('Pick start and end date');
+    attachRangeListeners(s,e);
     fetchRangeTotals(s,e);
   }
   document.getElementById('dashToday').addEventListener('click', ()=>{
     const t = isoDate(new Date());
     document.getElementById('dashStart').value = t; document.getElementById('dashEnd').value = t;
+    attachRangeListeners(t,t);
     fetchRangeTotals(t,t);
   });
   document.getElementById('dashThisMonth').addEventListener('click', ()=>{
     const d = new Date(); const start = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`;
     const end = isoDate(d);
     document.getElementById('dashStart').value = start; document.getElementById('dashEnd').value = end;
+    attachRangeListeners(start,end);
     fetchRangeTotals(start,end);
   });
 })();
@@ -2701,8 +2702,45 @@ if (username || fullname) {
 
 
 
-const dataRef = ref(db, `/${username}`);
 console.log(username || 'unknown user')
+
+// ── Range-scoped realtime listeners (compat SDK only) ──
+// index.html loads Firebase v9.22.2 COMPAT scripts (firebase-database-compat.js),
+// and `db` above comes from that: `firebase.database()`. The previous version of
+// this fix used the MODULAR v12 SDK's query()/orderByKey()/onChildAdded() on that
+// same compat `db` object — mixing two different SDK builds like that is what
+// caused "INTERNAL ASSERT FAILED: KeyIndex.isDefinedOn not expected to be called."
+// This version stays 100% on the compat API (same style as db.ref(...) used
+// everywhere else in this file), so there's no cross-SDK mismatch.
+//
+// Original bug this replaces: onChildAdded/Changed/Removed on the ENTIRE user
+// tree (every date, forever). Once enough history piled up, Firebase's internal
+// snapshot diffing recursed over every node under that path and blew the JS
+// call stack ("Maximum call stack size exceeded"). Fix: only watch the date
+// range currently shown on the dashboard, and re-point the listeners whenever
+// that range changes.
+let _rangeQueryRef = null;
+let _onRangeAdded = null, _onRangeChanged = null, _onRangeRemoved = null;
+
+function attachRangeListeners(startISO, endISO) {
+  if (!startISO || !endISO) return;
+
+  // detach the previous range's listeners before attaching new ones
+  if (_rangeQueryRef) {
+    if (_onRangeAdded)   _rangeQueryRef.off('child_added', _onRangeAdded);
+    if (_onRangeChanged) _rangeQueryRef.off('child_changed', _onRangeChanged);
+    if (_onRangeRemoved) _rangeQueryRef.off('child_removed', _onRangeRemoved);
+  }
+
+  _rangeQueryRef = db.ref(`/${username}`).orderByKey().startAt(startISO).endAt(endISO);
+  _onRangeAdded   = () => debouncedRefresh('added');
+  _onRangeChanged = () => debouncedRefresh('updated');
+  _onRangeRemoved = () => debouncedRefresh('deleted');
+
+  _rangeQueryRef.on('child_added',   _onRangeAdded);
+  _rangeQueryRef.on('child_changed', _onRangeChanged);
+  _rangeQueryRef.on('child_removed', _onRangeRemoved);
+}
 // simple toast function
 function showToast(msg) {
   let toast = document.createElement("div");
