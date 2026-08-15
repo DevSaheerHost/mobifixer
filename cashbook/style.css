@@ -53,7 +53,7 @@
       background:var(--card);
       position:stiky;
       top:var(--nav-h);
-      z-index:999;
+      z-index:100;
       box-shadow:0 2px 8px rgba(15,23,42,0.05);
       background:#fff;
     padding:12px 14px;
@@ -80,10 +80,10 @@
     .grid{display:grid;grid-template-columns:1fr 350px;gap:16px}
     
     #mainView{
-      padding: 0 16px;
+      padding: 0 10px;
     }
     div.card.dboard{
-      margin: 16px !important;
+      margin: 10px !important;
       margin-top: 23px !important;
     }
     
@@ -2945,17 +2945,17 @@ body.dark .dash-skel-bar {
 
 /* Stagger grid skeleton too */
 .dash-skel-stat:nth-child(1) .skel-line { animation-delay: 0ms;
-  width: 150px !important;}
+  width: 140px !important;}
 .dash-skel-stat:nth-child(2) .skel-line { animation-delay: 60ms; 
-  width: 150px !important; }
+  width: 140px !important; }
 .dash-skel-stat:nth-child(3) .skel-line { animation-delay: 120ms; 
-  width: 150px !important;
+  width: 140px !important;
 }
 .dash-skel-stat:nth-child(4) .skel-line { animation-delay: 180ms; 
-  width: 150px !important;
+  width: 140px !important;
 }
 .dash-skel-stat:nth-child(5) .skel-line { animation-delay: 240ms; 
-  width: 150px !important;
+  width: 140px !important;
 }
 
 /* Smooth reveal when real data replaces skeleton */
