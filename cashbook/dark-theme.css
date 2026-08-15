@@ -339,3 +339,12 @@ body.dark #entryFormIn input.focus ~ .suggestion-container span{
 body.dark div.suggestion-container span.suggest{
   color: var(--green) !important;
 }
+
+body.dark button.popup-btn{
+  background: var(--red);
+}
+body.dark button.popup-btn-cancel{
+  background: var(--red-bg);
+  color: var(--red);
+  border: 1px solid var(--red);
+}
