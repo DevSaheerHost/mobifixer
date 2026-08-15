@@ -3675,42 +3675,54 @@ const syncExitStates = (pages, current) => {
 const PageRouter = (() => {
   const pages = document.querySelectorAll('.page');
   let current = document.querySelector('.page.active');
+  let atHome = true; // tracks whether we're sitting on the "home" history entry
 
-  function show(hash, from = 'direct') {
+  function show(hash) {
     const id = hash.replace('#', '') || 'home';
     const next = document.getElementById(id);
-
     if (!next || next === current) return;
 
-    // exit current
     current.classList.remove('active');
     current.classList.add('exit');
-
-    // enter next
     next.classList.remove('exit');
     next.classList.add('active');
-
     current = next;
   }
-syncExitStates(pages, current)
-  // click handler
+  syncExitStates(pages, current);
+
+  // Central navigation — collapses history so back always returns to
+  // home in ONE tap, no matter how many pages were visited in between.
+  function navigateTo(id) {
+    if (!id || id === 'home') {
+      if (!atHome) history.back();      // unwind to the single base entry
+      else show('#home');
+      return;
+    }
+    if (atHome) {
+      history.pushState({ page: id }, '', `#${id}`); // first hop: push once
+      atHome = false;
+    } else {
+      history.replaceState({ page: id }, '', `#${id}`); // later hops: replace, don't stack
+    }
+    show(`#${id}`);
+  }
+
   document.addEventListener('click', e => {
     const link = e.target.closest('[data-link]');
     if (!link) return;
-
     e.preventDefault();
-    location.hash = link.dataset.link;
+    navigateTo(link.dataset.link);
   });
 
-  // hash change (back / forward)
-  window.addEventListener('hashchange', () => {
-    show(location.hash, 'back');
+  window.addEventListener('popstate', (e) => {
+    const id = (e.state && e.state.page) || location.hash.replace('#', '') || 'home';
+    atHome = (id === 'home');
+    show(`#${id}`);
   });
 
-  // first load
   show(location.hash);
 
-  return { show };
+  return { show, navigateTo };
 })();
 
 //PageRouter.show('#about');
@@ -3747,34 +3759,18 @@ const isUserSeeCustomAlert=''
     });
   }
 
-  // Watch hash changes (history.back() from settings/profile pages)
+  // Watch hash changes (back button, forward button, PageRouter navigation)
   window.addEventListener('popstate', () => {
     const hash = location.hash.replace('#','') || 'home';
     syncBottomNav(hash);
   });
 
-  // Wire bottom nav buttons to the existing data-link navigation
+  // Wire bottom nav buttons to PageRouter — no more manual page transitions
+  // or separate pushState calls here, PageRouter.navigateTo handles it all.
   document.querySelectorAll('.bnav-item[data-link]').forEach(btn => {
     btn.addEventListener('click', () => {
       const link = btn.dataset.link;
-      // Re-use existing data-link button if present (JS already handles it)
-      const existing = document.querySelector(
-        `[data-link="${link}"]:not(.bnav-item):not([style*="display:none"])`
-      );
-      if (existing) {
-        existing.click();
-      } else {
-        // Fallback: manually transition pages
-        document.querySelectorAll('.page').forEach(p => {
-          if (p.classList.contains('active')) p.classList.replace('active','exit');
-          setTimeout(() => p.classList.remove('exit'), 250);
-        });
-        const page = document.getElementById(link);
-        if (page) {
-          setTimeout(() => page.classList.add('active'), 10);
-          if (link !== 'home') history.pushState({page:link},'',`#${link}`);
-        }
-      }
+      PageRouter.navigateTo(link);
       syncBottomNav(link);
     });
   });
