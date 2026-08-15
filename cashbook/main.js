@@ -4000,7 +4000,7 @@ document.getElementById('profile')?.addEventListener('click', e => {
     return;
   }
 
-  // Sign Out row
+// Sign Out row
   if (target.closest('#signOutRow')) {
     showOverlay({
       title: '🚪 Sign Out?',
@@ -4008,13 +4008,17 @@ document.getElementById('profile')?.addEventListener('click', e => {
       btnColor: '#ef4444',
     });
     // Override the overlay confirm button to call signOut
-    const btn = document.getElementById('alertBtn');
+    const btn = document.getElementById('confirmBtn');   // ← was 'alertBtn'
     if (btn) {
       btn.onclick = () => {
-        firebase.auth().signOut()
-          .then(() => location.reload())
-          .catch(err => showTopToast(err.message, '#ef4444'));
-      };
+  firebase.auth().signOut()
+    .then(() => {
+      localStorage.clear();
+      window.location.hash = 'home';
+      location.reload(true)
+    })
+    .catch(err => showTopToast(err.message, '#ef4444'));
+};
     }
     return;
   }
