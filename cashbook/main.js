@@ -840,6 +840,7 @@ Sign out</button>
      mainView.style.display = 'none';
      userArea.innerHTML = '';
      document.querySelector('.loader').classList.add('off')
+     $('.bottom-nav').classList.add('hidden')
    }
  });
  
@@ -3675,7 +3676,7 @@ const syncExitStates = (pages, current) => {
 const PageRouter = (() => {
   const pages = document.querySelectorAll('.page');
   let current = document.querySelector('.page.active');
-  let atHome = true; // tracks whether we're sitting on the "home" history entry
+  let atHome = true;
 
   function show(hash) {
     const id = hash.replace('#', '') || 'home';
@@ -3690,20 +3691,24 @@ const PageRouter = (() => {
   }
   syncExitStates(pages, current);
 
-  // Central navigation — collapses history so back always returns to
-  // home in ONE tap, no matter how many pages were visited in between.
+  function setSearchBarVisible(visible) {
+    $('.search-wrapper').classList.toggle('hideToTop', !visible);
+  }
+
   function navigateTo(id) {
     if (!id || id === 'home') {
-      if (!atHome) history.back();      // unwind to the single base entry
+      if (!atHome) history.back();
       else show('#home');
+      setSearchBarVisible(true);   // ✅ home = search bar visible
       return;
     }
     if (atHome) {
-      history.pushState({ page: id }, '', `#${id}`); // first hop: push once
+      history.pushState({ page: id }, '', `#${id}`);
       atHome = false;
     } else {
-      history.replaceState({ page: id }, '', `#${id}`); // later hops: replace, don't stack
+      history.replaceState({ page: id }, '', `#${id}`);
     }
+    setSearchBarVisible(false);
     show(`#${id}`);
   }
 
@@ -3717,9 +3722,14 @@ const PageRouter = (() => {
   window.addEventListener('popstate', (e) => {
     const id = (e.state && e.state.page) || location.hash.replace('#', '') || 'home';
     atHome = (id === 'home');
+    setSearchBarVisible(atHome);
     show(`#${id}`);
   });
 
+  // Initial load — sync state before first render
+  const initialId = location.hash.replace('#', '') || 'home';
+  atHome = (initialId === 'home');
+  setSearchBarVisible(atHome);
   show(location.hash);
 
   return { show, navigateTo };
