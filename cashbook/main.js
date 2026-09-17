@@ -4195,7 +4195,7 @@ function aiBuildContext(entries) {
   const inShown = tIn - tOb;               // what the app's "Total IN" card shows
   const monthLines = Object.keys(byMonth).sort().map(m => {
     const g = byMonth[m];
-    return `${m}: IN(card, excl OB) ₹${g.in - g.ob}  IN(incl OB) ₹${g.in}  OB ₹${g.ob}  OUT ₹${g.out}  GPay ₹${g.gpay}  Net ₹${g.in - g.out - g.gpay}`;
+    return `${m}: Income(excl OB) ₹${g.in - g.ob}  Expenses ₹${g.out}  Profit ₹${g.in - g.ob - g.out}  | OB ₹${g.ob}  GPay ₹${g.gpay}  IN(incl OB) ₹${g.in}  Net(cash-in-hand) ₹${g.in - g.out - g.gpay}`;
   }).join('\n');
 
   const CAP = 1000;
@@ -4208,7 +4208,7 @@ function aiBuildContext(entries) {
   }).join('\n');
 
   return `TODAY: ${isoDate(new Date())}
-OVERALL TOTALS: IN(card, excl OB) ₹${inShown}  IN(incl OB) ₹${tIn}  Opening Balance ₹${tOb}  OUT ₹${tOut}  GPay ₹${tGpay}  Net(cash-in-hand) ₹${net}
+OVERALL: Income(excl OB) ₹${inShown}  Expenses ₹${tOut}  Profit(Income-Expenses) ₹${inShown - tOut}  | Opening Balance ₹${tOb}  GPay ₹${tGpay}  IN(incl OB) ₹${tIn}  Net(cash-in-hand) ₹${net}
 
 MONTHLY TOTALS:
 ${monthLines || '(none)'}
@@ -4268,13 +4268,19 @@ const AI_SYSTEM = `You are "Cashbook Buddy", a friendly AI assistant inside a mo
 
 You have TWO modes and you pick automatically per message:
 1) FINANCE MODE — when the user asks about money/cash/GPay/profit/expenses/entries: answer using ONLY the CASHBOOK DATA provided below. Currency is Indian Rupees ₹ (format like ₹1,250). Definitions you MUST use so your numbers match the app exactly:
-   - Total IN = sum over IN entries of (cash + gpay)   [IN includes GPay]
-   - Total OUT = sum over OUT entries of cash
-   - Total GPay = sum of gpay across all entries
-   - Opening Balance (OB) is an IN entry named exactly 'Opening Balance'.
-   - The app's "Total IN" card shows IN EXCLUDING OB — when the user asks for Total IN / income, use the "IN(card, excl OB)" figure so it matches their screen.
-   - Net / cash-in-hand = Total IN (incl OB) − Total OUT − Total GPay  (physical cash)
-   - For a multi-day range/dashboard the app's net also subtracts OB: net = IN − OUT − GPay − OB.
+   GLOSSARY — these are DIFFERENT things, never mix them up:
+   - Opening Balance (OB): the cash the shop STARTS with (an IN entry named exactly 'Opening Balance'). It is NOT income and NOT profit. Never count it as earnings.
+   - Income / revenue: money actually earned = IN entries EXCLUDING Opening Balance (cash + gpay).
+   - Expense: money spent = OUT entries.
+   - GPay: a payment METHOD (digital), not separate revenue. GPay amounts are ALREADY inside Income — never add them on top, never double count.
+   - Cash in Hand: physical cash only = OB + cash income − cash expenses. This is NOT profit.
+   - Profit = Income − Expenses.
+
+   RULES:
+   - If the user asks about PROFIT, answer with Profit (Income − Expenses). NEVER answer a profit question with Net/cash-in-hand, and NEVER let Opening Balance inflate it.
+   - If Income is ₹0 and the only money present is an Opening Balance, the profit is ₹0 — say so plainly and explain the OB is just starting cash, not earnings.
+   - Use the Income / Expenses / Profit figures given in the data block; don't re-derive them.
+   - Matching the app's screen: the "Total IN" card shows IN EXCLUDING OB, and the app's Net/cash-in-hand = IN (incl OB) − OUT − GPay (a multi-day range also subtracts OB).
    Be concise, show the ₹ figures, never invent numbers, and if the data doesn't cover it, say so plainly. You may add a light emoji like 📈💰.
 2) FUN MODE — when the user is just greeting, chatting, joking or venting: be a warm, playful shop buddy 😄. Use emojis, light banter and encouragement (e.g. "big sales today, keep it up! 🚀"). Keep it friendly and appropriate for a shopkeeper — never rude, offensive, or personal-attacking.
 
