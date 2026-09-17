@@ -1,0 +1,28 @@
+{
+  "//": "TARGET rules for the CASHBOOK app (project recat-auth-test). DO NOT APPLY YET.",
+  "//BLOCKER": "Cashbook stores no uid. These rules only work after /users/$shop/members/$uid is written on signup+login and backfilled for existing shops (see SECURITY-AUDIT.md F1). Applying them before that locks everyone out.",
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "users": {
+      "$shop": {
+        ".read": "auth != null && data.child('members').child(auth.uid).exists()",
+        ".write": "auth != null && (data.child('members').child(auth.uid).exists() || !data.exists())",
+
+        "signupInfo": {
+          "email": {
+            ".read": true,
+            "//": "public lookup so a member can find the shop before signing in"
+          }
+        }
+      }
+    },
+
+    "$shop": {
+      "//": "the ledger itself: {username}/{YYYY-MM-DD}/{in|out|liquid}, plus goals/reminders/recycleBin/counters",
+      ".read": "auth != null && root.child('users').child($shop).child('members').child(auth.uid).exists()",
+      ".write": "auth != null && root.child('users').child($shop).child('members').child(auth.uid).exists()"
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "//": "PROPOSED rules for the SERVICE app (project c24o-c038b). Not applied. Test in the Rules Playground first.",
+  "//PUBLIC_EMAIL_LOOKUP": "Login must read the shop's email BEFORE signing in, so owner/email stays publicly readable. Everything else needs auth. Narrow this further only after login no longer reads the DB first.",
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "shops": {
+      "$shop": {
+        ".read": "auth != null && (data.child('uid').val() === auth.uid || data.child('owner/uid').val() === auth.uid)",
+        ".write": "auth != null && (data.child('uid').val() === auth.uid || data.child('owner/uid').val() === auth.uid || !data.exists())",
+
+        "owner": {
+          "email": {
+            ".read": true,
+            "//": "public on purpose: the login flow needs it before auth"
+          }
+        },
+
+        "password": {
+          ".read": false,
+          ".write": true,
+          "//": "legacy plaintext password: never readable. Write allowed so migration can null it out."
+        }
+      }
+    },
+
+    "clicks": {
+      ".read": false,
+      ".write": true,
+      "//": "write-only analytics"
+    }
+  }
+}
