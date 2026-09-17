@@ -47,6 +47,10 @@ let ready = 0, claimable = 0, blocked = 0;
 for (const shop of names) {
   const s = shops[shop] || {};
   const memberUids = Object.keys(s.members || {});
+  // Provenance matters: under today's open rules a client-written claim is
+  // only as trustworthy as the rules are. A server-side backfill is not.
+  const viaBackfill = memberUids.filter(u => (s.members[u] || {}).claimedVia === 'backfill');
+  const viaClient   = memberUids.filter(u => (s.members[u] || {}).claimedVia === 'client-claim');
   const hasSignupEmail = Boolean(s.signupInfo && s.signupInfo.email);
 
   const events = Object.values(audit[shop] || {});
@@ -65,7 +69,10 @@ for (const shop of names) {
       blocked++;
     } else {
       status = 'READY';
-      note = `${memberUids.length} member uid(s)`;
+      const prov = [];
+      if (viaBackfill.length) prov.push(`${viaBackfill.length} server-backfilled`);
+      if (viaClient.length) prov.push(`${viaClient.length} client-claimed`);
+      note = `${memberUids.length} member uid(s)${prov.length ? ' (' + prov.join(', ') + ')' : ''}`;
       ready++;
     }
   } else if (hasSignupEmail) {
@@ -78,7 +85,7 @@ for (const shop of names) {
     blocked++;
   }
 
-  rows.push({ shop, status, note, tally });
+  rows.push({ shop, status, note, tally, clientClaimed: viaClient.length > 0 });
 }
 
 console.log('\nCashbook membership audit');
@@ -93,8 +100,14 @@ for (const r of rows) {
 console.log('-'.repeat(72));
 console.log(`${names.length} shops | READY ${ready} | PENDING ${claimable} | needs attention ${blocked}`);
 
+const anyClientClaimed = rows.some(r => r.clientClaimed);
 if (blocked === 0 && claimable === 0) {
   console.log('\nVerdict: safe to set ENFORCE_MEMBERSHIP = true in cashbook/main.js.');
+  if (anyClientClaimed) {
+    console.log('  Caveat: some mappings were written by the client, which anyone');
+    console.log('  could forge while the database rules are still open. Re-run a');
+    console.log('  server-side backfill first if you want this gate to be trustworthy.');
+  }
 } else {
   console.log('\nVerdict: DO NOT enforce yet.');
   if (claimable) console.log(`  - ${claimable} shop(s) still need their owner to log in once to self-claim.`);

@@ -72,6 +72,38 @@ live in `scripts/test-auth.mjs` and run in CI.
 When every active shop reports READY, set `ENFORCE_MEMBERSHIP = true`. Rollback is
 flipping it back and redeploying; no data is touched.
 
+#### Two caveats on the claim, and what to do about them
+
+While the rules are still open, **the email check in `resolveMembership` runs only in
+our own client**. Anyone can open a console and write `/users/{shop}/members/{theirUid}`
+directly. So the claim is a convenience for collecting the mapping, not a control — and
+the coverage number Phase 2 keys on is itself forgeable.
+
+That is not a regression (with open rules an attacker can already write the whole
+ledger), but it has two consequences worth planning around:
+
+1. **A server-side backfill is strictly better than the client claim.** One run of
+   `admin.auth().getUserByEmail(signupInfo.email)` with a service credential maps every
+   shop deterministically, with nothing to race and no public email carve-out needed.
+   Write those records with `claimedVia: 'backfill'`; `audit-membership.mjs` reports
+   provenance and warns when a shop's mapping is only client-claimed.
+2. **`signupInfo.email` is itself writable today.** Someone could point a shop's signup
+   email at an address they control, claim it legitimately, and remove the real owner's
+   entry — a lockout that would survive into the rules phase. The backfill closes this
+   by resolving uids before anyone can poison the anchor.
+
+Membership records deliberately carry **no `role`**. Owner and staff share one Auth
+account, so there is no uid-level role to record, and a wrong-but-unused field would
+mislead whoever writes the rules later.
+
+#### Before Phase 3: capture the rules that are live right now
+
+**Nobody currently knows what the production rules are** — they were only ever edited in
+the console, and this repo has never held a copy. Export them from
+Firebase console → Realtime Database → Rules into `firebase/cashbook.rules.CURRENT.json`
+(and the same for the service app). That file is the only rollback if a rules deploy
+goes wrong.
+
 **Phase 3 — rules.** Only after Phase 2 has been stable. See the blockers in
 `cashbook.rules.json`; the pre-login read of `/users/{shop}` and the root-level ledger
 path are the two things most likely to take the app down.

@@ -550,14 +550,17 @@ function renderType(type, data) {
 
   // Records uid + outcome only. Deliberately no email, password or token.
   const logAuthAttempt = (shop, uid, outcome) => {
+    // Fire and forget, and swallow both a sync throw and a rejected write:
+    // auditing must never be able to fail a real login.
     try {
-      db.ref(`/authAudit/${shop}`).push({
+      const w = db.ref(`/authAudit/${shop}`).push({
         uid: uid || 'unknown',
         outcome,
         at: Date.now(),
         atISO: new Date().toISOString()
       });
-    } catch (_) { /* auditing must never block a login */ }
+      if (w && typeof w.catch === 'function') w.catch(() => {});
+    } catch (_) { /* ignored on purpose */ }
   };
 
   /**
@@ -591,13 +594,15 @@ function renderType(type, data) {
     // created by signupUser), and Auth refuses a duplicate password account.
     const signupEmail = normStr(dbUser && dbUser.signupInfo && dbUser.signupInfo.email);
     if (signupEmail && signupEmail === normStr(user.email)) {
-      // role here describes the ACCOUNT (the owner's login), not the person
-      // typing a name at the keyboard - staff share this same account.
+      // Deliberately NO role field. Owner and staff share this one account,
+      // so there is no uid-level role and the record must not pretend there
+      // is - a future rule or admin tool would read it and be wrong.
+      // claimedVia records provenance: a client claim is only as trustworthy
+      // as the rules, so the audit can weigh it against a server backfill.
       const record = {
-        role: 'owner',
         fullname: (dbUser.signupInfo && dbUser.signupInfo.fullname) || dbUser.fullname || '',
-        addedAt: Date.now(),
-        addedBy: 'claim'
+        claimedAt: Date.now(),
+        claimedVia: 'client-claim'
       };
       try {
         await db.ref(`/users/${shop}/members/${uid}`).set(record);
@@ -689,7 +694,7 @@ function renderType(type, data) {
     // Which Firebase accounts may open this shop. New shops are born with
     // this map, so they never need the legacy claim-on-first-login path.
     members: newUid
-      ? { [newUid]: { role: 'owner', fullname, addedAt: Date.now(), addedBy: 'signup' } }
+      ? { [newUid]: { fullname, claimedAt: Date.now(), claimedVia: 'signup' } }
       : {},
     logins: {}
   });

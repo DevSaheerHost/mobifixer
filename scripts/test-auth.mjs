@@ -40,10 +40,10 @@ const baseDb = () => ({
   users: {
     alpha:  { username: 'alpha',  fullname: 'Anita Rao',
               signupInfo: { fullname: 'Anita Rao', email: 'a@shop.test' },
-              members: { uidA: { role: 'owner', addedBy: 'signup' } } },
+              members: { uidA: { claimedVia: 'signup' } } },
     beta:   { username: 'beta',   fullname: 'Bilal Khan',
               signupInfo: { fullname: 'Bilal Khan', email: 'b@shop.test' },
-              members: { uidB: { role: 'owner', addedBy: 'signup' } } },
+              members: { uidB: { claimedVia: 'signup' } } },
     legacy: { username: 'legacy', fullname: 'Anita Rao',
               signupInfo: { fullname: 'Anita Rao', email: 'a@shop.test' } },  // no members yet
     orphan: { username: 'orphan', fullname: 'Anita Rao',
@@ -153,7 +153,7 @@ console.log('\nPhase 1 - ENFORCE_MEMBERSHIP = false (record and log, deny nobody
   e = sandbox();
   await login(e, 'legacy', OWNER_A, 'Anita Rao');
   check('legacy shop self-claims for the account matching the signup email',
-    outcomeFor(e.store, 'legacy') === 'claimed' && e.store.users.legacy.members?.uidA?.addedBy === 'claim',
+    outcomeFor(e.store, 'legacy') === 'claimed' && e.store.users.legacy.members?.uidA?.claimedVia === 'client-claim',
     outcomeFor(e.store, 'legacy'));
 
   e = sandbox();
@@ -169,7 +169,13 @@ console.log('\nPhase 1 - ENFORCE_MEMBERSHIP = false (record and log, deny nobody
   e = sandbox();
   await login(e, 'legacy', OWNER_A, 'Anita Rao');
   check('claiming one shop leaves other shops untouched',
-    JSON.stringify(e.store.users.beta.members) === '{"uidB":{"role":"owner","addedBy":"signup"}}');
+    JSON.stringify(e.store.users.beta.members) === '{"uidB":{"claimedVia":"signup"}}');
+
+  e = sandbox();
+  await login(e, 'legacy', OWNER_A, 'Anita Rao');
+  check('claimed record carries no uid-level role (staff share the uid)',
+    !('role' in (e.store.users.legacy.members?.uidA || {})),
+    JSON.stringify(e.store.users.legacy.members?.uidA));
 
   e = sandbox();
   const alpha = baseDb().users.alpha;
