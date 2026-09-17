@@ -1,6 +1,7 @@
 {
   "//": "TARGET rules for the CASHBOOK app (project recat-auth-test). DO NOT APPLY YET.",
-  "//BLOCKER": "Cashbook stores no uid. These rules only work after /users/$shop/members/$uid is written on signup+login and backfilled for existing shops (see SECURITY-AUDIT.md F1). Applying them before that locks everyone out.",
+  "//BLOCKER": "STILL DO NOT APPLY. Phase 1 (client-side) now writes /users/$shop/members/$uid on signup and claims it on first login, but existing shops are only mapped as their owners log in. Run scripts/audit-membership.mjs and set ENFORCE_MEMBERSHIP=true first. Applying these rules before every active shop is mapped locks those shops out.",
+  "//UNRESOLVED": "Two known gaps in these rules: loginUser reads /users/$shop BEFORE signing in (unauthenticated, would be denied), and /feedback + /auditLogs are not covered here at all.",
   "rules": {
     ".read": false,
     ".write": false,

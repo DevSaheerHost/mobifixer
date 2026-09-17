@@ -1,9 +1,12 @@
 # Firebase security audit — findings & proposed rules
 
-**Status: documentation only. Nothing here has been applied.** Rules are edited in the
-Firebase console; this repo had none, so they were invisible to review. Apply only
-after reading the constraints below and testing in the Rules Playground — a wrong
-rule locks out live shops.
+**Status: no Firebase Security Rules have been applied.** The `.rules.json` files here
+are proposals only. Rules are edited in the Firebase console; this repo had none, so
+they were invisible to review. Apply only after reading the constraints below and
+testing in the Rules Playground — a wrong rule locks out live shops.
+
+F1 now has **client-side Phase 1 shipped** (see its Status section). That is code, not
+rules, and it denies nobody yet.
 
 There are **two separate Firebase projects**:
 
@@ -29,17 +32,49 @@ in `recat-auth-test` can type **someone else's shop username** and the client ha
 that shop's ledger. `detectRole` then grants **owner** to anyone whose typed name is a
 substring of the stored owner name.
 
-The database cannot save us here either: **cashbook stores no uid anywhere**.
-`signupUser()` writes `{username, fullname, role, signupInfo:{device,fullname,email}, logins}` —
-no `uid`, and `staff` is keyed by `fullname`. So there is currently **no uid→shop mapping
-to write a rule against**.
+The database could not save us either: **cashbook stored no uid anywhere**.
+`signupUser()` wrote `{username, fullname, role, signupInfo:{device,fullname,email}, logins}` —
+no `uid`, and `staff` is keyed by `fullname`. There was **no uid→shop mapping to write a
+rule against**. Phase 1 below starts building one.
 
-**Fix order (code first, then rules):**
-1. On signup, also write `members/{uid}: true` and `ownerUid: uid` under `/users/{username}`.
-2. On login, after `signInWithEmailAndPassword`, verify `members[auth.uid]` exists; if not,
-   sign out and refuse — instead of trusting the typed username.
-3. Backfill `members` for existing shops (one-off script, owner's uid from their email).
-4. Only then apply `cashbook.rules.json`, which gates everything on membership.
+### Status: Phase 1 shipped (record + log, enforce nothing)
+
+Confirmed with the operator: **staff sign in with the owner's email and password**.
+`signupUser()` refuses an existing username, so staff have no way to register their own
+account for an existing shop. In practice that means **one Firebase Auth account per
+shop**, and owner-vs-staff is only the name typed at login.
+
+That splits the problem cleanly:
+
+* **Authorization** (which shop may this account open) — keyed on uid. This is the hole.
+* **Display role** (owner or staff) — stays name-based, because staff share the owner's
+  uid and no uid check can tell them apart. It is a guard rail, not a boundary (F3).
+
+**Phase 1 — done, in `cashbook/main.js`:**
+1. `signupUser()` writes `members/{uid}` as part of the same `/users/{shop}` write, so new
+   shops are born mapped.
+2. `resolveMembership()` classifies every login as `member` / `claimed` / `no-record` /
+   `mismatch` and records it to `/authAudit/{shop}` (uid and outcome only — no email,
+   password or token). A legacy shop with no `members` node self-claims for the account
+   whose email matches `signupInfo.email`. An attacker cannot forge that anchor: the
+   address is already registered in Firebase Auth, and Auth refuses a duplicate
+   password account for it.
+3. `detectRole()` no longer uses `.includes()`. Typing `a` used to match almost any owner
+   name and hand out owner; it is now an exact match against the signup name or the
+   current profile name, consistent with `handleStaffAccessControl()`.
+4. `loadUserFromDB()` is gated on `onAuthStateChanged` instead of running at module load
+   from `localStorage` alone.
+
+`ENFORCE_MEMBERSHIP = false`, so nobody is denied yet. Regression tests for all of this
+live in `scripts/test-auth.mjs` and run in CI.
+
+**Phase 2 — enforce.** Run `node scripts/audit-membership.mjs <firebase-export.json>`.
+When every active shop reports READY, set `ENFORCE_MEMBERSHIP = true`. Rollback is
+flipping it back and redeploying; no data is touched.
+
+**Phase 3 — rules.** Only after Phase 2 has been stable. See the blockers in
+`cashbook.rules.json`; the pre-login read of `/users/{shop}` and the root-level ledger
+path are the two things most likely to take the app down.
 
 ---
 
@@ -65,7 +100,13 @@ same publicly-readable record.
 Both apps let the person pick their own role at login (service app: radio buttons;
 cashbook: `detectRole` on a typed name). Client-side role gates — including the
 owner-only delete added earlier — are therefore a guard rail against accidents, not
-security. Real enforcement needs the uid→role mapping from F1 plus rules.
+security.
+
+For cashbook this is now a **known, accepted limitation** rather than an oversight:
+staff share the owner's Auth account, so there is no separate identity to bind a role
+to. Making the role a real boundary would mean giving every staff member their own
+login — a product change, not a rules change. F1's membership map fixes the
+*cross-shop* hole; it does not make owner-vs-staff enforceable.
 
 ---
 

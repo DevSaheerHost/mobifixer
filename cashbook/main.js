@@ -536,10 +536,92 @@ function renderType(type, data) {
   const snap = await userRef.get();
   return snap.exists() ? snap.val() : null;
 }
+  // ── Authorization: shop membership ──────────────────────────────
+  // Firebase Auth answers "who is this person". It does NOT answer "which
+  // shop may they open". Until this existed, any valid account in the
+  // project could open any shop just by typing its username.
+  //
+  // Phase 1 (now): RECORD the uid -> shop mapping and LOG mismatches, but
+  // still let everyone in, so no live shop can be locked out on day one.
+  // Phase 2 (later): flip ENFORCE_MEMBERSHIP to true to start denying.
+  const ENFORCE_MEMBERSHIP = false;
+
+  const normStr = (v) => (v || '').trim().toLowerCase();
+
+  // Records uid + outcome only. Deliberately no email, password or token.
+  const logAuthAttempt = (shop, uid, outcome) => {
+    try {
+      db.ref(`/authAudit/${shop}`).push({
+        uid: uid || 'unknown',
+        outcome,
+        at: Date.now(),
+        atISO: new Date().toISOString()
+      });
+    } catch (_) { /* auditing must never block a login */ }
+  };
+
+  /**
+   * Is this signed-in Firebase account allowed to open this shop?
+   * Returns { outcome, membership } where outcome is one of:
+   *   'member'    - uid is already in the shop's members map
+   *   'claimed'   - legacy shop with no members map; this account matched the
+   *                 email recorded at signup, so the mapping was created now
+   *   'no-record' - legacy shop we could not safely claim (needs the audit)
+   *   'mismatch'  - shop HAS a members map and this uid is not in it
+   * Never throws: in Phase 1 a read failure must not break a real login.
+   */
+  const resolveMembership = async (shop, dbUser, user) => {
+    const uid = user && user.uid;
+    if (!uid) return { outcome: 'no-record', membership: null };
+
+    let members = null;
+    try {
+      const snap = await db.ref(`/users/${shop}/members`).get();
+      members = snap.exists() ? snap.val() : null;
+    } catch (_) {
+      return { outcome: 'no-record', membership: null };
+    }
+
+    if (members && members[uid]) return { outcome: 'member', membership: members[uid] };
+    if (members) return { outcome: 'mismatch', membership: null };
+
+    // Legacy shop, no members map yet. Claim it for the account whose email
+    // matches the one recorded at signup. An attacker cannot forge that:
+    // the address is already registered in Firebase Auth (every shop was
+    // created by signupUser), and Auth refuses a duplicate password account.
+    const signupEmail = normStr(dbUser && dbUser.signupInfo && dbUser.signupInfo.email);
+    if (signupEmail && signupEmail === normStr(user.email)) {
+      // role here describes the ACCOUNT (the owner's login), not the person
+      // typing a name at the keyboard - staff share this same account.
+      const record = {
+        role: 'owner',
+        fullname: (dbUser.signupInfo && dbUser.signupInfo.fullname) || dbUser.fullname || '',
+        addedAt: Date.now(),
+        addedBy: 'claim'
+      };
+      try {
+        await db.ref(`/users/${shop}/members/${uid}`).set(record);
+        return { outcome: 'claimed', membership: record };
+      } catch (_) {
+        return { outcome: 'no-record', membership: null };
+      }
+    }
+    return { outcome: 'no-record', membership: null };
+  };
+
+  // Owner-vs-staff is a DISPLAY role, not a security boundary, and it stays
+  // name-based on purpose: staff sign in with the owner's shared account, so
+  // the uid cannot tell them apart. What changed is the comparison - it was
+  // .includes(), meaning typing "a" matched almost any owner name and handed
+  // out owner. Now it is exact, matching handleStaffAccessControl(). Both the
+  // signup name and the current profile name are accepted, so tightening this
+  // cannot lock out anyone who can already sign in today.
   const detectRole=(dbUser, fullname) =>{
-  return dbUser.fullname.toLowerCase().includes(fullname.toLowerCase())
-    ? 'owner'
-    : 'staff';
+  const typed = normStr(fullname);
+  if (!typed) return 'staff';
+  const signupName = normStr(dbUser && dbUser.signupInfo && dbUser.signupInfo.fullname);
+  const currentName = normStr(dbUser && dbUser.fullname);
+  return (typed === signupName || typed === currentName) ? 'owner' : 'staff';
 }
   const loginUser= async({ email, password, username, fullname })=> {
   const dbUser = await getUser(username);
@@ -548,8 +630,23 @@ function renderType(type, data) {
     return;
   }
 
-  // Firebase Auth handles password — no DB password check
-  await auth.signInWithEmailAndPassword(email, password);
+  // Authentication: Firebase Auth handles the password. This proves WHO the
+  // person is. It proves nothing about which shop they may open.
+  const cred = await auth.signInWithEmailAndPassword(email, password);
+  const authUser = (cred && cred.user) || auth.currentUser;
+
+  // Authorization: does this Firebase UID actually belong to THIS shop?
+  const { outcome } = await resolveMembership(username, dbUser, authUser);
+  logAuthAttempt(username, authUser && authUser.uid, outcome);
+
+  if (outcome === 'mismatch' && ENFORCE_MEMBERSHIP) {
+    await auth.signOut();
+    localStorage.removeItem('CASHBOOK_USER_NAME');
+    localStorage.removeItem('CASHBOOK_ROLL');
+    localStorage.removeItem('CASHBOOK_FULLNAME');
+    showTopToast("This account doesn't have access to that shop.", '#F44336');
+    return;
+  }
 
   const role = detectRole(dbUser, fullname);
 
@@ -576,8 +673,9 @@ function renderType(type, data) {
     return;
   }
   
-  await auth.createUserWithEmailAndPassword(email, password);
-  
+  const cred = await auth.createUserWithEmailAndPassword(email, password);
+  const newUid = cred && cred.user && cred.user.uid;
+
   // ⚠️ Password is NEVER stored in the database — Firebase Auth handles it
   await db.ref(`/users/${username}`).set({
     username,
@@ -588,6 +686,11 @@ function renderType(type, data) {
       fullname,
       email,
     },
+    // Which Firebase accounts may open this shop. New shops are born with
+    // this map, so they never need the legacy claim-on-first-login path.
+    members: newUid
+      ? { [newUid]: { role: 'owner', fullname, addedAt: Date.now(), addedBy: 'signup' } }
+      : {},
     logins: {}
   });
   
@@ -842,7 +945,12 @@ Sign out</button>
      // Start fetching in background instantly (don't await — parallel with UI setup)
      const _prefetchPromise = db.ref(dayRoot(todayISO)).get();
      loadForDate(todayISO, _prefetchPromise);
-     
+
+     // Gated on auth state: previously this ran at module load from
+     // localStorage alone, so a signed-out browser holding a stale
+     // CASHBOOK_USER_NAME would still render a shop.
+     loadUserFromDB();
+
    } else {
      authView.style.display = 'block';
      mainView.style.display = 'none';
@@ -854,7 +962,7 @@ Sign out</button>
  
  
     
-    const loadUserFromDB = async () => {
+    async function loadUserFromDB() {
   if (!username) return handleInvalidAuthState();
   
   try {
@@ -894,9 +1002,10 @@ Sign out</button>
     console.error(err);
     showTopToast('Something went wrong. Retry.');
   }
-};
+}
 
-loadUserFromDB()
+// loadUserFromDB() is called from onAuthStateChanged above, once Firebase
+// Auth has confirmed a signed-in user — not unconditionally at module load.
     // get user data from DB
 
 const ProfilePageFeedback = (type) => {

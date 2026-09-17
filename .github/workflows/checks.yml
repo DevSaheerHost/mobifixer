@@ -14,3 +14,5 @@ jobs:
           node-version: '20'
       - name: Syntax-check every JavaScript file
         run: node scripts/check.mjs
+      - name: Cashbook shop-authorization regression tests
+        run: node scripts/test-auth.mjs
