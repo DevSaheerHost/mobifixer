@@ -1624,12 +1624,48 @@ function setupEventDelegation() {
   
 
 
-    // Create serial number (count existing children +1)
-    async function nextSerial(dateISO,type){
-      const ref = db.ref(dayRoot(dateISO)+`/${type}`);
-      const snap = await ref.get();
-      const count = snap.exists()? Object.keys(snap.val()).length:0;
-      return count+1;
+    // Highest serial ever used for this day+type, including deleted (recycled)
+    // entries, so a number that was handed out once is never handed out again.
+    async function _maxUsedSerial(dateISO, type) {
+      const paths = [dayRoot(dateISO) + `/${type}`, `${username}/recycleBin/${dateISO}/${type}`];
+      let max = 0;
+      for (const path of paths) {
+        try {
+          const snap = await db.ref(path).get();
+          if (!snap.exists()) continue;
+          Object.values(snap.val() || {}).forEach(r => {
+            const v = Number(r && r.serial) || 0;
+            if (v > max) max = v;
+          });
+        } catch (_) { /* unreadable path must not block an entry */ }
+      }
+      return max;
+    }
+
+    // Serial number = a permanent per-day id.
+    // Previously this counted existing children + 1, which was wrong twice over:
+    //   - deleting an entry lowered the count, so the next entry REUSED a number
+    //   - two staff adding at once both read the same count and got the SAME number
+    // A transaction-backed counter fixes both: it only ever moves up, and Firebase
+    // serialises concurrent updates.
+    async function nextSerial(dateISO, type){
+      if (!type) return 1;                 // /liquid is a single node, not a list
+      const counterRef = db.ref(`${username}/counters/${dateISO}/${type}`);
+
+      // Seed only on the first add of a day (or for days written before counters
+      // existed); afterwards the counter alone is authoritative.
+      let floor = 0;
+      try {
+        const cur = await counterRef.get();
+        if (!cur.exists()) floor = await _maxUsedSerial(dateISO, type);
+      } catch (_) {
+        floor = await _maxUsedSerial(dateISO, type);
+      }
+
+      const res = await counterRef.transaction(c => Math.max(Number(c) || 0, floor) + 1);
+      const val = res && res.committed && res.snapshot ? Number(res.snapshot.val()) : NaN;
+      if (Number.isFinite(val) && val > 0) return val;
+      return (floor || await _maxUsedSerial(dateISO, type)) + 1;   // transaction aborted
     }
 
 const saveItemName = (raw) => {
@@ -4158,7 +4194,7 @@ async function aiFetchLedger() {
   const raw = snap.val() || {};
   const entries = [];
   Object.keys(raw).forEach(dateKey => {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return; // skip goals/reminders/recycleBin
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return; // skip goals/reminders/recycleBin/counters
     const day = raw[dateKey] || {};
     ['in', 'out'].forEach(type => {
       const group = day[type] || {};
