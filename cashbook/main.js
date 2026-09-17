@@ -2316,9 +2316,9 @@ function askUserReason({ title, placeholder, btnText }) {
 
 // Add your video files to ./assets/video/ and list them here
 const MEME_VIDEOS = [
-  '/cashbook/assets/video/cat.mp4',
-  '/cashbook/assets/video/blabla.mp4',
-  '/cashbook/assets/video/manual_override.mp4',
+  './assets/video/cat.mp4',
+  './assets/video/blabla.mp4',
+  './assets/video/manual_override.mp4',
   //'./assets/video/party4.mp4',
  // './assets/video/party5.mp4',
 ];
@@ -2566,7 +2566,7 @@ drawSparklineFullscreen(fullscreenChart, nets, labels)
   const chartElSvg = document.querySelector('#dashChart');
 
   chartElSvg.onclick=()=>{
-  location.href='/cashbook/dashboard/'
+  location.href='./dashboard'
   //  mainView.style.display='none';
    // chartView.style.display='block';
    // document.querySelector('.card.dboard').style.display='none';
