@@ -2,6 +2,13 @@ const $ = s => document.querySelector(s)
 const username = localStorage.getItem('CASHBOOK_USER_NAME');
 const fullname = localStorage.getItem('CASHBOOK_FULLNAME');
 
+// Safari / older iOS WebViews lack requestIdleCallback -> fall back to a short timer.
+// typeof-test so this can't itself throw a ReferenceError.
+const runWhenIdle = (cb, opts = {}) => {
+  if (typeof requestIdleCallback === 'function') return requestIdleCallback(cb, opts);
+  return setTimeout(() => cb({ didTimeout: true, timeRemaining: () => 0 }), 300);
+};
+
 // ── NETWORK SPEED: Data cache ──────────────────────────────────
 // In-memory cache: instant re-render when switching back to same date
 const _memCache = {};
@@ -1220,7 +1227,7 @@ function filterData(data, searchValue) {
 
       // ── SPEED: Prefetch adjacent dates in background (zero-cost) ──
       // When user taps prev/next day, data is already cached
-      requestIdleCallback(() => {
+      runWhenIdle(() => {
         const d = new Date(dateISO);
         const prev = new Date(d); prev.setDate(d.getDate() - 1);
         const next = new Date(d); next.setDate(d.getDate() + 1);
