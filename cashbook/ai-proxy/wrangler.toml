@@ -1,0 +1,11 @@
+name = "cashbook-ai-proxy"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+# Secrets — DO NOT put them here. Set them after deploy:
+#   wrangler secret put GEMINI_KEY
+#   wrangler secret put GROQ_KEY
+#
+# Optional: restrict which browser origins may call this Worker.
+# [vars]
+# ALLOWED_ORIGINS = "https://mobifixer.vercel.app,http://localhost:5500"

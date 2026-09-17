@@ -3991,10 +3991,10 @@ const AI_ERR_RANK = { RESOURCE_EXHAUSTED: 7, PERMISSION_DENIED: 6, INVALID_ARGUM
 const aiRank = (e) => (e && AI_ERR_RANK[e.aiStatus]) || 0;
 
 // Discover flash models this key can actually use (self-heals against model renames).
-async function aiDiscoverModels(key) {
+async function aiDiscoverModels() {
   if (_aiDiscoveredModels) return _aiDiscoveredModels;
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(key)}`);
+    const res = await fetch(aiGeminiUrl('v1beta/models'));
     if (!res.ok) return (_aiDiscoveredModels = []);
     const data = await res.json();
     _aiDiscoveredModels = (data.models || [])
@@ -4010,16 +4010,26 @@ let aiMessages = [];               // [{role:'user'|'model', text}]
 let _aiLedgerText = null;          // cached context block
 let _aiLedgerAt = 0;               // cache timestamp
 
-// Shared default key so AI works out of the box; a user's own key (Settings) overrides it.
-const AI_DEFAULT_KEY = 'AIzaSyD8iQZBQiEsTEH2kbVdW3xamhJ3RVG5HCo';
-const aiKey = () => localStorage.getItem('CASHBOOK_GEMINI_KEY') || AI_DEFAULT_KEY;
-const aiEnabled = () => !!(appSettings && appSettings.enableAI) && !!aiKey();
+// API keys live in a Cloudflare Worker proxy (server-side), NOT in this client, so
+// nothing secret ships to the browser. Set AI_PROXY to your deployed Worker URL
+// (see cashbook/ai-proxy/README.md). A user may still paste their OWN key in
+// Settings — then we call the provider directly with their key instead of the proxy.
+const AI_PROXY = ''; // e.g. 'https://cashbook-ai-proxy.<subdomain>.workers.dev' (no trailing slash)
+const geminiUserKey = () => (localStorage.getItem('CASHBOOK_GEMINI_KEY') || '').trim();
+const groqUserKey = () => (localStorage.getItem('CASHBOOK_GROQ_KEY') || '').trim();
+const aiConfigured = () => !!AI_PROXY || !!geminiUserKey() || !!groqUserKey();
+const aiEnabled = () => !!(appSettings && appSettings.enableAI) && aiConfigured();
 
 // Groq fallback — used when all Gemini models are rate-limited/exhausted (Gemini's
 // free tier limits fast; Groq's free tier is far more generous). OpenAI-compatible.
-const AI_GROQ_DEFAULT_KEY = ''; // TODO: paste shared default Groq key here
-const groqApiKey = () => localStorage.getItem('CASHBOOK_GROQ_KEY') || AI_GROQ_DEFAULT_KEY;
 const AI_GROQ_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
+
+// Gemini endpoint: direct with the user's own key, else via the proxy (no key in client).
+function aiGeminiUrl(subpath) {
+  const uk = geminiUserKey();
+  if (uk) return `https://generativelanguage.googleapis.com/${subpath}?key=${encodeURIComponent(uk)}`;
+  return `${AI_PROXY}/gemini/${subpath}`;
+}
 
 // Show/hide the bottom-nav "Ask AI" entry based on settings + key
 function updateAiNavVisibility() {
@@ -4179,8 +4189,7 @@ DEVELOPER PROFILE — Saheer Babu (share only when the user wants to know more):
 Today's date and the ledger follow.`;
 
 async function aiAsk() {
-  const key = aiKey();
-  if (!key) { showTopToast('Add your Gemini API key in Settings', '#ef4444'); location.hash = 'settings'; return null; }
+  if (!aiConfigured()) { showTopToast('AI is not set up yet — add a key in Settings.', '#ef4444'); location.hash = 'settings'; return null; }
   let ledger = '';
   try { ledger = await aiGetLedgerText(false); } catch (e) { ledger = '(ledger unavailable)'; }
   let profile = '';
@@ -4199,15 +4208,15 @@ async function aiAsk() {
   };
 
   try {
-    return await aiGenerate(key, body);           // primary: Gemini
+    return await aiGenerate(body);                // primary: Gemini
   } catch (err) {
-    // Gemini exhausted/unavailable → fall back to Groq if a key exists
-    const gk = groqApiKey();
+    // Gemini exhausted/unavailable → fall back to Groq (proxy or user's own key)
+    const groqAvailable = !!AI_PROXY || !!groqUserKey();
     const canFallback = err.httpCode === 429 ||
       ['RESOURCE_EXHAUSTED', 'NOT_FOUND', 'EMPTY', 'UNKNOWN', 'HTTP_500', 'HTTP_503'].includes(err.aiStatus);
-    if (gk && canFallback) {
+    if (groqAvailable && canFallback) {
       try {
-        return await aiGroqGenerate(gk, systemText, aiMessages.slice(-10));  // fallback: Groq
+        return await aiGroqGenerate(systemText, aiMessages.slice(-10));  // fallback: Groq
       } catch (gerr) {
         throw (aiRank(gerr) >= aiRank(err) ? gerr : err); // surface the more meaningful error
       }
@@ -4217,12 +4226,12 @@ async function aiAsk() {
 }
 
 // Low-level call with real-error surfacing, 429 backoff, model fallback + discovery.
-async function aiGenerate(key, body) {
+async function aiGenerate(body) {
   let bestErr = null;
   const consider = (e) => { if (!bestErr || aiRank(e) >= aiRank(bestErr)) bestErr = e; };
 
   const tryModel = async (model) => {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+    const url = aiGeminiUrl(`v1beta/models/${model}:generateContent`);
     const backoffs = [0, 1500, 4000]; // initial try + 2 retries for transient 429s
     for (let attempt = 0; attempt < backoffs.length; attempt++) {
       if (backoffs[attempt]) await aiSleep(backoffs[attempt]);
@@ -4260,7 +4269,7 @@ async function aiGenerate(key, body) {
 
   // If the only trouble was "model not found", ask Google what this key CAN use, then retry.
   if (!bestErr || bestErr.aiStatus === 'NOT_FOUND') {
-    const discovered = (await aiDiscoverModels(key)).filter(m => !primary.includes(m));
+    const discovered = (await aiDiscoverModels()).filter(m => !primary.includes(m));
     for (const m of discovered) {
       const out = await tryModel(m);
       if (out != null) return out;
@@ -4271,10 +4280,14 @@ async function aiGenerate(key, body) {
 }
 
 // Groq fallback (OpenAI-compatible chat completions). Throws AiError on failure.
-async function aiGroqGenerate(key, systemText, messages) {
+async function aiGroqGenerate(systemText, messages) {
   const oaMsgs = [{ role: 'system', content: systemText }].concat(
     messages.map(m => ({ role: m.role === 'model' ? 'assistant' : 'user', content: m.text }))
   );
+  const uk = groqUserKey();
+  const groqUrl = uk ? 'https://api.groq.com/openai/v1/chat/completions' : `${AI_PROXY}/groq/chat`;
+  const groqHeaders = { 'Content-Type': 'application/json' };
+  if (uk) groqHeaders['Authorization'] = 'Bearer ' + uk;
   let bestErr = null;
   const consider = (e) => { if (!bestErr || aiRank(e) >= aiRank(bestErr)) bestErr = e; };
 
@@ -4283,9 +4296,9 @@ async function aiGroqGenerate(key, systemText, messages) {
       if (wait) await aiSleep(wait);
       let res;
       try {
-        res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        res = await fetch(groqUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+          headers: groqHeaders,
           body: JSON.stringify({ model, messages: oaMsgs, temperature: 0.5 })
         });
       } catch (netErr) { consider(new AiError(navigator.onLine ? 'NETWORK' : 'OFFLINE', netErr.message)); break; }
@@ -4343,11 +4356,10 @@ function aiGuidance(status) {
 
 // Settings diagnostic: ping the API and report the real outcome
 async function aiTestKey() {
-  const key = aiKey();
-  if (!key) { showTopToast('Enter your Gemini API key first', '#ef4444'); return; }
-  showTopToast('Testing key…', '#0BA2FF');
+  if (!aiConfigured()) { showTopToast('Add a key first, or set up the app proxy', '#ef4444'); return; }
+  showTopToast('Testing…', '#0BA2FF');
   try {
-    const reply = await aiGenerate(key, { contents: [{ role: 'user', parts: [{ text: 'Reply with just: ok' }] }] });
+    const reply = await aiGenerate({ contents: [{ role: 'user', parts: [{ text: 'Reply with just: ok' }] }] });
     showTopToast(`✅ Working${_aiWorkingModel ? ' (' + _aiWorkingModel + ')' : ''}`, '#34A853');
     updateAiNavVisibility();
   } catch (err) {
