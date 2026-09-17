@@ -4497,10 +4497,78 @@ async function aiTestKey() {
 function aiEscape(t) {
   return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
+// Turn URLs in ALREADY-ESCAPED text into links. Escaping turned & into &amp;,
+// so the href must un-escape it or query strings (?a=1&b=2) break.
+function aiLinkify(escaped) {
+  return escaped.replace(/(https?:\/\/[^\s<]+|\bwww\.[^\s<]+)/g, (m) => {
+    let url = m, tail = '';
+    const t = url.match(/[.,;:!?)\]}]+$/);          // don't swallow sentence punctuation
+    if (t) { tail = t[0]; url = url.slice(0, -tail.length); }
+    if (!url) return m;
+    const href = url.replace(/&amp;/g, '&');
+    const full = /^www\./i.test(href) ? 'https://' + href : href;
+    return `<a href="${full}" target="_blank" rel="noopener noreferrer">${url}</a>` + tail;
+  });
+}
+
+// Minimal markdown: bold, inline code, bullet + numbered lists, links, newlines.
 function aiFormat(t) {
-  return aiEscape(t)
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\n/g, '<br>');
+  const lines = aiEscape(t).split('\n');
+  let out = '', list = null;                        // 'ul' | 'ol' | null
+  const closeList = () => { if (list) { out += `</${list}>`; list = null; } };
+  const inline = (x) => aiLinkify(
+    x.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+     .replace(/`([^`]+)`/g, '<code>$1</code>')
+  );
+  lines.forEach(raw => {
+    const b = raw.match(/^\s*[-*]\s+(.*)$/);
+    const n = raw.match(/^\s*\d+[.)]\s+(.*)$/);
+    if (b) {
+      if (list !== 'ul') { closeList(); out += '<ul>'; list = 'ul'; }
+      out += `<li>${inline(b[1])}</li>`;
+    } else if (n) {
+      if (list !== 'ol') { closeList(); out += '<ol>'; list = 'ol'; }
+      out += `<li>${inline(n[1])}</li>`;
+    } else {
+      closeList();
+      out += raw.trim() ? inline(raw) + '<br>' : '<br>';
+    }
+  });
+  closeList();
+  return out.replace(/(<br>)+$/, '');
+}
+
+// WhatsApp-style day label
+function aiDayLabel(ts) {
+  const d = new Date(ts), now = new Date();
+  const same = (a, b) => a.toDateString() === b.toDateString();
+  const y = new Date(now); y.setDate(now.getDate() - 1);
+  if (same(d, now)) return 'Today';
+  if (same(d, y)) return 'Yesterday';
+  const opts = { weekday: 'short', month: 'short', day: 'numeric' };
+  if (d.getFullYear() !== now.getFullYear()) opts.year = 'numeric';
+  return d.toLocaleDateString('en-IN', opts);
+}
+const aiTimeLabel = (ts) => new Date(ts).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+const AI_COPY_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+
+// Clipboard with a fallback for older iOS WebViews / non-secure origins
+async function aiCopyText(text) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(text); return true; }
+  } catch (_) {}
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:-9999px;opacity:0';
+    document.body.appendChild(ta);
+    ta.select(); ta.setSelectionRange(0, ta.value.length);
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  } catch (_) { return false; }
 }
 function aiRenderMessages() {
   const box = document.getElementById('aiMessages');
@@ -4508,9 +4576,20 @@ function aiRenderMessages() {
   if (!aiMessages.length) {
     box.innerHTML = `<div class="ai-empty">👋 Hi! I'm your Cashbook Buddy.<br>Ask me about your cash, GPay or profit — or just say hi 😄</div>`;
   } else {
-    box.innerHTML = aiMessages.map(m =>
-      `<div class="ai-msg ai-${m.role}"><div class="ai-bubble">${aiFormat(m.text)}</div></div>`
-    ).join('');
+    let html = '', lastDay = null;
+    aiMessages.forEach((m, i) => {
+      // Legacy messages (saved before timestamps existed) have no ts.
+      const day = m.ts ? aiDayLabel(m.ts) : 'Earlier';
+      if (day !== lastDay) { html += `<div class="ai-daysep"><span>${day}</span></div>`; lastDay = day; }
+      html += `<div class="ai-msg ai-${m.role}"><div class="ai-bubble">` +
+                `<div class="ai-text">${aiFormat(m.text)}</div>` +
+                `<div class="ai-meta">` +
+                  `<button class="ai-copy" data-i="${i}" title="Copy" aria-label="Copy message">${AI_COPY_ICON}</button>` +
+                  (m.ts ? `<span class="ai-time">${aiTimeLabel(m.ts)}</span>` : '') +
+                `</div>` +
+              `</div></div>`;
+    });
+    box.innerHTML = html;
   }
   box.scrollTop = box.scrollHeight;
 }
@@ -4537,7 +4616,7 @@ async function aiSendMessage(text) {
   const suggestions = document.getElementById('aiSuggestions');
   if (suggestions) suggestions.style.display = 'none';
 
-  aiMessages.push({ role: 'user', text });
+  aiMessages.push({ role: 'user', text, ts: Date.now() });
   aiRenderMessages();
   aiSaveChat();
 
@@ -4548,7 +4627,7 @@ async function aiSendMessage(text) {
     const reply = await aiAsk();
     if (typing) typing.remove();
     if (reply == null) return;               // no key (already handled)
-    aiMessages.push({ role: 'model', text: reply });
+    aiMessages.push({ role: 'model', text: reply, ts: Date.now() });
     aiRenderMessages();
     aiSaveChat();
   } catch (err) {
@@ -4557,7 +4636,7 @@ async function aiSendMessage(text) {
     const guide = aiGuidance(status);
     const raw = err.aiMessage ? `\n\n_${status}: ${err.aiMessage}_` : (guide ? '' : `\n\n_${status}_`);
     // Show the real reason as a chat bubble so it's readable and copyable
-    aiMessages.push({ role: 'model', text: `⚠️ ${guide || 'Something went wrong — please try again.'}${raw}` });
+    aiMessages.push({ role: 'model', text: `⚠️ ${guide || 'Something went wrong — please try again.'}${raw}`, ts: Date.now() });
     aiRenderMessages();
     aiSaveChat();
     showTopToast(guide ? status.replace(/_/g, ' ').toLowerCase() : 'AI error — see chat', '#ef4444');
@@ -4588,6 +4667,22 @@ async function aiSendMessage(text) {
 
   const testBtn = document.getElementById('aiTestKeyBtn');
   if (testBtn) testBtn.addEventListener('click', aiTestKey);
+
+  // Copy a message (delegated, since the list re-renders). Copies the RAW source
+  // text from aiMessages - not the rendered HTML.
+  const msgBox = document.getElementById('aiMessages');
+  if (msgBox) msgBox.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.ai-copy');
+    if (!btn) return;
+    const msg = aiMessages[Number(btn.dataset.i)];
+    if (!msg) return;
+    const ok = await aiCopyText(msg.text);
+    if (!ok) { showTopToast('Copy failed', '#ef4444'); return; }
+    btn.classList.add('copied');
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    if (typeof vibrate === 'function') vibrate(8);
+    setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = AI_COPY_ICON; }, 1500);
+  });
 
   const clearBtn = document.getElementById('aiClearChat');
   if (clearBtn) clearBtn.addEventListener('click', () => {
