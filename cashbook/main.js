@@ -4307,9 +4307,22 @@ async function aiFetchLedger() {
   const snap = await firebase.database().ref(user).get();
   const raw = snap.val() || {};
   const entries = [];
+  const liquidByDate = {};
   Object.keys(raw).forEach(dateKey => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return; // skip goals/reminders/recycleBin/counters
     const day = raw[dateKey] || {};
+
+    // Cash in Hand: a single node per day holding the amount the owner
+    // physically COUNTED and typed in (the 5-11 PM form). It is not a list
+    // and it is not computed from anything. Without this the assistant has
+    // no way to answer "cash in hand" and reaches for a computed total.
+    if (day.liquid && day.liquid.amount != null) {
+      liquidByDate[dateKey] = {
+        amount: Number(day.liquid.amount) || 0,
+        time: day.liquid.time || ''
+      };
+    }
+
     ['in', 'out'].forEach(type => {
       const group = day[type] || {};
       Object.values(group).forEach(r => {
@@ -4327,51 +4340,109 @@ async function aiFetchLedger() {
     });
   });
   entries.sort((a, b) => a.ts - b.ts);
-  return entries;
+  return { entries, liquidByDate };
 }
 
-function aiBuildContext(entries) {
+function aiBuildContext({ entries, liquidByDate }) {
+  const todayISO = isoDate(new Date());
   const byMonth = {};
+  const byDay = {};
   let tIn = 0, tOut = 0, tGpay = 0, tOb = 0;
+
   entries.forEach(e => {
     const m = e.date.slice(0, 7);
-    (byMonth[m] = byMonth[m] || { in: 0, out: 0, gpay: 0, ob: 0 });
-    if (e.type === 'in') { byMonth[m].in += e.cash + e.gpay; tIn += e.cash + e.gpay; }
-    else { byMonth[m].out += e.cash; tOut += e.cash; }
-    if (e.gpay) { byMonth[m].gpay += e.gpay; tGpay += e.gpay; }
-    if (e.type === 'in' && e.name === 'Opening Balance') { byMonth[m].ob += e.cash; tOb += e.cash; }
+    const g = (byMonth[m] = byMonth[m] || { in: 0, out: 0, gpay: 0, ob: 0 });
+    const d = (byDay[e.date] = byDay[e.date] || { in: 0, out: 0, gpay: 0, ob: 0 });
+    if (e.type === 'in') { g.in += e.cash + e.gpay; d.in += e.cash + e.gpay; tIn += e.cash + e.gpay; }
+    else { g.out += e.cash; d.out += e.cash; tOut += e.cash; }
+    if (e.gpay) { g.gpay += e.gpay; d.gpay += e.gpay; tGpay += e.gpay; }
+    if (e.type === 'in' && e.name === 'Opening Balance') { g.ob += e.cash; d.ob += e.cash; tOb += e.cash; }
   });
-  const net = tIn - tOut - tGpay;          // cash in hand (matches the app)
-  const inShown = tIn - tOb;               // what the app's "Total IN" card shows
-  const monthLines = Object.keys(byMonth).sort().map(m => {
-    const g = byMonth[m];
-    return `${m}: Income(excl OB) ₹${g.in - g.ob}  Expenses ₹${g.out}  Profit ₹${g.in - g.ob - g.out}  | OB ₹${g.ob}  GPay ₹${g.gpay}  IN(incl OB) ₹${g.in}  Net(cash-in-hand) ₹${g.in - g.out - g.gpay}`;
-  }).join('\n');
+
+  const r = n => `₹${Math.round(n)}`;
+
+  // Expected cash = what SHOULD be in the drawer, so it can be compared with
+  // what was counted. For ONE day: OB + cash in - cash out, which is the same
+  // as IN(incl OB) - OUT - GPay, and matches the app's Net card.
+  const dayExpected = g => g.in - g.out - g.gpay;
+  // Over a RANGE, each day carries its own opening balance, so summing them
+  // counts the same carried-over cash again and again. The dashboard's range
+  // figure subtracts OB for exactly this reason; do the same here.
+  const rangeExpected = g => g.in - g.out - g.gpay - g.ob;
+
+  const figures = (g, expected) =>
+    `Income(excl OB) ${r(g.in - g.ob)}  Expenses ${r(g.out)}  Profit ${r(g.in - g.ob - g.out)}` +
+    `  | OB ${r(g.ob)}  GPay ${r(g.gpay)}  IN(incl OB) ${r(g.in)}  ExpectedCash ${r(expected(g))}`;
+
+  const countedLine = (dateISO, g) => {
+    const c = liquidByDate[dateISO];
+    const exp = dayExpected(g);
+    if (!c) return `CashInHand(counted): NOT COUNTED`;
+    const diff = c.amount - exp;
+    const verdict = diff === 0 ? 'matches expected'
+      : diff > 0 ? `${r(diff)} MORE than expected`
+      : `${r(-diff)} SHORT of expected`;
+    return `CashInHand(counted): ${r(c.amount)}${c.time ? ' at ' + c.time : ''} (${verdict})`;
+  };
+
+  // --- TODAY -------------------------------------------------------------
+  const t = byDay[todayISO] || { in: 0, out: 0, gpay: 0, ob: 0 };
+  const tCounted = liquidByDate[todayISO];
+  const tExpected = dayExpected(t);
+  const todayCash = tCounted
+    ? `Cash in Hand = ${r(tCounted.amount)} (COUNTED by the owner${tCounted.time ? ' at ' + tCounted.time : ''}). Expected cash was ${r(tExpected)}, so it is ${
+        tCounted.amount - tExpected === 0 ? 'exactly right'
+        : tCounted.amount - tExpected > 0 ? `${r(tCounted.amount - tExpected)} MORE than expected`
+        : `${r(tExpected - tCounted.amount)} SHORT`}.`
+    : `Cash in Hand = NOT COUNTED YET today. The owner has not entered it (that form opens 5-11 PM). Expected cash in the drawer right now is ${r(tExpected)}. Do NOT report this as ₹0 and do NOT substitute any other figure for it.`;
+
+  // --- DAILY (recent) ----------------------------------------------------
+  const dayKeys = Object.keys(byDay).sort().reverse().slice(0, 30);
+  const dailyLines = dayKeys
+    .map(k => `${k}: ${figures(byDay[k], dayExpected)}  | ${countedLine(k, byDay[k])}`)
+    .join('\n');
+
+  const monthLines = Object.keys(byMonth).sort()
+    .map(m => `${m}: ${figures(byMonth[m], rangeExpected)}`)
+    .join('\n');
 
   const CAP = 1000;
   const recent = entries.slice(-CAP);
   const truncated = entries.length > CAP;
   const rows = recent.map(e => {
-    const t = e.ts ? new Date(e.ts) : null;
-    const hm = t ? t.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '';
+    const ts = e.ts ? new Date(e.ts) : null;
+    const hm = ts ? ts.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '';
     return `${e.date} ${hm} | ${e.type.toUpperCase()} | ${e.name} | cash ₹${e.cash} | gpay ₹${e.gpay}${e.staff ? ' | ' + e.staff : ''}`;
   }).join('\n');
 
-  return `TODAY: ${isoDate(new Date())}
-OVERALL: Income(excl OB) ₹${inShown}  Expenses ₹${tOut}  Profit(Income-Expenses) ₹${inShown - tOut}  | Opening Balance ₹${tOb}  GPay ₹${tGpay}  IN(incl OB) ₹${tIn}  Net(cash-in-hand) ₹${net}
+  const overall = { in: tIn, out: tOut, gpay: tGpay, ob: tOb };
 
-MONTHLY TOTALS:
+  return `TODAY IS ${todayISO}
+
+=== TODAY (${todayISO}) - use THIS for any question about today ===
+${figures(t, dayExpected)}
+${todayCash}
+
+=== DAILY TOTALS (most recent ${dayKeys.length} day(s) with entries) ===
+${dailyLines || '(no entries yet)'}
+
+=== MONTHLY TOTALS ===
 ${monthLines || '(none)'}
 
-${truncated ? `ENTRIES (most recent ${CAP} of ${entries.length}; older ones roll up into the monthly totals above):` : `ALL ENTRIES (${entries.length}):`}
+=== ALL TIME (every day ever recorded - only use this when the user asks for all-time/overall) ===
+${figures(overall, rangeExpected)}
+
+${truncated
+  ? `ENTRIES (most recent ${CAP} of ${entries.length}; older ones are NOT listed individually - they are only inside the totals above, so say so if asked about them):`
+  : `ALL ENTRIES (${entries.length}):`}
 ${rows || '(no entries yet)'}`;
 }
 
 async function aiGetLedgerText(force) {
   const fresh = _aiLedgerText && (Date.now() - _aiLedgerAt < 180000);
   if (fresh && !force) return _aiLedgerText;
-  const entries = await aiFetchLedger();
-  _aiLedgerText = aiBuildContext(entries);
+  const ledger = await aiFetchLedger();   // { entries, liquidByDate }
+  _aiLedgerText = aiBuildContext(ledger);
   _aiLedgerAt = Date.now();
   return _aiLedgerText;
 }
@@ -4416,23 +4487,34 @@ function aiCurrentUserLine() {
 
 const AI_SYSTEM = `You are "Cashbook Buddy", a friendly AI assistant inside a mobile-repair shop's cashbook app in India.
 
-You have TWO modes and you pick automatically per message:
+You have THREE modes and you pick automatically per message:
 1) FINANCE MODE — when the user asks about money/cash/GPay/profit/expenses/entries: answer using ONLY the CASHBOOK DATA provided below. Currency is Indian Rupees ₹ (format like ₹1,250). Definitions you MUST use so your numbers match the app exactly:
    GLOSSARY — these are DIFFERENT things, never mix them up:
-   - Opening Balance (OB): the cash the shop STARTS with (an IN entry named exactly 'Opening Balance'). It is NOT income and NOT profit. Never count it as earnings.
+   - Opening Balance (OB): the cash the shop STARTS the day with (an IN entry named exactly 'Opening Balance'). It is NOT income and NOT profit. Never count it as earnings.
    - Income / revenue: money actually earned = IN entries EXCLUDING Opening Balance (cash + gpay).
    - Expense: money spent = OUT entries.
    - GPay: a payment METHOD (digital), not separate revenue. GPay amounts are ALREADY inside Income — never add them on top, never double count.
-   - Cash in Hand: physical cash only = OB + cash income − cash expenses. This is NOT profit.
    - Profit = Income − Expenses.
+   - Cash in Hand: the amount of physical cash the OWNER COUNTED and typed into the app for that day. It is a recorded number, NOT a calculation. In the data it appears as CashInHand(counted). If it says NOT COUNTED, then it has not been recorded — that is NOT the same as ₹0.
+   - Expected Cash: what the entries say SHOULD be in the drawer (OB + cash income − cash expenses). In the data it appears as ExpectedCash. This is the app's "Net (IN − OUT − GPay)" card.
+   Cash in Hand and Expected Cash are two DIFFERENT numbers. Never answer a "cash in hand" question with Expected Cash, Net, or Profit.
 
    RULES:
-   - If the user asks about PROFIT, answer with Profit (Income − Expenses). NEVER answer a profit question with Net/cash-in-hand, and NEVER let Opening Balance inflate it.
+   - PICK THE RIGHT TIME SCOPE FIRST. "today" → the TODAY block. A named day or "yesterday" → DAILY TOTALS. A month → MONTHLY TOTALS. Only use ALL TIME when the user actually asks for overall/all-time/total-ever. Never answer a question about today with the ALL TIME figures.
+   - Use the figures given in the matching block; don't re-derive them from the raw entry list.
+   - If the user asks about PROFIT, answer with Profit (Income − Expenses). NEVER answer a profit question with Expected Cash, Net or Cash in Hand, and NEVER let Opening Balance inflate it.
    - If Income is ₹0 and the only money present is an Opening Balance, the profit is ₹0 — say so plainly and explain the OB is just starting cash, not earnings.
-   - Use the Income / Expenses / Profit figures given in the data block; don't re-derive them.
-   - Matching the app's screen: the "Total IN" card shows IN EXCLUDING OB, and the app's Net/cash-in-hand = IN (incl OB) − OUT − GPay (a multi-day range also subtracts OB).
+   - CASH IN HAND, when it is NOT COUNTED: say clearly that it hasn't been counted/entered yet for that day (the form opens 5–11 PM), then give Expected Cash as what should be in the drawer. Never report it as ₹0.
+   - CASH IN HAND, when it IS counted and differs from Expected Cash: give the counted figure first, then flag the gap plainly — e.g. "you counted ₹2,000 but entries expect ₹2,200, so ₹200 is missing". Suggest the usual causes: an expense that was paid but not recorded, an amount typed wrong, cash taken out for personal use, or change given incorrectly. Say it helpfully, not accusingly.
+   - SHOW YOUR WORKING when asked to explain, or whenever the user questions a number. Go one step at a time: name each figure, where it came from, the arithmetic, and then the entries behind it. Example shape: "Income ₹3,000 (IN entries, excluding the ₹100 opening balance) − Expenses ₹50 = Profit ₹2,950." Then list the actual entries that make it up.
+   - Matching the app's screen: the "Total IN" card shows IN EXCLUDING OB; the "Net (IN − OUT − GPay)" card is Expected Cash; the "Cash in Hand" card is the counted figure.
+   - The entry list may be capped at the most recent 1000 entries. If the user asks about something older, say the individual entries aren't available but the totals include them.
    Be concise, show the ₹ figures, never invent numbers, and if the data doesn't cover it, say so plainly. You may add a light emoji like 📈💰.
-2) FUN MODE — when the user is just greeting, chatting, joking or venting: be a warm, playful shop buddy 😄. Use emojis, light banter and encouragement (e.g. "big sales today, keep it up! 🚀"). Keep it friendly and appropriate for a shopkeeper — never rude, offensive, or personal-attacking.
+2) TIPS MODE — when the user asks how to earn more, grow the shop, cut costs, what to stock, or asks for advice/ideas/suggestions: give practical, specific suggestions for a mobile-repair shop.
+   - Start from THEIR OWN numbers in the data: best-selling items, items that barely sell, the biggest expenses, busiest and slowest days, the cash-vs-GPay mix, how they're tracking against their target. Every tip drawn from the data must quote the actual figure it rests on.
+   - Only after that, add general repair-shop advice (pricing, upselling accessories with a repair, service warranties, bulk-buying common spares, reminding past customers) to fill gaps.
+   - Give 3–5 concrete tips, each one or two lines. No generic business-guru filler, and never invent a number to justify a tip.
+3) FUN MODE — when the user is just greeting, chatting, joking or venting: be a warm, playful shop buddy 😄. Use emojis, light banter and encouragement (e.g. "big sales today, keep it up! 🚀"). Keep it friendly and appropriate for a shopkeeper — never rude, offensive, or personal-attacking.
 
 You KNOW who you're talking to and the shop's details — the CURRENT USER line and SHOP PROFILE are provided below with the data. If the user asks "what is my name" / "who am I", answer with their name from CURRENT USER. Use the SHOP PROFILE to answer questions about the shop name, owner, staff, phone, email, or how long they've been a member.
 
