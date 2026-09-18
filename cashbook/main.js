@@ -1432,6 +1432,7 @@ search.oninput = e => {
   
   const filtered = filterData(data, value);
   renderEntries(filtered, entriesListClone);
+  setSummaryHeading(`Matching \u201c${value}\u201d`);
 };
 
 window.onscroll = () => {
@@ -1466,21 +1467,32 @@ window.onscroll = () => {
 
 
 // render liquid money 
+// Always writes the label. It used to bail out when a day had no counted
+// value, leaving the PREVIOUS day's figure on screen - so yesterday's cash
+// showed as today's. "Not counted" and "zero" are different answers, so an
+// absent value renders as a dash, never 0.
 function renderLiquid(liquid) {
-  if (!liquid) {
-    console.log('ther is no Liquid money')
-    return;
-  }
-
-  $('#liquidMoneyLabel').textContent=liquid.amount;
-  
+  const el = $('#liquidMoneyLabel');
+  if (!el) return;
+  if (!liquid || liquid.amount == null) { el.textContent = '\u2014'; return; }
+  el.textContent = `\u20b9${(Number(liquid.amount) || 0).toLocaleString()}`;
 }
 
 
 
 // Updated renderEntries function with target support
+// The summary card's heading, so filtered totals can say what they describe.
+function setSummaryHeading(text) {
+  const h = document.querySelector('#today_summery_card h3');
+  if (h) h.textContent = text;
+}
+
 function renderEntries(data, target = entriesList) {
   document.querySelector('.loader').classList.add('off');
+  // renderEntries always writes the shared summary totals. When it is called
+  // for the search results it is showing a SUBSET of the day, so the heading
+  // has to say so; every other caller is the whole day.
+  if (target === entriesList) setSummaryHeading('Today summary');
   // Reveal real summary totals, hide skeleton (direct call — no MutationObserver)
   hideSkeleton();
   target.innerHTML = '';
@@ -1507,6 +1519,7 @@ function renderEntries(data, target = entriesList) {
     totalOutEl.textContent = '₹0';
     totalGpayEl.textContent = '₹0';
     netBalEl.textContent = '₹0';
+    $('#todayOB').textContent = '₹0';   // was left showing the previous day's OB
     return;
   }
   let ob = 0
@@ -1514,7 +1527,7 @@ let count = 0;
 let inCount =0
 let outCount = 0
   rows.forEach(r => {
-    if(r.name === 'Opening Balance') ob = r.amount;
+    if(r.name === 'Opening Balance') ob = Number(r.amount) || 0;   // stored as a string on older entries
     const el = document.createElement('div');
     el.className = `entry ${r._type === 'in' ? 'in' : 'out'}${r.gpay ? ' gp' : ''} ${ r.name==='Opening Balance'?' ob':''}`;
     el.innerHTML = `
@@ -1558,7 +1571,7 @@ document.querySelector('#all').innerHTML=`ALL <span>${count}</span>`
   totalGpayEl.textContent = `₹${totalGpay.toLocaleString()}`;
   const net = totalIn - totalOut - totalGpay;
   netBalEl.textContent = `₹${net.toLocaleString()}`;
-  $('#todayOB').textContent=`₹${ob.toLocaleString() || 0}`
+  $('#todayOB').textContent=`₹${ob.toLocaleString()}`
   // total - ob
   
   globalIn = totalIn
@@ -1942,7 +1955,7 @@ $('.loader').classList.remove('off')
       await nodeRef.set({
         serial: s,
         name: 'Opening Balance',
-        amount: obAmount,
+        amount: Number(obAmount) || 0,
         gpay: false,
         ts: Date.now(),
         staffName,
@@ -2024,6 +2037,22 @@ if (data.targetAmount > globalIn) {
     showTopToast('Enter Amount');
     return;
   }
+
+  // A day's counted cash is a single node, so saving again REPLACES it.
+  // Correcting a miscount is legitimate, so don't block it - just make sure
+  // it is deliberate instead of silently overwriting what was counted.
+  try {
+    const _existing = await db.ref(dayRoot(isoDate(new Date())) + '/liquid').get();
+    if (_existing.exists()) {
+      const _prev = Number((_existing.val() || {}).amount) || 0;
+      const _ok = await askUserPermission({
+        title: 'Replace today\u2019s Cash in Hand?',
+        desc: `You already recorded <b>\u20b9${_prev.toLocaleString()}</b> for today. Saving <b>\u20b9${(Number(liqAmount) || 0).toLocaleString()}</b> will replace it.`,
+        btnColor: '#FFC107',
+      });
+      if (!_ok) return;
+    }
+  } catch (_) { /* if the check fails, let the save go ahead as before */ }
 
   progress = true;
   $('.loader').classList.remove('off');
@@ -2152,7 +2181,7 @@ function checkOBBox() {
   const hour = now.getHours(); // 0–23
   
   const noOB = localStorage.getItem('CASHBOOK_OB')!=now.getDate();
-  const inTime = hour >= 17 && hour < 23; // 9pm to 11pm
+  const inTime = hour >= 17 && hour < 23; // 5pm to 11pm
   
   if (noOB && inTime) {
     obCard.classList.remove('hidden');
@@ -2163,8 +2192,8 @@ function checkOBBox() {
   
   // liquid card
   
-  const noLiquid = localStorage.getItem('CASHBOOK_LIQUID')!=now.getDate();
-  
+  // The card stays available all evening so a miscount can be corrected;
+  // liquidMoneyForm.onsubmit asks before replacing a value already recorded.
   if(inTime){
     liquidCard.classList.remove('hidden');
   }else liquidCard.classList.add('hidden');
