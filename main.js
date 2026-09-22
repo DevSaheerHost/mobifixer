@@ -696,6 +696,7 @@ const scheduleListRefresh = () => {
     // counter, so don't overwrite it while the add form is open.
     if (data.length && location.hash !== '#add') $('#new_sn').textContent = Math.max(...data.map(d => Number(d.sn) || 0)) + 1;
     checkDoneDevices(data);
+    remindOpenJobs(data);
     if ($('#staticText')) $('#staticText').textContent = 'No Pending works';
     timerElement?.remove(); // drop the debug timer once load settles
     $('.loader').classList.add('hidden');
@@ -3705,8 +3706,15 @@ $$('.toggle_btn').forEach(btn => {
       localStorage.setItem('theme', input.checked ? 'light' : 'dark');
     }
 
-    if (input?.name === 'notify') {
-      console.log('Notifications:', input.checked ? 'Enabled' : 'Disabled');
+    // The markup names this input voice_alert, so the previous branch here
+    // (input.name === 'notify') never matched and the setting did nothing.
+    if (input?.name === 'voice_alert') {
+      const on = input.checked;
+      localStorage.setItem(REMINDER_ENABLED_KEY, on ? 'on' : 'off');
+      // The only place permission is requested: the user just asked for it.
+      if (on && 'Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission().catch(() => {});
+      }
     }
   };
 });
@@ -4500,73 +4508,82 @@ window.addEventListener('hashchange', () => {
 // 1) page లో ഈ സ്ക്രിപ്റ്റ് ചേർക്കുക.
 // 2) ഉപയോക്താവിൽ നിന്നും Notification permission വേണം.
 
-const REMINDER_HOUR = 10;   // 24-hour (IST) — change as needed
-const REMINDER_MIN = 0;
-const REMINDER_TEXT = "Remind: Do the monthly task (9th).";
+// ── Reminder: work still open ───────────────────────────────────────────
+// Replaces a hardcoded "monthly task (9th)" reminder that was the source of
+// the notification spam: its setTimeout delay exceeded the browser's ~24.9
+// day maximum for roughly five days each month, so it fired immediately and
+// then rescheduled itself to the same date, looping. It also called
+// Notification.requestPermission() on every page load.
+//
+// This one is deliberately quiet:
+//   * at most ONE reminder per calendar day, and once per page load
+//   * only when something is actually outstanding
+//   * never asks for permission by itself - that happens only when the
+//     Settings toggle is switched on
+//   * a fixed tag, so a new one replaces the old instead of stacking
+// There is no push server, so a notification can only appear while the app
+// is open. When permission has not been granted it falls back to the in-app
+// notice, under the same once-a-day rule.
+const REMINDER_ENABLED_KEY = 'MF_OPEN_JOBS_REMINDER';
+const REMINDER_LAST_KEY    = 'MF_OPEN_JOBS_REMINDER_DAY';
+// Work not finished. 'done' is excluded: the repair is complete and it is the
+// customer's turn to collect. 'collected' is finished outright.
+const OPEN_STATUSES = ['pending', 'progress', 'spare'];
 
-function getNext9thAt(hour = REMINDER_HOUR, minute = REMINDER_MIN) {
-  const now = new Date();
-  // create date in local timezone
-  let year = now.getFullYear();
-  let month = now.getMonth(); // 0..11
-  let candidate = new Date(year, month, 9, hour, minute, 0, 0);
+const reminderEnabled = () => localStorage.getItem(REMINDER_ENABLED_KEY) !== 'off';
 
-  if (now > candidate) {
-    // already past this month's 9th -> next month
-    month += 1;
-    if (month > 11) { month = 0; year += 1; }
-    candidate = new Date(year, month, 9, hour, minute, 0, 0);
-  }
-  return candidate;
-}
+const openJobs = (rows) => (rows || []).filter(d =>
+  d && d.isDeleted !== true && OPEN_STATUSES.includes(String(d.status || '').toLowerCase())
+);
 
-function msUntil(date) {
-  return date.getTime() - Date.now();
-}
+let reminderShownThisLoad = false;
 
-async function requestAndSchedule() {
-  if (!("Notification" in window)) {
-    console.warn("Notifications not supported in this browser.");
-    return;
-  }
+async function remindOpenJobs(rows) {
+  if (reminderShownThisLoad || !reminderEnabled()) return;
 
-  let permission = Notification.permission;
-  if (permission !== "granted") {
-    permission = await Notification.requestPermission();
-    if (permission !== "granted") {
-      console.warn("User denied notifications.");
+  const todayKey = normDateKey(getCurrentDate());
+  if (!todayKey || localStorage.getItem(REMINDER_LAST_KEY) === todayKey) return;
+
+  const open = openJobs(rows);
+  if (!open.length) return;            // nothing outstanding: stay quiet
+
+  reminderShownThisLoad = true;
+  localStorage.setItem(REMINDER_LAST_KEY, todayKey);
+
+  const latest = [...open].sort((a, b) => (Number(b.sn) || 0) - (Number(a.sn) || 0)).slice(0, 3);
+  const names  = latest.map(d => `#${d.sn} ${d.name || 'Unknown'}`).join(', ');
+  const more   = open.length - latest.length;
+  const title  = `${open.length} job${open.length > 1 ? 's' : ''} still open`;
+  const body   = more > 0 ? `Latest: ${names} - and ${more} more.` : `Latest: ${names}`;
+
+  if ('Notification' in window && Notification.permission === 'granted' && 'serviceWorker' in navigator) {
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      // Android Chrome forbids `new Notification()`; it must go through the
+      // service worker registration.
+      await reg.showNotification(title, {
+        body,
+        tag: 'mobifixer-open-jobs',
+        icon: './assets/images/icon-192.png',
+        badge: './assets/images/favicon-32.png',
+        data: { hash: '' }   // home; the list already opens on the pending tab
+      });
       return;
-    }
+    } catch (_) { /* fall through to the in-app notice */ }
   }
-
-  scheduleNext();
+  showNotice({ title, body, type: 'info', delay: 6 });
 }
 
-function scheduleNext() {
-  const next = getNext9thAt();
-  const wait = msUntil(next);
-
-  console.log("Next reminder scheduled at:", next.toString());
-
-  // If wait is too big for setTimeout in some envs, you can split timers.
-  setTimeout(() => {
-    showNotification(REMINDER_TEXT);
-    // schedule the subsequent month
-    scheduleNext(); // recursion: compute next 9th and schedule again
-  }, wait);
-}
-
-function showNotification(text) {
-  try {
-    new Notification(text);
-    // optionally also play a sound or show UI on page
-  } catch (err) {
-    console.error("Notification failed:", err);
-  }
-}
-
-// Start
-requestAndSchedule();
+// Reflect the stored setting on the Settings toggle, which was hardcoded to
+// "active" in the markup and never restored.
+(() => {
+  const input = document.querySelector('input[name="voice_alert"]');
+  const btn = input?.parentElement?.querySelector('.toggle_btn');
+  if (!input || !btn) return;
+  const on = reminderEnabled();
+  btn.classList.toggle('active', on);
+  input.checked = on;
+})();
 
 
 

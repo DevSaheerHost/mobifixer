@@ -18,3 +18,5 @@ jobs:
         run: node scripts/test-auth.mjs
       - name: Cashbook AI context regression tests
         run: node scripts/test-ai-context.mjs
+      - name: Root app open-jobs reminder tests
+        run: node scripts/test-reminder.mjs
