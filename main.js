@@ -9,7 +9,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebas
 
 import { onAuthStateChanged, getAuth } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 // Realtime Database import
-import { getDatabase, ref, onChildAdded, onChildChanged, update, query, limitToLast, orderByKey, remove , onValue, push, goOffline}
+import { getDatabase, ref, onChildAdded, onChildChanged, update, query, limitToLast, orderByKey, remove , onValue, push, goOffline, goOnline}
 from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 // DOM helpers
 const $ = s => document.querySelector(s);
@@ -266,6 +266,20 @@ logoutBtn.onclick=()=>{
 //   localStorage.setItem('isBackupDownloaded', 'true');
 //   }
 
+
+// Records store their date as DD-MON-YYYY, built with
+// toLocaleDateString('en-GB', {month:'short'}). Modern ICU renders September
+// as "SEPT" while older engines (and the hardcoded tables below) use "SEP",
+// so a stored date and a freshly computed one disagree for the same day -
+// which is why today's entry count and today's takings both read zero for the
+// whole of September. Two staff on different browsers can disagree the same
+// way. Normalise the month to three letters before comparing; this only reads
+// dates, so no stored record changes.
+function normDateKey(v) {
+  const t = String(v == null ? '' : v).toUpperCase().trim();
+  const m = t.match(/^(\d{1,2})-([A-Z]+)-(\d{4})$/);
+  return m ? `${m[1].padStart(2, '0')}-${m[2].slice(0, 3)}-${m[3]}` : t;
+}
 
 const getDateLabel=(dateString) =>{
   const date = new Date(dateString);
@@ -1217,6 +1231,13 @@ $('header').classList.toggle('slide-up', hash!='');
     $(".not-found").classList.add('hidden'); // 404 view
   } else {
     $(".not-found").classList.remove('hidden'); // 404 view
+    // The 404 animation is 237 KB and <lottie-player> fetches its src on
+    // parse, even inside a display:none panel. It is held in data-src and
+    // handed over only here, the first time the view is actually shown.
+    const _nf = $('#notFoundAnim');
+    if (_nf && !_nf.getAttribute('src') && _nf.dataset.src) {
+      _nf.setAttribute('src', _nf.dataset.src);
+    }
     return
   }
 
@@ -1272,7 +1293,7 @@ const today =
   `${String(d.getDate()).padStart(2, '0')}-${months[d.getMonth()]}-${d.getFullYear()}`;
 
 // 🔹 Filter today's entries
-const todayData = data.filter(item => item.date?.toUpperCase() === today);
+const todayData = data.filter(item => normDateKey(item.date) === normDateKey(today));
 
 $('#todayData').textContent = todayData.length;
 
@@ -2581,7 +2602,7 @@ const renderPayments = () => {
   const dt = new Date();
   const today = `${String(dt.getDate()).padStart(2,'0')}-${months[dt.getMonth()]}-${dt.getFullYear()}`;
   const collectedToday = data
-    .filter(d => d.status === 'collected' && ((d.paidInfo?.date || d.date || '').toUpperCase() === today))
+    .filter(d => d.status === 'collected' && normDateKey(d.paidInfo?.date || d.date) === normDateKey(today))
     .reduce((s, d) => s + (Number(d.amount) || 0), 0);
 
   const setTxt = (id, v) => { const el = $('#' + id); if (el) el.textContent = v; };
@@ -3901,9 +3922,10 @@ if (LAST_VERSION !== CURRENT_VERSION) {
     localStorage.setItem('app_version', CURRENT_VERSION);
 }
 
-window.addEventListener('beforeunload', () => {
-  localStorage.setItem('app_version', CURRENT_VERSION);
-});
+// (Previously a second 'beforeunload' listener wrote app_version here. It is
+// already written above on the same path, and 'beforeunload' disqualifies the
+// page from the back/forward cache, forcing a full cold reload on every
+// back-navigation.)
 
 //######################### THE END ###################################//
 
@@ -3918,8 +3940,28 @@ onValue(connectedRef, (snap) => {
   }
 });
  
- window.addEventListener('beforeunload', () => {
-  goOffline(db);
+ // Only drop the realtime socket when the page is genuinely being discarded.
+ // This used to run on 'beforeunload', but on iOS a page usually goes into the
+ // back/forward cache and is later RESTORED - so after switching to WhatsApp
+ // and coming back, the app looked fine while the socket was dead: no live
+ // updates, and writes queued against a closed connection. Nothing called
+ // goOnline (its only mention was a comment), and the visibilitychange handler
+ // that should have recovered has its one real call commented out.
+ // 'pagehide' with event.persisted tells us which case we are in, and
+ // registering it instead of 'beforeunload' also keeps the page eligible for
+ // the back/forward cache.
+ window.addEventListener('pagehide', (event) => {
+  if (!event.persisted) goOffline(db);
+});
+
+ // Coming back from the bfcache, or from a background tab: make sure the
+ // connection is live again. goOnline is a no-op when already connected.
+ window.addEventListener('pageshow', (event) => {
+  if (event.persisted) goOnline(db);
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') goOnline(db);
 });
 
 
@@ -3987,7 +4029,8 @@ const closeAlert=()=> {
 
 
 
-console.log(`Approx localStorage used: ${localStorageSize()} bytes`);
+// (removed a duplicate localStorageSize() scan that existed only to log a
+// debug line; logStorageStatus() below already computes it for the UI.)
 
 // 
 

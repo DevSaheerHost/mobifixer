@@ -100,9 +100,8 @@
 </head>
 
 <body>
-  <script src="https://cdn.jsdelivr.net/npm/showdown/dist/showdown.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/showdown/dist/showdown.min.js"></script>
+  <script defer src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
   
 
   
@@ -1454,7 +1453,8 @@ Loading changelog...
     <main class="not-found hidden">
       <div class="flex">
         <lottie-player
-  src="./Error 404.json"
+  id="notFoundAnim"
+  data-src="./Error 404.json"
   background="transparent"
   speed="1"
   style="width: 200px; height: 200px;"
@@ -1500,9 +1500,9 @@ Stable Access</h3>
     
     
     
-    <audio id="newSound" src="./mixkit.wav" preload="auto"></audio>
-    <audio id="update" src="./update.mp3" preload="auto"></audio>
-    <audio id="disconnect" src="./disconnect.mp3" preload="auto"></audio>
+    <audio id="newSound" src="./mixkit.wav" preload="none"></audio>
+    <audio id="update" src="./update.mp3" preload="none"></audio>
+    <audio id="disconnect" src="./disconnect.mp3" preload="none"></audio>
 
 <div class="loader">
   <div class="loading-card">
@@ -1910,8 +1910,8 @@ Stable Access</h3>
   <ul class="activity-list"></ul>
 </main>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script defer src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
   <script type="module" src="./main.js"></script>
 
 <!-- ########## PRINT RECEIPT MODAL ########## -->
