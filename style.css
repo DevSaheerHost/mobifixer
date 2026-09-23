@@ -2214,14 +2214,26 @@ input.uppercase{
 
 
 
-.collapse{
-    height: 10px;
-    border-radius: 10px;
-    transform: translateY(-10px) !important;
-    border-bottom-right-radius: 0 !important;
-    border-bottom-left-radius: 0 !important;
-    border-bottom: 0 !important;
-    opacity: 0.5;
+/* A closed job card.
+   This used to be `height: 10px; opacity: .5`, which did not collapse the card
+   so much as erase it - a collapsed job showed nothing, not even whose it was.
+   Nobody used it, so every one of a shop's jobs sat fully expanded and the list
+   could not be scanned. Now closing a card hides the detail and leaves the
+   summary row, which carries who, which device, what state and what is owed. */
+.list-item.collapse {
+    height: auto;
+    opacity: 1;
+    transform: none !important;
+    border-radius: var(--radius-large) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+.list-item.collapse > *:not(nav) {
+    display: none;
+}
+
+.list-item.collapse .caret {
+    transform: rotate(0deg);
 }
 
 
@@ -5850,4 +5862,503 @@ li nav h3.sn {
   color: var(--text-muted);
   font-style: italic;
   opacity: 0.75;
+}
+
+/* ===========================================================================
+   HOME / JOB LIST
+   ---------------------------------------------------------------------------
+   The list used to render every job fully expanded - device, complaints,
+   amounts, a note box and six status buttons - for all of a shop's jobs. The
+   only way to shrink one collapsed it to a 10px sliver showing nothing, so in
+   practice nothing was ever collapsed and the list could not be scanned.
+
+   Jobs now open and close. A closed job shows a summary row carrying who, which
+   device, what state and what is still owed, which is enough for most of what
+   the page is used for. Tapping the row opens the full card, unchanged.
+   ======================================================================== */
+
+/* The list itself: a stack of cards, not a 2rem-gapped grid. */
+.home .list-section {
+  padding: 0.25rem 1rem calc(6rem + env(safe-area-inset-bottom));
+}
+
+.home .list-section .list {
+  /* `.list` carries margin: 1rem and the section carries padding, so the list
+     sat inside a double gutter and lost 32px of width on a phone. */
+  margin: 0;
+  grid-template-columns: 1fr;
+  gap: 0.6rem;
+  perspective: none;
+  transform-style: flat;
+}
+
+@media screen and (min-width: 760px) {
+  .home .list-section .list {
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 0.75rem;
+  }
+}
+
+.home .list .list-item {
+  padding: 0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  box-shadow: none;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.home .list .list-item:not(.collapse) {
+  border-color: var(--accent-glass);
+}
+
+/* ---------- the summary row ---------- */
+
+.home .list .list-item > nav {
+  /* `li nav` is absolutely positioned with a solid blue bar - that is why the
+     card carried padding-top: 2rem, to leave room underneath it. The summary
+     row is the card's own first row now, so it goes back into the flow. The
+     global rule is left alone; other lists still use it. */
+  position: static;
+  background: transparent;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.8rem 0.85rem;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* The card body sits inside the same border, indented to line up with the row. */
+.home .list .list-item > *:not(nav) {
+  padding-inline: 0.9rem;
+}
+
+.home .list .list-item > .flex-center:last-child {
+  padding-bottom: 0.9rem;
+}
+
+/* Selecting a job is its own target - the avatar - so that tapping anywhere
+   else on the row can open the card without fighting the checkbox. */
+.home .list .list-item .pick {
+  display: block;
+  cursor: pointer;
+}
+
+.home .list .list-item .pick input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.home .list .list-item .circle {
+  margin: 0;
+  height: 38px;
+  width: 38px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.home .list .list-item .pick input:checked + .circle {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: #04121e;
+}
+
+.home .list .list-item .pick input:focus-visible + .circle {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+.home .list .list-item .who {
+  display: block;
+  min-width: 0;
+}
+
+.home .list .list-item .who h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-color);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.home .list .list-item .meta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+  min-width: 0;
+}
+
+.home .list .list-item .meta .model {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------- status chip ---------- */
+
+.chip {
+  flex: none;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+/* Colour carries meaning here, so each state also reads as a word - never
+   colour alone. */
+.chip.s-pending   { color: #f0a132; background: rgba(240, 161, 50, 0.14); border-color: rgba(240, 161, 50, 0.35); }
+.chip.s-spare     { color: #c98bff; background: rgba(201, 139, 255, 0.14); border-color: rgba(201, 139, 255, 0.35); }
+.chip.s-progress  { color: var(--accent-color); background: rgba(11, 162, 255, 0.14); border-color: rgba(11, 162, 255, 0.35); }
+.chip.s-done      { color: var(--success-color); background: rgba(0, 195, 106, 0.14); border-color: rgba(0, 195, 106, 0.35); }
+.chip.s-collected { color: var(--text-muted); background: var(--card-bg); border-color: var(--border-color); }
+.chip.s-return    { color: var(--danger-color); background: rgba(255, 59, 59, 0.14); border-color: rgba(255, 59, 59, 0.35); }
+
+/* ---------- serial + balance ---------- */
+
+.home .list .list-item .trail {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
+  text-align: right;
+}
+
+.home .list .list-item .trail .sn {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.home .list .list-item .trail .due {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-color);
+  font-variant-numeric: tabular-nums;
+}
+
+.home .list .list-item .trail .due.settled {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* ---------- caret + edit ---------- */
+
+.home .list .list-item .caret {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  transition: transform var(--transition-fast);
+  transform: rotate(180deg);
+}
+
+.home .list .list-item .editIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  margin: 0;
+  border-radius: var(--radius-small);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.home .list .list-item .editIcon:active {
+  background: var(--card-bg);
+  color: var(--accent-color);
+}
+
+/* ---------- filter chips ---------- */
+
+/* The row scrolls sideways and used to run off the edge with nothing to say so.
+   The fade on the right is the affordance. */
+.home nav.status-nav {
+  position: relative;
+  display: flex;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  background: var(--bg-color);
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
+}
+
+.home nav.status-nav::-webkit-scrollbar { display: none; }
+
+.home nav.status-nav a {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 36px;
+  padding: 0 0.9rem;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--card-bg);
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.home nav.status-nav a.active {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: #04121e;
+  font-weight: 600;
+}
+
+.home nav.status-nav .badge {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--bg-color);
+  color: var(--text-color);
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.home nav.status-nav .badge.hidden { display: none; }
+
+.home nav.status-nav a.active .badge {
+  background: rgba(0, 0, 0, 0.25);
+  color: #04121e;
+}
+
+/* ---------- date divider ---------- */
+
+/* It was centred between two 1px #ddd rules, with #666 text - light-theme
+   colours left in a dark app, so the rules read as bright lines across the
+   screen. A quiet left-aligned label does the same job. */
+/* Three separate .date-divider rules exist further up this file, from three
+   passes at the same thing - two of them still carry light-theme colours
+   (#666 text, #ddd and #ccc rules) and one adds a border. Rather than untangle
+   them, this overrides what matters. It keeps the sticky behaviour, which is
+   worth having in a long list, but gives it a background so the label does not
+   sit on top of the rows scrolling under it. */
+.home .list .date-divider {
+  margin: 0.7rem 0 0.1rem;
+  padding: 0.35rem 0;
+  border: none;
+  background: var(--bg-color);
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+.home .list .date-divider p {
+  margin: 0;
+}
+
+.home .list .date-divider:first-child {
+  margin-top: 0;
+}
+
+.home .list .date-divider::before,
+.home .list .date-divider::after {
+  content: none;
+}
+
+/* ---------- new job button ---------- */
+
+/* It used to sit on top of the last card's content. */
+.home .add {
+  position: fixed;
+  right: 1rem;
+  bottom: calc(1.25rem + env(safe-area-inset-bottom));
+  z-index: 8;
+  min-height: 52px;
+  padding: 0 1.4rem;
+  border-radius: 999px;
+  background: var(--accent-color);
+  box-shadow: 0 10px 28px -8px rgba(11, 162, 255, 0.7);
+}
+
+.home .add a {
+  color: #04121e;
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-decoration: none;
+}
+
+/* The chips row sticks to the top of the list; it does not need a margin
+   pushing it away from the search field above it. */
+.home nav.status-nav {
+  margin-top: 0;
+}
+
+/* ---------- search results ---------- */
+
+/* The dropdown is a separate component from the list (searchCard.js), and it
+   showed every status in the same amber regardless of what the status was.
+   Same chip palette as the list now, so a result reads the same way a row does.
+   Markup untouched - this is styling only. */
+.search-out {
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-large);
+  background: var(--bg-secondary);
+  box-shadow: 0 24px 60px -20px var(--shadow-color);
+}
+
+.search-out li {
+  margin-bottom: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-medium);
+  box-shadow: none;
+}
+
+.search-out li:last-child { margin-bottom: 0; }
+
+.search-out .search-card .top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.search-out .search-card h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.search-out .search-card .phone,
+.search-out .search-card .model,
+.search-out .search-card .complaint {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.search-out .search-card .complaint { color: var(--text-color); }
+
+.search-out .search-card .sn {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.search-out .search-card .bottom {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* One status, one colour - the same as the chips on the list. */
+.search-out .status {
+  padding: 0.15rem 0.5rem;
+  border: 1px solid transparent;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: none;
+  color: var(--text-muted);
+  background: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+.search-out .status.pending   { color: #f0a132; background: rgba(240, 161, 50, 0.14); border-color: rgba(240, 161, 50, 0.35); }
+.search-out .status.spare     { color: #c98bff; background: rgba(201, 139, 255, 0.14); border-color: rgba(201, 139, 255, 0.35); }
+.search-out .status.progress  { color: var(--accent-color); background: rgba(11, 162, 255, 0.14); border-color: rgba(11, 162, 255, 0.35); }
+.search-out .status.done      { color: var(--success-color); background: rgba(0, 195, 106, 0.14); border-color: rgba(0, 195, 106, 0.35); }
+.search-out .status.return,
+.search-out .status.deleted   { color: var(--danger-color); background: rgba(255, 59, 59, 0.14); border-color: rgba(255, 59, 59, 0.35); font-size: 0.6875rem; }
+
+/* ---------- the open card ---------- */
+
+/* The Remind button shipped with only .has-reminder and .is-overdue modifiers
+   and no base style, so it fell through to the global button rule and rendered
+   as a solid white pill next to Print's outlined one. */
+.remind-btn {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  border-radius: 100px;
+  padding: 0.35rem 0.9rem;
+  font-size: 12px;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.remind-btn:hover,
+.remind-btn:active {
+  background: var(--card-hover);
+  color: var(--text-color);
+}
+
+/* Detail rows read as "Device 1 : Realme 9 Pro" - a bold colon in its own
+   column, from `p.value::before { content: ":    " }`. A label and a value is
+   the same information without the debug-dump look. */
+.home .list .list-item p.value::before {
+  content: none;
+}
+
+.home .list .list-item .item_flex {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr);
+  gap: 0.5rem;
+  align-items: baseline;
+  padding: 0.15rem 0;
+}
+
+.home .list .list-item .item_flex p.key {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.home .list .list-item .item_flex p.value {
+  font-size: 0.8125rem;
+  color: var(--text-color);
+  overflow-wrap: anywhere;
+}
+
+.home .list .list-item .device_box,
+.home .list .list-item .amount_box {
+  padding: 0.65rem 0.75rem;
+  margin-bottom: 0.45rem;
+  border-radius: var(--radius-medium);
+  background: var(--card-bg);
+}
+
+.home .list .list-item .status {
+  margin-top: 0.9rem;
 }

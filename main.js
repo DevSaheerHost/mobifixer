@@ -1,5 +1,5 @@
 const initialTime = performance.now();
-import { cardLayout } from './cardLayout.js';
+import { cardLayout, cardSummary } from './cardLayout.js';
 import { searchCard } from './searchCard.js';
 import { inventoryCard} from './inventoryCard.js';
 import { generateWhatsAppLink} from './generateWhatsappLink.js';
@@ -861,7 +861,8 @@ const createCardsyyyy = (data, status, sn) => {
     const nav = document.createElement('nav')
     listItem.classList.add('list-item');
     listItem.setAttribute("data-sn", item.sn);
-    nav.innerHTML=`<h3>${item.name} </h4> <h3 class='sn'>${item.sn} </h4> `;
+    nav.innerHTML = cardSummary(item);
+    listItem.classList.add('collapse');
     listItem.appendChild(nav)
     listItem.innerHTML += cardLayout(item);
     listContainer.appendChild(listItem);
@@ -894,7 +895,8 @@ filtered.forEach(item => {
   const nav = document.createElement('nav')
   listItem.classList.add('list-item');
   listItem.setAttribute("data-sn", item.sn);
-  nav.innerHTML = `<h3>${item.name}</h4> <h3 class='sn'>${item.sn} </h4> `;
+  nav.innerHTML = cardSummary(item);
+  listItem.classList.add('collapse');
   listItem.appendChild(nav)
   listItem.innerHTML += cardLayout(item);
   listContainer.appendChild(listItem);
@@ -1008,19 +1010,10 @@ if (item.isDeleted === true) return;
     listItem.setAttribute("data-sn", item.sn);
     
     const nav = document.createElement("nav");
-    nav.innerHTML = `
-      <span class='flex_center'> 
-        <input type="checkbox" class="multiSelect" data-sn="${item.sn}" id='${item.sn}'>
-        <label for='${item.sn}'>
-          <h3 class='flex_center'><span class='circle'>${initials(item.name)}</span>
-          ${item.name}</h3>
-        </label>
-      </span>
-      <span>
-        <h3 class='sn'>${item.sn}</h3>
-        <i class="fa-solid fa-pen editIcon" data-sn='${item.sn}'></i>
-      </span>
-    `;
+    nav.innerHTML = cardSummary(item);
+    // Closed by default. Everything worth scanning is on the summary row, and
+    // 1248 fully-expanded cards is not a list anybody can read.
+    listItem.classList.add('collapse');
     listItem.appendChild(nav);
     listItem.innerHTML += cardLayout(item);
     
@@ -2288,9 +2281,13 @@ document.addEventListener('click', e => {
 
 
   //////////
-if (e.target.tagName.toLowerCase() === 'nav') {
-  const parent = e.target.closest('li');
-//  alert(parent)
+// Open or close a job. This used to be `e.target.tagName === 'nav'`, which is
+// only true when the tap lands on the nav's own padding - tapping the customer
+// name, the serial or the status did nothing at all. Now the whole row works,
+// except the two controls that live inside it and mean something else.
+const summaryRow = e.target.closest('.list-item > nav');
+if (summaryRow && !e.target.closest('.pick') && !e.target.closest('.editIcon')) {
+  const parent = summaryRow.closest('li');
   if (parent) parent.classList.toggle('collapse');
 }
 

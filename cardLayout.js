@@ -1,3 +1,75 @@
+// The summary row that every job in the list shows before it is opened.
+//
+// Until now the whole card was expanded for every job at once - device,
+// complaints, amounts, a note box and six status buttons, for all 1248 jobs on
+// a real shop. There WAS a collapse (tap the nav), but it set height:10px, so a
+// collapsed card showed nothing at all, not even whose job it was. Nobody used
+// it, so the list was unscannable.
+//
+// This row carries enough to not need opening: who, which device, what state,
+// what is still owed. Three places in main.js built the list and each wrote its
+// own <nav> - two of them just a name and a serial, the third with an avatar,
+// a checkbox and an edit pencil - so the list changed shape depending on how
+// you got to it. All three call this now. (The search dropdown is a separate
+// component, searchCard.js, and keeps its own markup.)
+
+const STATUS_LABEL = {
+  pending:   'Pending',
+  spare:     'Spare',
+  progress:  'In progress',
+  done:      'Done',
+  collected: 'Collected',
+  return:    'Return'
+};
+
+const initialsOf = (s = '') =>
+  s.trim().split(/\s+/).map(w => w[0] || '').filter(Boolean).slice(0, 2).join('').toUpperCase() || '?';
+
+const money = (n) => '\u20b9' + Number(n || 0).toLocaleString('en-IN');
+
+// Escaped: these are customer-entered values going into innerHTML.
+const esc = (v) => String(v == null ? '' : v)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+export const cardSummary = (item = {}) => {
+  const { name, sn, status, amount, advance, devices, model } = item;
+  const firstModel = (Array.isArray(devices) && devices.length && devices[0].model) || model || '';
+  const balance = Number(amount || 0) - Number(advance || 0);
+  const label = STATUS_LABEL[status] || status || 'Pending';
+
+  return `
+    <label class="pick" for="${esc(sn)}" aria-label="Select this job">
+      <input type="checkbox" class="multiSelect" data-sn="${esc(sn)}" id="${esc(sn)}">
+      <span class="circle">${esc(initialsOf(name))}</span>
+    </label>
+
+    <span class="who">
+      <h3>${esc(name) || '<i>No name</i>'}</h3>
+      <span class="meta">
+        <span class="chip s-${esc(status || 'pending')}">${esc(label)}</span>
+        ${firstModel ? `<span class="model">${esc(firstModel)}</span>` : ''}
+      </span>
+    </span>
+
+    <span class="trail">
+      <span class="sn">${esc(sn)}</span>
+      ${balance > 0
+        ? `<span class="due" title="Balance">${money(balance)}</span>`
+        : `<span class="due settled">Settled</span>`}
+    </span>
+
+    <i class="fa-solid fa-chevron-down caret" aria-hidden="true"></i>
+    <i class="fa-solid fa-pen editIcon" data-sn="${esc(sn)}" aria-label="Edit"></i>
+  `;
+};
+
+// Every value below goes through esc(). Customer names, device models,
+// complaints, notes and phone numbers were interpolated into innerHTML raw, so
+// a job whose complaint read `<img src=x onerror=...>` ran that script in the
+// shop's page. Those fields are attacker-writable today because the database
+// has no rules on it yet. The `<i>unknown</i>` fallbacks stay outside esc() -
+// they are ours, not the customer's.
 export const cardLayout = ({
   name,
   status,
@@ -27,16 +99,16 @@ export const cardLayout = ({
       <div class='device_box mt-2'>
         <div class='item_flex'>
           <p class='key'>Device ${i + 1}</p>
-          <p class='value'>${d.model || '<i>unknown</i>'}</p>
+          <p class='value'>${esc(d.model) || '<i>unknown</i>'}</p>
         </div>
         <div class='item_flex'>
           <p class='key'>Complaints</p>
-          <p class='value complaints'>${d.complaints || '<i>none</i>'}</p>
+          <p class='value complaints'>${esc(d.complaints) || '<i>none</i>'}</p>
         </div>
 
   ${d.lock?`<div class='item_flex end'>
     <p class='key'>Lock</p>
-    <p class='value'>${d.lock || 'none'}</p>
+    <p class='value'>${esc(d.lock) || 'none'}</p>
   </div>`:''}
       </div>
     `).join('');
@@ -45,17 +117,17 @@ export const cardLayout = ({
     deviceDetails = `
       <div class='item_flex'>
         <p class='key'>Model</p>
-        <p class='value'>${model || '<i>unknown</i>'}</p>
+        <p class='value'>${esc(model) || '<i>unknown</i>'}</p>
       </div>
 
       <div class='item_flex'>
         <p class='key'>Complaints</p>
-        <p class='value complaints'>${complaints || '<i>none</i>'}</p>
+        <p class='value complaints'>${esc(complaints) || '<i>none</i>'}</p>
       </div>
 
       <div class='item_flex'>
-        <p class='key'>${lock? 'Lock':''}</p>
-        <p class='value'>${lock || '<i>none</i>'}</p>
+        <p class='key'>${lock ? 'Lock' : ''}</p>
+        <p class='value'>${esc(lock) || '<i>none</i>'}</p>
       </div>
     `;
   }
@@ -95,18 +167,18 @@ export const cardLayout = ({
     
     
       <div class='item_flex'>
-      <p class='key'>${number}</p>
-      <p class='value'>${date || ''} ${time || ''}</p>
+      <p class='key'>${esc(number)}</p>
+      <p class='value'>${esc(date)} ${esc(time)}</p>
     </div>
     ${altNumber?
       `    <div class='item_flex'>
       <p class='key'>Alt Number</p>
-      <p class='value'>+91 ${altNumber}</p>
+      <p class='value'>+91 ${esc(altNumber)}</p>
     </div>`:''}
   </div>
 
   <div class='note-input-wrap'>
-    <textarea id='note-input-${sn}' class='add-note-input' placeholder='Add note+'>${notes || ''}</textarea>
+    <textarea id='note-input-${sn}' class='add-note-input' placeholder='Add note+'>${esc(notes)}</textarea>
     <button id='note-btn-${sn}' class='add-note-btn' name='sn-${sn}'>Save notes</button>
   </div>
 
@@ -141,7 +213,7 @@ export const cardLayout = ({
       <label for="return-${sn}">Return</label>
     </span>
 
-      <button class='call-btn bb_glass' data-num="+91${number}">
+      <button class='call-btn bb_glass' data-num="+91${esc(number)}">
       <i class="fa-solid fa-phone"></i>
     </button>
   </div>
@@ -158,7 +230,7 @@ export const cardLayout = ({
 <p class="author_name">
   ${author === me
     ? '<span class="you"><i class="fa-solid fa-user"></i> You</span>'
-    : `<span>${author || 'Unknown'}</span>`}
+    : `<span>${esc(author) || 'Unknown'}</span>`}
 </p>
     </div>
   `;

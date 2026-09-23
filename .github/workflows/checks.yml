@@ -26,3 +26,5 @@ jobs:
         run: node scripts/test-shop-details.mjs
       - name: Shop access / signup safety tests
         run: node scripts/test-shop-access.mjs
+      - name: Home job list tests
+        run: node scripts/test-home.mjs
