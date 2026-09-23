@@ -4168,18 +4168,29 @@ function editShopDetails() {
     }
 
     // Get current data from localStorage
-    const shopName = localStorage.getItem('shopName') || 'MobiFixer Service Center';
-    const ownerName = localStorage.getItem('ownerName') || 'Saheer Babu';
-    const ownerPhone = localStorage.getItem('ownerPhone') || '+91 98765 43210';
-    const shopEmail = localStorage.getItem('shopEmail') || 'info@mobifixer.com';
-    const shopLocation = localStorage.getItem('shopLocation') || 'Thrissur, Kerala, India';
-    const shopGST = localStorage.getItem('shopGST') || '27AAJPA5055K1Z0';
-    const shopEstablished = localStorage.getItem('shopEstablished') || 'January 2023';
-    const shopDescription = localStorage.getItem('shopDescription') || '';
-    const shopTagline = localStorage.getItem('shopTagline') || 'Professional Mobile Repair & Services';
-    const hoursMF = localStorage.getItem('hoursMF') || '9:00 AM - 6:00 PM';
-    const hoursSat = localStorage.getItem('hoursSat') || '10:00 AM - 5:00 PM';
-    const hoursSun = localStorage.getItem('hoursSun') || 'Closed';
+    // Blank, not invented. These fields used to be PREFILLED with the
+    // developer's name, address and GST number, so a shop that opened this
+    // form and pressed Save would have written someone else's tax identifier
+    // in as their own. An empty field shows its placeholder instead.
+    const d = shopDetailsCache || {};
+    const cur = (k) => {
+      const v = d[k] != null ? d[k] : localStorage.getItem(k);
+      return (v && String(v).trim()) ? String(v).trim() : '';
+    };
+    // Display name only. The tenant key (localStorage 'shopName') is never
+    // written from this form.
+    const shopName = cur('shopDisplayName') || localStorage.getItem('shopName') || '';
+    const ownerName = cur('ownerName');
+    const ownerPhone = cur('ownerPhone');
+    const shopEmail = cur('shopEmail');
+    const shopLocation = cur('shopLocation');
+    const shopGST = cur('shopGST');
+    const shopEstablished = cur('shopEstablished');
+    const shopDescription = cur('shopDescription');
+    const shopTagline = cur('shopTagline');
+    const hoursMF = cur('hoursMF');
+    const hoursSat = cur('hoursSat');
+    const hoursSun = cur('hoursSun');
 
     // Fill form fields
     $('#editShopName').value = shopName;
@@ -4231,7 +4242,7 @@ function saveShopDetails(event) {
 
   try {
     // Get all form values
-    const shopName = $('#editShopName').value.trim();
+    const displayName = $('#editShopName').value.trim();   // display only, NOT the tenant key
     const shopTagline = $('#editShopTagline').value.trim();
     const shopDescription = $('#editShopDescription').value.trim();
     const ownerName = $('#editOwnerName').value.trim();
@@ -4245,7 +4256,7 @@ function saveShopDetails(event) {
     const hoursSun = $('#editHoursSun').value.trim();
 
     // Validation
-    if (!shopName) {
+    if (!displayName) {
       showNotice({ title: 'Required', body: 'Shop name is required!', type: 'warning' });
       return;
     }
@@ -4283,8 +4294,13 @@ function saveShopDetails(event) {
       return;
     }
 
-    // Save to localStorage
-    localStorage.setItem('shopName', shopName);
+    // NOT localStorage.setItem('shopName', ...). `shopName` is the tenant key
+    // behind every database path in this app; rewriting it here would repoint
+    // the whole app at a different (probably non-existent) node and the shop's
+    // data would appear to vanish. The field is disabled in the markup, so
+    // this was a no-op rewrite — but it was one attribute away from being
+    // catastrophic. The display name is stored separately.
+    localStorage.setItem('shopDisplayName', displayName);
     localStorage.setItem('shopTagline', shopTagline);
     localStorage.setItem('shopDescription', shopDescription);
     localStorage.setItem('ownerName', ownerName);
@@ -4297,25 +4313,32 @@ function saveShopDetails(event) {
     localStorage.setItem('hoursSat', hoursSat);
     localStorage.setItem('hoursSun', hoursSun);
 
-    // TODO: Save to Firebase as well
-    // const db = getDatabase(app);
-    // update(ref(db, 'shopDetails'), {
-    //   shopName, shopTagline, shopDescription, ownerName, ownerPhone, shopEmail,
-    //   shopLocation, shopGST, shopEstablished, hours: { hoursMF, hoursSat, hoursSun }
-    // });
+    const details = {
+      shopDisplayName: displayName, shopTagline, shopDescription, ownerName, ownerPhone,
+      shopEmail, shopLocation, shopGST, shopEstablished, hoursMF, hoursSat, hoursSun,
+      updatedAt: Date.now(),
+      updatedBy: localStorage.getItem('author') || 'Unknown'
+    };
+    shopDetailsCache = { ...(shopDetailsCache || {}), ...details };
 
-    // Close modal
+    // Close modal and repaint from the cache straight away, so the change is
+    // visible whether or not the network is up.
     closeEditShopModal();
-
-    // Reload shop details
     loadShopDetails();
 
-    // Show success message
-    showNotice({ 
-      title: 'Success', 
-      body: 'Shop details updated successfully!', 
-      type: 'success' 
-    });
+    // Then share it with the rest of the shop. Only claim success once it
+    // has actually been written.
+    update(ref(db, `shops/${shopName}/shopDetails`), details)
+      .then(() => showNotice({
+        title: 'Saved',
+        body: 'Shop details updated for everyone in the shop.',
+        type: 'success'
+      }))
+      .catch(() => showNotice({
+        title: 'Saved on this phone only',
+        body: 'Could not reach the server, so your team will not see this yet. It will need saving again when you are back online.',
+        type: 'warning'
+      }));
 
   } catch (error) {
     console.error('Error saving shop details:', error);
@@ -4329,34 +4352,76 @@ function saveShopDetails(event) {
 $('#editShopForm').onsubmit=(event)=>saveShopDetails(event)
 
 // Load shop details from localStorage/Firebase
+// Shop details live at shops/{shop}/shopDetails so every staff member sees
+// the same thing. They used to be written to localStorage only — the Firebase
+// write was a commented-out TODO — so each phone had its own copy while the
+// app said "Shop details updated successfully!".
+//
+// A separate node on purpose: `owner` holds the account's uid and email from
+// signup, and must not be overwritten by a details form.
+let shopDetailsCache = null;
+
+async function fetchShopDetails() {
+  if (!shopName) return;
+  try {
+    const snap = await get(ref(db, `shops/${shopName}/shopDetails`));
+    if (snap.exists()) {
+      shopDetailsCache = snap.val() || {};
+      // Cache locally so the page paints instantly next time.
+      Object.entries(shopDetailsCache).forEach(([k, v]) => {
+        if (typeof v === 'string') localStorage.setItem(k, v);
+      });
+      loadShopDetails();
+    }
+  } catch (_) { /* offline: the localStorage cache below still renders */ }
+}
+
 function loadShopDetails() {
   try {
     const shopDetailsPage = $('.shop_details_page');
     if (!shopDetailsPage) return;
 
-    // Get shop info from localStorage or set defaults
-    const shopName = localStorage.getItem('shopName') || 'MobiFixer Service Center';
-    const ownerName = localStorage.getItem('ownerName') || 'Saheer Babu';
-    const ownerPhone = localStorage.getItem('ownerPhone') || '+91 98765 43210';
-    const shopEmail = localStorage.getItem('shopEmail') || 'info@mobifixer.com';
-    const shopLocation = localStorage.getItem('shopLocation') || 'Thrissur, Kerala, India';
-    const shopGST = localStorage.getItem('shopGST') || '27AAJPA5055K1Z0';
-    const shopEstablished = localStorage.getItem('shopEstablished') || 'January 2023';
-    const shopDescription = localStorage.getItem('shopDescription') || 'Welcome to MobiFixer Service Center - Your one-stop solution for all mobile device repairs and services. With over 5+ years of experience in the mobile repair industry, we pride ourselves on providing professional, reliable, and affordable repair services. Our team of certified technicians ensures that your device is handled with utmost care and expertise. We use genuine parts and the latest tools to deliver quality service every time.';
-    const shopTagline = localStorage.getItem('shopTagline') || 'Professional Mobile Repair & Services';
+    // No invented defaults. These used to fall back to the developer's own
+    // name, a Thrissur address and a real-looking GST number, so every shop
+    // that had not filled the page in was shown someone else's details as if
+    // they were their own — including a tax identifier. An empty field now
+    // reads "Not set", which is true.
+    const unset = (v) => (v && String(v).trim()) ? String(v).trim() : '';
+    const d = shopDetailsCache || {};
+    const pick = (k) => unset(d[k]) || unset(localStorage.getItem(k));
+
+    // The shop's DISPLAY name. Deliberately not `shopName` from localStorage:
+    // that value is the tenant key behind every database path in this app.
+    const displayName = pick('shopDisplayName') || localStorage.getItem('shopName') || '';
+    const ownerName = pick('ownerName');
+    const ownerPhone = pick('ownerPhone');
+    const shopEmail = pick('shopEmail');
+    const shopLocation = pick('shopLocation');
+    const shopGST = pick('shopGST');
+    const shopEstablished = pick('shopEstablished');
+    const shopDescription = pick('shopDescription');
+    const shopTagline = pick('shopTagline');
+    const shopName = displayName;
 
     // Update shop header
     if ($('#shopName')) $('#shopName').textContent = shopName;
     if ($('#shopTagline')) $('#shopTagline').textContent = shopTagline;
     
-    // Update shop information
-    if ($('#ownerName')) $('#ownerName').textContent = ownerName;
-    if ($('#ownerPhone')) $('#ownerPhone').textContent = ownerPhone;
-    if ($('#shopEmail')) $('#shopEmail').textContent = shopEmail;
-    if ($('#shopLocation')) $('#shopLocation').textContent = shopLocation;
-    if ($('#shopGST')) $('#shopGST').textContent = shopGST;
-    if ($('#shopEstablished')) $('#shopEstablished').textContent = shopEstablished;
-    if ($('#shopDescription')) $('#shopDescription').textContent = shopDescription;
+    // Update shop information. An empty field says so plainly and is greyed,
+    // so nobody mistakes a placeholder for real shop data.
+    const put = (id, val) => {
+      const el = $('#' + id);
+      if (!el) return;
+      el.textContent = val || 'Not set';
+      el.classList.toggle('value-unset', !val);
+    };
+    put('ownerName', ownerName);
+    put('ownerPhone', ownerPhone);
+    put('shopEmail', shopEmail);
+    put('shopLocation', shopLocation);
+    put('shopGST', shopGST);
+    put('shopEstablished', shopEstablished);
+    put('shopDescription', shopDescription);
 
     // Calculate and update statistics from data
     calculateAndUpdateShopStats();
@@ -4496,10 +4561,13 @@ function calculateTodayRevenue(dataArray) {
   }
 }
 
-// Initialize shop details page on load
+// Initialize shop details page on load. loadShopDetails() paints from the
+// local cache immediately; fetchShopDetails() then pulls whatever the rest of
+// the shop has saved and repaints if it differs.
 window.addEventListener('load', () => {
   setTimeout(() => {
     loadShopDetails();
+    fetchShopDetails();
   }, 2000);
 });
 
@@ -4507,6 +4575,7 @@ window.addEventListener('load', () => {
 window.addEventListener('hashchange', () => {
   if (location.hash === '#shop-details') {
     loadShopDetails();
+    fetchShopDetails();
   }
 });
 

@@ -5776,3 +5776,12 @@ li nav h3.sn {
 /* The card's own reminder state, so a job shows it without opening anything. */
 .remind-btn.has-reminder { color: var(--accent-color); border-color: var(--accent-color); }
 .remind-btn.is-overdue { color: var(--danger-color); border-color: var(--danger-color); }
+
+/* A shop detail that has not been filled in. It says "Not set" and is muted,
+   so an empty field can never be mistaken for real shop data — this page used
+   to show the developer's own name, address and GST number as placeholders. */
+.value-unset {
+  color: var(--text-muted);
+  font-style: italic;
+  opacity: 0.75;
+}
