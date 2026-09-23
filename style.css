@@ -6372,3 +6372,189 @@ li nav h3.sn {
   box-shadow: none;
   background: var(--card-bg);
 }
+
+/* ===========================================================================
+   HEADER AND SEARCH
+   ---------------------------------------------------------------------------
+   The header was 2rem of padding with a 30px-rounded bottom, and the search
+   field was absolutely positioned at `bottom: -1rem`, hanging half off that
+   rounded edge at 80% width. The action icons were 25px glyphs in grey pills
+   that scrolled sideways, and a `#timerElement` debug readout ("0ms") sat fixed
+   to the top-left of the viewport in near-black text on a near-black
+   background - invisible, but shipping.
+
+   Now: one compact bar with the shop on the left and its actions on the right,
+   and the search field in the flow beneath it, full width.
+   ======================================================================== */
+
+header {
+  padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-top, 0px));
+  padding-top: calc(0.75rem + env(safe-area-inset-top, 0px));
+  padding-bottom: 0.75rem;
+  background: var(--bg-secondary) !important;
+  border: none;
+  border-bottom: 1px solid var(--border-color);
+  border-radius: 0;
+  text-align: left;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+header .shop-selector-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.35rem;
+  overflow: visible;      /* it used to scroll sideways */
+  margin-bottom: 0.65rem;
+}
+
+/* The shop name takes the space; the icons sit at the end. */
+header .shop-selector-wrap .myshop {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  background: none;
+  animation: none;
+}
+
+header .shop-selector-wrap .myshop h3 {
+  margin: 0;
+  min-width: 0;
+}
+
+header .shop-selector-wrap .myshop a {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-heading);
+  text-decoration: none;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Shops whose name is the brand get the wordmark instead of the text. */
+header .shop-selector-wrap .myshop a img.logo {
+  display: block;
+  height: 26px;
+  width: auto;
+}
+
+header .nav-icon {
+  flex: none;
+  padding: 0;
+  background: none;
+  border-radius: var(--radius-medium);
+}
+
+header .nav-icon > a,
+header .nav-icon > i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-medium);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+header .nav-icon > a:active,
+header .nav-icon > i:active {
+  background: var(--card-bg);
+  color: var(--accent-color);
+}
+
+/* 25px glyphs in a 40px button left no room around them. */
+header i {
+  font-size: 17px;
+}
+
+/* ---------- search ---------- */
+
+header .search-bar {
+  /* It used to be absolutely positioned at `bottom: -1rem; right: 50%` with
+     `transform: translateX(50%)`, hanging half off the header's rounded edge.
+     `right`/`bottom` have to be cleared as well as the position: on a
+     relatively positioned box `right: 50%` shifts it LEFT by half the
+     container, which put it 163px off the side of the screen. */
+  position: relative;
+  inset: auto;
+  transform: none;
+  width: 100%;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0 0.85rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-medium);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+header .search-bar:focus-within {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(11, 162, 255, 0.18);
+}
+
+header .search-bar .search-icon {
+  flex: none;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+/* Inside the search bar the wrapper draws the box, so the field itself has no
+   surface of its own. The !important flags match ones already in the global
+   rules - `input { background: #3b3d43 !important }` and
+   `input, button, select { border-radius: 12px !important }` - which no amount
+   of specificity beats. Overridden only here rather than unpicked globally;
+   every form in the app depends on those. */
+header .search-bar input#search {
+  flex: 1;
+  min-width: 0;
+  height: 44px !important;
+  padding: 0;
+  background: transparent !important;
+  border: none;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: var(--text-color);
+  /* 16px exactly, or iOS Safari zooms the page when it gets focus. */
+  font-size: 16px;
+}
+
+header .search-bar .search-clear {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  margin-right: -0.35rem;
+  background: none;
+  box-shadow: none;
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+header .search-bar .search-clear.hidden { display: none; }
+header .search-bar .search-clear:active { background: var(--card-hover); color: var(--text-color); }
+
+/* The dropdown was pinned at `top: 10rem` and 90vw of the viewport, measured
+   from the header. It is a child of the search bar now, so it lines up with the
+   field whatever size the header is. */
+header .search-bar .search-out {
+  top: calc(100% + 6px);
+  right: auto;
+  left: 0;
+  width: 100%;
+  transform: none;
+  margin: 0;
+}

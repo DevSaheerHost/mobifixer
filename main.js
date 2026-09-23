@@ -619,7 +619,6 @@ if(shopName && shopName.toLowerCase()==='mobifixer') {
   $('#shopname').appendChild(myLogo)
   
 }
-const timerElement = $('#timerElement')
 $('.settings_page .profile_container .name').textContent=shopName;
 $('.profile_page .profile_container .name').textContent=shopName;
 
@@ -703,7 +702,6 @@ const scheduleListRefresh = () => {
     remindOpenJobs(data);
     paintReminderButtons();
     if ($('#staticText')) $('#staticText').textContent = 'No Pending works';
-    timerElement?.remove(); // drop the debug timer once load settles
     $('.loader').classList.add('hidden');
   }, 80);
 };
@@ -1828,6 +1826,21 @@ previousStatuses[sn] = oldStatus;
 
 const search = $('#search');
 const searchOut = $('.search-out');
+
+// Clearing a search meant selecting the text and deleting it. The button only
+// exists while there is something to clear.
+const searchClear = $('#searchClear');
+const paintSearchClear = () => searchClear?.classList.toggle('hidden', !search.value);
+search.addEventListener('input', paintSearchClear);
+if (searchClear) {
+  searchClear.onclick = () => {
+    search.value = '';
+    search.dispatchEvent(new Event('input', { bubbles: true }));
+    searchOut.classList.add('hidden');
+    search.focus();
+  };
+}
+paintSearchClear();
 
 // focus → show
 search.addEventListener("focus", () => {

@@ -159,5 +159,43 @@ console.log('\nStyling that was wrong');
      ['pending','spare','progress','done','return'].every(s => css.includes(`.search-out .status.${s}`)));
 }
 
+console.log('\nHeader and search');
+{
+  const html = readFileSync('index.html', 'utf8');
+  const header = html.slice(at(html, '<header>', 'the header'), at(html, '</header>', 'the header end'));
+
+  // It was fixed to the top-left of the viewport in near-black text on a
+  // near-black background, showing "0ms". Only ever read and removed.
+  ck('the debug timer is gone', !html.includes('timerElement'));
+  ck('and nothing still reads it', !readFileSync('main.js', 'utf8').includes("$('#timerElement')"));
+
+  ck('the shop name element is kept', header.includes('id="shopname"'));
+  ck('as are the three actions',
+     (header.match(/class="nav-icon"/g) || []).length === 3);
+  ck('the bell keeps a child for its handler to bind to',
+     /id="toggle_fullscreen_notification"[^>]*>\s*<i/.test(header));
+  ck('the dead accessories and MKLM links are gone',
+     !header.includes('box-archive') && !header.includes('MKLM'));
+
+  ck('the search field has a clear button', header.includes('id="searchClear"'));
+  ck('the results dropdown is anchored inside the search bar',
+     at(header, 'class="search-bar"', 'the search bar') < at(header, 'class="search-out', 'the dropdown') &&
+     header.indexOf('</div>', at(header, 'class="search-out', 'the dropdown')) > 0);
+  ck('the field does not autocapitalize or autocorrect a serial number',
+     /id="search"[\s\S]{0,200}autocapitalize="none"/.test(header) &&
+     /id="search"[\s\S]{0,200}autocorrect="off"/.test(header));
+
+  // `position: relative` with a leftover `right: 50%` shifts a box LEFT by half
+  // its container - it put the search bar 163px off the side of the screen.
+  ck('the search bar clears the offsets it used to be positioned with',
+     /header \.search-bar\s*\{[^}]*position:\s*relative[^}]*inset:\s*auto/.test(css));
+  ck('the field is 16px so iOS does not zoom on focus',
+     /header \.search-bar input#search\s*\{[^}]*font-size:\s*16px/.test(css));
+  ck('and has no surface of its own inside the bar',
+     /header \.search-bar input#search\s*\{[^}]*background:\s*transparent\s*!important/.test(css));
+  ck('the header no longer scrolls sideways',
+     /header \.shop-selector-wrap\s*\{[^}]*overflow:\s*visible/.test(css));
+}
+
 console.log(`\n${pass} passed, ${fail} failed\n`);
 process.exit(fail ? 1 : 0);
