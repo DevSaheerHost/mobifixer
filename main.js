@@ -4564,8 +4564,16 @@ async function remindOpenJobs(rows) {
       await reg.showNotification(title, {
         body,
         tag: 'mobifixer-open-jobs',
-        icon: './assets/images/icon-192.png',
-        badge: './assets/images/favicon-32.png',
+        // The real logo, transparent, as supplied. The previous icon was the
+        // mark on a solid black plate, which read as a black tile.
+        icon: './assets/images/notification-logo.png',
+        // No `badge`. Android builds the small status-bar badge from a PNG's
+        // ALPHA CHANNEL ALONE, painting every opaque pixel white - and the
+        // favicon that used to be passed here has no alpha channel at all, so
+        // it rendered as a solid white square. A badge needs a square,
+        // single-colour, white-on-transparent mark; the logo is a 2:1
+        // wordmark whose arrow and lettering overlap, so nothing legible can
+        // be derived from it at 24dp. Better none than a white block.
         data: { hash: '' }   // home; the list already opens on the pending tab
       });
       return;
