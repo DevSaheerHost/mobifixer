@@ -64,6 +64,12 @@ console.log('\nThe closed row carries the job');
   ck('what is still owed, not the total', /class="due"[^>]*>₹1,300</.test(html), text(html));
 }
 {
+  // A job with no amount entered is not a settled balance.
+  for (const empty of [undefined, '', '   ', null]) {
+    const html = cardSummary({ ...JOB, amount: empty, advance: empty });
+    ck(`no amount recorded (${JSON.stringify(empty)}) claims nothing about money`,
+       !/Settled/.test(html) && !/class="due"/.test(html), text(html));
+  }
   ck('a fully paid job says so instead of showing ₹0',
      /class="due settled">Settled</.test(cardSummary({ ...JOB, advance: '1800' })));
   ck('an overpaid job is settled too',
@@ -92,6 +98,12 @@ console.log('\nCustomer data is escaped');
   ck('and the textarea is still closed exactly once', (body.match(/<\/textarea>/g) || []).length === 1);
   ck('a quote in a phone number cannot escape the attribute',
      !/data-num="\+91[^"]*"[^>]*onmouseover/i.test(body));
+  const noMoney = cardLayout({ sn: 1, amount: '', advance: '', devices: [] });
+  ck('an empty amount reads "Not set", not a bare ₹',
+     /class="value-unset">Not set</.test(noMoney) && !new RegExp('>₹<').test(noMoney));
+  ck('a real amount still renders',
+     cardLayout({ sn: 1, amount: '1800', advance: '500', devices: [] }).includes('₹1,800'));
+
   ck('our own <i>unknown</i> fallbacks are left alone',
      cardLayout({ sn: 1, devices: [{ model: '', complaints: '' }] }).includes('<i>unknown</i>'));
 }
@@ -133,6 +145,12 @@ console.log('\nStyling that was wrong');
      /^\.remind-btn\s*\{/m.test(css), 'it fell through to the solid white default');
   ck('the debug-style ": " prefix is dropped on the home card',
      /\.home \.list \.list-item p\.value::before\s*\{\s*content:\s*none/.test(css));
+  // It draws its own bordered box, so padding insets the contents and leaves
+  // the border running to the card's edges.
+  ck('the status block is inset with margin, not padding',
+     /\.home \.list \.list-item > \.status\s*\{[^}]*margin:\s*0\.9rem 0\.9rem 0/.test(css));
+  ck('and it is excluded from the padding rule',
+     /\.home \.list \.list-item > \*:not\(nav\):not\(\.status\)/.test(css));
   ck('the date divider is not drawn with light-theme rules',
      /\.home \.list \.date-divider\s*\{[^}]*border:\s*none/.test(css));
   ck('the list is not inside a double gutter',

@@ -5930,8 +5930,11 @@ li nav h3.sn {
   user-select: none;
 }
 
-/* The card body sits inside the same border, indented to line up with the row. */
-.home .list .list-item > *:not(nav) {
+/* The card body sits inside the same border, indented to line up with the row.
+   `.status` is excluded: it draws its own bordered box, so padding would inset
+   its contents while the border still ran to the card's edges. It gets margin
+   instead - see below. */
+.home .list .list-item > *:not(nav):not(.status) {
   padding-inline: 0.9rem;
 }
 
@@ -6359,6 +6362,13 @@ li nav h3.sn {
   background: var(--card-bg);
 }
 
-.home .list .list-item .status {
-  margin-top: 0.9rem;
+/* The status block is a box of its own, so it is inset with margin. It also
+   carried a #999 top border and a #727272 bottom one - light-theme greys that
+   read as a hard line across a dark card. */
+.home .list .list-item > .status {
+  margin: 0.9rem 0.9rem 0;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  box-shadow: none;
+  background: var(--card-bg);
 }

@@ -27,6 +27,13 @@ const initialsOf = (s = '') =>
 
 const money = (n) => '\u20b9' + Number(n || 0).toLocaleString('en-IN');
 
+// An empty amount used to render as a lone "\u20b9" with nothing after it. Say so
+// instead, in the same muted style the shop details page uses.
+const rupees = (n) => {
+  const v = String(n == null ? '' : n).trim();
+  return v === '' ? '<span class="value-unset">Not set</span>' : money(v);
+};
+
 // Escaped: these are customer-entered values going into innerHTML.
 const esc = (v) => String(v == null ? '' : v)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -35,6 +42,10 @@ const esc = (v) => String(v == null ? '' : v)
 export const cardSummary = (item = {}) => {
   const { name, sn, status, amount, advance, devices, model } = item;
   const firstModel = (Array.isArray(devices) && devices.length && devices[0].model) || model || '';
+  // An amount that was never entered is not a settled balance. Both come back
+  // as empty strings, so `amount - advance` was 0 and the row said "Settled"
+  // about money nobody had recorded.
+  const hasAmount = String(amount == null ? '' : amount).trim() !== '';
   const balance = Number(amount || 0) - Number(advance || 0);
   const label = STATUS_LABEL[status] || status || 'Pending';
 
@@ -54,9 +65,11 @@ export const cardSummary = (item = {}) => {
 
     <span class="trail">
       <span class="sn">${esc(sn)}</span>
-      ${balance > 0
-        ? `<span class="due" title="Balance">${money(balance)}</span>`
-        : `<span class="due settled">Settled</span>`}
+      ${!hasAmount
+        ? ''
+        : balance > 0
+          ? `<span class="due" title="Balance">${money(balance)}</span>`
+          : `<span class="due settled">Settled</span>`}
     </span>
 
     <i class="fa-solid fa-chevron-down caret" aria-hidden="true"></i>
@@ -148,12 +161,12 @@ export const cardLayout = ({
 
     <div class='item_flex'>
       <p class='key'>Around</p>
-      <p class='amount value'>₹${amount ? Number(amount).toLocaleString('en-IN') : ''}</p>
+      <p class='amount value'>${rupees(amount)}</p>
     </div>
 
     <div class='item_flex'>
       <p class='key'>Advance</p>
-      <p class='advance value'>₹${advance ? Number(advance).toLocaleString('en-IN') : ''}</p>
+      <p class='advance value'>${rupees(advance)}</p>
     </div>
     
     ${advance!=0?
