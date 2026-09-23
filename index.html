@@ -1429,6 +1429,44 @@ Loading changelog...
 </main>
 
 
+<!-- ########## REMIND ME SHEET ########## -->
+<div class="remind_sheet_overlay" id="remindOverlay">
+  <div class="remind-sheet" role="dialog" aria-modal="true" aria-labelledby="remindTitle">
+    <span class="sheet-handle"></span>
+
+    <div class="flex_between">
+      <h3 id="remindTitle">Remind me about this job</h3>
+      <i class="fa-solid fa-xmark close_remind" id="remindClose" role="button" tabindex="0" aria-label="Close"></i>
+    </div>
+
+    <p class="remind-for" id="remindFor">—</p>
+
+    <div class="remind-existing hidden" id="remindExisting">
+      <i class="fa-solid fa-bell"></i>
+      <span id="remindExistingText">—</span>
+      <button type="button" class="remind-clear" id="remindClear">Cancel reminder</button>
+    </div>
+
+    <p class="remind-group-label">Quick</p>
+    <div class="remind-presets" id="remindPresets">
+      <button type="button" class="remind-chip" data-mins="60">In 1 hour</button>
+      <button type="button" class="remind-chip" data-mins="180">In 3 hours</button>
+      <button type="button" class="remind-chip" data-at="today-18">This evening<small>6:00 PM</small></button>
+      <button type="button" class="remind-chip" data-at="tomorrow-10">Tomorrow<small>10:00 AM</small></button>
+      <button type="button" class="remind-chip" data-mins="2880">In 2 days</button>
+      <button type="button" class="remind-chip" data-mins="10080">Next week</button>
+    </div>
+
+    <p class="remind-group-label">Or pick a date &amp; time</p>
+    <div class="remind-custom">
+      <input type="datetime-local" id="remindCustom" aria-label="Reminder date and time" />
+      <button type="button" class="remind-set" id="remindSetCustom">Set</button>
+    </div>
+
+    <p class="remind-hint" id="remindHint"></p>
+  </div>
+</div>
+
 <!-- ########## BOTTOM SHEET ########## -->
 <div class="bottom_sheet_overlay">
   <div class="bottom-sheet">

@@ -697,6 +697,7 @@ const scheduleListRefresh = () => {
     if (data.length && location.hash !== '#add') $('#new_sn').textContent = Math.max(...data.map(d => Number(d.sn) || 0)) + 1;
     checkDoneDevices(data);
     remindOpenJobs(data);
+    paintReminderButtons();
     if ($('#staticText')) $('#staticText').textContent = 'No Pending works';
     timerElement?.remove(); // drop the debug timer once load settles
     $('.loader').classList.add('hidden');
@@ -2288,6 +2289,12 @@ if (e.target.tagName.toLowerCase() === 'nav') {
 //  alert(parent)
   if (parent) parent.classList.toggle('collapse');
 }
+
+  const remindBtn = e.target.closest('.remind-btn');
+  if (remindBtn) {
+    openRemindSheet(remindBtn.dataset.sn);
+    return;
+  }
 
   const printBtn = e.target.closest('.print-btn');
   if (printBtn) {
@@ -4591,6 +4598,231 @@ async function remindOpenJobs(rows) {
   btn.classList.toggle('active', on);
   input.checked = on;
 })();
+
+// ── Per-job reminders ────────────────────────────────────────────────────
+// "Remind me" on a job card. Stored shop-wide so any staff member who opens
+// the app sees and gets it.
+//
+// Deliberately NOT stored on the service record: saving an edited job does a
+// whole-node set() with only the form's fields, which would silently drop a
+// reminder. A sibling node is immune to that.
+//
+// Due reminders are found by a ticker, not by setTimeout. A timer long enough
+// to reach the due date would exceed the browser's ~24.9 day maximum and fire
+// instantly in a loop — which is exactly the bug that made the old monthly
+// reminder spam. A ticker cannot have that failure mode, and it also means a
+// reminder set on one phone still fires on another.
+const REMINDER_TICK_MS = 30000;
+const remindersBySn = new Map();
+
+const remindersRef = () => ref(db, `shops/${shopName}/reminders`);
+const reminderRef = (sn) => ref(db, `shops/${shopName}/reminders/${sn}`);
+
+const fmtWhen = (ts) => {
+  const d = new Date(ts), now = new Date();
+  const time = d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
+  const sameDay = d.toDateString() === now.toDateString();
+  const tomorrow = new Date(now); tomorrow.setDate(now.getDate() + 1);
+  if (sameDay) return `today at ${time}`;
+  if (d.toDateString() === tomorrow.toDateString()) return `tomorrow at ${time}`;
+  return `${d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} at ${time}`;
+};
+
+const fmtOverdue = (ts) => {
+  const mins = Math.round((Date.now() - ts) / 60000);
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs} hour${hrs === 1 ? '' : 's'} ago`;
+  const days = Math.round(hrs / 24);
+  return `${days} day${days === 1 ? '' : 's'} ago`;
+};
+
+// Reflect reminder state on the cards without waiting for a re-render.
+function paintReminderButtons() {
+  document.querySelectorAll('.remind-btn').forEach(btn => {
+    const rem = remindersBySn.get(String(btn.dataset.sn));
+    const live = rem && !rem.fired;
+    btn.classList.toggle('has-reminder', !!live);
+    btn.classList.toggle('is-overdue', !!(live && rem.dueAt <= Date.now()));
+    const label = live ? (rem.dueAt <= Date.now() ? 'Overdue' : fmtWhen(rem.dueAt)) : 'Remind';
+    const icon = live ? 'fa-solid fa-bell' : 'fa-regular fa-bell';
+    btn.innerHTML = `<i class="${icon}"></i> ${label}`;
+  });
+}
+
+async function fireReminder(rem) {
+  const job = data.find(d => String(d.sn) === String(rem.sn));
+  const who = job ? (job.name || 'Unknown') : `#${rem.sn}`;
+  const device = job && job.devices && job.devices[0] ? job.devices[0].model : '';
+  const late = rem.dueAt < Date.now() - 60000;
+  const title = late ? `Overdue reminder - ${who}` : `Reminder - ${who}`;
+  const body = [`#${rem.sn}${device ? ' - ' + device : ''}`,
+                late ? `Was due ${fmtOverdue(rem.dueAt)}.` : '',
+                rem.note || ''].filter(Boolean).join(' ');
+
+  if ('Notification' in window && Notification.permission === 'granted' && 'serviceWorker' in navigator) {
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      await reg.showNotification(title, {
+        body,
+        tag: `mobifixer-reminder-${rem.sn}`,   // one per job, never stacks
+        icon: './assets/images/notification-logo.png',
+        badge: './assets/images/badge-96.png',
+        data: { hash: '' }
+      });
+    } catch (_) { showNotice({ title, body, type: 'info', delay: 8 }); }
+  } else {
+    showNotice({ title, body, type: 'info', delay: 8 });
+  }
+
+  try { await update(reminderRef(rem.sn), { fired: true, firedAt: Date.now() }); }
+  catch (_) { rem.fired = true; }   // at least don't repeat it this session
+}
+
+function checkDueReminders() {
+  const now = Date.now();
+  remindersBySn.forEach(rem => {
+    if (rem && !rem.fired && Number(rem.dueAt) <= now) fireReminder(rem);
+  });
+  paintReminderButtons();
+}
+
+function watchReminders() {
+  if (!shopName) return;
+  onValue(remindersRef(), snap => {
+    remindersBySn.clear();
+    const all = snap.val() || {};
+    Object.entries(all).forEach(([sn, r]) => { if (r) remindersBySn.set(String(sn), { ...r, sn }); });
+    checkDueReminders();       // catches anything that fell due while the app was closed
+  });
+  setInterval(checkDueReminders, REMINDER_TICK_MS);
+}
+
+// ── the sheet ──
+const remindOverlay = $('#remindOverlay');
+let remindSn = null;
+
+const localInputValue = (d) => {
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+};
+
+function closeRemindSheet() {
+  remindOverlay?.classList.remove('active');
+  remindSn = null;
+}
+
+function openRemindSheet(sn) {
+  if (!remindOverlay) return;
+  remindSn = String(sn);
+  const job = data.find(d => String(d.sn) === remindSn);
+  const device = job && job.devices && job.devices[0] ? job.devices[0].model : '';
+  $('#remindFor').textContent = job
+    ? `#${sn} · ${job.name || 'Unknown'}${device ? ' · ' + device : ''}`
+    : `#${sn}`;
+
+  const rem = remindersBySn.get(remindSn);
+  const existing = $('#remindExisting');
+  if (rem && !rem.fired) {
+    existing.classList.remove('hidden');
+    $('#remindExistingText').textContent = rem.dueAt <= Date.now()
+      ? `Was due ${fmtOverdue(rem.dueAt)}`
+      : `Set for ${fmtWhen(rem.dueAt)}${rem.createdBy ? ' by ' + rem.createdBy : ''}`;
+  } else {
+    existing.classList.add('hidden');
+  }
+
+  // "This evening" is meaningless once it is past 6pm; say so rather than
+  // silently scheduling something in the past.
+  const now = new Date();
+  const evening = new Date(now); evening.setHours(18, 0, 0, 0);
+  const eveBtn = document.querySelector('.remind-chip[data-at="today-18"]');
+  if (eveBtn) eveBtn.disabled = evening.getTime() <= now.getTime();
+
+  const custom = $('#remindCustom');
+  const soon = new Date(now.getTime() + 60 * 60 * 1000);
+  custom.min = localInputValue(now);
+  custom.value = localInputValue(soon);
+  $('#remindHint').textContent = '';
+  $('#remindHint').classList.remove('warn');
+
+  remindOverlay.classList.add('active');
+}
+
+async function saveReminder(dueAt) {
+  if (!remindSn) return;
+  if (!Number.isFinite(dueAt)) return;
+  if (dueAt <= Date.now()) {
+    const h = $('#remindHint');
+    h.textContent = 'Pick a time in the future.';
+    h.classList.add('warn');
+    return;
+  }
+  const sn = remindSn;
+  try {
+    await set(reminderRef(sn), {
+      sn: Number(sn) || sn,
+      dueAt,
+      dueISO: new Date(dueAt).toISOString(),
+      fired: false,
+      createdAt: Date.now(),
+      createdBy: localStorage.getItem('author') || 'Unknown'
+    });
+    closeRemindSheet();
+    showNotice({ title: 'Reminder set', body: `#${sn} · ${fmtWhen(dueAt)}`, type: 'info', delay: 4 });
+    logActivity('reminder', { sn, detail: fmtWhen(dueAt) });
+    // Ask for permission only now — the person has just asked to be reminded.
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {});
+    }
+  } catch (err) {
+    const h = $('#remindHint');
+    h.textContent = 'Could not save the reminder. Check your connection and try again.';
+    h.classList.add('warn');
+  }
+}
+
+if (remindOverlay) {
+  $('#remindClose')?.addEventListener('click', closeRemindSheet);
+  remindOverlay.addEventListener('click', e => { if (e.target === remindOverlay) closeRemindSheet(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && remindOverlay.classList.contains('active')) closeRemindSheet(); });
+
+  $('#remindPresets')?.addEventListener('click', e => {
+    const chip = e.target.closest('.remind-chip');
+    if (!chip || chip.disabled) return;
+    if (chip.dataset.mins) return saveReminder(Date.now() + Number(chip.dataset.mins) * 60000);
+    const d = new Date();
+    if (chip.dataset.at === 'today-18') d.setHours(18, 0, 0, 0);
+    if (chip.dataset.at === 'tomorrow-10') { d.setDate(d.getDate() + 1); d.setHours(10, 0, 0, 0); }
+    saveReminder(d.getTime());
+  });
+
+  $('#remindSetCustom')?.addEventListener('click', () => {
+    const v = $('#remindCustom').value;
+    if (!v) {
+      const h = $('#remindHint');
+      h.textContent = 'Choose a date and time first.';
+      h.classList.add('warn');
+      return;
+    }
+    saveReminder(new Date(v).getTime());
+  });
+
+  $('#remindClear')?.addEventListener('click', async () => {
+    if (!remindSn) return;
+    const sn = remindSn;
+    try { await remove(reminderRef(sn)); closeRemindSheet();
+      showNotice({ title: 'Reminder cancelled', body: `#${sn}`, type: 'info', delay: 3 });
+    } catch (_) {
+      const h = $('#remindHint');
+      h.textContent = 'Could not cancel. Check your connection.';
+      h.classList.add('warn');
+    }
+  });
+}
+
+watchReminders();
+
 
 
 

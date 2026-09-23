@@ -5624,3 +5624,155 @@ li nav h3.sn {
 .list {
   padding-bottom: 6.5rem;
 }
+
+/* ── Remind me ────────────────────────────────────────────────────────────
+   A bottom sheet, matching the existing one: reachable with a thumb,
+   dismissed by tapping outside, and never covering the whole screen. */
+.remind_sheet_overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+  z-index: 40;
+}
+.remind_sheet_overlay.active { opacity: 1; visibility: visible; }
+
+.remind-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-secondary, #161b22);
+  color: var(--text-color);
+  border-radius: 20px 20px 0 0;
+  border-top: 1px solid var(--border-color);
+  padding: 0.75rem 1.1rem calc(1.4rem + env(safe-area-inset-bottom));
+  transform: translateY(100%);
+  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  max-height: 88vh;
+  overflow-y: auto;
+}
+.remind_sheet_overlay.active .remind-sheet { transform: translateY(0); }
+
+.remind-sheet .sheet-handle {
+  display: block;
+  width: 42px;
+  height: 4px;
+  border-radius: 99px;
+  background: var(--border-color);
+  margin: 0 auto 0.9rem;
+}
+.remind-sheet h3 { font-size: 1.05rem; }
+.remind-sheet .close_remind { padding: 0.4rem 0.6rem; cursor: pointer; }
+
+.remind-for {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  margin: 0.15rem 0 0.9rem;
+}
+
+.remind-existing {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  background: rgba(11, 162, 255, 0.12);
+  border: 1px solid rgba(11, 162, 255, 0.35);
+  color: var(--text-color);
+  border-radius: 12px;
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+/* .hidden is declared earlier in this file, so the display:flex above would
+   otherwise beat it on source order and the box would never hide. */
+.remind-existing.hidden { display: none; }
+.remind-existing i { color: var(--accent-color); }
+.remind-clear {
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid var(--danger-color);
+  color: var(--danger-color);
+  border-radius: 99px;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.82rem;
+}
+
+.remind-group-label {
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0.2rem 0 0.55rem;
+}
+
+/* Two per row on a phone, so every label fits without truncating. */
+.remind-presets {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-bottom: 1.1rem;
+}
+.remind-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  background: var(--card-bg, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  border-radius: 14px;
+  padding: 0.7rem 0.85rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-align: left;
+  min-height: 48px;            /* comfortable touch target */
+}
+.remind-chip small {
+  font-weight: 400;
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+.remind-chip:active { background: var(--accent-glass); border-color: var(--accent-color); }
+.remind-chip[disabled] { opacity: 0.38; }
+
+.remind-custom { display: flex; gap: 0.6rem; align-items: center; }
+.remind-custom input[type="datetime-local"] {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  min-height: 48px;
+  background: var(--card-bg, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  border-radius: 14px;
+  padding: 0.6rem 0.85rem;
+  font-size: 0.95rem;
+}
+.remind-set {
+  background: var(--accent-color);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  padding: 0 1.2rem;
+  min-height: 48px;
+  font-weight: 700;
+}
+.remind-set[disabled] { opacity: 0.45; }
+
+.remind-hint {
+  margin-top: 0.9rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  min-height: 1.1em;
+}
+.remind-hint.warn { color: #ffb020; }
+
+/* The card's own reminder state, so a job shows it without opening anything. */
+.remind-btn.has-reminder { color: var(--accent-color); border-color: var(--accent-color); }
+.remind-btn.is-overdue { color: var(--danger-color); border-color: var(--danger-color); }

@@ -151,6 +151,10 @@ export const cardLayout = ({
       <i class='fa-solid fa-print'></i> Print
     </button>
 
+    <button class='remind-btn' data-sn='${sn}' aria-label='Set a reminder for this job'>
+      <i class='fa-regular fa-bell'></i> Remind
+    </button>
+
 <p class="author_name">
   ${author === me
     ? '<span class="you"><i class="fa-solid fa-user"></i> You</span>'
