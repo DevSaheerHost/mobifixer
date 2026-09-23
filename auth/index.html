@@ -1,83 +1,159 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
   <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>AUTHENTICATION</title>
-  
+  <!-- user-scalable=no used to be here; it blocks pinch-zoom, which people rely on. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Sign in · MobiFixer</title>
+  <meta name="theme-color" content="#0d1117">
+  <meta name="description" content="Sign in to MobiFixer — customer records, repairs and payments for your shop.">
+
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16.png">
+  <link rel="apple-touch-icon" href="../assets/images/icon-192.png">
+
+  <!-- style.css asked for Poppins but nothing ever loaded it here, so these
+       screens rendered in the system font while the app rendered in Poppins.
+       Only the four weights actually used - the app's own @import pulls all 18. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+
   <link rel="stylesheet" href="./style.css">
 </head>
 
 <body>
 
-
-  <main class="start-page" id="home-page">
-    <div class="flex">
-      <div class="child top">
-        
-      </div>
-      <div class="child midle">
-        <h1 class="logo">MOBIFIXER</h1>
-        
-        <p class="home-desc">
-  Easily manage your customer records — name, phone, device model, complaints, and advances — 
-  all in one place. Fast, simple, and organized, just like a digital bill book.
-</p>
-      </div>
-      <div class="child bottom">
-
-        <div class="button-container">
-          
-          <button class="get-started-btn">Get Started</button>
-        </div>
-      </div>
+  <main class="auth-page" id="home-page">
+    <div class="auth-card splash-card">
+      <img class="brand brand-lg" src="../assets/images/logo_s_no_bg.png" alt="MobiFixer"
+           width="677" height="369" fetchpriority="high">
+      <p class="auth-sub">
+        Customer records, repairs, payments and reminders — your whole shop in one place.
+      </p>
+      <button class="btn btn-primary get-started-btn" type="button">Get started</button>
     </div>
   </main>
-  
-  
-    <main class="auth-page hidden" id="login-page">
-  <h1>Login</h1>
-  <div class="form">
-    <input type="text" id="login_businessName" placeholder="Business Name" /><br>
-    <input type="password" id="login_businessPass" placeholder="Password" /><br>
-    <a href="#/reset" id="forgot-link">Forgot password?</a>
-    <button id="login">Login</button>
-              <p>Open new shop? <a href="#/signup">SignUp</a></p>
-  </div>
-</main>
 
+  <main class="auth-page hidden" id="login-page">
+    <div class="auth-card">
+      <img class="brand" src="../assets/images/logo_s_no_bg.png" alt="MobiFixer" width="677" height="369">
+      <h1>Sign in</h1>
+      <p class="auth-sub">Use your shop's business name and password.</p>
 
-<main class="auth-page hidden" id="reset-page">
-  <h1>Reset Password</h1>
-  <div class="form">
-    <p class="reset-desc">Enter your Business Name and we'll email a password reset link to the shop's registered email.</p>
-    <input type="text" id="reset_businessName" placeholder="Business Name" /><br>
-    <button id="reset-btn">Send reset link</button>
-    <p>Remembered it? <a href="#/login">Back to Login</a></p>
-  </div>
-</main>
+      <p class="auth-msg hidden" id="login-msg" role="status" aria-live="polite"></p>
 
+      <form id="loginForm" novalidate>
+        <label class="field" for="login_businessName">
+          <span class="field-label">Business name</span>
+          <input type="text" id="login_businessName" placeholder="your shop name"
+                 autocomplete="username" autocapitalize="none" autocorrect="off"
+                 spellcheck="false" enterkeyhint="next">
+        </label>
 
-<main class="auth-page hidden" id="signup-page">
-        <h1>Signup Page</h1>
-        <div class="form">
-          <input type="text" id="signup_name" placeholder="Name" /><br>
-          <input type="text" name="businessname" id="signup_businessName" placeholder="Business Name" />
-          <input type="email" placeholder="Email" id="signup_businessEmail" /><br>
-          <input type="password" placeholder="Password" id="signup_businessPassword" /><br>
-          <button id="signup">Sign-up</button>
-        </div>
-</main>
-  
+        <label class="field" for="login_businessPass">
+          <span class="field-label">Password</span>
+          <span class="field-wrap">
+            <input type="password" id="login_businessPass" placeholder="Your password"
+                   autocomplete="current-password" enterkeyhint="go">
+            <button type="button" class="pw-toggle" data-for="login_businessPass"
+                    aria-label="Show password" aria-pressed="false">
+              <svg class="i-show" viewBox="0 0 24 24" aria-hidden="true"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12Z"/><circle cx="12" cy="12" r="3.2"/></svg>
+              <svg class="i-hide" viewBox="0 0 24 24" aria-hidden="true"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12Z"/><circle cx="12" cy="12" r="3.2"/><path d="M4 20 20 4"/></svg>
+            </button>
+          </span>
+        </label>
+
+        <a href="#/reset" id="forgot-link">Forgot password?</a>
+
+        <button class="btn btn-primary" id="login" type="submit">Sign in</button>
+      </form>
+
+      <p class="auth-alt">Opening a new shop? <a href="#/signup">Create an account</a></p>
+    </div>
+  </main>
+
+  <main class="auth-page hidden" id="reset-page">
+    <div class="auth-card">
+      <img class="brand" src="../assets/images/logo_s_no_bg.png" alt="MobiFixer" width="677" height="369">
+      <h1>Reset password</h1>
+      <p class="auth-sub">We'll email a reset link to the address registered for your shop.</p>
+
+      <p class="auth-msg hidden" id="reset-msg" role="status" aria-live="polite"></p>
+
+      <form id="resetForm" novalidate>
+        <label class="field" for="reset_businessName">
+          <span class="field-label">Business name</span>
+          <input type="text" id="reset_businessName" placeholder="your shop name"
+                 autocomplete="username" autocapitalize="none" autocorrect="off"
+                 spellcheck="false" enterkeyhint="send">
+        </label>
+
+        <button class="btn btn-primary" id="reset-btn" type="submit">Send reset link</button>
+      </form>
+
+      <p class="auth-alt">Remembered it? <a href="#/login">Back to sign in</a></p>
+    </div>
+  </main>
+
+  <main class="auth-page hidden" id="signup-page">
+    <div class="auth-card">
+      <img class="brand" src="../assets/images/logo_s_no_bg.png" alt="MobiFixer" width="677" height="369">
+      <h1>Create your shop</h1>
+      <p class="auth-sub">The business name is how your team signs in. It can't be changed later.</p>
+
+      <p class="auth-msg hidden" id="signup-msg" role="status" aria-live="polite"></p>
+
+      <form id="signupForm" novalidate>
+        <label class="field" for="signup_name">
+          <span class="field-label">Your name</span>
+          <input type="text" id="signup_name" placeholder="Owner's full name"
+                 autocomplete="name" enterkeyhint="next">
+        </label>
+
+        <label class="field" for="signup_businessName">
+          <span class="field-label">Business name</span>
+          <input type="text" name="businessname" id="signup_businessName" placeholder="Shop name"
+                 autocomplete="organization" autocapitalize="none" autocorrect="off"
+                 spellcheck="false" enterkeyhint="next">
+        </label>
+
+        <label class="field" for="signup_businessEmail">
+          <span class="field-label">Email</span>
+          <input type="email" id="signup_businessEmail" placeholder="you@example.com"
+                 autocomplete="email" autocapitalize="none" autocorrect="off"
+                 spellcheck="false" inputmode="email" enterkeyhint="next">
+          <span class="field-hint">Password resets go here. Use an address you can open.</span>
+        </label>
+
+        <label class="field" for="signup_businessPassword">
+          <span class="field-label">Password</span>
+          <span class="field-wrap">
+            <input type="password" id="signup_businessPassword" placeholder="At least 6 characters"
+                   autocomplete="new-password" enterkeyhint="go">
+            <button type="button" class="pw-toggle" data-for="signup_businessPassword"
+                    aria-label="Show password" aria-pressed="false">
+              <svg class="i-show" viewBox="0 0 24 24" aria-hidden="true"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12Z"/><circle cx="12" cy="12" r="3.2"/></svg>
+              <svg class="i-hide" viewBox="0 0 24 24" aria-hidden="true"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12Z"/><circle cx="12" cy="12" r="3.2"/><path d="M4 20 20 4"/></svg>
+            </button>
+          </span>
+        </label>
+
+        <button class="btn btn-primary" id="signup" type="submit">Create shop</button>
+      </form>
+
+      <p class="auth-alt">Already have a shop? <a href="#/login">Sign in</a></p>
+    </div>
+  </main>
+
   <div class="loader hidden">
-  <div class="loading-card">
-    <h3>Please wait...</h3>
+    <div class="loading-card">
+      <span class="spinner" aria-hidden="true"></span>
+      <p>Please wait…</p>
+    </div>
   </div>
-</div>
-  
+
   <script type="module" charset="utf-8" src="./main.js"></script>
 </body>
 

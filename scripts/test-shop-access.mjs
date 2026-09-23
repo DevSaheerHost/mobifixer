@@ -26,6 +26,16 @@ import { readFileSync } from 'node:fs';
 
 const src = readFileSync('main.js', 'utf8');
 
+// Slicing on exact strings silently produced garbage whenever a handler was
+// renamed - String.indexOf returns -1 and slice(-1, n) hands back nonsense that
+// still "passes". These throw instead, so a rename is a loud failure.
+const at = (src, needle, what) => {
+  const i = needle instanceof RegExp ? src.search(needle) : src.indexOf(needle);
+  if (i < 0) throw new Error(`could not find ${what} (${needle}) - has it been renamed?`);
+  return i;
+};
+const region = (src, from, to, what) => src.slice(at(src, from, what + ' start'), at(src, to, what + ' end'));
+
 let pass = 0, fail = 0;
 const ck = (name, cond, extra = '') => {
   if (cond) { pass++; console.log('  ok    ' + name); }
@@ -310,7 +320,7 @@ console.log('\nForgot password');
      'still below the button');
   ck('it is under the password field',
      loginPage.indexOf('login_businessPass') < loginPage.indexOf('id="forgot-link"'));
-  const style = authCss.slice(authCss.indexOf('#forgot-link{'), authCss.indexOf('#forgot-link:active'));
+  const style = region(authCss, /#forgot-link\s*\{/, '#forgot-link:active', 'the #forgot-link rule');
   ck('it has a 44px touch target', /min-height:\s*44px/.test(style), style.slice(0, 60));
   ck('it is not styled as muted italic body text', !/font-style:\s*italic/.test(style));
 
@@ -328,7 +338,7 @@ console.log('\nForgot password');
 console.log('\nSignup can no longer overwrite a shop');
 {
   const authSrc = readFileSync('auth/main.js', 'utf8');
-  const signup = authSrc.slice(authSrc.indexOf("$('#signup').onclick"), authSrc.indexOf('// Google sign-in removed'));
+  const signup = region(authSrc, "$('#signupForm').onsubmit", '// Google sign-in removed', 'the signup handler');
   ck('the shop is created with a transaction, not set()',
      /runTransaction\(child\(shopRef, businessName\)/.test(signup));
   ck('the transaction aborts when the node already exists',
@@ -347,15 +357,15 @@ console.log('\nSignup can no longer overwrite a shop');
 console.log('\nThe pre-auth lookup');
 {
   const authSrc = readFileSync('auth/main.js', 'utf8');
-  const helper = authSrc.slice(authSrc.indexOf('const lookupShopEmail'), authSrc.indexOf("$('#login').onclick"));
+  const helper = region(authSrc, 'const lookupShopEmail', "$('#loginForm').onsubmit", 'lookupShopEmail');
 
   ck('reads owner/email', helper.includes('${identifier}/owner/email'));
   ck('and falls back to the top-level email', helper.includes('${identifier}/email'));
 
   // The whole point: once the rules require auth on shops/$shop, reading that
   // node unauthenticated is denied and a public child does not save it.
-  const login = authSrc.slice(authSrc.indexOf("$('#login').onclick"), authSrc.indexOf('// \u{1F510} Forgot password'));
-  const reset = authSrc.slice(authSrc.indexOf('// \u{1F510} Forgot password'), authSrc.indexOf("// Creating a shop"));
+  const login = region(authSrc, "$('#loginForm').onsubmit", '// \u{1F510} Forgot password', 'the login handler');
+  const reset = region(authSrc, '// \u{1F510} Forgot password', '// Creating a shop', 'the reset handler');
   for (const [what, body] of [['login', login], ['reset', reset]]) {
     ck(`${what} never reads the whole shop node`, !/get\(child\(shopRef, identifier\)\)/.test(body));
     ck(`${what} goes through lookupShopEmail`, body.includes('lookupShopEmail(identifier)'));
@@ -392,7 +402,7 @@ console.log('\nThe plaintext-password branch is gone');
   const code = (t) => t.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
   ck('login no longer creates accounts',
      !/createUserWithEmailAndPassword\s*\(/.test(
-       code(authSrc.slice(authSrc.indexOf("$('#login').onclick"), authSrc.indexOf('// \u{1F510} Forgot password')))));
+       code(region(authSrc, "$('#loginForm').onsubmit", '// \u{1F510} Forgot password', 'the login handler'))));
   ck('signup is the only place an account is created',
      (authSrc.match(/await createUserWithEmailAndPassword/g) || []).length === 1);
 }
@@ -408,6 +418,59 @@ console.log('\nThe proposed rules match the shapes that exist');
   ck('the top-level email is publicly readable too', shop.email?.['.read'] === true);
   ck('no password carve-out is left', !('password' in shop));
   ck('the root is denied', rules['.read'] === false && rules['.write'] === false);
+}
+
+console.log('\nThe rebuilt auth screens');
+{
+  const authSrc  = readFileSync('auth/main.js', 'utf8');
+  const authHtml = readFileSync('auth/index.html', 'utf8');
+  const authCss  = readFileSync('auth/style.css', 'utf8');
+  const code = (t) => t.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+
+  ck('no alert() popups are left', !/\balert\s*\(/.test(code(authSrc)));
+  ck('every message goes through one helper',
+     /const showAuthMessage = /.test(authSrc) &&
+     (authSrc.match(/showAuthMessage\(/g) || []).length >= 15);
+  ck('each screen has its own message strip',
+     ['login-msg', 'reset-msg', 'signup-msg'].every(id => authHtml.includes(`id="${id}"`)));
+  ck('and the strips are announced to screen readers',
+     (authHtml.match(/role="status" aria-live="polite"/g) || []).length === 3);
+  ck('a message parked for another screen is delivered by the router',
+     /pendingAuthMessage/.test(authSrc) && /clearAuthMessages\(\)/.test(authSrc));
+
+  // Bare inputs with an onclick handler meant Enter and the phone keyboard's
+  // Go key did nothing at all.
+  for (const f of ['loginForm', 'resetForm', 'signupForm']) {
+    ck(`${f} is a real form`, authHtml.includes(`id="${f}"`) && authSrc.includes(`$('#${f}').onsubmit`));
+  }
+  ck('the submit buttons submit', (authHtml.match(/type="submit"/g) || []).length === 3);
+
+  // A double tap on Create shop used to fire two account creations.
+  ck('the button is disabled while a request is in flight',
+     /const setBusy = /.test(authSrc) && /btn\.disabled = busy/.test(authSrc));
+  ck('and every handler uses it', (authSrc.match(/setBusy\('#/g) || []).length === 6);
+
+  ck('both password fields have a show\/hide toggle',
+     (authHtml.match(/class="pw-toggle"/g) || []).length === 2 &&
+     /aria-pressed/.test(authHtml));
+
+  // logo_s_no_bg.png is a bright wordmark on transparency - it needs the dark
+  // surface, and the dark surface is why it can finally be used here.
+  ck('the real logo is used, not a text stand-in',
+     (authHtml.match(/logo_s_no_bg\.png/g) || []).length === 4 && !/class="logo"/.test(authHtml));
+  ck('sized in the markup so nothing shifts as it loads',
+     /width="677" height="369"/.test(authHtml));
+  ck('the screens use the app palette', /--bg-color: #0d1117/.test(authCss) && /--accent-color: #0ba2ff/.test(authCss));
+  ck('Poppins is actually loaded now', /fonts\.googleapis\.com\/css2\?family=Poppins/.test(authHtml));
+  ck('inputs are 16px so iOS does not zoom on focus', /font-size:\s*16px/.test(authCss));
+
+  const viewport = (authHtml.match(/<meta name="viewport"[^>]*>/) || [''])[0];
+  ck('pinch-zoom is no longer blocked',
+     !!viewport && !/user-scalable=no/.test(viewport) && !/maximum-scale/.test(viewport), viewport);
+  ck('the page declares a language', /<html lang="en">/.test(authHtml));
+
+  // Same source-order trap as the app's stylesheet.
+  ck('the message strip can still be hidden by .hidden', /\.auth-msg\.hidden\s*\{/.test(authCss));
 }
 
 console.log(`\n${pass} passed, ${fail} failed\n`);

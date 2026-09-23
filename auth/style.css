@@ -1,271 +1,403 @@
-*{
+/* ===========================================================================
+   MobiFixer — authentication screens
+   ---------------------------------------------------------------------------
+   These used to be cream (#F9F7F2) with a maroon accent while the app itself is
+   dark, so signing in jumped between two products. They now use the app's own
+   palette. That also lets the real logo be used: logo_s_no_bg.png is a bright
+   wordmark on transparency (mean luminance 211/255, no dark pixels) and is
+   invisible on a light background, which is why these pages carried a text
+   "MOBIFIXER" heading instead.
+
+   The tokens below mirror :root in ../style.css. They are duplicated rather
+   than imported on purpose - importing would pull the app's whole stylesheet
+   onto the login screen. If the app's palette changes, change these too.
+   ======================================================================== */
+
+:root {
+  --bg-color: #0d1117;
+  --bg-secondary: #161b22;
+  --card-bg: rgba(255, 255, 255, 0.06);
+
+  --text-color: #e6edf3;
+  --text-muted: #8b949e;
+  --text-heading: #ffffff;
+
+  --accent-color: #0ba2ff;
+  --accent-hover: #0088d8;
+  --danger-color: #ff3b3b;
+  --success-color: #00c36a;
+  --warn-color: #f0a132;
+
+  --border-color: rgba(255, 255, 255, 0.15);
+  --shadow-color: rgba(0, 0, 0, 0.5);
+
+  --font-main: 'Poppins', system-ui, -apple-system, sans-serif;
+
+  --radius-small: 6px;
+  --radius-medium: 10px;
+  --radius-large: 16px;
+}
+
+* {
   padding: 0;
   margin: 0;
+  border: none;
   outline: none;
   box-sizing: border-box;
-  border: none;font-family: "Poppins", sans-serif;
-  transition: all .4s;
+  font-family: var(--font-main);
+  -webkit-tap-highlight-color: transparent;
 }
 
-
-button {
-  
-  padding: 0.75rem 1.5rem;
-  
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
-  letter-spacing: 0.5px;
-}
-button {
-  background: linear-gradient(135deg, #ffcc70, #ff8177, #cf556c);
-  color: #fff;
-  font-size: 1rem;
-  font-weight: 600;
-  background: #42445A;
+html, body {
+  min-height: 100%;
+  background: var(--bg-color);
 }
 
-
-
-button:active {
-  transform: scale(0.95);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+body {
+  color: var(--text-color);
+  /* A single soft wash of the accent behind the card, so the screen has some
+     depth without a background image to download. */
+  background:
+    radial-gradient(90rem 40rem at 50% -18rem, rgba(11, 162, 255, 0.16), transparent 60%),
+    var(--bg-color);
 }
+
+/* ---------- pages ---------- */
 
 main {
   position: absolute;
-  inset: 0;         /* top:0; right:0; bottom:0; left:0; */
-  width: 100%;
-  height: 100%;
-  overflow: hidden; /* just in case */
-  transition: all .4s ease;
-  box-shadow: -5px 0 0px rgba(0, 0, 0, .20);
-  background: linear-gradient(135deg, #F9F7F2, #FFFFFF);
+  inset: 0;
+  overflow-y: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem calc(2rem + env(safe-area-inset-bottom));
 }
 
-/* visible state */
-main:not(.hidden) {
-  opacity: 1;
-  transform: translateX(0);
-  pointer-events: auto;
-  visibility: visible;
-  z-index: 1;
-  animation: open .4s;
-  scale: 1;
-}
-
-/* hidden state */
 main.hidden {
-  
-  transform: translateX(00%);
-  scale: 0.99;
-  pointer-events: none;
-  visibility: hidden;
-  z-index: 0;
-}
-main.start-page .flex{
-  display: flex;
-  flex-flow: column;
-  height: 100%;
-  text-align: center;
-}
-main.start-page .flex .child{
-flex: 1;
+  display: none;
 }
 
-.flex .bottom{
-  flex: 0.1;
-}
-.flex .bottom buttons{
-  background: linear-gradient(135deg, #ffcc70, #ff8177, #cf556c);
-color: #fff;
-font-size: 1rem;
-font-weight: 600;
+main:not(.hidden) {
+  animation: rise 0.32s ease both;
 }
 
-
-
-
-.logo {
-  color: #333333; /* dark gray */
-  font-weight: 700;
-  font-size: 2rem;
-  letter-spacing: 2px;
-  text-align: center;
-  margin-bottom: 1rem;
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
 }
 
-/* Paragraph */
-.home-desc {
-  font-size: 1rem;
-  color: #999999; /* subtle gray */
-  max-width: 350px;
-  margin: 0 auto;
-  line-height: 1.5;
+@media (prefers-reduced-motion: reduce) {
+  main:not(.hidden) { animation: none; }
+  * { transition: none !important; }
 }
 
+/* ---------- card ---------- */
 
-.get-started-btn{
-  background: #42445A;
-  color: #fff;
-  font-size: 1.1rem;
-  font-weight: 800;
-  width: auto;
-  height: 60px;
-  border-radius: 50px; /* fully circular */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  box-shadow: 0 6px 15px rgba(0,0,0,0.25);
-  transition: all 0.3s ease;
-  border: none;
-  margin: auto;
-}
-
-
-
-
-
-.get-started-btn:active {
-  transform: scale(0.95);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-  background: linear-gradient(135deg, #ff8177, #ffcc70, #cf556c);
-}
-
-
-
-
-
-
-
-
-input {
-  background: #ffffff;
-  border: 2px solid #e5e5e5;
-  border-radius: 10px;
-  padding: 0.7rem 1rem;
-  color: #333;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-  outline: none;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-}
-
-input::placeholder {
-  color: #aaa;
-  font-style: italic;
-}
-
-input:focus {
-  border-color: #d4af37; /* Golden accent */
-  box-shadow: 0 0 12px rgba(212, 175, 55, 0.4);
-}
-
-@keyframes open{
-  from{
-    transform: translateX(100%);
-    
-  }
-}
-
-
-
-.auth-page{
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-flow: column;
-  gap: 1rem;
-}
-.auth-page .form{
-  padding: 2rem;
-}
-
-.auth-page .form input{
-  margin-bottom: 1rem;
+.auth-card {
   width: 100%;
-}
-
-/* The submit buttons were content-width and left-aligned under full-width
-   fields. That always looked off; moving "Forgot password?" above the Login
-   button made it obvious, because the button ended up squeezed between two
-   right-aligned lines. Matching the fields is also a bigger tap target. */
-.auth-page .form button{
-  width: 100%;
-}
-
-.auth-page .form p{
-  margin-top: 1rem;
-  color: #999;
-  font-style: italic;
-  font-size: 13px;
-  font-weight: 600;
-  margin: auto;
-  text-align: right;
-}
-
-.loader{
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(0, 0, 0, 0.44);
-    z-index: 9;
-    
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.loader .loading-card{
-    padding: 1rem;
-    background: #fff;
-    border-radius: 10px;
-}
-
-
-
-
-
-
-
-
-.auth-page .form p.reset-desc{
+  max-width: 380px;
+  padding: 2rem 1.5rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-large);
+  box-shadow: 0 24px 60px -20px var(--shadow-color);
   text-align: center;
-  font-style: normal;
-  color: #777;
-  font-size: 13px;
-  max-width: 320px;
-  line-height: 1.5;
+}
+
+.splash-card {
+  padding: 2.75rem 1.5rem;
+}
+
+.brand {
+  width: 150px;
+  height: auto;
+  display: block;
   margin: 0 auto 1.25rem;
 }
 
-/* Forgot password. A reset email is now the ONLY way back into an account -
-   the plaintext-password branch is gone - so this has to be findable and easy
-   to hit. It used to be a 13px italic line below the Login button, in the same
-   muted grey as "Open new shop?". It now sits directly under the password
-   field, where people look for it, with a 44px touch target. */
-#forgot-link{
-  color: #cf556c;
+.brand-lg {
+  width: 200px;
+  margin-bottom: 1.75rem;
+}
+
+.auth-card h1 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--text-heading);
+  letter-spacing: -0.01em;
+}
+
+.auth-sub {
+  margin: 0.4rem auto 1.5rem;
+  max-width: 30ch;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.splash-card .auth-sub {
+  margin-bottom: 2rem;
+}
+
+/* ---------- message strip ---------- */
+
+/* Replaces 19 alert() popups. role="status" + aria-live in the markup so a
+   screen reader announces it the way the popup used to interrupt. */
+.auth-msg {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 1.25rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--border-color);
+  border-left-width: 3px;
+  border-radius: var(--radius-medium);
+  background: var(--card-bg);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  text-align: left;
+  white-space: pre-line;
+  color: var(--text-color);
+}
+
+/* `.hidden` is declared further down; without this the rule above wins on
+   source order and the strip could never be hidden. */
+.auth-msg.hidden {
+  display: none;
+}
+
+.auth-msg::before {
+  flex: none;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.auth-msg.is-error   { border-left-color: var(--danger-color); }
+.auth-msg.is-success { border-left-color: var(--success-color); }
+.auth-msg.is-warn    { border-left-color: var(--warn-color); }
+
+.auth-msg.is-error::before   { content: "!"; color: var(--danger-color); }
+.auth-msg.is-success::before { content: "\2713"; color: var(--success-color); }
+.auth-msg.is-warn::before    { content: "!"; color: var(--warn-color); }
+
+/* ---------- fields ---------- */
+
+.field {
+  display: block;
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.field-hint {
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.field-wrap {
+  position: relative;
+  display: block;
+}
+
+input {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-medium);
+  color: var(--text-color);
+  /* 16px exactly: anything smaller makes iOS Safari zoom the page on focus. */
+  font-size: 16px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.field-wrap input {
+  padding-right: 3rem;
+}
+
+input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+input:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(11, 162, 255, 0.22);
+}
+
+/* Chrome paints a white block over a dark field when it autofills. */
+input:-webkit-autofill,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-color);
+  -webkit-box-shadow: 0 0 0 100px var(--bg-secondary) inset;
+  caret-color: var(--text-color);
+}
+
+.pw-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.25rem;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border-radius: var(--radius-small);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.pw-toggle:hover { color: var(--text-color); }
+.pw-toggle:active { transform: translateY(-50%) scale(0.92); }
+
+.pw-toggle svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+}
+
+.pw-toggle .i-hide { display: none; }
+.pw-toggle[aria-pressed="true"] .i-show { display: none; }
+.pw-toggle[aria-pressed="true"] .i-hide { display: block; }
+
+/* ---------- forgot password ---------- */
+
+/* A reset email is the only way back into an account, so this has to be easy
+   to find and easy to hit. It sits under the password field, where people look
+   for it, with a 44px touch target. */
+#forgot-link {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   min-height: 44px;
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
-  font-weight: 600;
+  margin: -0.25rem 0 0.5rem;
+  color: var(--accent-color);
+  font-size: 0.8125rem;
+  font-weight: 500;
   font-style: normal;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  text-decoration: none;
 }
 
-#forgot-link:active{
+#forgot-link:active {
   opacity: 0.6;
 }
 
+/* ---------- buttons ---------- */
+
+.btn {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.85rem 1.25rem;
+  border-radius: var(--radius-medium);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.12s ease, opacity 0.2s ease;
+}
+
+.btn-primary {
+  background: var(--accent-color);
+  color: #04121e;
+}
+
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-primary:active { transform: scale(0.985); }
+
+.btn[disabled] {
+  opacity: 0.55;
+  cursor: progress;
+  transform: none;
+}
+
+.get-started-btn {
+  max-width: 260px;
+  margin: 0 auto;
+}
+
+/* ---------- secondary links ---------- */
+
+.auth-alt {
+  margin-top: 1.5rem;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.auth-alt a,
+.auth-sub a {
+  color: var(--accent-color);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+/* ---------- loader ---------- */
+
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(13, 17, 23, 0.72);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+.loading-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-medium);
+  color: var(--text-color);
+  font-size: 0.875rem;
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--accent-color);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ---------- small screens ---------- */
+
+@media screen and (max-width: 360px) {
+  .auth-card { padding: 1.5rem 1.15rem; }
+  .brand { width: 130px; }
+  .brand-lg { width: 170px; }
+}
+
 /*#################### END #################*/
-.hidden{
+.hidden {
   display: none;
 }

@@ -35,6 +35,49 @@ const shopRef = ref(db, "shops/")
 //==========//
 
 const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+// Inline messages, replacing 19 alert() popups. Same wording and same logic -
+// only the presentation changes. Each page owns its own strip, so a message can
+// never surface on the wrong screen, and the markup carries role="status" +
+// aria-live so a screen reader still announces it the way a popup interrupted.
+const MSG_FOR = {
+  '#login-page':  '#login-msg',
+  '#reset-page':  '#reset-msg',
+  '#signup-page': '#signup-msg'
+};
+
+// Some messages are followed straight away by a route change, where an inline
+// strip would never be read. Those are parked here and shown by router() on the
+// screen the person lands on.
+let pendingAuthMessage = null;
+
+const showAuthMessage = (pageSel, text, type = 'error') => {
+  const el = $(MSG_FOR[pageSel]);
+  if (!el) return;
+  el.textContent = text;
+  el.classList.remove('is-error', 'is-success', 'is-warn');
+  el.classList.add('is-' + type);
+  el.classList.remove('hidden');
+};
+
+const clearAuthMessages = () => {
+  Object.values(MSG_FOR).forEach(sel => {
+    const el = $(sel);
+    if (!el) return;
+    el.textContent = '';
+    el.classList.add('hidden');
+  });
+};
+
+// Disable the submit button and show the overlay together. Without the disable,
+// a double tap on Create shop fires two account creations.
+const setBusy = (btnSel, busy) => {
+  const btn = $(btnSel);
+  if (btn) btn.disabled = busy;
+  const loader = $('.loader');
+  if (loader) loader.classList.toggle('hidden', !busy);
+};
 
 let lastHash = location.hash;
 let direction = "forward"; // default
@@ -56,6 +99,10 @@ const router = () => {
   const pages = document.querySelectorAll("main");
   pages.forEach(m => m.classList.add('hidden'));
 
+  // A message belongs to the screen it was raised on; leaving it up while the
+  // person navigates elsewhere would be worse than the popup it replaced.
+  clearAuthMessages();
+
   let target;
   switch (location.hash) {
     case "#/login":
@@ -76,7 +123,12 @@ const router = () => {
   // apply animation
   
   target.classList.remove('hidden')
-  
+
+  if (pendingAuthMessage) {
+    const { page, text, type } = pendingAuthMessage;
+    pendingAuthMessage = null;
+    if (target && ('#' + target.id) === page) showAuthMessage(page, text, type);
+  }
 
   lastHash = location.hash;
   direction = "forward"; // reset
@@ -87,38 +139,22 @@ router();
 
 $(".get-started-btn").onclick = () => (location.hash = "#/login");
 
+// Show/hide the password. On a phone, typing a password blind into a field you
+// cannot check is where most "wrong password" attempts come from.
+$$('.pw-toggle').forEach(btn => {
+  btn.onclick = () => {
+    const input = document.getElementById(btn.dataset.for);
+    if (!input) return;
+    const reveal = input.type === 'password';
+    input.type = reveal ? 'text' : 'password';
+    btn.setAttribute('aria-pressed', String(reveal));
+    btn.setAttribute('aria-label', reveal ? 'Hide password' : 'Show password');
+  };
+});
+
 
 
 import { get, child } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
-
-// $('.logo').onclick = async (e) => {
-//   e.preventDefault();
-//   const email = $('#login_businessName').value.trim(); // <-- here use email instead of name
-//   const password = $('#login_businessPass').value.trim();
-
-//   if (!email || !password) {
-//     alert("Please enter all fields!");
-//     return;
-//   }
-
-//   $('.loader').classList.remove('hidden');
-
-//   try {
-//     const userCredential = await signInWithEmailAndPassword(auth, email, password);
-//     const user = userCredential.user;
-
-//     localStorage.setItem('uid', user.uid);
-//     localStorage.setItem('shopEmail', user.email);
-//     alert("✅ Login successful!");
-//     location = "/";
-//   } catch (err) {
-//     console.error(err);
-//     alert("❌ Login failed: " + err.message);
-//   } finally {
-//     $('.loader').classList.add('hidden');
-//   }
-// };
-
 
 // The shop's login email, and nothing else.
 //
@@ -141,18 +177,18 @@ const lookupShopEmail = async (identifier) => {
   return String(email).trim();
 };
 
-$('#login').onclick = async (e) => {
+$('#loginForm').onsubmit = async (e) => {
   e.preventDefault();
 
   const identifier = $('#login_businessName').value.trim().toLowerCase();
   const password = $('#login_businessPass').value.trim();
 
   if (!identifier || !password) {
-    alert("Please enter all fields!");
+    showAuthMessage('#login-page', 'Enter your business name and password.', 'warn');
     return;
   }
 
-  $('.loader').classList.remove('hidden');
+  setBusy('#login', true);
 
   try {
     // The plaintext-password branch that used to sit here is gone. It read a
@@ -166,7 +202,7 @@ $('#login').onclick = async (e) => {
     if (!email) {
       // Either no such shop, or a record with no email on it. Deliberately the
       // same message: a login form should not confirm which shops exist.
-      alert("❌ Shop not found, or it has no login email. Check the business name.");
+      showAuthMessage('#login-page', 'Shop not found, or it has no login email. Check the business name.');
       return;
     }
 
@@ -175,42 +211,43 @@ $('#login').onclick = async (e) => {
       const user = userCredential.user;
       localStorage.setItem('shopName', identifier);
       localStorage.setItem('uid', user.uid);
-      alert("✅ Logged in (FB Account)");
+      // No message on success: the app opening is the confirmation, and an
+      // inline strip would be wiped by the navigation a moment later.
       location = "/";
     } catch (err) {
       if (err.code === "auth/invalid-credential" || err.code === "auth/wrong-password" ||
           err.code === "auth/user-not-found") {
         // Dead end before this: a reset email is now the only way back in, so
         // say so rather than leaving someone guessing at the same field.
-        alert("❌ Wrong password!\n\nIf you don't remember it, tap \"Forgot password?\" to get a reset link by email.");
+        showAuthMessage('#login-page', 'Wrong password. If you don\u2019t remember it, tap "Forgot password?" to get a reset link by email.');
       } else if (err.code === "auth/too-many-requests") {
-        alert("⚠️ Too many attempts. Please wait a few minutes and try again.");
+        showAuthMessage('#login-page', 'Too many attempts. Please wait a few minutes and try again.', 'warn');
       } else {
         console.error(err);
-        alert("❌ Login failed: " + err.message);
+        showAuthMessage('#login-page', 'Login failed: ' + err.message);
       }
     }
   } catch (err) {
     console.error(err);
-    alert("❌ Error: " + err.message);
+    showAuthMessage('#login-page', 'Something went wrong: ' + err.message);
   } finally {
-    $('.loader').classList.add('hidden');
+    setBusy('#login', false);
   }
 };
 
 
 // 🔐 Forgot password → send Firebase reset email to the shop's registered email
-$('#reset-btn').onclick = async (e) => {
+$('#resetForm').onsubmit = async (e) => {
   e.preventDefault();
 
   const identifier = $('#reset_businessName').value.trim().toLowerCase();
 
   if (!identifier) {
-    alert("Please enter your Business Name.");
+    showAuthMessage('#reset-page', 'Enter your business name.', 'warn');
     return;
   }
 
-  $('.loader').classList.remove('hidden');
+  setBusy('#reset-btn', true);
 
   try {
     // Same narrow lookup as login: only the public email paths, never the whole
@@ -218,7 +255,7 @@ $('#reset-btn').onclick = async (e) => {
     const email = await lookupShopEmail(identifier);
 
     if (!email) {
-      alert("❌ Shop not found, or no email is registered for it. Check the business name, or contact support.");
+      showAuthMessage('#reset-page', 'Shop not found, or no email is registered for it. Check the business name, or contact support.');
       return;
     }
 
@@ -235,7 +272,11 @@ $('#reset-btn').onclick = async (e) => {
     // mask the email a little for privacy
     const [user, domain] = email.split('@');
     const masked = `${user.slice(0, 2)}***@${domain || ''}`;
-    alert(`✅ If an account exists for ${masked}, a password reset link has been sent. Check your inbox and spam folder.`);
+    pendingAuthMessage = {
+      page: '#login-page',
+      type: 'success',
+      text: `If an account exists for ${masked}, a password reset link has been sent. Check your inbox and spam folder.`
+    };
     location.hash = "#/login";
 
   } catch (err) {
@@ -244,16 +285,16 @@ $('#reset-btn').onclick = async (e) => {
       // Said "log in once with your current password first" when there was a
       // migration step to do. There isn't one any more, so that advice would
       // just send someone in a circle.
-      alert("⚠️ No account was found for this shop's registered email. Please contact support.");
+      showAuthMessage('#reset-page', "No account was found for this shop's registered email. Please contact support.", 'warn');
     } else if (err.code === "auth/invalid-email") {
-      alert("❌ The email on record is invalid. Please contact support.");
+      showAuthMessage('#reset-page', 'The email on record is invalid. Please contact support.');
     } else if (err.code === "auth/too-many-requests") {
-      alert("⚠️ Too many attempts. Please wait a few minutes and try again.");
+      showAuthMessage('#reset-page', 'Too many attempts. Please wait a few minutes and try again.', 'warn');
     } else {
-      alert("❌ Error: " + err.message);
+      showAuthMessage('#reset-page', 'Something went wrong: ' + err.message);
     }
   } finally {
-    $('.loader').classList.add('hidden');
+    setBusy('#reset-btn', false);
   }
 };
 
@@ -272,7 +313,7 @@ $('#reset-btn').onclick = async (e) => {
 //   2. the write is a transaction that aborts when the node is already there,
 //      so there is no ordering of events in which an existing shop is
 //      overwritten. The server decides, not the client.
-$('#signup').onclick = async (e) => {
+$('#signupForm').onsubmit = async (e) => {
   e.preventDefault();
   const userName = $('#signup_name').value.trim();
   const businessName = $('#signup_businessName').value.trim().toLowerCase();
@@ -280,18 +321,18 @@ $('#signup').onclick = async (e) => {
   const businessPass = $('#signup_businessPassword').value.trim();
 
   if (!userName || !businessName || !businessEmail || !businessPass) {
-    alert("Please enter all fields!");
+    showAuthMessage('#signup-page', 'Fill in every field to create your shop.', 'warn');
     return;
   }
 
-  $('.loader').classList.remove('hidden');
+  setBusy('#signup', true);
 
   let createdUser = null;
   try {
     // 1) Is the name free? Asked first, so a taken name costs nothing.
     const existing = await get(child(shopRef, businessName));
     if (existing.exists()) {
-      alert("❌ This business name is already taken. Please choose another.");
+      showAuthMessage('#signup-page', 'That business name is already taken. Please choose another.');
       return;
     }
 
@@ -322,7 +363,7 @@ $('#signup').onclick = async (e) => {
       // untouched. Remove the account we just made so this email stays usable.
       try { await deleteUser(createdUser); } catch (_) {}
       createdUser = null;
-      alert("❌ That business name was just taken. Please choose another.");
+      showAuthMessage('#signup-page', 'That business name was just taken. Please choose another.');
       return;
     }
 
@@ -330,18 +371,23 @@ $('#signup').onclick = async (e) => {
     localStorage.setItem('author', userName);
     localStorage.setItem('role', 'Shop Owner');
 
-    alert("✅ Signup successful!");
+    pendingAuthMessage = {
+      page: '#login-page',
+      type: 'success',
+      text: 'Shop created. Sign in with your business name and password to continue.'
+    };
     location.hash = "#/login";
   } catch (err) {
     console.error(err);
     // If the account was created but the shop was not, roll the account back
     // rather than leaving an email that can never be signed up again.
     if (createdUser) { try { await deleteUser(createdUser); } catch (_) {} }
-    alert("❌ Error: " + err.message);
+    showAuthMessage('#signup-page', 'Could not create the shop: ' + err.message);
   } finally {
-    $('.loader').classList.add('hidden');
+    setBusy('#signup', false);
   }
 };
+
 
 // Google sign-in removed. It derived the shop name from the email local part
 // (saheer@gmail.com -> the shop named "saheer") and signed the person into that
