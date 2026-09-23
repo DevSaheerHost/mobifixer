@@ -31,6 +31,26 @@ const pemToArrayBuffer = (pem) => {
   return buf.buffer;
 };
 
+// Google's token is good for an hour, but the cron runs every minute - so the
+// first version signed a fresh RS256 JWT and made an OAuth round trip 60 times
+// more often than it needed to. On Cloudflare's free tier CPU time per
+// invocation is the tightest limit and RSA signing is the only real CPU this
+// Worker does, so it is worth not repeating.
+//
+// Cached in a module global: a Worker isolate is reused across invocations
+// often, but not guaranteed, so this is an optimisation and never a
+// requirement. Refreshed a minute early to avoid racing the expiry.
+let tokenCache = { token: null, expiresAt: 0 };
+
+export function _resetTokenCache() { tokenCache = { token: null, expiresAt: 0 }; }
+
+export async function getCachedAccessToken(sa, fetchImpl = fetch, now = Date.now()) {
+  if (tokenCache.token && now < tokenCache.expiresAt) return tokenCache.token;
+  const token = await getAccessToken(sa, fetchImpl);
+  tokenCache = { token, expiresAt: now + 55 * 60 * 1000 };
+  return token;
+}
+
 /** Exchange the service account for a short-lived Google OAuth token. */
 export async function getAccessToken(sa, fetchImpl = fetch) {
   const now = Math.floor(Date.now() / 1000);
@@ -132,7 +152,7 @@ const dbDelete = async (env, path, token) => {
 
 export async function sweep(env, now = Date.now()) {
   const sa = JSON.parse(env.FIREBASE_SERVICE_ACCOUNT);
-  const access = await getAccessToken(sa);
+  const access = await getCachedAccessToken(sa, fetch, now);
   const sent = { shops: 0, due: 0, pushes: 0, pruned: 0 };
 
   // shallow=true returns only the shop names, so this stays tiny however

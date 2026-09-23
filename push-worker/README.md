@@ -91,7 +91,21 @@ draws the notification and the icon, badge and tag would be out of our hands.
   old phones don't accumulate.
 - **A reminder is marked fired even if delivery failed.** The in-app path still surfaces it when
   the shop next opens the app, and a reminder that retried forever would become spam.
-- **Cost.** One invocation a minute is ~43k/month, inside Cloudflare's free allowance.
+- **Cost: nothing, and no card.** Cloudflare's free plan includes cron triggers. One run a
+  minute is 1,440 invocations a day against a 100,000/day allowance. An idle run makes
+  `2 + (number of shops)` subrequests — 11 at nine shops, against a 50-per-invocation limit.
+  FCM itself is free and unlimited on every Firebase plan, and the Realtime Database reads
+  here are a few hundred bytes a minute. Nothing in this design needs a paid tier.
+- **Watch this as the shop list grows.** The per-shop reminder read is what scales: past
+  roughly 45 shops an idle sweep would hit the subrequest limit. The fix then is a single
+  index node the app writes to (`pendingReminders/{shop}/{sn}`) so the sweep does one read
+  instead of one per shop. Not worth doing at nine.
+- **The OAuth token is cached for its full hour** rather than re-minted every minute. RSA
+  signing is the only real CPU this Worker spends, and CPU per invocation is the tightest
+  free-tier limit.
+- **Accuracy.** A one-minute cron means a reminder lands within about a minute of its time.
+  Cloudflare schedules crons on a best-effort basis, so treat that as "within a minute or
+  two", not to the second.
 - **Security.** `FIREBASE_SERVICE_ACCOUNT` is a Cloudflare secret, never in this repo. If it
   ever leaks, revoke that key in the Firebase console and generate a new one. Note that the
   database currently has **no security rules**, so push tokens — and all customer data — are

@@ -12,7 +12,7 @@
  *
  *   node scripts/test-push.mjs
  */
-import { selectDue, buildMessage, isDeadToken } from '../push-worker/worker.js';
+import { selectDue, buildMessage, isDeadToken, getCachedAccessToken, _resetTokenCache } from '../push-worker/worker.js';
 
 let pass = 0, fail = 0;
 const ck = (name, cond, detail = '') => {
@@ -80,6 +80,56 @@ console.log('\nPruning tokens for phones that are gone');
   ck('a server wobble is NOT dead', !isDeadToken(500, 'INTERNAL'), 'must not delete a good token');
   ck('a rate limit is NOT dead', !isDeadToken(429, 'QUOTA_EXCEEDED'));
   ck('an auth problem is NOT dead', !isDeadToken(401, 'UNAUTHENTICATED'));
+}
+
+console.log('\nThe OAuth token is not re-minted every minute');
+{
+  // Google's token lasts an hour; the cron runs every minute. Signing a fresh
+  // RS256 JWT 60 times an hour is the only real CPU this Worker spends, and CPU
+  // per invocation is the tightest limit on Cloudflare's free tier.
+  //
+  // A real RSA key, so this exercises the actual signing path rather than
+  // stubbing the thing under test.
+  const { generateKeyPairSync } = await import('node:crypto');
+  const { privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+  const SA = {
+    client_email: 'push@example.iam.gserviceaccount.com',
+    private_key: privateKey.export({ type: 'pkcs8', format: 'pem' })
+  };
+
+  let mints = 0;
+  const fakeFetch = async () => {
+    mints++;
+    return { ok: true, json: async () => ({ access_token: 'tok-' + mints }) };
+  };
+
+  _resetTokenCache();
+  const t0 = Date.parse('2026-01-01T00:00:00Z');
+
+  const first = await getCachedAccessToken(SA, fakeFetch, t0);
+  ck('the first run mints a token', first === 'tok-1', first);
+
+  await getCachedAccessToken(SA, fakeFetch, t0 + 60 * 1000);
+  ck('a minute later it reuses it', mints === 1, `minted ${mints} times`);
+
+  const late = await getCachedAccessToken(SA, fakeFetch, t0 + 54 * 60 * 1000);
+  ck('and still at 54 minutes', mints === 1 && late === 'tok-1', `minted ${mints} times`);
+
+  await getCachedAccessToken(SA, fakeFetch, t0 + 56 * 60 * 1000);
+  ck('it refreshes before the hour is up, not after', mints === 2, `minted ${mints} times`);
+
+  // 60 runs an hour used to mean 60 signatures and 60 OAuth round trips. Two
+  // now, not one: 60 minutes of runs crosses the 55-minute refresh once.
+  _resetTokenCache();
+  let hourly = 0;
+  const counting = async () => { hourly++; return { ok: true, json: async () => ({ access_token: 't' }) }; };
+  for (let m = 0; m < 60; m++) await getCachedAccessToken(SA, counting, t0 + m * 60 * 1000);
+  ck('an hour of runs costs two signatures, not sixty', hourly === 2, `${hourly} in 60 runs`);
+
+  const { readFileSync: read } = await import('node:fs');
+  ck('and the sweep uses the cached getter',
+     read('push-worker/worker.js', 'utf8').includes('getCachedAccessToken(sa, fetch, now)'));
+  _resetTokenCache();
 }
 
 console.log('\nWhat sw.js draws when a push arrives');
