@@ -7,7 +7,7 @@ import { generateWhatsAppLink} from './generateWhatsappLink.js';
 // Firebase core import
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 
-import { onAuthStateChanged, getAuth, signOut } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+import { onAuthStateChanged, getAuth, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 // Realtime Database import
 import { getDatabase, ref, onChildAdded, onChildChanged, update, query, limitToLast, orderByKey, remove , onValue, push, goOffline, goOnline}
 from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
@@ -45,6 +45,49 @@ const downloadLocalData = () => {
 }
 
 $('#exportJson').onclick=()=>downloadLocalData()
+
+// Change password. This row used to point at #settings/password, which is not
+// in the routes table, so tapping it landed on the 404 page. It sends a reset
+// link through the same Firebase flow as the sign-in screen instead.
+//
+// The wording stays conditional on purpose: Firebase's Email Enumeration
+// Protection resolves sendPasswordResetEmail whether or not an account exists
+// for the address, so a definite "sent" would be a claim we cannot make.
+$('#changePasswordBtn').onclick = async () => {
+  try {
+    const snap = await get(ref(db, `shops/${shopName}/owner/email`));
+    const email = String((snap.exists() && snap.val()) || '').trim();
+
+    if (!email) {
+      showNotice({
+        title: 'No email on record',
+        body: 'This shop has no email address saved, so a reset link cannot be sent. Add one in Shop details.',
+        type: 'warn'
+      });
+      return;
+    }
+
+    const [user, domain] = email.split('@');
+    const masked = `${user.slice(0, 2)}***@${domain || ''}`;
+    if (!confirm(`Send a password reset link to ${masked}?\n\nYou will be signed out of nothing - the current session keeps working until you change the password.`)) return;
+
+    await sendPasswordResetEmail(auth, email);
+    showNotice({
+      title: 'Check your email',
+      body: `If an account exists for ${masked}, a reset link has been sent. Check the inbox and the spam folder.`,
+      type: 'success'
+    });
+  } catch (err) {
+    console.error(err);
+    showNotice({
+      title: 'Could not send the link',
+      body: err.code === 'auth/too-many-requests'
+        ? 'Too many attempts. Please wait a few minutes and try again.'
+        : err.message,
+      type: 'error'
+    });
+  }
+};
 $('#clearLocalData').onclick=()=>{
   const isConfirmed = confirm('Are you sure you want to delete the backup data? This action cannot be undone.')
     if(isConfirmed){
@@ -619,8 +662,21 @@ if(shopName && shopName.toLowerCase()==='mobifixer') {
   $('#shopname').appendChild(myLogo)
   
 }
-$('.settings_page .profile_container .name').textContent=shopName;
-$('.profile_page .profile_container .name').textContent=shopName;
+// The profile card's name and email start as muted placeholders, because the
+// markup used to ship the developer's own name and address as its defaults.
+// This fills them in and drops the placeholder styling with them - setting
+// textContent alone would leave real values rendered in italic grey.
+const setProfileField = (field, value) => {
+  const text = String(value == null ? '' : value).trim();
+  ['.settings_page', '.profile_page'].forEach(page => {
+    const el = $(`${page} .profile_container .${field}`);
+    if (!el) return;
+    el.textContent = text || 'Not set';
+    el.classList.toggle('value-unset', !text);
+  });
+};
+
+setProfileField('name', shopName);
 
 //console.log(backupRef)
 // in the card section nots textarea size
@@ -3808,18 +3864,37 @@ const getStaff = async () => {
   const staffList = $('.staff_list'); // for example <div id="staff-list"></div>
   staffList.innerHTML = ''; // clear old data
 
+  // Same row component as the rest of the settings pages, so a staff member
+  // lines up with everything else instead of sitting flush to the card edge.
+  // Escaped: names and roles are typed by whoever signs in.
+  const esc = (v) => String(v == null ? '' : v)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
   Object.entries(data).forEach(([id, staff]) => {
     const el = document.createElement('li');
-    el.className = 'list-item'; // use your CSS class
-
+    el.className = 'list-item';
     el.innerHTML = `
-      <p>${staff.name} (${staff.role})</p>
-    <i class="fa-solid fa-angle-right"></i>
-    
+      <span class="row is-static">
+        <span class="list-item-content">
+          <span class="list-item-title">${esc(staff.name) || 'Unnamed'}</span>
+          <span class="list-item-desc">${esc(staff.role) || 'No role set'}</span>
+        </span>
+      </span>
     `;
-
     staffList.appendChild(el);
   });
+
+  if (!staffList.children.length) {
+    staffList.innerHTML = `
+      <li class="list-item">
+        <span class="row is-static">
+          <span class="list-item-content">
+            <span class="list-item-desc">Nobody else has signed in to this shop yet.</span>
+          </span>
+        </span>
+      </li>`;
+  }
 };
 
 getStaff()
@@ -3839,8 +3914,7 @@ const owner = async ()=>{
   $('#my-name').textContent=localStorage.getItem('author')
   $('#my-role').textContent=localStorage.getItem('role')
   
-$('.settings_page .profile_container .mail').textContent=owner.email || '(null)';
-$('.profile_page .profile_container .mail').textContent=owner.email || '(null)';
+setProfileField('mail', owner.email);
   
   if (localStorage.getItem('author')?.toLowerCase() !== owner.name.toLowerCase()) {
   

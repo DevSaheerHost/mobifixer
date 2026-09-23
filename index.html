@@ -629,220 +629,169 @@ Loading changelog...
   <div class="page_header">
     <div class="flex">
       <i class="fa-solid fa-arrow-left" onclick="window.history.back()"></i>
-      <h3>
-        <i class="fa-solid fa-gear"></i>
-         Settings</h3>
+      <h3>Settings</h3>
     </div>
   </div>
-  
+
   <div class="profile_container">
     <div class="box">
-      <img src="./assets/images/logo_s_no_bg.png" alt="Logo" />
+      <img src="./assets/images/logo_s_no_bg.png" alt="MobiFixer" />
       <div class="name_wrap">
-        <p class="name">SAHEER BABU</p>
-        <p class="mail">sheerbabu549@gmail.com</p>
+        <!-- Left blank on purpose. These used to ship the developer's own name
+             and email as the default text, shown to every shop until an async
+             read replaced them - and for good if that read returned early. -->
+        <p class="name value-unset">Loading…</p>
+        <p class="mail value-unset">—</p>
       </div>
     </div>
-    
+
     <div class="card_flex">
       <div class="card">
         <p class="count" id="totalData">0</p>
-        <p>Total Entry</p>
+        <p>Total</p>
       </div>
-      
-       <div class="card" id="todayEntry">
+
+      <div class="card" id="todayEntry">
         <p class="count" id="todayData">0</p>
-        <p>Today's Entry</p>
+        <p>Today</p>
       </div>
-      
-       <div class="card">
+
+      <div class="card">
         <p class="count" id="spareAvailableCount">0</p>
-        <p>Available Spares</p>
+        <p>Spares</p>
       </div>
     </div>
   </div>
-  
-      <h4 class="page_title"> 
-      <i class="fa-solid fa-user-circle"></i>
-      Profile & Business</h4>
+
+  <h4 class="page_title">Shop</h4>
 
   <ul class="settings_list">
-    <a href="#settings/profile">
-      <li class="list-item">
-        <div class="list-item-content">
-          <p class="list-item-title">Manage Profile</p>
-          <p class="list-item-desc">Update your personal information</p>
-        </div>
-        <i class="fa-solid fa-chevron-right"></i>
-      </li>
-    </a>
-    
-    <a href="#settings/shop">
-      <li class="list-item">
-        <div class="list-item-content">
-          <a href="#shop-details">
-          <p class="list-item-title"></p>Shop Details</p>
-          <p class="list-item-desc">Edit shop name and information</p>
-          </a>
-        </div>
-        <i class="fa-solid fa-chevron-right"></i>
-      </li>
-    </a>
-    
-      <a href="#settings/password">
-         <li class="list-item">
-           <p class="list-item-title">Change Password</p>
-           <i class="fa-solid fa-chevron-right"></i>
-         </li>
+    <li class="list-item">
+      <a class="row" href="#settings/profile">
+        <span class="list-item-content">
+          <span class="list-item-title">Manage profile</span>
+          <span class="list-item-desc">Your name, role and staff</span>
+        </span>
+        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
       </a>
-  </ul>
-  
-  <h4 class="page_title">
-    <i class="fa-solid fa-database"></i>
-    Records & Data</h4>
-  
-   <ul class="settings_list">
-    <li class="list-item" onclick="location.hash='#payments'">
-      <div class="list-item-content">
-        <p class="list-item-title">Payments / Balance Due</p>
-        <p class="list-item-desc">Outstanding balances and collections</p>
-      </div>
-      <i class="fa-solid fa-chevron-right"></i>
     </li>
 
-    <li class="list-item" onclick="location.hash='#activity'">
-      <div class="list-item-content">
-        <p class="list-item-title">Activity Log</p>
-        <p class="list-item-desc">Who added, edited, or changed records</p>
-      </div>
-      <i class="fa-solid fa-chevron-right"></i>
+    <li class="list-item">
+      <!-- One anchor. This was an <a href="#shop-details"> nested inside an
+           <a href="#settings/shop">, and #settings/shop is not a route - so
+           whether you landed on the right page or the 404 depended on exactly
+           where you tapped. -->
+      <a class="row" href="#shop-details">
+        <span class="list-item-content">
+          <span class="list-item-title">Shop details</span>
+          <span class="list-item-desc">Address, GST, opening hours</span>
+        </span>
+        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+      </a>
     </li>
 
-    <li class="list-item" onclick="location.hash='#bacuprestore'">
-      <div class="list-item-content">
-        <p class="list-item-title">Backup & Restore Data</p>
-        <p class="list-item-desc">Cloud sync and export options</p>
-      </div>
-      <i class="fa-solid fa-chevron-right"></i>
-    </li>
-    
-     <li class="list-item">
-      <div class="list-item-content" id="exportJson">
-        <p class="list-item-title">Export to Excel / PDF</p>
-        <p class="list-item-desc">Generate reports and exports</p>
-      </div>
-      <i class="fa-solid fa-chevron-right"></i>
-    </li>
-    
-     <li class="list-item" id="clearLocalData">
-      <div class="list-item-content">
-        <p class="list-item-title">Clear Local Back-up Entries</p>
-        <p class="list-item-desc">To fix data missing error. Please Export Your backup first ⚠️</p>
-      </div>
-      <i class="fa-solid fa-chevron-right"></i>
-    </li>
-  </ul>
-  
-  
-   <h4 class="page_title">
-     <i class="fa-solid fa-palette"></i>
-     Theme & Interface</h4>
-  
-   <ul class="settings_list">
-     <a href="#settings/thememode">
-       <li class="list-item">
-        <div class="list-item-content">
-          <p class="list-item-title">Theme Mode</p>
-          <p class="list-item-desc">Customize colors and appearance</p>
-        </div>
-        <i class="fa-solid fa-chevron-right"></i>
-       </li>
-     </a>
-    
-     <li class="list-item">
-      <div class="list-item-content">
-        <p class="list-item-title">Language</p>
-        <p class="list-item-desc">Select your preferred language</p>
-      </div>
-      <i class="fa-solid fa-chevron-right"></i>
-    </li>
-    
-    <a href="#settings/sound">
-     <li class="list-item">
-      <div class="list-item-content">
-        <p class="list-item-title">Sound & Notification</p>
-        <p class="list-item-desc">Enable alerts and notifications</p>
-      </div>
-      <i class="fa-solid fa-chevron-right"></i>
-    </li>
-    </a>
-     <li class="list-item">
-      <div class="list-item-content">
-        <p class="list-item-title">Default Home Page</p>
-        <p class="list-item-desc">Set your startup screen</p>
-      </div>
-      <i class="fa-solid fa-chevron-right"></i>
-    </li>
-  </ul>
-  
-     <h4 class="page_title">
-     <i class="fa-solid fa-tools"></i>
-     Tools & Utilities</h4>
-  
-   <ul class="settings_list">
     <li class="list-item">
-      <div class="list-item-content">
-        <p class="list-item-title">Printer Settings</p>
-        <p class="list-item-desc">Configure printer preferences</p>
-      </div>
-      <i class="fa-solid fa-chevron-right"></i>
-    </li>
-    
-     <li class="list-item">
-      <div class="list-item-content">
-        <p class="list-item-title">Spare Parts Threshold Alert</p>
-        <p class="list-item-desc">Set low stock warnings</p>
-      </div>
-      <i class="fa-solid fa-chevron-right"></i>
-    </li>
-    
-     <li class="list-item">
-      <div class="list-item-content">
-        <p class="list-item-title">Auto Sync Settings</p>
-        <p class="list-item-desc">Manage synchronization</p>
-      </div>
-      <i class="fa-solid fa-chevron-right"></i>
+      <!-- Pointed at #settings/password, which is not a route either. It sends
+           a reset email through the same flow as the sign-in screen now. -->
+      <button class="row" type="button" id="changePasswordBtn">
+        <span class="list-item-content">
+          <span class="list-item-title">Change password</span>
+          <span class="list-item-desc">Emails a reset link to the shop's address</span>
+        </span>
+        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+      </button>
     </li>
   </ul>
-  
-    <h4 class="page_title">
-      <i class="fa-solid fa-circle-question"></i>
-      Help & Support</h4>
-  
-   <ul class="settings_list">
-     <a href="#changelog">
+
+  <h4 class="page_title">Records &amp; data</h4>
+
+  <ul class="settings_list">
     <li class="list-item">
-      <div class="list-item-content">
-        <p class="list-item-title">About MobiFixer</p>
-        <p class="list-item-desc">App information and credits</p>
-      </div>
-      <i class="fa-solid fa-chevron-right"></i>
+      <a class="row" href="#payments">
+        <span class="list-item-content">
+          <span class="list-item-title">Payments and balance due</span>
+          <span class="list-item-desc">What is still owed, and by whom</span>
+        </span>
+        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+      </a>
     </li>
-     </a>
-     <li class="list-item">
-      <div class="list-item-content">
-        <p class="list-item-title">Report a Bug / Suggest Feature</p>
-        <p class="list-item-desc">Send feedback to developers</p>
-      </div>
-      <i class="fa-solid fa-chevron-right"></i>
+
+    <li class="list-item">
+      <a class="row" href="#activity">
+        <span class="list-item-content">
+          <span class="list-item-title">Activity log</span>
+          <span class="list-item-desc">Who added, edited or changed a record</span>
+        </span>
+        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+      </a>
     </li>
-    
-     <li class="list-item">
-      <div class="list-item-content">
-        <p class="list-item-title">Privacy Policy & Terms</p>
-        <p class="list-item-desc">Read our policies</p>
-      </div>
-      <i class="fa-solid fa-chevron-right"></i>
+
+    <li class="list-item">
+      <a class="row" href="#bacuprestore">
+        <span class="list-item-content">
+          <span class="list-item-title">Backup and restore</span>
+          <span class="list-item-desc">Cloud sync and export options</span>
+        </span>
+        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+      </a>
+    </li>
+
+    <li class="list-item">
+      <button class="row" type="button" id="exportJson">
+        <span class="list-item-content">
+          <span class="list-item-title">Export your data</span>
+          <span class="list-item-desc">Download a copy of every record</span>
+        </span>
+        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+      </button>
+    </li>
+
+    <li class="list-item">
+      <button class="row is-risky" type="button" id="clearLocalData">
+        <span class="list-item-content">
+          <span class="list-item-title">Clear local backup</span>
+          <span class="list-item-desc">Fixes "data missing" errors. Export first.</span>
+        </span>
+        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+      </button>
+    </li>
+  </ul>
+
+  <h4 class="page_title">Appearance</h4>
+
+  <ul class="settings_list">
+    <li class="list-item">
+      <a class="row" href="#settings/thememode">
+        <span class="list-item-content">
+          <span class="list-item-title">Theme</span>
+          <span class="list-item-desc">Colours and appearance</span>
+        </span>
+        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+      </a>
+    </li>
+
+    <li class="list-item">
+      <a class="row" href="#settings/sound">
+        <span class="list-item-content">
+          <span class="list-item-title">Sound and notifications</span>
+          <span class="list-item-desc">Alerts, reminders and voice</span>
+        </span>
+        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+      </a>
+    </li>
+  </ul>
+
+  <h4 class="page_title">About</h4>
+
+  <ul class="settings_list">
+    <li class="list-item">
+      <a class="row" href="#changelog">
+        <span class="list-item-content">
+          <span class="list-item-title">About MobiFixer</span>
+          <span class="list-item-desc">Version and what changed</span>
+        </span>
+        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+      </a>
     </li>
   </ul>
 </main>
@@ -850,76 +799,59 @@ Loading changelog...
 <!-- ########## PROFILE_PAGE ########## -->
 
 <main class="profile_page hidden">
-  
-   <div class="page_header">
+  <div class="page_header">
     <div class="flex">
       <i class="fa-solid fa-arrow-left" onclick="window.history.back()"></i>
-      <h3>Settings</h3>
+      <h3>Profile</h3>
     </div>
   </div>
-  
-  
+
   <div class="profile_container">
-     <div class="box">
-      <img src="./assets/images/logo_s_no_bg.png" alt="Logo" />
+    <div class="box">
+      <img src="./assets/images/logo_s_no_bg.png" alt="MobiFixer" />
       <div class="name_wrap">
-        <p class="name">SAHEER BABU</p>
-        <p class="mail">sheerbabu549@gmail.com</p>
+        <p class="name value-unset">Loading…</p>
+        <p class="mail value-unset">—</p>
       </div>
     </div>
   </div>
-  
-  
-  
-<div class="container">
-  <div class="lang_theme_flex">
-    <p>English</p>
-    <span>
-      <p>Light Mode</p>
-      <input type="checkbox" name="theme" id="theme" class="hidden"/>
-      <div class="toggle_btn">
-        <div class="toggle_ball"></div>
-      </div>
-    </span>
+
+  <!-- The "English" label and the "Light Mode" toggle that used to sit here are
+       gone. The toggle animated and wrote theme=light to localStorage, but
+       .light-mode has no rules anywhere in style.css, so nothing changed - a
+       control that reported success and did nothing. Appearance lives on the
+       theme page, which is real. -->
+
+  <h4 class="page_title">Signed in as</h4>
+
+  <ul class="settings_list">
+    <li class="list-item">
+      <span class="row is-static">
+        <span class="list-item-content">
+          <span class="list-item-desc">Name</span>
+          <span class="list-item-title" id="my-name"></span>
+        </span>
+      </span>
+    </li>
+    <li class="list-item">
+      <span class="row is-static">
+        <span class="list-item-content">
+          <span class="list-item-desc">Role</span>
+          <span class="list-item-title" id="my-role"></span>
+        </span>
+      </span>
+    </li>
+  </ul>
+
+  <h4 class="page_title">Staff</h4>
+  <!-- Filled by getStaff(). It used to ship two rows of "SAHEER BABU
+       (DEVELOPER)" placeholder text that stayed put if that read found
+       nothing. -->
+  <ul class="staff_list"></ul>
+
+  <div class="profile_actions">
+    <button id="logoutBtn" class="logout_btn" type="button">Log out</button>
   </div>
-  
-  
-  
-
-</div>
-  
-  <ul class="list">
-    <li class="list-item">
-    <p id="my-name"></p>
-  </li>  
-  <li class="list-item">
-    <p id="my-role"></p>
-  </li>
-  </ul>
-  
-  
-  <!--- DYNAMIC UPDATE --->
-
-  <h4 class="page_title">Add/Manage Staffs</h4>
-  <ul class="staff_list">
-    <li class="list-item">
-      <p>SAHEER BABU (DEVELOPER)</p>
-    <i class="fa-solid fa-angle-right"></i>
-    </li>
-    <li class="list-item">
-      <p>SAHEER BABU (DESIGNER)</p>
-      <i class="fa-solid fa-angle-right"></i>
-    </li>
-        <li class="list-item">
-      <p>Add Staff</p>
-      <i class="fa-solid fa-plus"></i>
-    </li>
-    
-    
-  </ul>
-  
-  <button id="logoutBtn" class="logout_btn">Log-Out</button>
-  
 </main>
 
 

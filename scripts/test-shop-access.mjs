@@ -29,12 +29,19 @@ const src = readFileSync('main.js', 'utf8');
 // Slicing on exact strings silently produced garbage whenever a handler was
 // renamed - String.indexOf returns -1 and slice(-1, n) hands back nonsense that
 // still "passes". These throw instead, so a rename is a loud failure.
-const at = (src, needle, what) => {
-  const i = needle instanceof RegExp ? src.search(needle) : src.indexOf(needle);
+const at = (src, needle, what, offset = 0) => {
+  const hay = offset ? src.slice(offset) : src;
+  const i = needle instanceof RegExp ? hay.search(needle) : hay.indexOf(needle);
   if (i < 0) throw new Error(`could not find ${what} (${needle}) - has it been renamed?`);
-  return i;
+  return i + offset;
 };
-const region = (src, from, to, what) => src.slice(at(src, from, what + ' start'), at(src, to, what + ' end'));
+// The end marker is searched for AFTER the start. Looking from 0 can find an
+// earlier match and slice backwards into an empty string, which then passes
+// every assertion run against it.
+const region = (src, from, to, what) => {
+  const a = at(src, from, what + ' start');
+  return src.slice(a, at(src, to, what + ' end', a + 1));
+};
 
 let pass = 0, fail = 0;
 const ck = (name, cond, extra = '') => {

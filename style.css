@@ -1595,10 +1595,10 @@ main.delete_page .card{
 
 
 .settings_page, .profile_page, .theme_page, .sound_page{
-   background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('./assets/images/bg.jpeg');
+    /* The circuit-board photo that used to be here is gone - see the settings
+       block at the end of this file. Removed at source rather than overridden,
+       so the 90KB image is never fetched. */
     height: 100dvh;
-    -webkit-backdrop-filter: blur(var(--glass-blur));
-    backdrop-filter: blur(var(--glass-blur));
     padding-bottom: 1rem;
     overflow-y: auto;
 }
@@ -6557,4 +6557,305 @@ header .search-bar .search-out {
   width: 100%;
   transform: none;
   margin: 0;
+}
+
+/* ===========================================================================
+   SETTINGS, PROFILE, THEME, SOUND
+   ---------------------------------------------------------------------------
+   These four pages had a circuit-board photo (bg.jpeg, 90KB) tiled behind them
+   under a 50% black wash, so every row of text sat on busy imagery. They use
+   the same surface as the rest of the app now.
+
+   There are three separate `.settings_page` blocks further up this file, from
+   three passes at the same thing. This overrides what matters rather than
+   untangling them - the same call the date divider needed.
+   ======================================================================== */
+
+.settings_page,
+.profile_page,
+.theme_page,
+.sound_page {
+  background: var(--bg-color);
+  padding-bottom: calc(3rem + env(safe-area-inset-bottom));
+}
+
+/* ---------- page header ---------- */
+
+.settings_page .page_header,
+.profile_page .page_header,
+.theme_page .page_header,
+.sound_page .page_header {
+  padding: 0.85rem 1rem;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.settings_page .page_header h3,
+.profile_page .page_header h3,
+.theme_page .page_header h3,
+.sound_page .page_header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-heading);
+}
+
+.settings_page .page_header .fa-arrow-left,
+.profile_page .page_header .fa-arrow-left,
+.theme_page .page_header .fa-arrow-left,
+.sound_page .page_header .fa-arrow-left {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-left: -0.5rem;
+  border-radius: var(--radius-medium);
+  font-size: 16px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+/* ---------- profile card ---------- */
+
+.settings_page .profile_container,
+.profile_page .profile_container {
+  padding: 1rem 1rem 0;
+}
+
+.settings_page .profile_container .box,
+.profile_page .profile_container .box {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1rem;
+  margin: 0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-large);
+  text-align: left;
+}
+
+/* Two earlier rules size this as a 70px circle with a 2px accent border and
+   padding. The logo is a 677x369 wordmark, so a square crop letterboxed it and
+   the border drew a box round the empty space. */
+.settings_page .profile_container .box img,
+.profile_page .profile_container .box img {
+  flex: none;
+  width: 92px;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+  object-fit: contain;
+}
+
+.settings_page .profile_container .name_wrap,
+.profile_page .profile_container .name_wrap {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.settings_page .profile_container .name,
+.profile_page .profile_container .name {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-color);
+  text-transform: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings_page .profile_container .mail,
+.profile_page .profile_container .mail {
+  margin: 0.1rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- stat row ---------- */
+
+.settings_page .profile_container .card_flex {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+  padding: 0;
+}
+
+.settings_page .profile_container .card_flex .card {
+  padding: 0.85rem 0.5rem;
+  margin: 0;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-medium);
+  text-align: center;
+}
+
+.settings_page .profile_container .card_flex .card p {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.settings_page .profile_container .card_flex .card .count {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-color);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- section heading ---------- */
+
+/* Large uppercase accent-blue before; a quiet label does the job. */
+.settings_page h4.page_title,
+.profile_page h4.page_title,
+.theme_page h4.page_title,
+.sound_page h4.page_title {
+  margin: 1.5rem 1rem 0.5rem;
+  padding: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ---------- rows ---------- */
+
+/* Only the settings and profile lists. The theme and sound pages have their
+   own components - colour swatches, hex fields, toggles - and stripping their
+   padding to fit this row shape broke them. They get the surface change and
+   nothing else. */
+.settings_page ul.settings_list,
+.profile_page ul.settings_list,
+.profile_page ul.staff_list {
+  margin: 0 1rem;
+  padding: 0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-large);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  overflow: hidden;
+}
+
+.settings_page ul.settings_list > li,
+.profile_page ul.settings_list > li,
+.profile_page ul.staff_list > li {
+  display: block;
+  padding: 0;
+  border: none;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.settings_page ul.settings_list > li:last-child,
+.profile_page ul.settings_list > li:last-child,
+.profile_page ul.staff_list > li:last-child {
+  border-bottom: none;
+}
+
+/* One row component whether it is a link, a button or plain text, so a row
+   without a description no longer sits shorter than its neighbours. */
+.settings_page .row,
+.profile_page .row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  min-height: 60px;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  text-align: left;
+  color: var(--text-color);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.settings_page .row:active,
+.profile_page .row:active {
+  background: var(--card-bg);
+}
+
+.settings_page .row.is-static,
+.profile_page .row.is-static {
+  cursor: default;
+}
+
+.settings_page .row.is-static:active,
+.profile_page .row.is-static:active {
+  background: none;
+}
+
+.settings_page .list-item-content,
+.profile_page .list-item-content {
+  display: block;
+  min-width: 0;
+}
+
+.settings_page .list-item-title,
+.profile_page .list-item-title {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.settings_page .list-item-desc,
+.profile_page .list-item-desc {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.settings_page .row .fa-chevron-right,
+.profile_page .row .fa-chevron-right {
+  flex: none;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Clearing the local backup is not like opening a page. */
+.settings_page .row.is-risky .list-item-title {
+  color: var(--danger-color);
+}
+
+/* ---------- log out ---------- */
+
+.profile_page .profile_actions {
+  padding: 1.75rem 1rem calc(1rem + env(safe-area-inset-bottom));
+}
+
+.profile_page .logout_btn {
+  width: 100%;
+  min-height: 48px;
+  margin: 0;
+  background: transparent;
+  border: 1px solid var(--danger-color);
+  border-radius: var(--radius-medium);
+  box-shadow: none;
+  color: var(--danger-color);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.profile_page .logout_btn:active {
+  background: rgba(255, 59, 59, 0.12);
 }
