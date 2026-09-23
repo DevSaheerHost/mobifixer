@@ -24,3 +24,5 @@ jobs:
         run: node scripts/test-push.mjs
       - name: Shop details page tests
         run: node scripts/test-shop-details.mjs
+      - name: Shop access / signup safety tests
+        run: node scripts/test-shop-access.mjs

@@ -185,6 +185,15 @@ input:focus {
 
 .auth-page .form input{
   margin-bottom: 1rem;
+  width: 100%;
+}
+
+/* The submit buttons were content-width and left-aligned under full-width
+   fields. That always looked off; moving "Forgot password?" above the Login
+   button made it obvious, because the button ended up squeezed between two
+   right-aligned lines. Matching the fields is also a bigger tap target. */
+.auth-page .form button{
+  width: 100%;
 }
 
 .auth-page .form p{
@@ -233,8 +242,27 @@ input:focus {
   margin: 0 auto 1.25rem;
 }
 
+/* Forgot password. A reset email is now the ONLY way back into an account -
+   the plaintext-password branch is gone - so this has to be findable and easy
+   to hit. It used to be a 13px italic line below the Login button, in the same
+   muted grey as "Open new shop?". It now sits directly under the password
+   field, where people look for it, with a 44px touch target. */
 #forgot-link{
   color: #cf556c;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 44px;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-style: normal;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+#forgot-link:active{
+  opacity: 0.6;
 }
 
 /*#################### END #################*/

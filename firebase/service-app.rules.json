@@ -1,6 +1,8 @@
 {
   "//": "PROPOSED rules for the SERVICE app (project c24o-c038b). Not applied. Test in the Rules Playground first.",
-  "//PUBLIC_EMAIL_LOOKUP": "Login must read the shop's email BEFORE signing in, so owner/email stays publicly readable. Everything else needs auth. Narrow this further only after login no longer reads the DB first.",
+  "//PREAUTH": "Login and reset read ONLY shops/$shop/owner/email and shops/$shop/email, never the whole shop node. RTDB checks permission at the location you read, so a public carve-out on a child does NOT rescue a denied read of the parent - reading shops/$shop unauthenticated fails outright. Both email paths are public for that reason; everything else needs auth.",
+  "//SHAPES": "The 2026-09 export shows three record shapes, all covered below: owner as an object with owner.uid (7 shops), owner as a bare name string with a top-level uid and email (2 shops, from the removed Google sign-in), and one shop carrying both.",
+  "//ROOT": "The root stays denied. That also closes the legacy /service (103 records) and /lastSn left over from before the multi-tenant restructure - nothing in the codebase reads them, and they are world-readable today.",
   "rules": {
     ".read": false,
     ".write": false,
@@ -13,14 +15,13 @@
         "owner": {
           "email": {
             ".read": true,
-            "//": "public on purpose: the login flow needs it before auth"
+            "//": "public on purpose: the pre-auth login lookup needs it"
           }
         },
 
-        "password": {
-          ".read": false,
-          ".write": true,
-          "//": "legacy plaintext password: never readable. Write allowed so migration can null it out."
+        "email": {
+          ".read": true,
+          "//": "same, for the two records that keep the email at the top level"
         }
       }
     },

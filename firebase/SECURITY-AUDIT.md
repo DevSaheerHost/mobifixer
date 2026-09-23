@@ -110,7 +110,142 @@ path are the two things most likely to take the app down.
 
 ---
 
-## F2 — Service app must read shop records *before* authenticating  🟠
+## F4 — Service app: any account could open any shop  🔴 critical
+
+Same shape as F1, in the other app, found later. The gate was `main.js`:
+
+```js
+const shopName = localStorage.getItem('shopName')
+if(!shopName) location='./auth/index.html'
+```
+
+`onAuthStateChanged` required an account in `c24o-c038b` — and the signup page hands
+one to anybody. Nothing tied the account to the shop, so: sign up, set
+`localStorage.shopName` to another shop, reload, and you had their customers, phone
+numbers and amounts.
+
+### Status: ENFORCING
+
+`ENFORCE_SHOP_ACCESS = true`. A definite `mismatch` signs the person out, clears the shop from
+the device and returns them to the login page. Everything else still passes: offline, an
+unreadable shop and an unrecognised record all allow, deliberately.
+
+Switched on after the export showed every shop resolves to `member` — by uid in either
+location, or by the email on the record — and after the operator confirmed only one shop is
+real (`mobifixer`, owner `shahin sha`, 1248 jobs, 3 staff sharing the one account). Those staff
+sign in as the shop's own email, so the email anchor covers them.
+
+Rollback is the one constant and a redeploy. Enforcement writes nothing but audit entries and
+member records, so there is nothing to restore.
+
+In `main.js`, marked `########## SHOP ACCESS ##########`:
+
+1. `resolveShopAccess(shop, user)` → `member` / `claimed` / `no-record` / `mismatch`,
+   against `owner.uid`, the legacy top-level `uid`, and a new additive
+   `shops/{shop}/members/{uid}` map.
+2. A known `owner.uid` is backfilled into the members map (`claimedVia: 'owner-uid'`);
+   a legacy shop with no uid at all claims for the account whose email matches the
+   shop record (`claimedVia: 'client-claim'`). Same caveat as F1: a client claim is
+   only as strong as the rules, and the rules are still open.
+3. Outcome and uid go to `shops/{shop}/authAudit`. No email, password or token.
+4. Only a definite `mismatch` is ever a denial; offline, unreadable and unknown all stay
+   allowed, deliberately.
+
+Tests: `scripts/test-shop-access.mjs`, in CI.
+
+**Phase 2 — done.** `node scripts/audit-shop-access.mjs <export.json>` reports
+READY / NEEDS-MIGRATION / AT-RISK per shop, plus mapping provenance. Re-run it after any
+future export; the two NEEDS-MIGRATION entries are the Google-created shops, which clear once
+a password is set through the reset flow.
+
+**Do not confuse this with the rules.** Enforcement is client-side and remains a guard rail:
+the database is still open, so anyone with the URL can bypass the app entirely. Rules are the
+real boundary and are still not deployed.
+
+---
+
+## F5 — Signup could wipe a shop  🟠 fixed
+
+`auth/main.js` wrote a new shop with `set()` on `shops/{name}` — a whole-node replace.
+Signing up on a name that already existed replaced that shop's services, stock and staff
+with an empty skeleton. This actually happened; commit `f6bdf5b` ("bug fixed : sugnup
+data lose") added a client-side `exists()` check afterwards, but it ran *after* the Auth
+account was created and check-then-write can be raced.
+
+Now: the name is checked before the Auth account exists, and the write is a
+`runTransaction` that aborts when the node is present, so the server refuses the
+overwrite regardless of what the client believes. An account created for a shop that
+then failed to be created is deleted rather than left orphaned — previously that email
+could never be used to sign up again.
+
+Google sign-in was also removed. It derived the shop name from the email local part
+(`saheer@gmail.com` → shop `saheer`) and signed the person into that shop if it existed.
+The buttons were already `hidden disabled` in `auth/index.html`, so nobody could reach
+it, but the handler was one class change away from live.
+
+---
+
+## Export, 2026-09 — what the live database actually contains
+
+One export of `c24o-c038b`, read locally with `scripts/audit-shop-access.mjs`. **9 shops.**
+
+* **No shop carries a plaintext password.** Every one is on Firebase Auth. F2's second step
+  turned out to be already true in the data; the migration branch was dead code.
+* **Every shop has a uid the rules can match** — `owner.uid` on seven, a top-level `uid` on
+  two, and one shop with both.
+* **Nine shops, nine different accounts.** No email owns more than one shop, so the operator
+  can only sign into `developer`. Enforcement could not be validated by logging in.
+* **One shop carries two different uids.** `mobifixer` - 1248 jobs, the real production shop -
+  has `owner.uid` from signup *and* a different top-level `uid` written later by the migration
+  branch. `resolveShopAccess()` read `ownerObj.uid || shopData.uid`, took the first and never
+  looked at the second: if the live account is the other one, enforcement would have signed
+  that owner out of their own data. The first simulation missed it because the expected uid was
+  computed with the same wrong rule as the code. Fixed - both locations are accepted, matching
+  what the rules already accept.
+* Re-simulated with expectations derived from the records rather than from the code: for every
+  shop, **every uid it carries** resolves to `member`, an account with the **right email but an
+  unrecognised uid** resolves to `member`, and a stranger resolves to `mismatch`.
+
+### Why enforcement is safe without logging into all nine
+
+Authorization now has two anchors, either sufficient:
+
+1. the uid, in either location the records use, or
+2. **the email on the shop record.**
+
+Login signs in *as* that address, so anyone reaching a shop legitimately holds it; Firebase
+Auth will not issue a second account for an address already taken, so it cannot be borrowed;
+and once the rules are on, only the owner can change it. It is not a weaker anchor than the
+uid - before the rules are on, nothing about the shop is protected either way.
+
+The consequence is that a stale or missing uid is no longer a lockout: the owner still matches
+on email and the record is repaired underneath them (`claimedVia: 'owner-email'`). The attack
+enforcement exists to stop - sign in as your own shop, then point `localStorage.shopName` at
+someone else's - fails on exactly this check, because the email will not match.
+* Three record shapes exist, and all three are now handled: `owner` as an object, `owner` as a
+  bare name string with the email at the top level (the two made by the removed Google
+  sign-in), and both together.
+* Outside `shops/` the root still holds a legacy `service` node (103 records) and `lastSn`
+  from before the multi-tenant restructure. **Nothing in the codebase reads them.** They are
+  world-readable today; the root deny in `service-app.rules.json` closes them. The data is
+  left in place.
+
+### Two things the export exposed
+
+**Two shops could not log in at all.** `babushop` and `sheerbabu549` store `owner` as a
+string, so `shopData.owner.email` was `undefined` and login fell through to *"Shop found, but
+no valid login data!"*. Reset already had the `|| shopData.email` fallback; login did not.
+Fixed.
+
+**The rules as written would have broken login for all nine shops.** Login and reset read the
+whole `shops/{name}` node before signing in. RTDB evaluates permission at the location you
+read, so a public carve-out on `owner/email` does **not** rescue a denied read of the parent.
+Both now read only the two public email paths through `lookupShopEmail()`, which is what makes
+the rules applicable at all. This had to ship before any rule.
+
+---
+
+## F2 — Service app must read shop records *before* authenticating  🟠 closed in code
 
 `auth/main.js` login does `get(child(shopRef, identifier))` **before**
 `signInWithEmailAndPassword` — it needs the shop's email to log in. So today the rules
@@ -119,11 +254,29 @@ must permit an **unauthenticated read of `shops/{shop}`**.
 Worse, the legacy branch reads `shopData.password` — a **plaintext password** — from that
 same publicly-readable record.
 
-**Fix order:**
-1. Narrow the pre-auth read to just the email: expose `shops/{shop}/owner/email` publicly and
-   require auth for the rest (see `service-app.rules.json`, `PUBLIC_EMAIL_LOOKUP`).
-2. Retire the plaintext-password branch and delete every remaining `password` field.
-   Un-migrated shops should go through password reset instead.
+**Both steps are done:**
+1. ✅ `lookupShopEmail()` reads only `shops/$shop/owner/email` and `shops/$shop/email`. Both
+   are public in `service-app.rules.json`; everything else requires auth.
+2. ✅ The plaintext branch is gone, along with the `createUserWithEmailAndPassword` call that
+   sat inside the *login* handler. The export confirms no `password` field is left to delete.
+
+What remains is deploying the rules, which is a console action and still pending.
+
+---
+
+## `shahin sha` in main.js:496 — not a backdoor
+
+```js
+author.toLowerCase()=='shahin sha'? localStorage.setItem('role', 'Shop Owner') :null
+```
+
+Flagged in an earlier audit as a hardcoded grant. It is the real owner of the only real shop:
+`shops/mobifixer/owner.name` is exactly `shahin sha`. Because the role radio is self-selected
+(F3), this line is how that owner reliably gets owner rights on their own data.
+
+**Leave it until per-account roles exist.** Removing it demotes them to staff and takes away
+delete and shop-details editing. `canEditShopDetails()` already matches the same name via
+`owner.name`, so the line is redundant for that one feature but not for `isOwner()` elsewhere.
 
 ---
 
