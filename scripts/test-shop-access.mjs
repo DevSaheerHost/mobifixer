@@ -120,12 +120,52 @@ console.log('\nSomebody else');
   ck('a stranger against a shop with a members map is a mismatch', r.outcome === 'mismatch', r.outcome);
 }
 {
-  // The whole point. A mapped shop must not be claimable by a matching email.
-  const t = shopWith({ owner: { uid: OWNER_UID, email: 'a@b.test' } });
+  // Deliberate change of behaviour. This used to return 'mismatch': uid was the
+  // only anchor. The live database has a shop carrying two different uids, and
+  // nobody here can log into eight of the nine shops to find out which one is
+  // live - so a stale uid had to stop being a lockout.
+  //
+  // The email is not a weaker anchor. Login signs in AS the address on the shop
+  // record, Firebase Auth refuses a second account for an address already
+  // taken, and once the rules are on only the owner can change that address.
+  // Before the rules are on, nothing about the shop is protected anyway.
+  const t = shopWith({ owner: { uid: OWNER_UID, email: 'a@b.test', name: 'Anil' } });
   const r = await run(t, { uid: OTHER_UID, email: 'a@b.test' });
-  ck('a matching email cannot override a uid that is already recorded',
-     r.outcome === 'mismatch', r.outcome);
+  ck('the right email is accepted even when the recorded uid is stale',
+     r.outcome === 'member', r.outcome);
+  ck('and the stale record is repaired', r.writes[0]?.path === `shops/demoshop/members/${OTHER_UID}`);
+  ck('recorded as matched on email, not on uid', r.writes[0]?.value.claimedVia === 'owner-email');
 }
+{
+  // The attack this has to stop: sign in as your own shop, then point
+  // localStorage.shopName at somebody else's.
+  const t = shopWith({ owner: { uid: OWNER_UID, email: 'a@b.test' } });
+  const r = await run(t, { uid: OTHER_UID, email: 'myownshop@b.test' });
+  ck('a different email with an unknown uid is still a mismatch', r.outcome === 'mismatch', r.outcome);
+  ck('and nothing is written', r.writes.length === 0);
+}
+
+console.log('\nA shop carrying two different uids');
+{
+  // mobifixer in the live export: owner.uid from signup, plus a top-level uid
+  // written later by the migration branch. Reading `owner.uid || uid` took the
+  // first and never looked at the second, which would have locked that shop's
+  // owner out of 1248 jobs.
+  const t = shopWith({ owner: { uid: 'uid-from-signup', email: 'a@b.test' }, uid: 'uid-from-migration' });
+  const a = await run(t, { uid: 'uid-from-signup', email: 'x@x' });
+  const b = await run(shopWith({ owner: { uid: 'uid-from-signup', email: 'a@b.test' }, uid: 'uid-from-migration' }),
+                      { uid: 'uid-from-migration', email: 'x@x' });
+  ck('the signup uid is accepted', a.outcome === 'member', a.outcome);
+  ck('the migration uid is accepted too', b.outcome === 'member', b.outcome);
+  ck('this matches what the rules accept',
+     JSON.parse(readFileSync('firebase/service-app.rules.json','utf8'))
+       .rules.shops.$shop['.read'].includes("data.child('uid')"));
+  const c = await run(shopWith({ owner: { uid: 'uid-from-signup', email: 'a@b.test' }, uid: 'uid-from-migration' }),
+                      { uid: 'uid-neither', email: 'thief@evil.test' });
+  ck('a third, unknown uid with a wrong email is still denied', c.outcome === 'mismatch', c.outcome);
+}
+
+console.log('\nWhen we cannot tell, we do not deny');
 
 console.log('\nLegacy shop with no uid anywhere');
 {
@@ -185,7 +225,6 @@ console.log('\nOnly the small nodes are read');
     ck(`reads shops/{shop}/${leaf}`, BLOCK.includes('`shops/${shop}/' + leaf + '`'));
 }
 
-console.log('\nWhen we cannot tell, we do not deny');
 {
   const r = await run({ shops: {} }, { uid: OWNER_UID, email: 'a@b.test' });
   ck('a shop that does not exist is no-record, not mismatch', r.outcome === 'no-record', r.outcome);

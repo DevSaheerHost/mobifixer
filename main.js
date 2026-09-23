@@ -4185,31 +4185,41 @@ async function resolveShopAccess(shop, user) {
   // shop does not exist or it is unrecognisable; both are "cannot tell".
   if (!ownerVal && !membersVal && !shopData.uid && !shopData.email) return 'no-record';
 
-  // Shops created by signup carry owner.uid; shops migrated off a plaintext
-  // password got a top-level uid instead (auth/main.js writes both shapes).
-  const ownerUid = ownerObj.uid || shopData.uid || null;
-  if (ownerUid && ownerUid === uid) {
+  // A shop can carry a uid in EITHER place, and one shop in the live database
+  // carries two DIFFERENT ones - owner.uid from signup, and a top-level uid
+  // written later by the migration branch. Reading `ownerObj.uid || uid` took
+  // whichever came first and never looked at the other, which would have
+  // locked that shop's owner out of 1248 jobs the moment enforcement went on.
+  // Both are accepted, exactly as the security rules accept both.
+  const knownUids = [ownerObj.uid, shopData.uid].filter(Boolean);
+  if (knownUids.indexOf(uid) !== -1) {
     // Known owner, but not in the members map yet. Record it so the map ends
     // up complete without anyone having to do anything.
     await writeMember(shop, uid, shopData, 'owner-uid');
     return 'member';
   }
-  if (ownerUid || membersVal) return 'mismatch';
 
-  // Legacy shop: no uid anywhere. Claim it for the account whose email matches
-  // the one on the shop record. That anchor is not forgeable from here - the
-  // address is already registered in Firebase Auth, and Auth will not hand out
-  // a second account for it.
+  // The second anchor: the email on the shop record. Login signs in AS that
+  // address, so anyone who reaches a shop legitimately holds it, and Firebase
+  // Auth will not issue a second account for an address that is already taken
+  // - an attacker cannot arrange to be signed in as somebody else's email.
   //
-  // It is still only as strong as the rules, which are still open: today
-  // anyone could write this node directly. That is why the audit records HOW a
-  // mapping was made, and why a server-side backfill supersedes it later.
+  // This is what makes enforcement safe on shops nobody here can test. A stale
+  // or missing uid stops being a lockout: the owner still matches on email,
+  // and the record is repaired underneath them. The attack it has to stop -
+  // sign in as your own shop, then point localStorage.shopName at another one
+  // - fails on exactly this check, because the email will not match.
   const shopEmail = String(ownerObj.email || shopData.email || '').trim().toLowerCase();
   const userEmail = String((user && user.email) || '').trim().toLowerCase();
   if (shopEmail && shopEmail === userEmail) {
-    const ok = await writeMember(shop, uid, shopData, 'client-claim');
-    return ok ? 'claimed' : 'no-record';
+    // 'owner-email' when the shop already had a uid that simply did not match
+    // (a stale record being repaired), 'client-claim' when it had none at all.
+    const ok = await writeMember(shop, uid, shopData, knownUids.length ? 'owner-email' : 'client-claim');
+    if (!ok) return 'no-record';
+    return knownUids.length ? 'member' : 'claimed';
   }
+
+  if (knownUids.length || membersVal) return 'mismatch';
 
   return 'no-record';
 }

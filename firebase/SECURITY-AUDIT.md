@@ -177,8 +177,35 @@ One export of `c24o-c038b`, read locally with `scripts/audit-shop-access.mjs`. *
   turned out to be already true in the data; the migration branch was dead code.
 * **Every shop has a uid the rules can match** — `owner.uid` on seven, a top-level `uid` on
   two, and one shop with both.
-* Running the real `resolveShopAccess()` against the real records: **9/9 `member` for their
-  own uid, 9/9 `mismatch` for a stranger.** F4 enforcement is safe to switch on.
+* **Nine shops, nine different accounts.** No email owns more than one shop, so the operator
+  can only sign into `developer`. Enforcement could not be validated by logging in.
+* **One shop carries two different uids.** `mobifixer` - 1248 jobs, the real production shop -
+  has `owner.uid` from signup *and* a different top-level `uid` written later by the migration
+  branch. `resolveShopAccess()` read `ownerObj.uid || shopData.uid`, took the first and never
+  looked at the second: if the live account is the other one, enforcement would have signed
+  that owner out of their own data. The first simulation missed it because the expected uid was
+  computed with the same wrong rule as the code. Fixed - both locations are accepted, matching
+  what the rules already accept.
+* Re-simulated with expectations derived from the records rather than from the code: for every
+  shop, **every uid it carries** resolves to `member`, an account with the **right email but an
+  unrecognised uid** resolves to `member`, and a stranger resolves to `mismatch`.
+
+### Why enforcement is safe without logging into all nine
+
+Authorization now has two anchors, either sufficient:
+
+1. the uid, in either location the records use, or
+2. **the email on the shop record.**
+
+Login signs in *as* that address, so anyone reaching a shop legitimately holds it; Firebase
+Auth will not issue a second account for an address already taken, so it cannot be borrowed;
+and once the rules are on, only the owner can change it. It is not a weaker anchor than the
+uid - before the rules are on, nothing about the shop is protected either way.
+
+The consequence is that a stale or missing uid is no longer a lockout: the owner still matches
+on email and the record is repaired underneath them (`claimedVia: 'owner-email'`). The attack
+enforcement exists to stop - sign in as your own shop, then point `localStorage.shopName` at
+someone else's - fails on exactly this check, because the email will not match.
 * Three record shapes exist, and all three are now handled: `owner` as an object, `owner` as a
   bare name string with the email at the top level (the two made by the removed Google
   sign-in), and both together.
