@@ -53,10 +53,14 @@ cd push-worker
 npx wrangler login
 npx wrangler deploy
 
-# paste the entire JSON file contents when prompted:
-npx wrangler secret put FIREBASE_SERVICE_ACCOUNT
+# Pipe the file in - do NOT paste at the prompt. The downloaded JSON is
+# pretty-printed across many lines and that prompt reads a single line, so a
+# paste stores "{" and the Worker throws on JSON.parse. Check the path matches
+# the file you actually downloaded.
+npx wrangler secret put FIREBASE_SERVICE_ACCOUNT < ~/Downloads/your-service-account.json
 
-# any random string; enables the manual /run check below:
+# Short and single line, so typing this one at the prompt is fine.
+# It enables the manual /run check below.
 npx wrangler secret put RUN_KEY
 ```
 
@@ -65,8 +69,17 @@ npx wrangler secret put RUN_KEY
 ```bash
 curl https://mobifixer-push.<your-subdomain>.workers.dev/health          # -> ok
 curl "https://mobifixer-push.<your-subdomain>.workers.dev/run?key=YOUR_RUN_KEY"
-# -> {"shops":1,"due":0,"pushes":0,"pruned":0}
 ```
+
+`/run` returns the sweep's own counts, so it says what actually happened:
+
+| Response | Meaning |
+|---|---|
+| `{"shops":9,"due":0,"pushes":0,"pruned":0}` | Working. Nothing was due this minute. |
+| `404` | `RUN_KEY` is unset or the `key=` does not match. |
+| `500 SyntaxError … JSON` | `FIREBASE_SERVICE_ACCOUNT` is truncated — it was pasted, not piped. |
+| `500 oauth 400 …` | The JSON parsed but Google rejected the key: wrong project, or already revoked. |
+| `{"shops":0,…}` | The credential cannot read `shops` — check the service account has Realtime Database access. |
 
 Then the real test: set a reminder two minutes out, **lock the phone**, and wait.
 
