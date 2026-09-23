@@ -7,7 +7,7 @@ import { generateWhatsAppLink} from './generateWhatsappLink.js';
 // Firebase core import
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 
-import { onAuthStateChanged, getAuth } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+import { onAuthStateChanged, getAuth, signOut } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 // Realtime Database import
 import { getDatabase, ref, onChildAdded, onChildChanged, update, query, limitToLast, orderByKey, remove , onValue, push, goOffline, goOnline}
 from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
@@ -4100,15 +4100,161 @@ if (navigator.hardwareConcurrency <= 4) {
 
 
 
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    console.log("✅ Logged in as:", user.email);
-  } else {
+/* ########## SHOP ACCESS ##########
+ *
+ * Signing in proves WHO you are. It proves nothing about WHICH shop you may
+ * open. Until now the app took the shop from localStorage:
+ *
+ *     const shopName = localStorage.getItem('shopName')   // main.js, top
+ *
+ * and onAuthStateChanged only checked that you were signed in to *some*
+ * account in this Firebase project. Anyone can make one on the signup page.
+ * So: sign up as yourself, set localStorage.shopName to another shop, reload,
+ * and you had that shop's customers, phone numbers and amounts.
+ *
+ * This is the same hole cashbook had (F1 in firebase/SECURITY-AUDIT.md) and
+ * this is the same fix, in the same order: record first, enforce later.
+ * ENFORCE_SHOP_ACCESS is false, so nothing below denies anybody. It builds the
+ * uid -> shop mapping that the security rules will eventually need, and tells
+ * us — from real logins, not guesswork — which shops are already mapped.
+ *
+ * Turning it on is one constant. Turning it back off is the same constant.
+ */
+const ENFORCE_SHOP_ACCESS = false;
+
+// Audit trail. uid and outcome only: never an email, a password or a token
+// (and never the shop's data). Fire and forget - a login must not fail, or
+// wait, because logging did.
+const logShopAccess = (shop, uid, outcome) => {
+  try {
+    push(ref(db, `shops/${shop}/authAudit`), {
+      uid: uid || null,
+      outcome,
+      at: Date.now(),
+      enforced: ENFORCE_SHOP_ACCESS
+    }).catch(() => {});
+  } catch (_) { /* never let the audit break a login */ }
+};
+
+/**
+ * Does this signed-in account belong to this shop?
+ *
+ *   member    - a uid we already recognise for this shop
+ *   claimed   - a legacy shop with no uid recorded, just mapped to this account
+ *   mismatch  - the shop knows uids, and this is not one of them
+ *   no-record - we cannot tell (offline, unreadable, or no anchor to claim on)
+ *
+ * Only `mismatch` is ever a denial, and only once ENFORCE_SHOP_ACCESS is true.
+ * Anything we are unsure about stays allowed on purpose: this runs against
+ * live shops, and a wrong guess locks a real person out of their own work.
+ */
+async function resolveShopAccess(shop, user) {
+  const uid = user && user.uid;
+  if (!shop || !uid) return 'no-record';
+
+  // Deliberately NOT get(`shops/${shop}`): that pulls the whole shop - every
+  // service record - down the wire on every auth state change, on phones, on
+  // mobile data. Read only the four small nodes this decision needs.
+  let owner, members, legacyUid, legacyEmail;
+  try {
+    [owner, members, legacyUid, legacyEmail] = await Promise.all([
+      get(ref(db, `shops/${shop}/owner`)),
+      get(ref(db, `shops/${shop}/members`)),
+      get(ref(db, `shops/${shop}/uid`)),
+      get(ref(db, `shops/${shop}/email`))
+    ]);
+  } catch (_) {
+    return 'no-record';               // offline or unreadable: never deny
+  }
+
+  // owner is an object on shops created by signup. The removed Google sign-in
+  // wrote it as a bare display-name string, so guard the shape before reading
+  // through it.
+  const ownerVal = owner.exists() ? owner.val() : null;
+  const ownerObj = (ownerVal && typeof ownerVal === 'object') ? ownerVal : {};
+  const shopData = {
+    owner: ownerObj,
+    uid: legacyUid.exists() ? legacyUid.val() : null,
+    email: legacyEmail.exists() ? legacyEmail.val() : null
+  };
+
+  const membersVal = members.exists() ? members.val() : null;
+  if (membersVal && membersVal[uid]) return 'member';
+
+  // Nothing here at all - no owner, no members, no legacy fields. Either the
+  // shop does not exist or it is unrecognisable; both are "cannot tell".
+  if (!ownerVal && !membersVal && !shopData.uid && !shopData.email) return 'no-record';
+
+  // Shops created by signup carry owner.uid; shops migrated off a plaintext
+  // password got a top-level uid instead (auth/main.js writes both shapes).
+  const ownerUid = ownerObj.uid || shopData.uid || null;
+  if (ownerUid && ownerUid === uid) {
+    // Known owner, but not in the members map yet. Record it so the map ends
+    // up complete without anyone having to do anything.
+    await writeMember(shop, uid, shopData, 'owner-uid');
+    return 'member';
+  }
+  if (ownerUid || membersVal) return 'mismatch';
+
+  // Legacy shop: no uid anywhere. Claim it for the account whose email matches
+  // the one on the shop record. That anchor is not forgeable from here - the
+  // address is already registered in Firebase Auth, and Auth will not hand out
+  // a second account for it.
+  //
+  // It is still only as strong as the rules, which are still open: today
+  // anyone could write this node directly. That is why the audit records HOW a
+  // mapping was made, and why a server-side backfill supersedes it later.
+  const shopEmail = String(ownerObj.email || shopData.email || '').trim().toLowerCase();
+  const userEmail = String((user && user.email) || '').trim().toLowerCase();
+  if (shopEmail && shopEmail === userEmail) {
+    const ok = await writeMember(shop, uid, shopData, 'client-claim');
+    return ok ? 'claimed' : 'no-record';
+  }
+
+  return 'no-record';
+}
+
+// Additive: a new node beside the existing ones. Nothing is moved or removed,
+// and no `role` is recorded - owner and staff share one account today, so a
+// uid-level role would be a guess that a future rule would read and be wrong
+// about.
+async function writeMember(shop, uid, shopData, claimedVia) {
+  try {
+    await update(ref(db, `shops/${shop}/members/${uid}`), {
+      name: (shopData.owner && shopData.owner.name) || '',
+      claimedAt: Date.now(),
+      claimedVia
+    });
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
     console.log("🚪 Logged out");
     location='./auth/index.html'
+    return;
+  }
+
+  // Deliberately not logging user.email - see logShopAccess.
+  console.log("✅ Signed in");
+
+  const outcome = await resolveShopAccess(shopName, user);
+  logShopAccess(shopName, user.uid, outcome);
+  console.log("shop access:", outcome);
+
+  if (outcome === 'mismatch' && ENFORCE_SHOP_ACCESS) {
+    try { await signOut(auth); } catch (_) {}
+    localStorage.removeItem('shopName');
+    localStorage.removeItem('author');
+    localStorage.removeItem('role');
+    alert("This account does not have access to that shop.");
+    location='./auth/index.html';
   }
 });
-//
+/* ########## END SHOP ACCESS ########## */
 
 
 

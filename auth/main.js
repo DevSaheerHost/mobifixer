@@ -1,15 +1,14 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 
 // Realtime Database import
-import { getDatabase, ref, onChildAdded, onChildChanged, update, query, limitToLast, orderByKey , set }
+import { getDatabase, ref, onChildAdded, onChildChanged, update, query, limitToLast, orderByKey, runTransaction }
 from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 import {
   getAuth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  GoogleAuthProvider,
-  signInWithPopup,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  deleteUser
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 
 
@@ -260,6 +259,20 @@ $('#reset-btn').onclick = async (e) => {
 };
 
 
+// Creating a shop. This used to lose data: the shop record was written with
+// set(), which replaces the whole node, so signing up on a name that already
+// existed replaced that shop's services, stock and staff with an empty
+// skeleton. A client-side exists() check was added afterwards, but it ran
+// AFTER the Auth account was created and check-then-write can be raced.
+//
+// Two changes below:
+//   1. the name is checked BEFORE the Auth account exists, so a taken name no
+//      longer strands the person with an account they cannot reuse - retrying
+//      with a different shop name used to fail auth/email-already-in-use for
+//      ever;
+//   2. the write is a transaction that aborts when the node is already there,
+//      so there is no ordering of events in which an existing shop is
+//      overwritten. The server decides, not the client.
 $('#signup').onclick = async (e) => {
   e.preventDefault();
   const userName = $('#signup_name').value.trim();
@@ -274,77 +287,67 @@ $('#signup').onclick = async (e) => {
 
   $('.loader').classList.remove('hidden');
 
+  let createdUser = null;
   try {
-    // 1️⃣ Create Firebase auth user
+    // 1) Is the name free? Asked first, so a taken name costs nothing.
+    const existing = await get(child(shopRef, businessName));
+    if (existing.exists()) {
+      alert("❌ This business name is already taken. Please choose another.");
+      return;
+    }
+
+    // 2) Create the Firebase Auth account.
     const userCredential = await createUserWithEmailAndPassword(auth, businessEmail, businessPass);
-    const user = userCredential.user;
+    createdUser = userCredential.user;
 
-const existing = await get(child(shopRef, businessName));
-if (existing.exists()) {
-  alert("❌ This business name is already taken. Please choose another.");
-  return;
-}
-
-    // 2️⃣ Save shop details (no password)
-    await set(child(shopRef, businessName), {
-      shop: businessName,
-      owner:{
-        name: userName,
-        email: businessEmail,
-        uid: user.uid,
-        createdAt: Date.now()
-      },
-      lastServiceSn: 0,
-      service: {},
-      staff:{}
+    // 3) Create the shop, and only create it. Returning undefined aborts the
+    //    transaction, so a name claimed in the meantime is left untouched.
+    const result = await runTransaction(child(shopRef, businessName), (current) => {
+      if (current !== null) return;   // already exists - abort, change nothing
+      return {
+        shop: businessName,
+        owner: {
+          name: userName,
+          email: businessEmail,
+          uid: createdUser.uid,
+          createdAt: Date.now()
+        },
+        lastServiceSn: 0,
+        service: {},
+        staff: {}
+      };
     });
+
+    if (!result.committed) {
+      // Somebody claimed the name between step 1 and step 3. Their shop is
+      // untouched. Remove the account we just made so this email stays usable.
+      try { await deleteUser(createdUser); } catch (_) {}
+      createdUser = null;
+      alert("❌ That business name was just taken. Please choose another.");
+      return;
+    }
 
     localStorage.setItem('shopName', businessName);
     localStorage.setItem('author', userName);
     localStorage.setItem('role', 'Shop Owner');
-    
+
     alert("✅ Signup successful!");
     location.hash = "#/login";
   } catch (err) {
     console.error(err);
+    // If the account was created but the shop was not, roll the account back
+    // rather than leaving an email that can never be signed up again.
+    if (createdUser) { try { await deleteUser(createdUser); } catch (_) {} }
     alert("❌ Error: " + err.message);
   } finally {
     $('.loader').classList.add('hidden');
   }
 };
 
-
-
-
-
-
-const provider = new GoogleAuthProvider();
-
-$('#google-login').onclick = async () => {
-  try {
-    const result = await signInWithPopup(auth, provider);
-    const user = result.user;
-
-    const businessName = user.email.split('@')[0].toLowerCase();
-    const snapshot = await get(child(shopRef, businessName));
-
-    if (!snapshot.exists()) {
-      await set(child(shopRef, businessName), {
-        shop: businessName,
-        owner: user.displayName || 'Unknown',
-        email: user.email,
-        uid: user.uid,
-        createdAt: Date.now(),
-        lastServiceSn: 0,
-        service: {}
-      });
-    }
-
-    localStorage.setItem('shopName', businessName);
-    alert(`✅ Welcome ${user.displayName || 'User'}!`);
-    location = "/";
-  } catch (err) {
-    console.error(err);
-    alert("❌ Google Sign-in Error: " + err.message);
-  }
-};
+// Google sign-in removed. It derived the shop name from the email local part
+// (saheer@gmail.com -> the shop named "saheer") and signed the person into that
+// shop if it already existed, which is a straightforward takeover of any shop
+// whose name matches somebody's email. The buttons were already hidden and
+// disabled in auth/index.html, so nobody could reach it, but leaving the
+// handler in place meant one stray class change would have switched it back on.
+// Email + password login and the reset flow above cover everything it did.

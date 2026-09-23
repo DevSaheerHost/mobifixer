@@ -110,6 +110,65 @@ path are the two things most likely to take the app down.
 
 ---
 
+## F4 — Service app: any account could open any shop  🔴 critical
+
+Same shape as F1, in the other app, found later. The gate was `main.js`:
+
+```js
+const shopName = localStorage.getItem('shopName')
+if(!shopName) location='./auth/index.html'
+```
+
+`onAuthStateChanged` required an account in `c24o-c038b` — and the signup page hands
+one to anybody. Nothing tied the account to the shop, so: sign up, set
+`localStorage.shopName` to another shop, reload, and you had their customers, phone
+numbers and amounts.
+
+### Status: Phase 1 shipped (record + log, enforce nothing)
+
+In `main.js`, marked `########## SHOP ACCESS ##########`:
+
+1. `resolveShopAccess(shop, user)` → `member` / `claimed` / `no-record` / `mismatch`,
+   against `owner.uid`, the legacy top-level `uid`, and a new additive
+   `shops/{shop}/members/{uid}` map.
+2. A known `owner.uid` is backfilled into the members map (`claimedVia: 'owner-uid'`);
+   a legacy shop with no uid at all claims for the account whose email matches the
+   shop record (`claimedVia: 'client-claim'`). Same caveat as F1: a client claim is
+   only as strong as the rules, and the rules are still open.
+3. Outcome and uid go to `shops/{shop}/authAudit`. No email, password or token.
+4. `ENFORCE_SHOP_ACCESS = false`. Only a definite `mismatch` is ever a denial;
+   offline, unreadable and unknown all stay allowed, deliberately.
+
+Tests: `scripts/test-shop-access.mjs`, in CI.
+
+**Phase 2 — measure.** `node scripts/audit-shop-access.mjs <export.json>` reports
+READY / NEEDS-MIGRATION / AT-RISK per shop, plus mapping provenance. Every active shop
+must read READY before `ENFORCE_SHOP_ACCESS` is flipped, or a real shop loses access to
+its own work.
+
+---
+
+## F5 — Signup could wipe a shop  🟠 fixed
+
+`auth/main.js` wrote a new shop with `set()` on `shops/{name}` — a whole-node replace.
+Signing up on a name that already existed replaced that shop's services, stock and staff
+with an empty skeleton. This actually happened; commit `f6bdf5b` ("bug fixed : sugnup
+data lose") added a client-side `exists()` check afterwards, but it ran *after* the Auth
+account was created and check-then-write can be raced.
+
+Now: the name is checked before the Auth account exists, and the write is a
+`runTransaction` that aborts when the node is present, so the server refuses the
+overwrite regardless of what the client believes. An account created for a shop that
+then failed to be created is deleted rather than left orphaned — previously that email
+could never be used to sign up again.
+
+Google sign-in was also removed. It derived the shop name from the email local part
+(`saheer@gmail.com` → shop `saheer`) and signed the person into that shop if it existed.
+The buttons were already `hidden disabled` in `auth/index.html`, so nobody could reach
+it, but the handler was one class change away from live.
+
+---
+
 ## F2 — Service app must read shop records *before* authenticating  🟠
 
 `auth/main.js` login does `get(child(shopRef, identifier))` **before**
@@ -124,6 +183,9 @@ same publicly-readable record.
    require auth for the rest (see `service-app.rules.json`, `PUBLIC_EMAIL_LOOKUP`).
 2. Retire the plaintext-password branch and delete every remaining `password` field.
    Un-migrated shops should go through password reset instead.
+
+Both wait on F4 Phase 2: `audit-shop-access.mjs` already reports which shops still carry a
+plaintext password, so step 2 has a work list the moment an export exists.
 
 ---
 
