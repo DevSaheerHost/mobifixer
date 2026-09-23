@@ -4567,13 +4567,12 @@ async function remindOpenJobs(rows) {
         // The real logo, transparent, as supplied. The previous icon was the
         // mark on a solid black plate, which read as a black tile.
         icon: './assets/images/notification-logo.png',
-        // No `badge`. Android builds the small status-bar badge from a PNG's
-        // ALPHA CHANNEL ALONE, painting every opaque pixel white - and the
-        // favicon that used to be passed here has no alpha channel at all, so
-        // it rendered as a solid white square. A badge needs a square,
-        // single-colour, white-on-transparent mark; the logo is a 2:1
-        // wordmark whose arrow and lettering overlap, so nothing legible can
-        // be derived from it at 24dp. Better none than a white block.
+        // Android builds the status-bar badge from a PNG's ALPHA CHANNEL
+        // ALONE, painting every opaque pixel white. The favicon that used to
+        // be passed here has no alpha channel, so it rendered as a solid
+        // white square. This is a square, white-on-transparent silhouette of
+        // the arrow mark, 81% transparent, built from the mark-only artwork.
+        badge: './assets/images/badge-96.png',
         data: { hash: '' }   // home; the list already opens on the pending tab
       });
       return;
