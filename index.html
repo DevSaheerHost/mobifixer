@@ -1578,6 +1578,19 @@ Stable Access</h3>
     </div>
   </div>
 
+  <!-- Nothing filled in yet. Shown by loadShopDetails() only when this shop has
+       saved no details at all, and only to the shop owner. The button opens the
+       same modal as "Edit Shop Details" at the bottom of the page, which nobody
+       ever scrolled far enough to find. -->
+  <div class="shop-setup-card hidden" id="shopSetupCard">
+    <i class="fa-solid fa-store"></i>
+    <h3>Add your shop details</h3>
+    <p>Your name, phone, location and opening hours show up on this page for everyone in the shop. It takes a minute.</p>
+    <button class="btn-edit-shop" id="setupShopBtn" type="button">
+      <i class="fa-solid fa-pen-to-square"></i> Add shop details
+    </button>
+  </div>
+
   <!-- Quick Stats -->
   <div class="shop-stats-grid">
     <div class="stat-box">
@@ -1660,19 +1673,22 @@ Stable Access</h3>
       <i class="fa-solid fa-clock"></i> Operating Hours
     </h4>
     
+    <!-- Painted by loadShopDetails() from what the shop saved. These used to be
+         three hardcoded times, so a shop that entered its real opening hours in
+         the edit form was still shown 9-6, Mon-Fri. -->
     <div class="hours-card">
       <div class="hour-row">
         <span class="day">Monday - Friday</span>
-        <span class="time">9:00 AM - 6:00 PM</span>
+        <span class="time" id="hoursMF"></span>
       </div>
       <div class="hour-row">
         <span class="day">Saturday</span>
-        <span class="time">10:00 AM - 5:00 PM</span>
+        <span class="time" id="hoursSat"></span>
       </div>
       <div class="hour-row">
         <span class="day">Sunday</span>
-        <span class="time">Closed</span>
-        <span class="badge-closed">Closed</span>
+        <span class="time" id="hoursSun"></span>
+        <span class="badge-closed hidden" id="sundayClosedBadge">Closed</span>
       </div>
     </div>
   </div>
@@ -1753,7 +1769,7 @@ Stable Access</h3>
           <i class="fa-solid fa-star"></i>
         </div>
         <div class="stat-detail-info">
-          <p class="stat-detail-value" id="shopRating">4.8</p>
+          <p class="stat-detail-value" id="shopRating">—</p>
           <p class="stat-detail-label">Customer Rating</p>
         </div>
       </div>
@@ -1767,21 +1783,18 @@ Stable Access</h3>
     </h4>
     
     <div class="about-card">
-      <p id="shopDescription">
-        Welcome to MobiFixer Service Center - Your one-stop solution for all mobile device repairs and services. 
-        With over 5+ years of experience in the mobile repair industry, we pride ourselves on providing 
-        professional, reliable, and affordable repair services. Our team of certified technicians ensures 
-        that your device is handled with utmost care and expertise. We use genuine parts and the latest 
-        tools to deliver quality service every time.
-      </p>
+      <p id="shopDescription"></p>
     </div>
   </div>
 
   <!-- Edit Shop Details Button -->
   <div class="shop-actions">
-    <button class="btn-edit-shop" id="editShop_details" onclick="editShopDetails()">
+    <button class="btn-edit-shop" id="editShop_details" type="button">
       <i class="fa-solid fa-edit"></i> Edit Shop Details
     </button>
+    <p class="shop-actions-note hidden" id="shopEditLocked">
+      <i class="fa-solid fa-lock"></i> Only the shop owner can change these details.
+    </p>
   </div>
 
 </main>

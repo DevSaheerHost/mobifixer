@@ -4154,9 +4154,23 @@ function goToShopDetails() {
   location.hash = '#shop-details';
 }
 $("#editShop_details").onclick=()=>editShopDetails()
+// Same modal, reached from the empty-state card at the top of the page.
+if ($('#setupShopBtn')) $('#setupShopBtn').onclick = () => editShopDetails()
 // Edit shop details - Open modal with current data
 function editShopDetails() {
   try {
+    // The hidden button is cosmetic; this is what actually stops a staff
+    // member reaching the form. Still a guard rail, not a security boundary —
+    // see canEditShopDetails().
+    if (!canEditShopDetails()) {
+      showNotice({
+        title: 'Owner only',
+        body: 'Only the shop owner can change the shop details.',
+        type: 'warning'
+      });
+      return;
+    }
+
     const modal = $('#editShopModal');
     if (!modal) {
       showNotice({ 
@@ -4361,6 +4375,22 @@ $('#editShopForm').onsubmit=(event)=>saveShopDetails(event)
 // signup, and must not be overwritten by a details form.
 let shopDetailsCache = null;
 
+// The name on shops/{shop}/owner, lowercased. Used only as a second way to
+// recognise the owner: `role` is picked from a radio button at login, so a real
+// owner who once signed in as staff has it set to something else and would
+// otherwise be locked out of their own shop's details with no way back.
+let shopOwnerName = (localStorage.getItem('shopOwnerName') || '').trim().toLowerCase();
+
+// Is this person allowed to edit the shop's details? A guard rail, not a
+// security boundary: both halves come from values the client controls, and the
+// database still accepts the write. It exists so staff do not overwrite the
+// owner's details by accident. Enforcement belongs in the Firebase rules.
+function canEditShopDetails() {
+  if (isOwner()) return true;
+  const author = (localStorage.getItem('author') || '').trim().toLowerCase();
+  return !!author && !!shopOwnerName && author === shopOwnerName;
+}
+
 async function fetchShopDetails() {
   if (!shopName) return;
   try {
@@ -4374,6 +4404,17 @@ async function fetchShopDetails() {
       loadShopDetails();
     }
   } catch (_) { /* offline: the localStorage cache below still renders */ }
+  // Separate node, separate read: shopDetails is the form's data, owner is the
+  // account. A shop with no owner record simply falls back to the role check.
+  try {
+    const own = await get(ref(db, `shops/${shopName}/owner`));
+    const name = (own.exists() && own.val() && own.val().name) ? String(own.val().name).trim() : '';
+    if (name) {
+      shopOwnerName = name.toLowerCase();
+      localStorage.setItem('shopOwnerName', name);
+      loadShopDetails();
+    }
+  } catch (_) { /* offline: the cached name above still applies */ }
 }
 
 function loadShopDetails() {
@@ -4401,6 +4442,9 @@ function loadShopDetails() {
     const shopEstablished = pick('shopEstablished');
     const shopDescription = pick('shopDescription');
     const shopTagline = pick('shopTagline');
+    const hoursMF = pick('hoursMF');
+    const hoursSat = pick('hoursSat');
+    const hoursSun = pick('hoursSun');
     const shopName = displayName;
 
     // Update shop header
@@ -4422,6 +4466,41 @@ function loadShopDetails() {
     put('shopGST', shopGST);
     put('shopEstablished', shopEstablished);
     put('shopDescription', shopDescription);
+
+    // Opening hours. The edit form has always collected these and
+    // saveShopDetails() has always stored them — nothing ever painted them, so
+    // the card showed three hardcoded times no matter what the shop entered.
+    put('hoursMF', hoursMF);
+    put('hoursSat', hoursSat);
+    put('hoursSun', hoursSun);
+    const closedBadge = $('#sundayClosedBadge');
+    if (closedBadge) {
+      closedBadge.classList.toggle('hidden', !/closed/i.test(hoursSun));
+    }
+
+    // Does this shop have anything of its own saved yet? `displayName` is
+    // deliberately left out: it falls back to the tenant key, so it is never
+    // empty and would hide the prompt for ever.
+    const hasDetails = !!(ownerName || ownerPhone || shopEmail || shopLocation ||
+      shopGST || shopEstablished || shopDescription || shopTagline ||
+      hoursMF || hoursSat || hoursSun);
+
+    // Editing is the owner's job. This is a guard rail, not a security
+    // boundary — `role` is a localStorage string the user can edit, and the
+    // write itself is still allowed by the database. It exists so staff do not
+    // overwrite the owner's details by accident, which is the real failure
+    // mode. Enforcement belongs in the Firebase rules.
+    const owner = canEditShopDetails();
+
+    // The prompt. "Edit Shop Details" sits ~2200px down the page, past six
+    // sections, so a new shop never found it. This sits under the header.
+    const setupCard = $('#shopSetupCard');
+    if (setupCard) setupCard.classList.toggle('hidden', hasDetails || !owner);
+    const editBtn = $('#editShop_details');
+    if (editBtn) editBtn.classList.toggle('hidden', !owner);
+    // A button that silently vanishes reads as a bug, so say why it is gone.
+    const lockedNote = $('#shopEditLocked');
+    if (lockedNote) lockedNote.classList.toggle('hidden', owner);
 
     // Calculate and update statistics from data
     calculateAndUpdateShopStats();
@@ -4545,7 +4624,9 @@ function calculateTodayRevenue(dataArray) {
     const completedJobs = collected|| 0; // Would come from completed jobs count
     const pendingJobs = pending || 0; // Would come from pending jobs
     const totalRevenue = totalCollectedRevenue||0; // Would sum all revenue
-    const shopRating = 4.8; // Could be average of customer ratings
+    // No rating is collected anywhere in this app. This used to read 4.8,
+    // which was simply made up and shown as the shop's own customer rating.
+    const shopRating = '—';
 
     // Update stat boxes
     if ($('#totalCustomers')) $('#totalCustomers').textContent = totalCustomers;
