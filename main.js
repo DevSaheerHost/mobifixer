@@ -4836,7 +4836,7 @@ if (remindOverlay) {
 //
 // While it is empty, everything below is skipped: no SDK is fetched, no
 // permission is requested, and the app behaves exactly as it did before.
-const PUSH_VAPID_KEY = '';
+const PUSH_VAPID_KEY = 'BCPJmqD8LHgF3zLMLGtdP1IODMw90Xf2qW19PVisGwUxPr6IJzAGvz1AV332iH5bU-Up-wOZdeYr-SVUxb_FoDA';
 
 const pushTokensRef = () => ref(db, `shops/${shopName}/pushTokens`);
 

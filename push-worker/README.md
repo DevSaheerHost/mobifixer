@@ -32,7 +32,19 @@ entirely and behaves exactly as before.
 Firebase console → **Project settings** → **Service accounts** → **Generate new private key**.
 A JSON file downloads.
 
-**Do not commit it and do not paste it into a chat.** It grants broad access to the project.
+**Do not commit it, and do not paste it into a chat, an issue, or a message.** It grants read
+and write access to the whole project — every shop's customers, phone numbers and amounts — and
+lets the holder send push as you. It belongs in exactly one place: a Cloudflare secret.
+
+If it is ever exposed, treat it as compromised immediately:
+
+1. Google Cloud console → **Service Accounts** → the `firebase-adminsdk-…` account → **Keys**
+2. Delete the exposed key id — this invalidates it at once, even for someone who already copied it
+3. **Add key → Create new key → JSON**
+4. `wrangler secret put FIREBASE_SERVICE_ACCOUNT` with the new one
+
+`scripts/check.mjs` fails the build if a PEM private key or a service-account JSON is ever
+committed, but it cannot help with a key pasted somewhere else — rotation is the only fix.
 
 ### 3. Deploy
 
