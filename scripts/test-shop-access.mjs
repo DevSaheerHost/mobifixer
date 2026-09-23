@@ -255,7 +255,7 @@ console.log('\nThe audit trail');
   const entry = s.audit[0];
   ck('writes to the shop\'s own authAudit node', entry?.path === 'shops/demoshop/authAudit');
   ck('records the uid and the outcome', entry?.value.uid === OWNER_UID && entry?.value.outcome === 'member');
-  ck('records whether enforcement was on', entry?.value.enforced === false);
+  ck('records whether enforcement was on', entry?.value.enforced === true);
   const keys = Object.keys(entry?.value || {}).sort().join(',');
   ck('and records nothing else', keys === 'at,enforced,outcome,uid', keys);
 
@@ -270,9 +270,11 @@ console.log('\nThe audit trail');
   ck('a failing audit never throws into the login path', !threw);
 }
 
-console.log('\nPhase 1 denies nobody');
+console.log('\nEnforcement');
 {
-  ck('ENFORCE_SHOP_ACCESS ships false', /const ENFORCE_SHOP_ACCESS = false;/.test(src));
+  // Flipped on after the export showed every shop resolves to member - by uid
+  // in either location, or by the email on the record. Only mismatch denies.
+  ck('ENFORCE_SHOP_ACCESS is on', /const ENFORCE_SHOP_ACCESS = true;/.test(src));
   ck('the only denial is a definite mismatch',
      /outcome === 'mismatch' && ENFORCE_SHOP_ACCESS/.test(CALLBACK));
   ck('no other outcome signs anybody out',
@@ -280,6 +282,47 @@ console.log('\nPhase 1 denies nobody');
   ck('the signed-in email is not written to the console', !/console\.log\([^)]*user\.email/.test(CALLBACK));
   ck('the access check runs on every auth state change', /resolveShopAccess\(shopName, user\)/.test(CALLBACK));
   ck('and its outcome is always recorded', /logShopAccess\(shopName, user\.uid, outcome\)/.test(CALLBACK));
+
+  // With enforcement live, the fail-open outcomes matter more than ever: an
+  // offline phone, an unreadable shop or an unrecognised record must not lock
+  // anybody out of their own work.
+  for (const safe of ['member', 'claimed', 'no-record'])
+    ck(`'${safe}' never signs anyone out`,
+       !new RegExp(`outcome === '${safe}'[^\\n]*signOut`).test(CALLBACK) &&
+       !new RegExp(`outcome === '${safe}' && ENFORCE_SHOP_ACCESS`).test(CALLBACK));
+  ck('the sign-out clears the shop from this device',
+     /removeItem\('shopName'\)/.test(CALLBACK));
+  ck('and sends the person back to the login page',
+     /location='\.\/auth\/index\.html'/.test(CALLBACK));
+}
+
+console.log('\nForgot password');
+{
+  const authSrc  = readFileSync('auth/main.js', 'utf8');
+  const authHtml = readFileSync('auth/index.html', 'utf8');
+  const authCss  = readFileSync('auth/style.css', 'utf8');
+  const loginPage = authHtml.slice(authHtml.indexOf('id="login-page"'), authHtml.indexOf('id="reset-page"'));
+
+  // A reset email is the only route back into an account now that the
+  // plaintext branch is gone, so the link has to be findable and hittable.
+  ck('the link sits above the Login button',
+     loginPage.indexOf('id="forgot-link"') < loginPage.indexOf('id="login"'),
+     'still below the button');
+  ck('it is under the password field',
+     loginPage.indexOf('login_businessPass') < loginPage.indexOf('id="forgot-link"'));
+  const style = authCss.slice(authCss.indexOf('#forgot-link{'), authCss.indexOf('#forgot-link:active'));
+  ck('it has a 44px touch target', /min-height:\s*44px/.test(style), style.slice(0, 60));
+  ck('it is not styled as muted italic body text', !/font-style:\s*italic/.test(style));
+
+  // Typing the shop name twice is how people mistype it.
+  ck('the business name is carried between the two screens',
+     /carryBusinessName\('#login_businessName', '#reset_businessName'\)/.test(authSrc) &&
+     /carryBusinessName\('#reset_businessName', '#login_businessName'\)/.test(authSrc));
+  const carry = authSrc.slice(authSrc.indexOf('const carryBusinessName'), authSrc.indexOf('const router'));
+  ck('and never overwrites something already typed', /!to\.value\.trim\(\)/.test(carry));
+
+  ck('a wrong password points at the reset flow',
+     /Wrong password[\s\S]{0,200}Forgot password/.test(authSrc));
 }
 
 console.log('\nSignup can no longer overwrite a shop');

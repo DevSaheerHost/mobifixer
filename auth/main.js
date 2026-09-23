@@ -44,6 +44,14 @@ window.addEventListener("popstate", () => {
   direction = "backward";
 });
 
+// Carry the business name between the login and reset screens, so nobody has
+// to retype it - or mistype it - on the way to a password reset and back. Only
+// fills a field that is empty, so it never overwrites what someone just typed.
+const carryBusinessName = (fromSel, toSel) => {
+  const from = $(fromSel), to = $(toSel);
+  if (from && to && from.value.trim() && !to.value.trim()) to.value = from.value.trim();
+};
+
 const router = () => {
   const pages = document.querySelectorAll("main");
   pages.forEach(m => m.classList.add('hidden'));
@@ -52,12 +60,14 @@ const router = () => {
   switch (location.hash) {
     case "#/login":
       target = $("#login-page");
+      carryBusinessName('#reset_businessName', '#login_businessName');
       break;
     case "#/signup":
       target = $("#signup-page");
       break;
     case "#/reset":
       target = $("#reset-page");
+      carryBusinessName('#login_businessName', '#reset_businessName');
       break;
     default:
       target = $("#home-page");
@@ -170,7 +180,9 @@ $('#login').onclick = async (e) => {
     } catch (err) {
       if (err.code === "auth/invalid-credential" || err.code === "auth/wrong-password" ||
           err.code === "auth/user-not-found") {
-        alert("❌ Wrong password!");
+        // Dead end before this: a reset email is now the only way back in, so
+        // say so rather than leaving someone guessing at the same field.
+        alert("❌ Wrong password!\n\nIf you don't remember it, tap \"Forgot password?\" to get a reset link by email.");
       } else if (err.code === "auth/too-many-requests") {
         alert("⚠️ Too many attempts. Please wait a few minutes and try again.");
       } else {

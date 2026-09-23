@@ -4120,7 +4120,7 @@ if (navigator.hardwareConcurrency <= 4) {
  *
  * Turning it on is one constant. Turning it back off is the same constant.
  */
-const ENFORCE_SHOP_ACCESS = false;
+const ENFORCE_SHOP_ACCESS = true;
 
 // Audit trail. uid and outcome only: never an email, a password or a token
 // (and never the shop's data). Fire and forget - a login must not fail, or

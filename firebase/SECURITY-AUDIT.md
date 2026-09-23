@@ -124,7 +124,19 @@ one to anybody. Nothing tied the account to the shop, so: sign up, set
 `localStorage.shopName` to another shop, reload, and you had their customers, phone
 numbers and amounts.
 
-### Status: Phase 1 shipped (record + log, enforce nothing)
+### Status: ENFORCING
+
+`ENFORCE_SHOP_ACCESS = true`. A definite `mismatch` signs the person out, clears the shop from
+the device and returns them to the login page. Everything else still passes: offline, an
+unreadable shop and an unrecognised record all allow, deliberately.
+
+Switched on after the export showed every shop resolves to `member` — by uid in either
+location, or by the email on the record — and after the operator confirmed only one shop is
+real (`mobifixer`, owner `shahin sha`, 1248 jobs, 3 staff sharing the one account). Those staff
+sign in as the shop's own email, so the email anchor covers them.
+
+Rollback is the one constant and a redeploy. Enforcement writes nothing but audit entries and
+member records, so there is nothing to restore.
 
 In `main.js`, marked `########## SHOP ACCESS ##########`:
 
@@ -136,15 +148,19 @@ In `main.js`, marked `########## SHOP ACCESS ##########`:
    shop record (`claimedVia: 'client-claim'`). Same caveat as F1: a client claim is
    only as strong as the rules, and the rules are still open.
 3. Outcome and uid go to `shops/{shop}/authAudit`. No email, password or token.
-4. `ENFORCE_SHOP_ACCESS = false`. Only a definite `mismatch` is ever a denial;
-   offline, unreadable and unknown all stay allowed, deliberately.
+4. Only a definite `mismatch` is ever a denial; offline, unreadable and unknown all stay
+   allowed, deliberately.
 
 Tests: `scripts/test-shop-access.mjs`, in CI.
 
-**Phase 2 — measure.** `node scripts/audit-shop-access.mjs <export.json>` reports
-READY / NEEDS-MIGRATION / AT-RISK per shop, plus mapping provenance. Every active shop
-must read READY before `ENFORCE_SHOP_ACCESS` is flipped, or a real shop loses access to
-its own work.
+**Phase 2 — done.** `node scripts/audit-shop-access.mjs <export.json>` reports
+READY / NEEDS-MIGRATION / AT-RISK per shop, plus mapping provenance. Re-run it after any
+future export; the two NEEDS-MIGRATION entries are the Google-created shops, which clear once
+a password is set through the reset flow.
+
+**Do not confuse this with the rules.** Enforcement is client-side and remains a guard rail:
+the database is still open, so anyone with the URL can bypass the app entirely. Rules are the
+real boundary and are still not deployed.
 
 ---
 
@@ -245,6 +261,22 @@ same publicly-readable record.
    sat inside the *login* handler. The export confirms no `password` field is left to delete.
 
 What remains is deploying the rules, which is a console action and still pending.
+
+---
+
+## `shahin sha` in main.js:496 — not a backdoor
+
+```js
+author.toLowerCase()=='shahin sha'? localStorage.setItem('role', 'Shop Owner') :null
+```
+
+Flagged in an earlier audit as a hardcoded grant. It is the real owner of the only real shop:
+`shops/mobifixer/owner.name` is exactly `shahin sha`. Because the role radio is self-selected
+(F3), this line is how that owner reliably gets owner rights on their own data.
+
+**Leave it until per-account roles exist.** Removing it demotes them to staff and takes away
+delete and shop-details editing. `canEditShopDetails()` already matches the same name via
+`owner.name`, so the line is redundant for that one feature but not for `isOwner()` elsewhere.
 
 ---
 
