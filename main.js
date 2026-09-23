@@ -1039,7 +1039,7 @@ const updateDateDividerCounts = (container, groups) =>{
   container.querySelectorAll('.date-divider').forEach(divider => {
     const date = divider.dataset.date;
     const count = groups[date] || 0;
-    divider.innerHTML = `<p>${date}, ${count} entries</p>`;
+    divider.innerHTML = `<p>${date}, ${count} ${count === 1 ? 'entry' : 'entries'}</p>`;
   });
 }
 $('.delete_page').onclick=e=>{

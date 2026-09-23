@@ -5491,3 +5491,136 @@ nav.status-naveeeeeeess{
 .android-popup.error .popup-btn:not(.popup-btn-secondary) { color: #ffb4ab; }
 .android-popup.warn .popup-btn:not(.popup-btn-secondary) { color: #ffb866; }
 .android-popup.success .popup-btn:not(.popup-btn-secondary) { color: #b4eed0; }
+
+/* ── Form layout corrections ──────────────────────────────────────────────
+   Three problems, all visible on a phone:
+
+   1. Fields stopped ~60px short of the right edge. The mobile media query
+      sets `.input-group { flex-direction: column; align-items: flex-start }`
+      for the theme page's label+control rows, but the same class wraps the
+      Add Service fields. In a column flex container, flex-start sizes
+      children to their CONTENT width, so each input fell back to its
+      intrinsic ~20-character width instead of filling the row. Restoring
+      `stretch` (the flex default) makes them fill.
+
+   2. The Add form markup nests one .input-group directly inside another, so
+      the separator border, padding-bottom and margin-bottom were all applied
+      twice — the stray line under the first field, and the oversized gap
+      after it. Neutralised here rather than by editing the markup, so no
+      element has to be removed from a live page.
+
+   3. Gaps between fields (56-94px) were larger than the fields themselves
+      (45px), so only about six fields fit on a screen. The floating label
+      sits inside the field box, so the space above was not doing any work. */
+
+.form .input-group,
+.inventory-create-page .input-group {
+  align-items: stretch;
+}
+
+.input-group .input-group {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.form input,
+.form textarea,
+.inventory-create-page input {
+  margin-top: 0.75rem;
+}
+
+/* The floating label was positioned into the space created by the input's
+   2rem top margin, so tightening that margin left it clipped against the
+   field edge. Anchor it to the field itself instead: centred while the field
+   is empty, tucked just inside the top edge once it floats. The label no
+   longer depends on the gap between fields, so spacing can be set for
+   readability rather than to make room for it. */
+.form .input_field {
+  padding-top: 0.55rem;
+}
+.form .input_field input,
+.form .input_field textarea {
+  margin-top: 0;
+}
+.form .input_field label {
+  top: 50%;
+  transform: translateY(-50%);
+}
+.form .input_field input:focus ~ label,
+.form .input_field input:valid ~ label {
+  top: 0.5rem;
+  transform: translateY(0);
+  font-size: 12px !important;
+  background: transparent;
+  padding: 0 4px;
+}
+
+/* An autosuggest dropdown keeps its border even when it has no suggestions in
+   it, which drew a stray rule across the form under the first field. */
+#name_suggest_container:empty,
+#number_suggest_container:empty,
+#alt_number_suggest_container:empty,
+#model_suggest_container:empty,
+#complaint_suggest_container:empty,
+#category_suggest_container:empty,
+.universal_input_suggest_container:empty {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* The device stepper had no styling of its own, so once the form fields began
+   filling their row it was left stranded against the right edge, away from
+   its own "Devices" heading. Group it and keep it with the label. */
+main.form .total_device {
+  justify-content: flex-start;
+  margin-top: 0.5rem;
+}
+main.form .total_device input {
+  text-align: center;
+}
+
+/* A job's serial number was rendered in the danger colour, on the card header
+   and on the Add page. Red is the app's signal for something wrong, and an SN
+   is neutral reference data — it read as an alert on every single card, and
+   competed with the genuine status colours. On the card the header is already
+   the accent blue, so the number just needs contrast against it; on the dark
+   Add page the accent reads as an identifier without shouting. */
+li nav h3.sn {
+  color: #fff;
+}
+#new_sn {
+  color: var(--accent-color);
+}
+
+/* The approximate price was rendered in the danger colour, so every card
+   showed its amount as if something were wrong. It is neutral information;
+   the advance keeps its green because money actually received is a real
+   signal worth calling out. */
+.list-item .amount {
+  color: var(--text-color);
+}
+
+/* The toast was built for short strings: nowrap, a fixed row, 80vw. A longer
+   message — such as the open-jobs reminder — was forced into a narrow column
+   and spilled over three lines with its title squeezed to one word per line.
+   Let it wrap and stack instead, so any length stays readable. */
+.notice {
+  white-space: normal;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: 0.25rem;
+  max-width: min(92vw, 420px);
+  line-height: 1.35;
+}
+.notice .title {
+  font-weight: 700;
+}
+
+/* The floating "New" button sat on top of the last card's controls. Give the
+   list room to scroll clear of it. */
+.list {
+  padding-bottom: 6.5rem;
+}
