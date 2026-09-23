@@ -20,3 +20,5 @@ jobs:
         run: node scripts/test-ai-context.mjs
       - name: Root app open-jobs reminder tests
         run: node scripts/test-reminder.mjs
+      - name: Push sender tests
+        run: node scripts/test-push.mjs

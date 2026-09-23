@@ -1,0 +1,15 @@
+name = "mobifixer-push"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+# Sweep once a minute, so a reminder lands within about a minute of its time.
+[triggers]
+crons = ["* * * * *"]
+
+[vars]
+PROJECT_ID = "c24o-c038b"
+DATABASE_URL = "https://c24o-c038b-default-rtdb.firebaseio.com"
+
+# Secrets are NOT set here — they would end up in git. Set them after deploy:
+#   wrangler secret put FIREBASE_SERVICE_ACCOUNT   (paste the whole JSON)
+#   wrangler secret put RUN_KEY                    (any random string; enables /run)

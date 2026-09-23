@@ -241,6 +241,10 @@ logoutBtn.onclick=()=>{
       target.insertAdjacentHTML('beforeend', finalHTML);
       homeContainer.scrollTop = homeContainer.scrollHeight;
 
+      // Stop reminders following a phone that is no longer signed in. Fire and
+      // forget - logging out must not wait on, or be blocked by, the network.
+      try { unregisterPush(); } catch (_) {}
+
       // Allow the user to see the confirmation for a brief split second, then clear storage completely
       setTimeout(() => {
         localStorage.clear();
@@ -4820,6 +4824,75 @@ if (remindOverlay) {
     }
   });
 }
+
+
+// ── Push registration ────────────────────────────────────────────────────
+// Lets a reminder arrive while the app is CLOSED. Without this, a reminder
+// that falls due on a locked phone only appears when the app is next opened.
+//
+// PUSH_VAPID_KEY is the public Web Push certificate from
+// Firebase console -> Project settings -> Cloud Messaging -> Web Push
+// certificates. It is public by design and safe to commit.
+//
+// While it is empty, everything below is skipped: no SDK is fetched, no
+// permission is requested, and the app behaves exactly as it did before.
+const PUSH_VAPID_KEY = '';
+
+const pushTokensRef = () => ref(db, `shops/${shopName}/pushTokens`);
+
+// A stable per-device id, so re-registering updates one row instead of
+// growing a new one on every load.
+function pushDeviceId() {
+  let id = localStorage.getItem('MF_DEVICE_ID');
+  if (!id) {
+    id = 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    localStorage.setItem('MF_DEVICE_ID', id);
+  }
+  return id;
+}
+
+async function registerPush() {
+  if (!PUSH_VAPID_KEY) return;                       // not configured yet
+  if (!shopName) return;
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+  if (Notification.permission !== 'granted') return; // never prompt from here
+  try {
+    // Loaded on demand: the messaging SDK is only fetched by shops that have
+    // actually granted permission, not by everyone on every page load.
+    const { getMessaging, getToken, isSupported } =
+      await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-messaging.js');
+    if (!(await isSupported())) return;              // iOS Safari below 16.4, etc.
+
+    const reg = await navigator.serviceWorker.ready;
+    const messaging = getMessaging(app);
+    const token = await getToken(messaging, {
+      vapidKey: PUSH_VAPID_KEY,
+      serviceWorkerRegistration: reg                 // reuse sw.js; no firebase-messaging-sw.js
+    });
+    if (!token) return;
+
+    await update(ref(db, `shops/${shopName}/pushTokens/${pushDeviceId()}`), {
+      token,
+      author: localStorage.getItem('author') || 'Unknown',
+      ua: navigator.userAgent.slice(0, 120),
+      updatedAt: Date.now()
+    });
+  } catch (err) {
+    // Push is an enhancement. If the SDK, the service worker or the network
+    // fails, the in-app reminder path still works, so fail quietly.
+    console.warn('push registration skipped:', err && err.message);
+  }
+}
+
+// Drop this device's token when the shop signs out, so reminders stop
+// following a phone that is no longer logged in.
+async function unregisterPush() {
+  if (!PUSH_VAPID_KEY || !shopName) return;
+  try { await remove(ref(db, `shops/${shopName}/pushTokens/${pushDeviceId()}`)); }
+  catch (_) {}
+}
+
+registerPush();
 
 watchReminders();
 
