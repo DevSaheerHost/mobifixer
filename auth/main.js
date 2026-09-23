@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 
 // Realtime Database import
-import { getDatabase, ref, onChildAdded, onChildChanged, update, query, limitToLast, orderByKey, runTransaction }
+import { getDatabase, ref, runTransaction }
 from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 import {
   getAuth,
@@ -110,6 +110,27 @@ import { get, child } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-d
 // };
 
 
+// The shop's login email, and nothing else.
+//
+// This used to read the whole shops/{name} node before signing in. Realtime
+// Database evaluates permission at the location you read, so once the security
+// rules require auth on shops/$shop that read is denied outright - making
+// shops/$shop/owner/email public would not have rescued it, and login would
+// have broken for every shop the moment rules went live.
+//
+// Two paths because the records have two shapes: shops created by signup keep
+// the email on owner, and the two created by the old Google sign-in kept it at
+// the top level with `owner` as a bare name string. Both are readable
+// unauthenticated by design; everything else needs to be signed in.
+const lookupShopEmail = async (identifier) => {
+  const [onOwner, onShop] = await Promise.all([
+    get(child(shopRef, `${identifier}/owner/email`)),
+    get(child(shopRef, `${identifier}/email`))
+  ]);
+  const email = (onOwner.exists() && onOwner.val()) || (onShop.exists() && onShop.val()) || '';
+  return String(email).trim();
+};
+
 $('#login').onclick = async (e) => {
   e.preventDefault();
 
@@ -124,63 +145,38 @@ $('#login').onclick = async (e) => {
   $('.loader').classList.remove('hidden');
 
   try {
-    const snapshot = await get(child(shopRef, identifier));
+    // The plaintext-password branch that used to sit here is gone. It read a
+    // password out of a publicly readable node and, on a first login, called
+    // createUserWithEmailAndPassword - a login handler that created accounts.
+    // The database export confirms no shop carries a password any more; every
+    // one is on Firebase Auth. A shop that somehow still had one goes through
+    // Forgot password instead.
+    const email = await lookupShopEmail(identifier);
 
-    if (!snapshot.exists()) {
-      alert("❌ Shop not found!");
+    if (!email) {
+      // Either no such shop, or a record with no email on it. Deliberately the
+      // same message: a login form should not confirm which shops exist.
+      alert("❌ Shop not found, or it has no login email. Check the business name.");
       return;
     }
 
-    const shopData = snapshot.val();
-
-    // 🧩 Case 1: Old user (plaintext password in DB)
-    if (shopData.password) {
-      if (String(shopData.password) === String(password)) {
-        try {
-          // 🔁 Attempt migration to Firebase Auth (if not yet)
-          const userCredential = await createUserWithEmailAndPassword(auth, shopData.email, shopData.password);
-          const user = userCredential.user;
-
-          await update(child(shopRef, identifier), { uid: user.uid, password: null });
-          alert("🔁 Account migrated successfully!");
-        } catch (err) {
-          if (err.code === "auth/email-already-in-use") {
-            // Already migrated earlier — just login
-            const userCredential = await signInWithEmailAndPassword(auth, shopData.email, password);
-            const user = userCredential.user;
-            await update(child(shopRef, identifier), { uid: user.uid, password: null });
-            alert("✅ Logged in (Migrated Account)");
-          } else {
-            console.error(err);
-            alert("❌ Migration/Login Error: " + err.message);
-          }
-        }
-
-        localStorage.setItem('shopName', identifier);
-        location = "/";
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      localStorage.setItem('shopName', identifier);
+      localStorage.setItem('uid', user.uid);
+      alert("✅ Logged in (FB Account)");
+      location = "/";
+    } catch (err) {
+      if (err.code === "auth/invalid-credential" || err.code === "auth/wrong-password" ||
+          err.code === "auth/user-not-found") {
+        alert("❌ Wrong password!");
+      } else if (err.code === "auth/too-many-requests") {
+        alert("⚠️ Too many attempts. Please wait a few minutes and try again.");
       } else {
-        alert("❌ Incorrect password");
+        console.error(err);
+        alert("❌ Login failed: " + err.message);
       }
-    }
-
-    // 🧩 Case 2: Already migrated Firebase user (no password in DB)
-    else if (shopData.owner.email) {
-      try {
-        const userCredential = await signInWithEmailAndPassword(auth, shopData.owner.email, password);
-        const user = userCredential.user;
-        localStorage.setItem('shopName', identifier);
-        localStorage.setItem('uid', user.uid);
-        alert("✅ Logged in (FB Account)");
-        location = "/";
-      } catch (err) {
-        if (err.code === "auth/invalid-credential" || err.code === "auth/wrong-password") {
-          alert("❌ Wrong password!");
-        } else {
-          alert("❌ Login failed: " + err.message);
-        }
-      }
-    } else {
-      alert("⚠️ Shop found, but no valid login data!");
     }
   } catch (err) {
     console.error(err);
@@ -205,35 +201,23 @@ $('#reset-btn').onclick = async (e) => {
   $('.loader').classList.remove('hidden');
 
   try {
-    const snapshot = await get(child(shopRef, identifier));
-
-    if (!snapshot.exists()) {
-      alert("❌ Shop not found! Check the business name and try again.");
-      return;
-    }
-
-    const shopData = snapshot.val();
-    // Login uses Firebase Auth; the email lives on the shop record.
-    const email = shopData?.owner?.email || shopData?.email;
+    // Same narrow lookup as login: only the public email paths, never the whole
+    // shop node, so this keeps working once the security rules are applied.
+    const email = await lookupShopEmail(identifier);
 
     if (!email) {
-      alert("⚠️ No email is registered for this shop, so a reset link can't be sent. Please contact support.");
+      alert("❌ Shop not found, or no email is registered for it. Check the business name, or contact support.");
       return;
     }
 
-    // ⚠️ Firebase (with Email Enumeration Protection, on by default) resolves
-    // sendPasswordResetEmail successfully even when the email has NO Auth account,
-    // so it would silently claim "sent" and no mail arrives. Legacy shops keep a
-    // plaintext password in the DB and only get a Firebase Auth account after their
-    // first login (migration). Detect that here and give honest guidance instead.
-    const hasAuthAccount = !!(shopData?.owner?.uid || shopData?.uid);
-    const legacyPlaintext = typeof shopData?.password === 'string' && shopData.password.length > 0;
-
-    if (!hasAuthAccount || legacyPlaintext) {
-      alert("⚠️ This shop isn't linked to email login yet, so no reset email can be sent.\n\nPlease log in ONCE with your current password (that activates email login), then use Forgot Password. If you don't remember the password, contact support.");
-      return;
-    }
-
+    // The checks that used to sit here - "does this shop have a Firebase Auth
+    // account yet" and "is it still on a plaintext password" - are gone with
+    // the migration branch. The database export confirms every shop is on
+    // Firebase Auth, so a reset email always has an account to land on.
+    //
+    // Firebase's Email Enumeration Protection still resolves this call even
+    // when an address has no account, so the wording below stays conditional
+    // on purpose: it must not become a way to test whether an email exists.
     await sendPasswordResetEmail(auth, email);
 
     // mask the email a little for privacy
@@ -245,7 +229,10 @@ $('#reset-btn').onclick = async (e) => {
   } catch (err) {
     console.error(err);
     if (err.code === "auth/user-not-found") {
-      alert("⚠️ This shop hasn't been activated for password reset yet. Please log in once with your current password first, then try again.");
+      // Said "log in once with your current password first" when there was a
+      // migration step to do. There isn't one any more, so that advice would
+      // just send someone in a circle.
+      alert("⚠️ No account was found for this shop's registered email. Please contact support.");
     } else if (err.code === "auth/invalid-email") {
       alert("❌ The email on record is invalid. Please contact support.");
     } else if (err.code === "auth/too-many-requests") {

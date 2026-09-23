@@ -262,5 +262,71 @@ console.log('\nSignup can no longer overwrite a shop');
      !/google-login/.test(readFileSync('auth/index.html', 'utf8')));
 }
 
+console.log('\nThe pre-auth lookup');
+{
+  const authSrc = readFileSync('auth/main.js', 'utf8');
+  const helper = authSrc.slice(authSrc.indexOf('const lookupShopEmail'), authSrc.indexOf("$('#login').onclick"));
+
+  ck('reads owner/email', helper.includes('${identifier}/owner/email'));
+  ck('and falls back to the top-level email', helper.includes('${identifier}/email'));
+
+  // The whole point: once the rules require auth on shops/$shop, reading that
+  // node unauthenticated is denied and a public child does not save it.
+  const login = authSrc.slice(authSrc.indexOf("$('#login').onclick"), authSrc.indexOf('// \u{1F510} Forgot password'));
+  const reset = authSrc.slice(authSrc.indexOf('// \u{1F510} Forgot password'), authSrc.indexOf("// Creating a shop"));
+  for (const [what, body] of [['login', login], ['reset', reset]]) {
+    ck(`${what} never reads the whole shop node`, !/get\(child\(shopRef, identifier\)\)/.test(body));
+    ck(`${what} goes through lookupShopEmail`, body.includes('lookupShopEmail(identifier)'));
+  }
+
+  // Run it against the three record shapes the export actually contains.
+  const shapes = {
+    'owner object':            { owner: { name: 'A', email: 'a@x.test', uid: 'u1' } },
+    'owner string + top email':{ owner: 'B', email: 'b@x.test', uid: 'u2' },
+    'both':                    { owner: { name: 'C', email: 'c@x.test', uid: 'u3' }, email: 'c@x.test', uid: 'u3' },
+    'no email at all':         { owner: { name: 'D', uid: 'u4' } }
+  };
+  const expected = { 'owner object': 'a@x.test', 'owner string + top email': 'b@x.test', 'both': 'c@x.test', 'no email at all': '' };
+  for (const [label, rec] of Object.entries(shapes)) {
+    const tree = { shops: { s: rec } };
+    const read = [];
+    const walk = p => String(p).split('/').filter(Boolean).reduce((o, k) => (o == null ? undefined : o[k]), tree);
+    const child = (r, p) => ({ _p: r._p.replace(/\/$/, '') + '/' + p });
+    const get = async (r) => { read.push(r._p); const v = walk(r._p); return { exists: () => v != null, val: () => v }; };
+    const fn = new Function('get', 'child', 'shopRef', `${helper}\nreturn lookupShopEmail;`)(get, child, { _p: 'shops/' });
+    const got = await fn('s');
+    ck(`resolves the email for: ${label}`, got === expected[label], JSON.stringify(got));
+    ck(`  and reads only the two email paths (${label})`,
+       read.every(p => p === 'shops/s/owner/email' || p === 'shops/s/email'), read.join(', '));
+  }
+}
+
+console.log('\nThe plaintext-password branch is gone');
+{
+  const authSrc = readFileSync('auth/main.js', 'utf8');
+  ck('no shop password is ever read', !/shopData[?.]*\.password|\.child\([\'"`]password/.test(authSrc));
+  // Strip comments first: the block above explains what was removed, and
+  // naming the function in prose is not the same as calling it.
+  const code = (t) => t.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+  ck('login no longer creates accounts',
+     !/createUserWithEmailAndPassword\s*\(/.test(
+       code(authSrc.slice(authSrc.indexOf("$('#login').onclick"), authSrc.indexOf('// \u{1F510} Forgot password')))));
+  ck('signup is the only place an account is created',
+     (authSrc.match(/await createUserWithEmailAndPassword/g) || []).length === 1);
+}
+
+console.log('\nThe proposed rules match the shapes that exist');
+{
+  const rules = JSON.parse(readFileSync('firebase/service-app.rules.json', 'utf8')).rules;
+  const shop = rules.shops.$shop;
+  ck('read checks both uid locations',
+     shop['.read'].includes("data.child('uid')") && shop['.read'].includes("data.child('owner/uid')"));
+  ck('write allows creating a shop that does not exist yet', shop['.write'].includes('!data.exists()'));
+  ck('owner/email is publicly readable', shop.owner?.email?.['.read'] === true);
+  ck('the top-level email is publicly readable too', shop.email?.['.read'] === true);
+  ck('no password carve-out is left', !('password' in shop));
+  ck('the root is denied', rules['.read'] === false && rules['.write'] === false);
+}
+
 console.log(`\n${pass} passed, ${fail} failed\n`);
 process.exit(fail ? 1 : 0);

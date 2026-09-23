@@ -169,7 +169,40 @@ it, but the handler was one class change away from live.
 
 ---
 
-## F2 — Service app must read shop records *before* authenticating  🟠
+## Export, 2026-09 — what the live database actually contains
+
+One export of `c24o-c038b`, read locally with `scripts/audit-shop-access.mjs`. **9 shops.**
+
+* **No shop carries a plaintext password.** Every one is on Firebase Auth. F2's second step
+  turned out to be already true in the data; the migration branch was dead code.
+* **Every shop has a uid the rules can match** — `owner.uid` on seven, a top-level `uid` on
+  two, and one shop with both.
+* Running the real `resolveShopAccess()` against the real records: **9/9 `member` for their
+  own uid, 9/9 `mismatch` for a stranger.** F4 enforcement is safe to switch on.
+* Three record shapes exist, and all three are now handled: `owner` as an object, `owner` as a
+  bare name string with the email at the top level (the two made by the removed Google
+  sign-in), and both together.
+* Outside `shops/` the root still holds a legacy `service` node (103 records) and `lastSn`
+  from before the multi-tenant restructure. **Nothing in the codebase reads them.** They are
+  world-readable today; the root deny in `service-app.rules.json` closes them. The data is
+  left in place.
+
+### Two things the export exposed
+
+**Two shops could not log in at all.** `babushop` and `sheerbabu549` store `owner` as a
+string, so `shopData.owner.email` was `undefined` and login fell through to *"Shop found, but
+no valid login data!"*. Reset already had the `|| shopData.email` fallback; login did not.
+Fixed.
+
+**The rules as written would have broken login for all nine shops.** Login and reset read the
+whole `shops/{name}` node before signing in. RTDB evaluates permission at the location you
+read, so a public carve-out on `owner/email` does **not** rescue a denied read of the parent.
+Both now read only the two public email paths through `lookupShopEmail()`, which is what makes
+the rules applicable at all. This had to ship before any rule.
+
+---
+
+## F2 — Service app must read shop records *before* authenticating  🟠 closed in code
 
 `auth/main.js` login does `get(child(shopRef, identifier))` **before**
 `signInWithEmailAndPassword` — it needs the shop's email to log in. So today the rules
@@ -178,14 +211,13 @@ must permit an **unauthenticated read of `shops/{shop}`**.
 Worse, the legacy branch reads `shopData.password` — a **plaintext password** — from that
 same publicly-readable record.
 
-**Fix order:**
-1. Narrow the pre-auth read to just the email: expose `shops/{shop}/owner/email` publicly and
-   require auth for the rest (see `service-app.rules.json`, `PUBLIC_EMAIL_LOOKUP`).
-2. Retire the plaintext-password branch and delete every remaining `password` field.
-   Un-migrated shops should go through password reset instead.
+**Both steps are done:**
+1. ✅ `lookupShopEmail()` reads only `shops/$shop/owner/email` and `shops/$shop/email`. Both
+   are public in `service-app.rules.json`; everything else requires auth.
+2. ✅ The plaintext branch is gone, along with the `createUserWithEmailAndPassword` call that
+   sat inside the *login* handler. The export confirms no `password` field is left to delete.
 
-Both wait on F4 Phase 2: `audit-shop-access.mjs` already reports which shops still carry a
-plaintext password, so step 2 has a work list the moment an export exists.
+What remains is deploying the rules, which is a console action and still pending.
 
 ---
 
