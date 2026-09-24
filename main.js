@@ -1605,14 +1605,33 @@ if(wasEdit){
       author: localStorage.getItem('author'),
       devices,
       // 🧷 Preserve old date/time if editing
-      date: wasEdit ? oldData.date : new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase().replace(/ /g, "-"),
-      time: wasEdit ? oldData.time : getCurrentTime(),
+      // ?? not : — if the record vanished between opening the form and saving,
+      // oldData is empty and these would be undefined, which Firebase rejects.
+      date: (wasEdit ? oldData.date : null) ?? new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase().replace(/ /g, "-"),
+      time: (wasEdit ? oldData.time : null) ?? getCurrentTime(),
       updateInfo: {updateTime, updatedBy},
       token
     };
 
     // ✅ Save — race against a timeout so the button never hangs on a bad connection.
-    const savePromise = set(itemRef, newData);
+    //
+    // set() is right for a NEW job: there is nothing on the node to preserve.
+    //
+    // For an edit it was wrong. set() replaces the whole node, and newData does
+    // not list every field a record can carry, so editing quietly deleted the
+    // ones it does not know about:
+    //   - paidInfo, written when a payment is collected and read back for the
+    //     day's collection total, so an edited job dropped out of the takings;
+    //   - isDeleted, the soft-delete flag, so editing a deleted job brought it
+    //     back to life.
+    //
+    // update() leaves anything not named here alone. The three legacy keys are
+    // nulled deliberately: the edit form has just read them into devices[0], so
+    // this finishes the old single-device migration rather than leaving a stale
+    // copy beside the new one.
+    const savePromise = wasEdit
+      ? update(itemRef, { ...newData, model: null, complaints: null, lock: null })
+      : set(itemRef, newData);
     
     try {
       await withTimeout(savePromise, SAVE_TIMEOUT, 'save');
