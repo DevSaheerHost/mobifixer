@@ -13,6 +13,8 @@
 // you got to it. All three call this now. (The search dropdown is a separate
 // component, searchCard.js, and keeps its own markup.)
 
+import { parsePattern, patternSvg, patternText } from './pattern.js';
+
 const STATUS_LABEL = {
   pending:   'Pending',
   spare:     'Spare',
@@ -38,6 +40,23 @@ const rupees = (n) => {
 const esc = (v) => String(v == null ? '' : v)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+// A pattern lock used to print as "Pattern 1-2-5-6-9", which is the shape it is
+// stored in, not a shape anyone reads. Draw it. The digits stay next to the
+// picture because they are what gets read out over the phone, and because a
+// 30px grid is for recognising a pattern, not for copying one dot by dot - the
+// chip opens a full-size view for that.
+//
+// A lock that is not a pattern (a PIN, a password, a note) is untouched: same
+// escaped text it has always been.
+const lockValue = (lock) => {
+  const dots = parsePattern(lock);
+  if (!dots) return esc(lock) || '<i>none</i>';
+  return `<button type="button" class="pattern-chip" data-pattern="${dots.join('-')}"
+            aria-label="Unlock pattern ${dots.join(' ')}, tap to enlarge">
+            ${patternSvg(dots)}<span>${patternText(dots)}</span>
+          </button>`;
+};
 
 export const cardSummary = (item = {}) => {
   const { name, sn, status, amount, advance, devices, model } = item;
@@ -121,7 +140,7 @@ export const cardLayout = ({
 
   ${d.lock?`<div class='item_flex end'>
     <p class='key'>Lock</p>
-    <p class='value'>${esc(d.lock) || 'none'}</p>
+    <p class='value'>${lockValue(d.lock)}</p>
   </div>`:''}
       </div>
     `).join('');
@@ -140,7 +159,7 @@ export const cardLayout = ({
 
       <div class='item_flex'>
         <p class='key'>${lock ? 'Lock' : ''}</p>
-        <p class='value'>${esc(lock) || '<i>none</i>'}</p>
+        <p class='value'>${lockValue(lock)}</p>
       </div>
     `;
   }

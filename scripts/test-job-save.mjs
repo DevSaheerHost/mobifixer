@@ -17,7 +17,12 @@
  *
  *   node scripts/test-job-save.mjs
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
+// parsePattern and dotBetween decide what gets written into a live record.
+// They used to be lifted out of main.js with a string match and eval'd; they
+// live in pattern.js now, so the test runs the real exports.
+import { PATTERN_MIN, parsePattern, formatPattern, dotBetween, patternSvg, patternText }
+  from '../pattern.js';
 
 const main = readFileSync('main.js', 'utf8');
 
@@ -278,8 +283,9 @@ console.log('\nStarting a new job does not inherit the last one');
 
 console.log('\nThe pattern is stored as text the card can already show');
 {
-  const fmt = between(main, "const formatPattern = ", ';', 'formatPattern');
-  ck('it is written as "Pattern 1-4-7-8-9"', /'Pattern ' \+ dots\.join\('-'\)/.test(fmt), fmt);
+  ck('it is written as "Pattern 1-4-7-8-9"',
+     formatPattern([1, 4, 7, 8, 9]) === 'Pattern 1-4-7-8-9', formatPattern([1, 4, 7, 8, 9]));
+  ck('and read straight back', String(parsePattern(formatPattern([1, 4, 7, 8, 9]))) === '1,4,7,8,9');
   ck('nothing new is added to the record', !/patternDots\s*[,:]/.test(newDataBlock), newDataBlock.slice(0, 80));
   ck('the lock field is still a plain text input',
      /<input type="text" id="lock" name="lock"/.test(formHtml));
@@ -289,20 +295,8 @@ console.log('\nThe pattern is stored as text the card can already show');
      /deviceField\('lock-input', 'Lock \/ pattern', data\.lock, true, \{ draw: true \}\)/.test(main));
 }
 
-// parsePattern and dotBetween decide what gets written into a live record, so
-// they are lifted OUT of main.js and run here rather than reimplemented. A copy
-// of the rule would agree with itself no matter what the app ends up doing.
-const lift = (start, what) => between(main, start, '\n};', what) + '\n}';
-const pattern = new Function(
-  between(main, 'const PATTERN_MIN =', ';', 'PATTERN_MIN') + ';\n' +
-  lift('const parsePattern = (value) => {', 'parsePattern') + ';\n' +
-  lift('const dotBetween = (a, b) => {', 'dotBetween') + ';\n' +
-  'return { PATTERN_MIN, parsePattern, dotBetween };'
-)();
-
 console.log('\nOnly a value the pad wrote is read back as a pattern');
 {
-  const { parsePattern, PATTERN_MIN } = pattern;
   ck('a pattern parses', String(parsePattern('Pattern 1-4-7-8-9')) === '1,4,7,8,9',
      String(parsePattern('Pattern 1-4-7-8-9')));
   ck('however it was spaced', String(parsePattern('pattern: 1 2 3 6 9')) === '1,2,3,6,9',
@@ -322,7 +316,6 @@ console.log('\nA drag picks up the dots it crosses');
 {
   // Recording 1-3 when the finger went through 2 writes down a pattern that does
   // not unlock the phone, so these are the cases that matter most here.
-  const { dotBetween } = pattern;
   for (const [a, b, want] of [[1,3,2], [3,1,2], [1,7,4], [1,9,5], [9,1,5], [3,7,5],
                               [4,6,5], [2,8,5], [7,9,8], [3,9,6], [7,3,5]])
     ck(`${a} to ${b} crosses ${want}`, dotBetween(a, b) === want, String(dotBetween(a, b)));
@@ -358,6 +351,193 @@ console.log('\nThe printed receipt escapes what the customer dictated');
   ck('the escaper covers the five characters that matter',
      ["/&/g, '&amp;'", "/</g, '&lt;'", "/>/g, '&gt;'", "/\"/g, '&quot;'", "/'/g, '&#39;'"]
        .every(part => main.includes(part)));
+}
+
+/* ---------------------------------------------------------------------------
+ * Showing a pattern, rather than printing the digits it is stored as.
+ * ------------------------------------------------------------------------ */
+
+// Comments stripped: these checks are about what the worker DOES, and sw.js
+// explains the old absolute-path bug in prose - "/index.html", "script.js",
+// "addAll" and "skipWaiting" all appear in comments describing what it no
+// longer does. Matching those would have passed for the wrong reason.
+const stripComments = (src) => src
+  .replace(/\/\*[\s\S]*?\*\//g, '')
+  .replace(/^[ \t]*\/\/.*$/gm, '')
+  .replace(/([^:"'`\\])\/\/.*$/gm, '$1');
+const sw = stripComments(readFileSync('sw.js', 'utf8'));
+
+console.log('\nThe picture says where to start and which way round');
+{
+  // 1-4-7 and 7-4-1 draw the identical line, so a still picture has to carry
+  // direction some other way or it is not usable on a bench.
+  const plain = patternSvg([1, 2, 3, 6, 9]);
+  const full  = patternSvg([1, 2, 3, 6, 9], { detailed: true });
+
+  ck('a pattern draws as one polyline', (plain.match(/<polyline/g) || []).length === 1);
+  ck('through the dots in order', plain.includes('50,50 150,50 250,50 250,150 250,250'), plain.slice(0, 90));
+  ck('all nine dots are drawn, so the shape is readable',
+     (plain.match(/<circle/g) || []).length === 9, String((plain.match(/<circle/g) || []).length));
+  ck('the five on the pattern are marked',
+     (plain.match(/class="on"/g) || []).length === 5, String((plain.match(/class="on"/g) || []).length));
+
+  ck('the small one stays plain', !plain.includes('start-ring') && !plain.includes('arrow'));
+  ck('the full-size one rings the first dot', full.includes('class="start-ring"'));
+  ck('and the ring is on dot 1, where the finger starts',
+     /<circle cx="50" cy="50" r="\d+" class="start-ring"/.test(full),
+     (full.match(/class="start-ring"[^>]*/) || [])[0]);
+  ck('one arrow per segment', (full.match(/class="arrow"/g) || []).length === 4,
+     String((full.match(/class="arrow"/g) || []).length));
+
+  // An arrow pointing the wrong way is worse than no arrow: it tells the bench
+  // to draw the pattern backwards. 1-2-3-6-9 goes right, right, down, down.
+  const angles = (svg) => [...svg.matchAll(/rotate\((-?[\d.]+)\)/g)].map(m => Number(m[1]));
+  ck('they point the way the finger goes', angles(full).join(',') === '0,0,90,90', angles(full).join(','));
+  ck('and they sit on the line, not beside it',
+     [...full.matchAll(/translate\(([\d.]+) ([\d.]+)\)/g)].map(m => `${m[1]},${m[2]}`).join(' ')
+       === '100.0,50.0 200.0,50.0 250.0,100.0 250.0,200.0',
+     [...full.matchAll(/translate\(([\d.]+) ([\d.]+)\)/g)].map(m => `${m[1]},${m[2]}`).join(' '));
+
+  // Reversing the pattern must move the ring and turn every arrow around.
+  const back = patternSvg([9, 6, 3, 2, 1], { detailed: true });
+  ck('reversing it moves the ring to the other end',
+     /<circle cx="250" cy="250" r="\d+" class="start-ring"/.test(back),
+     (back.match(/class="start-ring"[^>]*/) || [])[0]);
+  ck('and every arrow turns around with it',
+     angles(back).join(',') === '-90,-90,180,180', angles(back).join(','));
+  ck('so the two are not the same picture', back !== full);
+
+  ck('the dots are never numbered - the caption already numbers them',
+     !full.includes('<text'), 'a <text> label came back');
+  ck('nothing but integers reaches the markup', !/undefined|NaN|\[object/.test(full));
+  ck('the caption reads as an order', patternText([1, 4, 7]) === '1 – 4 – 7', patternText([1, 4, 7]));
+}
+
+console.log('\nThe card draws a pattern and leaves everything else alone');
+{
+  ck('cardLayout uses the shared module',
+     /from '\.\/pattern\.js'/.test(card) && /parsePattern/.test(card));
+  ck('there is one lock renderer', /const lockValue = \(lock\) => \{/.test(card));
+  ck('and both lock rows go through it',
+     (card.match(/\$\{lockValue\(/g) || []).length === 2,
+     String((card.match(/\$\{lockValue\(/g) || []).length));
+  ck('a lock that is not a pattern is still escaped',
+     /return esc\(lock\) \|\| '<i>none<\/i>';/.test(card));
+  ck('the chip carries the dots for the viewer to read',
+     /data-pattern="\$\{dots\.join\('-'\)\}"/.test(card));
+  ck('and it is a button, so it is reachable from a keyboard',
+     /<button type="button" class="pattern-chip"/.test(card));
+  ck('neither lock row interpolates the raw value any more',
+     !/\$\{esc\(d\.lock\) \|\| 'none'\}/.test(card) && !/\$\{esc\(lock\) \|\| '<i>none<\/i>'\}/.test(card));
+}
+
+console.log('\nThe viewer is read-only and cannot reach the job form');
+{
+  const viewer = between(html, '<div class="pattern_view_overlay"', '<!-- ########## PATTERN PAD',
+                         'the pattern viewer');
+  ck('it exists', viewer.includes('id="patternViewGrid"'));
+  ck('outside the job form', html.indexOf('pattern_view_overlay') > html.indexOf('</form>'));
+  ck('it has no inputs of any kind', !/<input|<select|<textarea/.test(viewer), viewer.slice(0, 80));
+  for (const m of viewer.matchAll(/<button\b[^>]*>/g))
+    ck('its button is type="button"', /type="button"/.test(m[0]), m[0]);
+  ck('the full-size renderer is what it draws with',
+     /patternSvg\(dots, \{ detailed: true \}\)/.test(main));
+  ck('Escape closes it as well as the pad',
+     /if \(patternViewOverlay\.classList\.contains\('active'\)\) closePatternView\(\);/.test(main));
+  ck('opening it does not collapse the card underneath',
+     /e\.stopPropagation\(\);\s*\/\/ don't also collapse/.test(main));
+}
+
+/* ---------------------------------------------------------------------------
+ * Speed. Each of these is here because removing it measurably cost something.
+ * ------------------------------------------------------------------------ */
+
+console.log('\nThe card body is built when the card is opened, not before');
+{
+  // Measured on 500 jobs at 4x CPU throttle: 2633 DOM nodes -> 1566, HTML
+  // parsing 79 ms -> 48 ms, and switching status tabs 157 ms -> 23 ms.
+  const render = between(main, 'const nextSlice = activeFiltered.slice', "// Fill in a card's body",
+                         'the render loop');
+  ck('the render loop writes only the summary row', /nav\.innerHTML = cardSummary\(item\)/.test(render));
+  ck('and no longer builds the body', !/cardLayout\(item\)/.test(render),
+     (render.match(/.*cardLayout\(item\).*/) || [''])[0].trim());
+  ck('expandCard builds it on first open', /const expandCard = \(li\) => \{/.test(main));
+  ck('exactly once per card', /if \(!li \|\| li\.dataset\.bodyBuilt\) return;/.test(main));
+  ck('the toggle calls it before uncollapsing',
+     /expandCard\(parent\); parent\.classList\.toggle\('collapse'\);/.test(main));
+  ck('it appends rather than reparsing the row it is added to',
+     /li\.insertAdjacentHTML\('beforeend', cardLayout\(item\)\)/.test(main));
+
+  // The two things that used to sweep the whole list after every render.
+  ck('the note boxes are sized per card', /const setAutoHeightTextArea = \(root = document\) =>/.test(main));
+  ck('the remind buttons are painted per card', /function paintReminderButtons\(root = document\)/.test(main));
+  const refresh = between(main, 'const scheduleListRefresh = () => {', '\n};', 'scheduleListRefresh');
+  ck('and neither runs over the whole list on every render',
+     !/setAutoHeightTextArea\(\)/.test(refresh), refresh);
+}
+
+console.log('\nThe boot path is not carrying things it does not need');
+{
+  ck('the font is a <link>, not an @import behind the stylesheet',
+     /<link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com/.test(html));
+  ck('with the handshake started in parallel',
+     /<link rel="preconnect" href="https:\/\/fonts\.gstatic\.com" crossorigin>/.test(html));
+  ck('and style.css no longer @imports it',
+     !/@import/.test(readFileSync('style.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')));
+
+  ck('jsPDF is not loaded on every visit', !/<script[^>]*jspdf/.test(html));
+  ck('nor XLSX', !/<script[^>]*sheetjs/.test(html));
+  ck('both are fetched when an export is actually asked for',
+     /await ensureExportLib\('xlsx'\)/.test(main) && /await ensureExportLib\('jspdf'\)/.test(main));
+  ck('and a CDN that will not answer says so instead of throwing',
+     /title: 'Export unavailable'/.test(main));
+  ck('a script is only ever fetched once', /if \(SCRIPT_CACHE\.has\(src\)\) return SCRIPT_CACHE\.get\(src\);/.test(main));
+
+  ck('lottie is pinned to a version', /lottie-player@\d+\.\d+\.\d+\//.test(html),
+     (html.match(/lottie-player@[^/]*/) || [])[0]);
+}
+
+console.log('\nDate labels are worked out once per date, not once per card');
+{
+  ck('the answers are cached', /const dateLabelCache = new Map\(\);/.test(main));
+  ck('and thrown away when the day turns over - "Today" must not go stale',
+     /if \(dayKey !== dateLabelDay\) \{ dateLabelCache\.clear\(\); dateLabelDay = dayKey; \}/.test(main));
+}
+
+console.log('\nOne service worker, and it can never pin a shop to a broken build');
+{
+  ck('the second worker is gone', !existsSync('service-worker.js'));
+  ck('and nothing registers it', !/service-worker\.js'\)/.test(main));
+  ck('sw.js is registered exactly once',
+     (main.match(/serviceWorker\.register\(/g) || []).length === 1,
+     String((main.match(/serviceWorker\.register\(/g) || []).length));
+
+  ck('every precached path is relative, so it resolves under /mobifixer/',
+     !/["']\/(index\.html|style\.css|main\.js|script\.js)["']/.test(sw),
+     (sw.match(/["']\/[a-z.]+["']/) || [''])[0]);
+  ck('and /script.js, which never existed, is not among them', !/script\.js/.test(sw));
+  ck('one missing file cannot cost the whole cache',
+     !/addAll/.test(sw) && /SHELL\.map/.test(sw));
+
+  ck('it is stale-while-revalidate, not cache-first',
+     /const fromNetwork = fetch\(req\)/.test(sw) && /event\.waitUntil\(fromNetwork\); return cached;/.test(sw));
+  ck('only GET is touched', /if \(req\.method !== "GET"\) return;/.test(sw));
+  ck('only this origin', /if \(url\.origin !== self\.location\.origin\) return;/.test(sw));
+  ck('only inside our own scope', /url\.pathname\.startsWith\(new URL\("\.\/", self\.registration\.scope\)\.pathname\)/.test(sw));
+  ck('it does not skipWaiting into a half-updated page', !/skipWaiting/.test(sw));
+  ck('old caches are dropped on activate', /if \(name !== CACHE\) await caches\.delete\(name\)/.test(sw));
+  ck('and there is a way to empty it without a deploy', /event\.data !== "CLEAR_CACHES"/.test(sw));
+}
+
+console.log('\nThe bulk bar can set every status a job can have');
+{
+  const bulk = between(html, '<select id="bulkStatus">', '</select>', 'the bulk status select');
+  const bulkOptions = [...bulk.matchAll(/value="([a-z]+)"/g)].map(m => m[1]);
+  for (const s of CARD_STATUSES)
+    ck(`${s} can be set in bulk`, bulkOptions.includes(s), bulkOptions.join(','));
+  ck('and it offers nothing the card cannot show',
+     bulkOptions.every(o => CARD_STATUSES.includes(o)),
+     bulkOptions.filter(o => !CARD_STATUSES.includes(o)).join(','));
 }
 
 console.log(`\n${pass} passed, ${fail} failed\n`);

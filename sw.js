@@ -56,17 +56,102 @@ self.addEventListener("notificationclick", event => {
   })());
 });
 
-self.addEventListener("install", () => {
-  // Nothing to precache; take over as soon as possible.
-  self.skipWaiting();
+// ---------------------------------------------------------------------------
+// Caching.
+//
+// There used to be a second worker, service-worker.js, registered on this same
+// scope. It precached "/index.html", "/style.css" and "/script.js" - absolute
+// paths, while the app is served from /mobifixer/ - so every one of them 404ed,
+// cache.addAll() rejected, install failed, and the only thing it ever produced
+// was an empty cache named mobifixer-cache-v6. It also listed /script.js, which
+// has never existed. It is gone; this is the one worker now.
+//
+// Strategy is stale-while-revalidate, NOT cache-first. Cache-first is how a shop
+// ends up pinned to a broken build with no way back, which has happened here
+// before. Every request still goes to the network in the background and the
+// fresh copy is what the next load gets.
+const CACHE = "mobifixer-shell-v1";
+
+// Relative, so they resolve under /mobifixer/ in production and under / locally.
+// registration.scope is the base either way.
+const SHELL = [
+  "./",
+  "./index.html",
+  "./style.css",
+  "./main.js",
+  "./cardLayout.js",
+  "./pattern.js",
+  "./searchCard.js",
+  "./inventoryCard.js",
+  "./searchPouchCard.js",
+  "./generateWhatsappLink.js",
+  "./manifest.json",
+];
+
+self.addEventListener("install", event => {
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE);
+    // Individually, not addAll: addAll is all-or-nothing, so one renamed file
+    // silently costs you the entire cache - which is exactly what went wrong
+    // before. A miss here should cost that one file, not the feature.
+    await Promise.all(SHELL.map(async (url) => {
+      try {
+        const res = await fetch(new Request(url, { cache: "reload" }));
+        if (res.ok) await cache.put(url, res);
+      } catch (_) {}
+    }));
+  })());
+  // Deliberately no skipWaiting(): swapping the worker mid-session can leave a
+  // page running old JS against a new shell. The new one takes over next load.
 });
 
 self.addEventListener("activate", event => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil((async () => {
+    for (const name of await caches.keys()) {
+      if (name !== CACHE) await caches.delete(name);   // includes the dead mobifixer-cache-v6
+    }
+    await self.clients.claim();
+  })());
 });
 
-// A no-op fetch handler. It does not call respondWith, so every request goes
-// to the network exactly as it would without a worker. It is kept because
-// some browsers still want a fetch handler present for installability; the
-// console.log that used to be here ran for every single request in the app.
-self.addEventListener("fetch", () => {});
+// The kill switch. If a bad shell ever gets cached, this empties it without
+// waiting for anything to expire:
+//   navigator.serviceWorker.controller.postMessage('CLEAR_CACHES')
+self.addEventListener("message", event => {
+  if (event.data !== "CLEAR_CACHES") return;
+  event.waitUntil((async () => {
+    for (const name of await caches.keys()) await caches.delete(name);
+    for (const c of await self.clients.matchAll()) c.postMessage("CACHES_CLEARED");
+  })());
+});
+
+self.addEventListener("fetch", event => {
+  const req = event.request;
+
+  // Only ever same-origin GETs. Firebase, gstatic, the CDNs and every write go
+  // straight to the network, untouched - a cached database response would be a
+  // shop looking at yesterday's jobs.
+  if (req.method !== "GET") return;
+  let url;
+  try { url = new URL(req.url); } catch (_) { return; }
+  if (url.origin !== self.location.origin) return;
+  if (!url.pathname.startsWith(new URL("./", self.registration.scope).pathname)) return;
+
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE);
+    const cached = await cache.match(req, { ignoreSearch: false });
+
+    const fromNetwork = fetch(req).then(res => {
+      // Opaque and error responses are not worth keeping.
+      if (res && res.ok && res.type === "basic") cache.put(req, res.clone()).catch(() => {});
+      return res;
+    }).catch(() => null);
+
+    // Serve what we have and refresh behind it; with nothing cached, wait for
+    // the network. If the network is also gone, say so rather than hanging.
+    if (cached) { event.waitUntil(fromNetwork); return cached; }
+    const res = await fromNetwork;
+    return res || new Response("Offline and not cached.", {
+      status: 503, headers: { "Content-Type": "text/plain" } });
+  })());
+});

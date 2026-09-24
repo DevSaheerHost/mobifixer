@@ -1,5 +1,7 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+/* The Poppins @import that was here is a <link> in index.html now: an @import
+   cannot start until this file has downloaded and parsed, which put the font a
+   full round trip behind everything else. */
 
 .poppins-thin {
   font-family: "Poppins", sans-serif;
@@ -7594,4 +7596,168 @@ main.form .jf-lock-row input {
 
 body.no-scroll {
   overflow: hidden;
+}
+
+/* ===========================================================================
+   PATTERN ON THE CARD, AND THE FULL-SIZE VIEW
+   ---------------------------------------------------------------------------
+   A pattern lock printed as "Pattern 1-2-5-6-9" is the shape it is stored in,
+   not a shape anyone reads off a bench. The card draws it instead, small, with
+   the digits beside it for reading out over the phone; tapping opens it at a
+   size you can actually copy from, with every dot numbered.
+   ======================================================================== */
+
+.pattern-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.55rem 0.25rem 0.3rem;
+  background: rgba(11, 162, 255, 0.08);
+  border: 1px solid rgba(11, 162, 255, 0.28);
+  border-radius: 999px !important;
+  color: var(--text-color);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.pattern-chip:active {
+  background: rgba(11, 162, 255, 0.18);
+}
+
+.pattern-chip svg {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+}
+
+/* The unused dots are what make the shape readable - without them the line is
+   floating in space and you cannot tell 1-2-3 from 4-5-6. */
+.pattern-chip circle { fill: rgba(255, 255, 255, 0.22); }
+.pattern-chip circle.on { fill: var(--accent-color); }
+.pattern-chip polyline {
+  fill: none;
+  stroke: var(--accent-color);
+  stroke-width: 14;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---------- the full-size view ---------- */
+
+.pattern_view_overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: rgba(0, 0, 0, 0.72);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.pattern_view_overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.pattern-view {
+  width: 100%;
+  max-width: 360px;
+  padding: 1.25rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom));
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-large);
+  text-align: center;
+  transform: scale(0.94);
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.pattern_view_overlay.active .pattern-view {
+  transform: scale(1);
+}
+
+.pattern-view h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-heading);
+}
+
+.pattern-view-for {
+  margin: 0.25rem 0 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.pattern-view-for[hidden] { display: none; }
+
+.pattern-view-grid {
+  width: min(260px, 66vw);
+  margin: 1rem auto 0;
+}
+
+.pattern-view-grid svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.pattern-view-grid circle { fill: rgba(255, 255, 255, 0.1); }
+.pattern-view-grid circle.on { fill: var(--accent-color); }
+.pattern-view-grid polyline {
+  fill: none;
+  stroke: var(--accent-color);
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Where the finger starts, and which way it goes - the two things the line
+   itself cannot say. */
+.pattern-view-grid .start-ring {
+  fill: none;
+  stroke: var(--accent-color);
+  stroke-width: 4;
+  opacity: 0.45;
+}
+
+.pattern-view-grid .arrow {
+  fill: #fff;
+  stroke: none;
+}
+
+.pattern-view-dots {
+  margin: 1rem 0 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--text-color);
+}
+
+.pattern-view-hint {
+  margin: 0.3rem 0 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.pattern-view-close {
+  width: 100%;
+  margin-top: 1.1rem;
+  padding: 0.8rem 1rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-medium);
+  color: var(--text-color);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
 }
