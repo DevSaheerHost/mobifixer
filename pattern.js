@@ -66,7 +66,10 @@ export const pointsFor = (dots) =>
 // validated, so nothing a customer typed can reach this markup.
 export const patternSvg = (dots, { detailed = false } = {}) => {
   const on = (n) => dots.includes(n);
-  const r = detailed ? 22 : 20;
+  // Smaller dots when the picture is small. A nine-dot pattern lights every one
+  // of them, and at r=20 against a 100-unit grid they merged into the lines and
+  // the whole thing read as a blob at thumbnail size.
+  const r = detailed ? 22 : 16;
 
   const circle = (n) => {
     const p = dotXY(n);

@@ -7607,20 +7607,32 @@ body.no-scroll {
    size you can actually copy from, with every dot numbered.
    ======================================================================== */
 
+/* The picture leads and the digits support it, not the other way round. They
+   started out the same weight, and on a nine-dot pattern the digits ran to two
+   lines with a 32px tangle stranded beside them. */
 .pattern-chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.25rem 0.55rem 0.25rem 0.3rem;
+  gap: 0.45rem;
+  padding: 0.2rem 0.6rem 0.2rem 0.25rem;
   background: rgba(11, 162, 255, 0.08);
   border: 1px solid rgba(11, 162, 255, 0.28);
   border-radius: 999px !important;
-  color: var(--text-color);
+  color: var(--text-muted);
   font-family: inherit;
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.06em;
+  /* Nine dots is the longest this can ever be; it must not wrap. */
+  white-space: nowrap;
   cursor: pointer;
+}
+
+/* The rows align on the baseline, which with a 52px chip drops the "Lock" label
+   to the bottom of the row. Centre it against the picture instead. Browsers
+   without :has() simply keep the baseline, which is what they had before. */
+.home .list .list-item .item_flex:has(.pattern-chip) {
+  align-items: center;
 }
 
 .pattern-chip:active {
@@ -7629,8 +7641,8 @@ body.no-scroll {
 
 .pattern-chip svg {
   flex: 0 0 auto;
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
 }
 
 /* The unused dots are what make the shape readable - without them the line is
@@ -7640,7 +7652,8 @@ body.no-scroll {
 .pattern-chip polyline {
   fill: none;
   stroke: var(--accent-color);
-  stroke-width: 14;
+  /* Thin enough that a nine-dot pattern is still a shape and not a blot. */
+  stroke-width: 10;
   stroke-linecap: round;
   stroke-linejoin: round;
 }

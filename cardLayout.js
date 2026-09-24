@@ -52,9 +52,13 @@ const esc = (v) => String(v == null ? '' : v)
 const lockValue = (lock) => {
   const dots = parsePattern(lock);
   if (!dots) return esc(lock) || '<i>none</i>';
+  // Hyphens, not spaced en-dashes. A nine-dot pattern spelled "2 – 5 – 7 – 3 –
+  // 6 – 8 – 4 – 1 – 9" is 33 characters, which wrapped the chip onto two lines
+  // and left the picture as an afterthought beside a wall of digits. The
+  // spaced-out form is still what the full-size view uses, where there is room.
   return `<button type="button" class="pattern-chip" data-pattern="${dots.join('-')}"
             aria-label="Unlock pattern ${dots.join(' ')}, tap to enlarge">
-            ${patternSvg(dots)}<span>${patternText(dots)}</span>
+            ${patternSvg(dots)}<span>${dots.join('-')}</span>
           </button>`;
 };
 

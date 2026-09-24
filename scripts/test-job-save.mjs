@@ -372,6 +372,9 @@ console.log('\nThe picture says where to start and which way round');
   // 1-4-7 and 7-4-1 draw the identical line, so a still picture has to carry
   // direction some other way or it is not usable on a bench.
   const plain = patternSvg([1, 2, 3, 6, 9]);
+  // Nine dots is the worst case: every dot is lit, so they have to be small
+  // enough not to merge into the lines at thumbnail size.
+  const nine = patternSvg([2, 5, 7, 3, 6, 8, 4, 1, 9]);
   const full  = patternSvg([1, 2, 3, 6, 9], { detailed: true });
 
   ck('a pattern draws as one polyline', (plain.match(/<polyline/g) || []).length === 1);
@@ -382,6 +385,10 @@ console.log('\nThe picture says where to start and which way round');
      (plain.match(/class="on"/g) || []).length === 5, String((plain.match(/class="on"/g) || []).length));
 
   ck('the small one stays plain', !plain.includes('start-ring') && !plain.includes('arrow'));
+  ck('a nine-dot pattern lights all nine',
+     (nine.match(/class="on"/g) || []).length === 9, String((nine.match(/class="on"/g) || []).length));
+  ck('and its dots stay small enough to read as a shape',
+     !/r="(1[7-9]|2\d)" class="on"/.test(nine), (nine.match(/r="\d+" class="on"/) || [''])[0]);
   ck('the full-size one rings the first dot', full.includes('class="start-ring"'));
   ck('and the ring is on dot 1, where the finger starts',
      /<circle cx="50" cy="50" r="\d+" class="start-ring"/.test(full),
@@ -425,6 +432,14 @@ console.log('\nThe card draws a pattern and leaves everything else alone');
      /return esc\(lock\) \|\| '<i>none<\/i>';/.test(card));
   ck('the chip carries the dots for the viewer to read',
      /data-pattern="\$\{dots\.join\('-'\)\}"/.test(card));
+  // "2 – 5 – 7 – 3 – 6 – 8 – 4 – 1 – 9" is 33 characters and wrapped the chip
+  // onto two lines, leaving the picture stranded beside a wall of digits. The
+  // spaced form is still what the full-size view uses, where there is room.
+  ck('and the digits on it are the compact form',
+     /<span>\$\{dots\.join\('-'\)\}<\/span>/.test(card),
+     (card.match(/<span>[^<]*<\/span>/) || [''])[0]);
+  ck('the spaced form is kept for the full-size view',
+     /patternText\(dots\)/.test(main) && !/patternText\(dots\)/.test(card));
   ck('and it is a button, so it is reachable from a keyboard',
      /<button type="button" class="pattern-chip"/.test(card));
   ck('neither lock row interpolates the raw value any more',
