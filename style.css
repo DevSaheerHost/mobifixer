@@ -6859,3 +6859,431 @@ header .search-bar .search-out {
 .profile_page .logout_btn:active {
   background: rgba(255, 59, 59, 0.12);
 }
+
+/* ===========================================================================
+   ADD / EDIT JOB FORM
+   ---------------------------------------------------------------------------
+   Eleven fields in one undifferentiated stack — customer, device, money, notes
+   and status all mixed together in the same pale pills the search bar had, with
+   the status control and the submit button below the fold at 1094px.
+
+   It is four labelled sections now, each on the app's card surface, with the
+   submit pinned to the bottom of the viewport so it is reachable without
+   scrolling past everything.
+
+   This component is namespaced `jf-` and does NOT reuse `.input_field`. That
+   older component floats its label on `input:valid`, which only worked because
+   every field carried a dead `required` — the moment the genuinely optional
+   ones (alternative number, lock, amount, advance) lost it, an empty field
+   would have matched `:valid` and floated its label over nothing. Labels sit
+   above their input here, so there is no state to get wrong.
+   ======================================================================== */
+
+main.form {
+  background: var(--bg-color);
+  padding: 0 1rem calc(1rem + env(safe-area-inset-bottom));
+}
+
+/* Older rules give every input in the form a top margin and a slide-up
+   animation meant for the floating-label layout. Both fight this one. */
+main.form input,
+main.form textarea,
+main.form select {
+  margin-top: 0;
+  animation: none;
+}
+
+main.form .sn-flex {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  gap: 1rem;
+  justify-content: space-between;
+  margin: 0 -1rem 0.25rem;
+  padding: 0.6rem 1rem;
+  background: var(--bg-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+main.form .sn-flex .sub_flex {
+  width: auto;
+  justify-content: flex-start;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+main.form .sn-flex a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  margin-left: -0.45rem;
+  border-radius: var(--radius-medium);
+  color: var(--text-muted);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+main.form .page-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-heading);
+}
+
+main.form #new_sn {
+  margin: 0;
+  padding: 0.2rem 0.65rem;
+  border: 1px solid rgba(11, 162, 255, 0.35);
+  border-radius: 999px;
+  background: rgba(11, 162, 255, 0.12);
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-color);
+}
+
+/* ---------- sections ---------- */
+
+.job-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding-top: 0.85rem;
+}
+
+.jf-section {
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-large);
+}
+
+.jf-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 0.9rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.jf-section-title i {
+  font-size: 0.85rem;
+  color: var(--accent-color);
+}
+
+/* ---------- fields ---------- */
+
+.jf-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.jf-field + .jf-field,
+.jf-row + .jf-hint {
+  margin-top: 0.85rem;
+}
+
+.jf-field > label {
+  margin-bottom: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.jf-req {
+  color: var(--danger-color);
+}
+
+.jf-optional {
+  margin-left: 0.15rem;
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+main.form .jf-field input,
+main.form .jf-field textarea,
+main.form .jf-field select {
+  width: 100%;
+  padding: 0.7rem 0.8rem;
+  /* `input { background: #3b3d43 !important }` near the top of this file paints
+     every input in the app a flat mid-grey. A textarea is not an <input>, so the
+     notes box escaped it and came out near-black next to grey fields. Both are
+     set here, and it takes !important to get past that one. */
+  background: var(--bg-color) !important;
+  border-radius: var(--radius-medium) !important;
+  /* 16px exactly — anything smaller makes iOS Safari zoom the page in on
+     focus, and it does not zoom back out. */
+  font-size: 16px;
+  font-family: inherit;
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  box-shadow: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+main.form .jf-field textarea {
+  resize: vertical;
+  min-height: 72px;
+  line-height: 1.5;
+}
+
+main.form .jf-field input::placeholder,
+main.form .jf-field textarea::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}
+
+main.form .jf-field input:focus,
+main.form .jf-field textarea:focus,
+main.form .jf-field select:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(11, 162, 255, 0.15);
+}
+
+/* Only after a failed submit — :invalid on its own would paint every required
+   field red before the shop has typed anything. */
+.job-form.was-validated .jf-field input:invalid {
+  border-color: var(--danger-color);
+}
+
+.jf-hint {
+  margin: 0.4rem 0 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.jf-hint-warn {
+  color: #ffb866;
+}
+
+.jf-hint[hidden] {
+  display: none;
+}
+
+.jf-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.jf-row .jf-field + .jf-field {
+  margin-top: 0;
+}
+
+/* ---------- money ---------- */
+
+.jf-money {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.jf-money-sign {
+  position: absolute;
+  left: 0.8rem;
+  font-size: 15px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+main.form .jf-money input {
+  padding-left: 1.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- status select ---------- */
+
+.jf-select {
+  position: relative;
+  display: flex;
+}
+
+main.form .jf-select select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 2.4rem;
+  /* `.form select` further up drops a shadow on every select in the page. */
+  box-shadow: none;
+  cursor: pointer;
+}
+
+.jf-select i {
+  position: absolute;
+  top: 50%;
+  right: 0.9rem;
+  transform: translateY(-50%);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+/* ---------- devices ---------- */
+
+.jf-device {
+  padding: 0.85rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-medium);
+}
+
+#more_device_input_container .jf-device,
+.jf-device + .jf-device {
+  margin-top: 0.75rem;
+}
+
+.jf-device-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.7rem;
+}
+
+.jf-device-no {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-color);
+}
+
+.jf-device-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  margin: -0.25rem -0.25rem -0.25rem 0;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.jf-device-remove:active {
+  background: rgba(255, 59, 59, 0.15);
+  color: var(--danger-color);
+}
+
+.jf-add-device {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 0.85rem;
+  padding: 0.7rem;
+  background: transparent;
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-medium);
+  color: var(--accent-color);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.jf-add-device:active {
+  background: rgba(11, 162, 255, 0.1);
+}
+
+.jf-add-device:disabled {
+  color: var(--text-muted);
+  cursor: default;
+  opacity: 0.55;
+}
+
+/* ---------- submit ---------- */
+
+.jf-submit-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 6;
+  margin: 0 -1rem;
+  padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg-color) 70%, transparent);
+}
+
+main.form .add-data {
+  width: 100%;
+  margin: 0;
+  padding: 0.95rem 1rem;
+  border: none;
+  border-radius: var(--radius-medium);
+  background: var(--accent-color);
+  color: #fff;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* `button:disabled { background: #C7C7C7 }` further up turns the submit light
+   grey the moment a save starts - a flash of the wrong colour on every job. */
+main.form .add-data:disabled {
+  background: var(--accent-color);
+  color: #fff;
+  opacity: 0.6;
+  cursor: default;
+}
+
+main.form .author_name {
+  margin: 0.25rem 0 0;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* ---------- autosuggest ---------- */
+
+/* The dropdown was positioned with `left: 2rem; right: 2rem` plus a -10%
+   transform, offsets tuned for a layout that no longer exists. Sit it under
+   its own field. */
+main.form .input_and_suggest_wrapper {
+  position: relative;
+}
+
+main.form #name_suggest_container,
+main.form #number_suggest_container,
+main.form #alt_number_suggest_container,
+main.form #model_suggest_container,
+main.form #complaint_suggest_container {
+  top: 100%;
+  left: 0;
+  right: 0;
+  width: auto;
+  margin-top: 0.35rem;
+  transform: none;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-medium);
+  box-shadow: 0 8px 24px var(--shadow-color);
+}
+
+main.form #name_suggest_container:empty,
+main.form #number_suggest_container:empty,
+main.form #alt_number_suggest_container:empty,
+main.form #model_suggest_container:empty,
+main.form #complaint_suggest_container:empty {
+  border: none;
+  box-shadow: none;
+}
+
+@media screen and (min-width: 700px) {
+  main.form {
+    max-width: 640px;
+    margin: 0 auto;
+  }
+}

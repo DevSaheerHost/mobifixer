@@ -1445,7 +1445,29 @@ const withTimeout = (p, ms, label) => Promise.race([
 let dataIsEdit = false;
 let editDataSn = 0;
 
-$('.add-data').onclick = async () => {
+const setStatusValue = (status) => {
+  const select = $('#status');
+  const wanted = String(status || 'pending');
+  select.value = wanted;
+  if (select.value === wanted) return;
+  const option = document.createElement('option');
+  option.value = wanted;
+  option.textContent = wanted.charAt(0).toUpperCase() + wanted.slice(1);
+  option.dataset.unknownStatus = 'true';
+  select.appendChild(option);
+  select.value = wanted;
+};
+
+
+// `invalid` fires on each field the browser rejects, and it does not bubble, so
+// it is caught on the way down. Red borders only appear once a submit has
+// actually been refused, never on a form the shop has not filled in yet.
+$('#jobForm').addEventListener('invalid', () => {
+  $('#jobForm').classList.add('was-validated');
+}, true);
+
+$('#jobForm').onsubmit = async (e) => {
+  e.preventDefault();
   const dataAddingTime = performance.now();
   const wasEdit = dataIsEdit; // snapshot mode — safe for deferred completion
   const name = $('#name').value.trim();
@@ -1459,10 +1481,6 @@ $('.add-data').onclick = async () => {
   const amount = $('#amount').value.trim() || 0;
   const advance = $('#advance').value.trim() || 0;
 
-  // if (!$('#sim').checked) {
-  //   showNotice({ title: 'WARN', body: "Please check the 'SIM and accessories' box before submitting!", type: 'error' });
-  //   return;
-  // }
   if (!name || !number || !complaints || !model || !status) {
     showNotice({ title: 'Validation Error', body: 'All fields are required!', type: 'error', delay: 10 });
     return;
@@ -1516,9 +1534,8 @@ $('.add-data').onclick = async () => {
       $('#advance').value = '';
       $('#amount').value = '';
       $('#notes').value = '';
-      $('#sim').checked = false;
-      $('#total_device_count').value = 1;
-      $('#more_device_input_container').innerHTML = '';
+      clearExtraDevices();
+      updateBalanceHint();
     }
 
     dataIsEdit = false;
@@ -1799,14 +1816,15 @@ document.onclick=e=>{
       $('#notes').value = data.notes || '';
       $('#amount').value = data.amount || '';
       $('#advance').value = data.advance || '';
-      $('#status').value = data.status || '';
-      $('#sim').checked = true;
+      // The select used to be missing "return", so loading one of those jobs left
+      // the control on '' and saving rewrote the record as pending. All six card
+      // statuses are options now; this keeps an UNKNOWN one round-tripping too,
+      // rather than quietly downgrading it, if a status is ever added elsewhere.
+      setStatusValue(data.status);
       $('.add-data').textContent = 'Update Data';
 
       // 🔹 Devices handling
-      const deviceCountInput = $('#total_device_count');
-      const deviceContainer = $('#more_device_input_container');
-      deviceContainer.innerHTML = '';
+      clearExtraDevices();
 
       let devices = [];
 
@@ -1827,37 +1845,12 @@ document.onclick=e=>{
       $('#complaint').value = firstDevice.complaints || '';
       $('#lock').value = firstDevice.lock || '';
 
-      // Add additional devices if more than 1
-      deviceCountInput.value = devices.length;
-      for (let i = 1; i < devices.length; i++) {
-        const d = devices[i];
-        const set = document.createElement('div');
-        set.className = 'device-set';
-        set.style.marginBottom = '10px';
-
-        const nameInput = document.createElement('input');
-        nameInput.type = 'text';
-        nameInput.placeholder = `Device ${i + 1} name`;
-        nameInput.className = 'device-input name-input';
-        nameInput.value = d.model || '';
-
-        const complaintInput = document.createElement('input');
-        complaintInput.type = 'text';
-        complaintInput.placeholder = `Device ${i + 1} complaint`;
-        complaintInput.className = 'device-input complaint-input';
-        complaintInput.value = d.complaints || '';
-
-        const lockInput = document.createElement('input');
-        lockInput.type = 'text';
-        lockInput.placeholder = `Device ${i + 1} lock`;
-        lockInput.className = 'device-input lock-input';
-        lockInput.value = d.lock || '';
-
-        set.appendChild(nameInput);
-        set.appendChild(complaintInput);
-        set.appendChild(lockInput);
-        deviceContainer.appendChild(set);
-      }
+      // Add additional devices if more than 1. Same builder the Add-another-device
+      // button uses, with the cap off so a record carrying more than MAX_DEVICES
+      // still loads in full instead of losing the extras on the next save.
+      for (let i = 1; i < devices.length; i++) addDeviceSet(devices[i], { enforceCap: false });
+      renumberDevices();
+      updateBalanceHint();
     }
   })();
 }
@@ -2438,22 +2431,24 @@ window.ononline=()=> showNotice({title:'Online', body:'Device Connected.', type:
 
 
 
-$('.add').onclick=()=>{
-  dataIsEdit=false
-  $('#name').value = data.name || '';
-      $('#number').value = data.number || '';
-      $('#complaint').value = data.complaints || '';
-      $('#model').value = data.model || '';
-      $('#lock').value = data.lock || '';
-      $('#notes').value = data.notes || '';
-      $('#amount').value = data.amount || '';
-      $('#advance').value = data.advance || '';
-      $('#status').value = data.status || 'pending';
-      $('#sim').checked = false;
-      $('.add-data').textContent = 'Add to List';
-
-
-}
+$('.add').onclick = () => {
+  // Every line here used to read `data.name`, `data.status` and so on off the
+  // GLOBAL job array, so each one was undefined and cleared its field by
+  // accident. It also left the extra device blocks from the last edit standing,
+  // so opening New straight after editing a two-device job started you off with
+  // the other customer's second device already typed in.
+  dataIsEdit = false;
+  editDataSn = 0;
+  ['#name', '#number', '#alt_number', '#model', '#complaint', '#lock',
+   '#amount', '#advance', '#notes'].forEach(sel => {
+    const el = $(sel);
+    if (el) el.value = '';
+  });
+  setStatusValue('pending');
+  clearExtraDevices();
+  updateBalanceHint();
+  $('.add-data').textContent = 'Add to List';
+};
 
 
 
@@ -3561,111 +3556,183 @@ window.addEventListener('DOMContentLoaded', loadTheme);
 // ################## THEME FUNCTION END ############### //
 
 
-// ########## Input count for multiple devices ######### //
+// ########## Devices on a job ######### //
+//
+// The +/- stepper sat BELOW the fields it controlled and gave no way to drop one
+// particular device - you could only shorten the list from the end. It is an
+// "Add another device" button with a remove on each block now.
+//
+// The .device-set markup used to be written out twice, once here for the stepper
+// and once in the edit-populate, and the two copies had drifted apart: this one
+// built labelled, required fields, the other bare placeholders. Both go through
+// makeDeviceSet() now.
+//
+// #total_device_count survives as a hidden input holding the total INCLUDING the
+// static first device, because the save and populate paths read it.
 
-
-const decrease_device_btn = $('#decrease_device');
-const increase_device_btn = $('#increase_device');
-const device_count_input = $('#total_device_count');
+const MAX_DEVICES = 5;
 const more_device_input_container = $('#more_device_input_container');
+const device_count_input = $('#total_device_count');
+const add_device_btn = $('#add_device_btn');
+const device_limit_hint = $('#device_limit_hint');
 
-const handleDeviceCountChange = () => {
-  let count = parseInt(device_count_input.value) || 1;
+let deviceFieldSeq = 0;
 
-  // Initialize inputs on load
-  updateInputs(count);
+const extraDeviceSets = () => [...more_device_input_container.querySelectorAll('.device-set')];
+const deviceCount = () => extraDeviceSets().length + 1;
 
-  decrease_device_btn.onclick = () => {
-    if (count > 1) {
-      count--;
-      device_count_input.value = count;
-      updateInputs(count);
-    }
-  };
+const deviceField = (cls, labelText, value, optional) => {
+  const wrap = document.createElement('div');
+  wrap.className = 'jf-field';
 
-  increase_device_btn.onclick = () => {
-    if (count < 5) {
-      count++;
-      device_count_input.value = count;
-      updateInputs(count);
-    }
-  };
-};
-
-const updateInputs = (count) => {
-  const existingSets = more_device_input_container.querySelectorAll('.device-set').length;
-
-  // ➕ Add missing device input sets
-  for (let i = existingSets + 2; i <= count; i++) {
-    const set = document.createElement('div');
-    set.className = 'device-set';
-
-    // Device name input field
-    const nameWrapper = document.createElement('div');
-    nameWrapper.className = 'input_field';
-
-    const nameInput = document.createElement('input');
-    nameInput.type = 'text';
-    nameInput.placeholder = '';
-    nameInput.className = 'device-input name-input';
-    nameInput.required=true
-
-    const nameLabel = document.createElement('label');
-    nameLabel.textContent = `Device ${i} Model Name`;
-
-    nameWrapper.appendChild(nameInput);
-    nameWrapper.appendChild(nameLabel);
-
-    // Complaint input field
-    const complaintWrapper = document.createElement('div');
-    complaintWrapper.className = 'input_field';
-
-    const complaintInput = document.createElement('input');
-    complaintInput.type = 'text';
-    complaintInput.placeholder = '';
-    complaintInput.required=true
-
-    complaintInput.className = 'device-input complaint-input';
-
-    const complaintLabel = document.createElement('label');
-    complaintLabel.textContent = `Device ${i} complaint`;
-
-    complaintWrapper.appendChild(complaintInput);
-    complaintWrapper.appendChild(complaintLabel);
-
-    // Lock input field
-    const lockWrapper = document.createElement('div');
-    lockWrapper.className = 'input_field';
-
-    const lockInput = document.createElement('input');
-    lockInput.type = 'text';
-    lockInput.placeholder = '';
-    lockInput.required=true
-    lockInput.className = 'device-input lock-input';
-
-    const lockLabel = document.createElement('label');
-    lockLabel.textContent = `Device ${i} lock`;
-
-    lockWrapper.appendChild(lockInput);
-    lockWrapper.appendChild(lockLabel);
-
-    // Append input fields to device set
-    set.appendChild(nameWrapper);
-    set.appendChild(complaintWrapper);
-    set.appendChild(lockWrapper);
-
-    more_device_input_container.appendChild(set);
+  const id = `dev-${cls}-${++deviceFieldSeq}`;
+  const label = document.createElement('label');
+  label.htmlFor = id;
+  label.textContent = labelText;
+  if (optional) {
+    const tag = document.createElement('span');
+    tag.className = 'jf-optional';
+    tag.textContent = 'optional';
+    label.append(' ', tag);
   }
 
-  // ➖ Remove extra device input sets if count decreased
-  while (more_device_input_container.querySelectorAll('.device-set').length > count - 1) {
-    more_device_input_container.lastElementChild.remove();
-  }
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.id = id;
+  input.className = `device-input ${cls}`;
+  input.placeholder = ' ';
+  input.autocomplete = 'off';
+  input.value = value || '';
+
+  wrap.append(label, input);
+  return wrap;
 };
 
+// `index` is the 1-based device number shown to the user; the first device is the
+// static block in the markup, so an extra set is never index 1.
+const makeDeviceSet = (index, data = {}) => {
+  const set = document.createElement('div');
+  set.className = 'device-set jf-device';
 
-handleDeviceCountChange();
+  const head = document.createElement('div');
+  head.className = 'jf-device-head';
 
+  const no = document.createElement('span');
+  no.className = 'jf-device-no';
+  no.textContent = `Device ${index}`;
+
+  const remove = document.createElement('button');
+  remove.type = 'button';
+  remove.className = 'jf-device-remove';
+  remove.setAttribute('aria-label', `Remove device ${index}`);
+  remove.title = 'Remove this device';
+  // A literal glyph rather than a Font Awesome <i>: if the icon font fails to
+  // load, an icon-only button becomes an invisible one, and this is the only
+  // way back out of a device block added by mistake.
+  remove.textContent = '\u00d7';
+
+  head.append(no, remove);
+  set.append(
+    head,
+    deviceField('name-input', 'Model', data.model),
+    deviceField('complaint-input', 'Complaint', data.complaints),
+    deviceField('lock-input', 'Lock / pattern', data.lock, true)
+  );
+  return set;
+};
+
+const renumberDevices = () => {
+  const sets = extraDeviceSets();
+  sets.forEach((set, i) => {
+    const n = i + 2;
+    const no = set.querySelector('.jf-device-no');
+    if (no) no.textContent = `Device ${n}`;
+    const rm = set.querySelector('.jf-device-remove');
+    if (rm) rm.setAttribute('aria-label', `Remove device ${n}`);
+  });
+
+  const total = sets.length + 1;
+  device_count_input.value = total;
+  const full = total >= MAX_DEVICES;
+  if (add_device_btn) add_device_btn.disabled = full;
+  if (device_limit_hint) device_limit_hint.hidden = !full;
+};
+
+// enforceCap is off when loading a saved job: a record that somehow carries more
+// than MAX_DEVICES devices must still come back in full, or editing it would
+// silently drop the extras on save.
+const addDeviceSet = (data, { enforceCap = true } = {}) => {
+  if (enforceCap && deviceCount() >= MAX_DEVICES) return null;
+  const set = makeDeviceSet(deviceCount() + 1, data);
+  more_device_input_container.appendChild(set);
+  renumberDevices();
+  return set;
+};
+
+const clearExtraDevices = () => {
+  more_device_input_container.innerHTML = '';
+  renumberDevices();
+};
+
+if (add_device_btn) {
+  add_device_btn.onclick = () => {
+    const set = addDeviceSet();
+    set?.querySelector('.name-input')?.focus();
+  };
+}
+
+more_device_input_container.onclick = (e) => {
+  const btn = e.target.closest?.('.jf-device-remove');
+  if (!btn) return;
+  btn.closest('.device-set')?.remove();
+  renumberDevices();
+};
+
+renumberDevices();
+
+
+// The shop quotes an approximate price and often takes some of it up front. It
+// was doing the subtraction in its head on every job; show the balance instead.
+const updateBalanceHint = () => {
+  const hint = $('#balance_hint');
+  if (!hint) return;
+  const amount = Number(String($('#amount').value).replace(/[^0-9.-]/g, '')) || 0;
+  const advance = Number(String($('#advance').value).replace(/[^0-9.-]/g, '')) || 0;
+  if (!amount && !advance) { hint.textContent = ''; return; }
+  const balance = amount - advance;
+  hint.textContent = balance >= 0
+    ? `Balance on collection: ₹${balance.toLocaleString('en-IN')}`
+    : `Advance is ₹${Math.abs(balance).toLocaleString('en-IN')} over the approximate amount`;
+  hint.classList.toggle('jf-hint-warn', balance < 0);
+};
+
+// The phone and money fields used to be <input type="number">, which refused
+// letters outright. They are tel/text now - for leading zeros, and for a numeric
+// keypad without the spinners and the e/+/- that type="number" allows - so the
+// filtering the old type did by accident has to be done deliberately.
+//
+// This is not cosmetic. The only check the save path makes on a phone number is
+// `number.length < 10 || number.length > 10`, so without this "abcdefghij" is
+// ten characters long and saves. And an amount of "abc" reached the card as
+// Number('abc') -> "\u20b9NaN".
+//
+// Bound on the FORM in the capture phase: #number already has its own oninput
+// driving the autosuggest, and capture runs before it, so the suggestions are
+// matched against the cleaned value.
+const stripTo = (el, unwanted) => {
+  const clean = el.value.replace(unwanted, '');
+  if (clean !== el.value) el.value = clean;   // the caret lands at the end, which
+};                                            // is where numeric typing happens
+
+$('#jobForm').addEventListener('input', (e) => {
+  const t = e.target;
+  if (t === $('#number') || t === $('#alt_number')) {
+    stripTo(t, /[^0-9]/g);
+  } else if (t === $('#amount') || t === $('#advance')) {
+    stripTo(t, /[^0-9.]/g);
+    updateBalanceHint();
+  }
+}, true);
 
 
 // ########## SEARCH_POUCH ########## //

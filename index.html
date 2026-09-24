@@ -206,107 +206,142 @@
 </div>
  <h3 id="new_sn">0</h3>
      </div>
-      <div class="input-group">
-       <div class="input-group">
-  <div class="input_and_suggest_wrapper">
-    <div class="input_field">
-      <input type="text" required name="name" id="name" placeholder="" />
-      <label for="name">Customer Name</label>
-    </div>
-    <div id="name_suggest_container" class="hidden"></div>
-  </div>
 
-  <div class="input_and_suggest_wrapper">
-    <div class="input_field">
-      <input type="number" required name="number" id="number" placeholder="" />
-      <label for="number">Number</label>
-    </div>
-    <div id="number_suggest_container" class="hidden"></div>
-  </div>
+      <form id="jobForm" class="job-form">
 
-  <div class="input_and_suggest_wrapper">
-    <div class="input_field">
-      <input type="number" required name="alt_number" id="alt_number" placeholder="" />
-      <label for="alt_number">Alternative Number</label>
-    </div>
-    <div id="alt_number_suggest_container" class="hidden"></div>
-  </div>
+        <section class="jf-section">
+          <h4 class="jf-section-title"><i class="fa-solid fa-user"></i> Customer</h4>
 
-  <div class="input_and_suggest_wrapper">
-    <div class="input_field">
-      <input type="text" required name="model" id="model" placeholder="" />
-      <label for="model">Device 1 Model Name</label>
-    </div>
-    <div id="model_suggest_container" class="hidden"></div>
-  </div>
+          <div class="jf-field">
+            <label for="name">Customer name <span class="jf-req">*</span></label>
+            <div class="input_and_suggest_wrapper">
+              <input type="text" id="name" name="name" required placeholder=" "
+                     autocomplete="off" autocapitalize="words" />
+              <div id="name_suggest_container" class="hidden"></div>
+            </div>
+          </div>
 
-  <div class="input_and_suggest_wrapper">
-    <div class="input_field">
-      <input type="text" required name="complaint" id="complaint" placeholder="" />
-      <label for="complaint">Complaints</label>
-    </div>
-    <div id="complaint_suggest_container" class="hidden"></div>
-  </div>
+          <div class="jf-field">
+            <label for="number">Phone number <span class="jf-req">*</span></label>
+            <div class="input_and_suggest_wrapper">
+              <input type="tel" id="number" name="number" required placeholder=" "
+                     inputmode="numeric" maxlength="10" autocomplete="off" />
+              <div id="number_suggest_container" class="hidden"></div>
+            </div>
+            <p class="jf-hint">10 digits, no country code</p>
+          </div>
 
-  <div class="input_field">
-    <input type="text" required name="lock" id="lock" placeholder="" />
-    <label for="lock">Lock</label>
-  </div>
+          <div class="jf-field">
+            <label for="alt_number">Alternative number <span class="jf-optional">optional</span></label>
+            <div class="input_and_suggest_wrapper">
+              <input type="tel" id="alt_number" name="alt_number" placeholder=" "
+                     inputmode="numeric" autocomplete="off" />
+              <div id="alt_number_suggest_container" class="hidden"></div>
+            </div>
+          </div>
+        </section>
 
-  <div id="more_device_input_container"></div>
+        <section class="jf-section">
+          <h4 class="jf-section-title"><i class="fa-solid fa-mobile-screen"></i> Devices</h4>
 
-<h4>Devices</h4>
-  <div class="total_device">
-    <span id="decrease_device">
-      <i class="fa-solid fa-minus"></i>
-    </span>
-    <input type="number" name="total_device_count" disabled id="total_device_count" placeholder="Total Devices" value="1">
-    <span id="increase_device">
-      <i class="fa-solid fa-plus"></i>
-    </span>
-  </div>
+          <div class="jf-device" data-device="1">
+            <div class="jf-device-head">
+              <span class="jf-device-no">Device 1</span>
+            </div>
 
-  <div class="input_field">
-    <input type="number" required name="amount" id="amount" placeholder="" />
-    <label for="amount">Approx Amount</label>
-  </div>
+            <div class="jf-field">
+              <label for="model">Model <span class="jf-req">*</span></label>
+              <div class="input_and_suggest_wrapper">
+                <input type="text" id="model" name="model" required placeholder=" "
+                       autocomplete="off" />
+                <div id="model_suggest_container" class="hidden"></div>
+              </div>
+            </div>
 
-  <div class="input_field">
-    <input type="number" required name="advance" id="advance" placeholder="" />
-    <label for="advance">Advance</label>
-  </div>
+            <div class="jf-field">
+              <label for="complaint">Complaint <span class="jf-req">*</span></label>
+              <div class="input_and_suggest_wrapper">
+                <input type="text" id="complaint" name="complaint" required placeholder=" "
+                       autocomplete="off" />
+                <div id="complaint_suggest_container" class="hidden"></div>
+              </div>
+            </div>
 
-  <textarea name="notes" id=notes rows="4" cols="40" placeholder="Notes (Optional)"></textarea>
+            <div class="jf-field">
+              <label for="lock">Lock / pattern <span class="jf-optional">optional</span></label>
+              <input type="text" id="lock" name="lock" placeholder=" "
+                     autocomplete="off" />
+            </div>
+          </div>
 
-  <select name="status" id="status">
-    <option value="pending">Pending</option>
-    <option value="progress">In Progress</option>
-    <option value="done">Done</option>
-    <option value="collected">Collected</option>
-    <option value="spare">Waiting For Spare</option>
-  </select>
+          <div id="more_device_input_container"></div>
 
-  <div class="checkBox-container hidden">
-    <input type="checkbox" name="sim" id="sim" />
-    <label for="sim">Hand over SIM & accessories to Customer</label>
-  </div>
-</div>
+          <button type="button" id="add_device_btn" class="jf-add-device">
+            <i class="fa-solid fa-plus"></i> Add another device
+          </button>
+          <p class="jf-hint" id="device_limit_hint" hidden>Up to 5 devices on one job.</p>
 
-        
-      <div class="checkBox-container hidden">
-          <input type="checkbox" name="sim" id="sim" />
-  <label for="sim">Hand over SIM & accessories to Customer</label>
-      </div>
-      
-      
-      
-      </div>
-      
-      
-      
-      <button class="add-data">Add to List</button>
+          <input type="hidden" name="total_device_count" id="total_device_count" value="1" />
+        </section>
+
+        <section class="jf-section">
+          <h4 class="jf-section-title"><i class="fa-solid fa-indian-rupee-sign"></i> Payment</h4>
+
+          <div class="jf-row">
+            <div class="jf-field">
+              <label for="amount">Approx amount <span class="jf-optional">optional</span></label>
+              <div class="jf-money">
+                <span class="jf-money-sign">₹</span>
+                <input type="text" id="amount" name="amount" placeholder="0"
+                       inputmode="numeric" autocomplete="off" />
+              </div>
+            </div>
+
+            <div class="jf-field">
+              <label for="advance">Advance paid <span class="jf-optional">optional</span></label>
+              <div class="jf-money">
+                <span class="jf-money-sign">₹</span>
+                <input type="text" id="advance" name="advance" placeholder="0"
+                       inputmode="numeric" autocomplete="off" />
+              </div>
+            </div>
+          </div>
+          <p class="jf-hint" id="balance_hint"></p>
+        </section>
+
+        <section class="jf-section">
+          <h4 class="jf-section-title"><i class="fa-solid fa-clipboard-check"></i> Status &amp; notes</h4>
+
+          <div class="jf-field">
+            <label for="status">Status</label>
+            <div class="jf-select">
+              <select name="status" id="status">
+                <option value="pending">Pending</option>
+                <option value="progress">In Progress</option>
+                <option value="spare">Waiting For Spare</option>
+                <option value="done">Done</option>
+                <option value="collected">Collected</option>
+                <option value="return">Return</option>
+              </select>
+              <i class="fa-solid fa-chevron-down"></i>
+            </div>
+          </div>
+
+          <div class="jf-field">
+            <label for="notes">Notes <span class="jf-optional">optional</span></label>
+            <textarea name="notes" id="notes" rows="3"
+                      placeholder="Anything the shop should remember about this job"></textarea>
+          </div>
+        </section>
+
+        <div class="jf-submit-bar">
+          <button type="submit" class="add-data">Add to List</button>
+        </div>
+      </form>
+
       <p class="author_name" id="author_name_p"></p>
     </main>
+
     
     <main class="shop-work hidden">
       <h3>Feature under development</h3>
