@@ -269,8 +269,15 @@
 
             <div class="jf-field">
               <label for="lock">Lock / pattern <span class="jf-optional">optional</span></label>
-              <input type="text" id="lock" name="lock" placeholder=" "
-                     autocomplete="off" />
+              <div class="jf-lock-row">
+                <input type="text" id="lock" name="lock" placeholder="PIN or password"
+                       autocomplete="off" />
+                <button type="button" class="jf-lock-draw" aria-label="Draw the unlock pattern">
+                  <span class="jf-lock-glyph" aria-hidden="true"></span>
+                  <span class="jf-lock-draw-text">Draw</span>
+                </button>
+              </div>
+              <div class="jf-lock-preview" hidden></div>
             </div>
           </div>
 
@@ -1422,6 +1429,34 @@ Loading changelog...
     </div>
 
     <p class="remind-hint" id="remindHint"></p>
+  </div>
+</div>
+
+<!-- ########## PATTERN PAD ########## -->
+<div class="pattern_overlay" id="patternOverlay">
+  <div class="pattern-sheet" role="dialog" aria-modal="true" aria-labelledby="patternTitle">
+    <span class="sheet-handle"></span>
+
+    <div class="flex_between">
+      <h3 id="patternTitle">Draw the unlock pattern</h3>
+      <i class="fa-solid fa-xmark close_pattern" id="patternClose" role="button" tabindex="0" aria-label="Close"></i>
+    </div>
+
+    <p class="pattern-replacing hidden" id="patternReplacing"></p>
+
+    <div class="pattern-grid" id="patternGrid" role="group" aria-label="Pattern dots, 1 to 9">
+      <svg class="pattern-lines" viewBox="0 0 300 300" aria-hidden="true" focusable="false">
+        <polyline id="patternPath" class="pattern-path" points="" />
+        <line id="patternDrag" class="pattern-drag" x1="0" y1="0" x2="0" y2="0" />
+      </svg>
+    </div>
+
+    <p class="pattern-readout" id="patternReadout"></p>
+
+    <div class="pattern-actions">
+      <button type="button" class="pattern-clear" id="patternClear">Clear</button>
+      <button type="button" class="pattern-save" id="patternSave" disabled>Use this pattern</button>
+    </div>
   </div>
 </div>
 

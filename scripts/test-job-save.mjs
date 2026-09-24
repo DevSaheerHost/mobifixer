@@ -266,5 +266,99 @@ console.log('\nStarting a new job does not inherit the last one');
   ck('and resets the status to pending', /setStatusValue\('pending'\)/.test(reset));
 }
 
+/* ---------------------------------------------------------------------------
+ * The unlock pattern pad.
+ *
+ * The lock field takes a PIN, a password or a pattern. A pattern written in
+ * words is not something the next person can act on, so it can be drawn on a
+ * 3x3 pad - but the value it writes has to stay plain text, because that field
+ * already holds free text on 1248 records and is read straight out onto the
+ * card and the printed receipt.
+ * ------------------------------------------------------------------------ */
+
+console.log('\nThe pattern is stored as text the card can already show');
+{
+  const fmt = between(main, "const formatPattern = ", ';', 'formatPattern');
+  ck('it is written as "Pattern 1-4-7-8-9"', /'Pattern ' \+ dots\.join\('-'\)/.test(fmt), fmt);
+  ck('nothing new is added to the record', !/patternDots\s*[,:]/.test(newDataBlock), newDataBlock.slice(0, 80));
+  ck('the lock field is still a plain text input',
+     /<input type="text" id="lock" name="lock"/.test(formHtml));
+  ck('every lock field sits in a row with its Draw button',
+     /<div class="jf-lock-row">/.test(formHtml) && /class="jf-lock-draw"/.test(formHtml));
+  ck('and the extra device blocks build the same row',
+     /deviceField\('lock-input', 'Lock \/ pattern', data\.lock, true, \{ draw: true \}\)/.test(main));
+}
+
+// parsePattern and dotBetween decide what gets written into a live record, so
+// they are lifted OUT of main.js and run here rather than reimplemented. A copy
+// of the rule would agree with itself no matter what the app ends up doing.
+const lift = (start, what) => between(main, start, '\n};', what) + '\n}';
+const pattern = new Function(
+  between(main, 'const PATTERN_MIN =', ';', 'PATTERN_MIN') + ';\n' +
+  lift('const parsePattern = (value) => {', 'parsePattern') + ';\n' +
+  lift('const dotBetween = (a, b) => {', 'dotBetween') + ';\n' +
+  'return { PATTERN_MIN, parsePattern, dotBetween };'
+)();
+
+console.log('\nOnly a value the pad wrote is read back as a pattern');
+{
+  const { parsePattern, PATTERN_MIN } = pattern;
+  ck('a pattern parses', String(parsePattern('Pattern 1-4-7-8-9')) === '1,4,7,8,9',
+     String(parsePattern('Pattern 1-4-7-8-9')));
+  ck('however it was spaced', String(parsePattern('pattern: 1 2 3 6 9')) === '1,2,3,6,9',
+     String(parsePattern('pattern: 1 2 3 6 9')));
+  ck('a four-digit PIN does not', parsePattern('4821') === null, String(parsePattern('4821')));
+  ck('nor a nine-digit one', parsePattern('123456789') === null);
+  ck('nor a word', parsePattern('swipe up') === null);
+  ck('nor an empty field', parsePattern('') === null);
+  ck('nor a missing one', parsePattern(undefined) === null);
+  ck('nor a pattern too short to exist', parsePattern('Pattern 1-2') === null);
+  ck('nor one that repeats a dot', parsePattern('Pattern 1-2-1-2') === null);
+  ck('nor one with more dots than there are', parsePattern('Pattern 1-2-3-4-5-6-7-8-9-1') === null);
+  ck('the minimum matches what Android enforces', PATTERN_MIN === 4, String(PATTERN_MIN));
+}
+
+console.log('\nA drag picks up the dots it crosses');
+{
+  // Recording 1-3 when the finger went through 2 writes down a pattern that does
+  // not unlock the phone, so these are the cases that matter most here.
+  const { dotBetween } = pattern;
+  for (const [a, b, want] of [[1,3,2], [3,1,2], [1,7,4], [1,9,5], [9,1,5], [3,7,5],
+                              [4,6,5], [2,8,5], [7,9,8], [3,9,6], [7,3,5]])
+    ck(`${a} to ${b} crosses ${want}`, dotBetween(a, b) === want, String(dotBetween(a, b)));
+  for (const [a, b] of [[1,5], [5,1], [1,2], [2,7], [1,4], [5,9], [4,8], [1,6], [2,4], [6,8], [1,1]])
+    ck(`${a} to ${b} crosses nothing`, dotBetween(a, b) === 0, String(dotBetween(a, b)));
+}
+
+console.log('\nThe pad cannot act on the job form it sits over');
+{
+  const sheet = between(html, '<div class="pattern_overlay"', '<!-- ########## BOTTOM SHEET', 'the pattern pad');
+  ck('the pad is outside the job form', html.indexOf('pattern_overlay') > html.indexOf('</form>'));
+  ck('and outside the add page entirely', !formHtml.includes('pattern_overlay'));
+  for (const m of sheet.matchAll(/<button\b[^>]*>/g))
+    ck('a button in the pad is type="button"', /type="button"/.test(m[0]), m[0]);
+  ck('the nine dots are built as type="button" too', /b\.type = 'button';\n  b\.className = 'pattern-dot';/.test(main));
+}
+
+console.log('\nThe printed receipt escapes what the customer dictated');
+{
+  // Model, complaint and lock were interpolated raw into the receipt markup -
+  // the same hole the job list had, on the page handed to the customer.
+  const receipt = between(main, "const devContainer = document.getElementById('pr-devices-container');",
+                          "document.getElementById('pr-status')", 'the receipt device rows');
+  ck('the model is escaped', /prEsc\(d\.model\)/.test(receipt) && !/\$\{d\.model \|\| ''\}/.test(receipt));
+  ck('the complaint is escaped', /prEsc\(d\.complaints\)/.test(receipt));
+  ck('the lock is escaped', /prEsc\(d\.lock\)/.test(receipt));
+  ck('and so are all three on the legacy single-device shape',
+     /prEsc\(service\.model\)/.test(receipt) && /prEsc\(service\.complaints\)/.test(receipt)
+       && /prEsc\(service\.lock\)/.test(receipt));
+  const RAW = /\$\{(d|service)\.(model|complaints|lock)(\s*\|\|\s*'')?\}/;
+  ck('no bare interpolation of any of them is left',
+     !RAW.test(receipt), (receipt.match(RAW) || [''])[0]);
+  ck('the escaper covers the five characters that matter',
+     ["/&/g, '&amp;'", "/</g, '&lt;'", "/>/g, '&gt;'", "/\"/g, '&quot;'", "/'/g, '&#39;'"]
+       .every(part => main.includes(part)));
+}
+
 console.log(`\n${pass} passed, ${fail} failed\n`);
 process.exit(fail ? 1 : 0);

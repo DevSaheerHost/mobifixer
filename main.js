@@ -1536,6 +1536,7 @@ $('#jobForm').onsubmit = async (e) => {
       $('#notes').value = '';
       clearExtraDevices();
       updateBalanceHint();
+      refreshAllLockPreviews();
     }
 
     dataIsEdit = false;
@@ -1851,6 +1852,7 @@ document.onclick=e=>{
       for (let i = 1; i < devices.length; i++) addDeviceSet(devices[i], { enforceCap: false });
       renumberDevices();
       updateBalanceHint();
+      refreshAllLockPreviews();
     }
   })();
 }
@@ -2301,22 +2303,30 @@ const openPrintReceipt = (service) => {
     altRow.classList.add('hidden');
   }
 
+  // The model, complaint and lock a customer dictated were interpolated into
+  // this markup raw - the same hole the job list had, on the one screen that
+  // gets handed to the customer. Everything else on the receipt goes in through
+  // textContent; these three are built as HTML, so they are escaped here.
+  const prEsc = (v) => String(v == null ? '' : v)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
   // Devices
   const devContainer = document.getElementById('pr-devices-container');
   devContainer.innerHTML = '';
   if (Array.isArray(service.devices) && service.devices.length > 0) {
     service.devices.forEach((d, i) => {
       devContainer.innerHTML += `
-        <div class="pr-row"><span class="pr-label">Device ${i + 1}</span><span class="pr-value">${d.model || ''}</span></div>
-        <div class="pr-row"><span class="pr-label">Issue</span><span class="pr-value">${d.complaints || ''}</span></div>
-        ${d.lock ? `<div class="pr-row"><span class="pr-label">Lock</span><span class="pr-value">${d.lock}</span></div>` : ''}
+        <div class="pr-row"><span class="pr-label">Device ${i + 1}</span><span class="pr-value">${prEsc(d.model)}</span></div>
+        <div class="pr-row"><span class="pr-label">Issue</span><span class="pr-value">${prEsc(d.complaints)}</span></div>
+        ${d.lock ? `<div class="pr-row"><span class="pr-label">Lock</span><span class="pr-value">${prEsc(d.lock)}</span></div>` : ''}
       `;
     });
   } else {
     devContainer.innerHTML = `
-      <div class="pr-row"><span class="pr-label">Device</span><span class="pr-value">${service.model || ''}</span></div>
-      <div class="pr-row"><span class="pr-label">Issue</span><span class="pr-value">${service.complaints || ''}</span></div>
-      ${service.lock ? `<div class="pr-row"><span class="pr-label">Lock</span><span class="pr-value">${service.lock}</span></div>` : ''}
+      <div class="pr-row"><span class="pr-label">Device</span><span class="pr-value">${prEsc(service.model)}</span></div>
+      <div class="pr-row"><span class="pr-label">Issue</span><span class="pr-value">${prEsc(service.complaints)}</span></div>
+      ${service.lock ? `<div class="pr-row"><span class="pr-label">Lock</span><span class="pr-value">${prEsc(service.lock)}</span></div>` : ''}
     `;
   }
 
@@ -2447,6 +2457,7 @@ $('.add').onclick = () => {
   setStatusValue('pending');
   clearExtraDevices();
   updateBalanceHint();
+  refreshAllLockPreviews();
   $('.add-data').textContent = 'Add to List';
 };
 
@@ -3581,7 +3592,7 @@ let deviceFieldSeq = 0;
 const extraDeviceSets = () => [...more_device_input_container.querySelectorAll('.device-set')];
 const deviceCount = () => extraDeviceSets().length + 1;
 
-const deviceField = (cls, labelText, value, optional) => {
+const deviceField = (cls, labelText, value, optional, { draw = false } = {}) => {
   const wrap = document.createElement('div');
   wrap.className = 'jf-field';
 
@@ -3603,6 +3614,28 @@ const deviceField = (cls, labelText, value, optional) => {
   input.placeholder = ' ';
   input.autocomplete = 'off';
   input.value = value || '';
+
+  if (draw) {
+    // Same row as device 1's lock field in index.html: the pad is opened by
+    // delegation off .jf-lock-draw and finds its input through .jf-lock-row,
+    // so every device gets one without anything having to know its id.
+    const row = document.createElement('div');
+    row.className = 'jf-lock-row';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'jf-lock-draw';
+    btn.setAttribute('aria-label', 'Draw the unlock pattern');
+    btn.innerHTML = '<span class="jf-lock-glyph" aria-hidden="true"></span>'
+                  + '<span class="jf-lock-draw-text">Draw</span>';
+    row.append(input, btn);
+
+    const preview = document.createElement('div');
+    preview.className = 'jf-lock-preview';
+    preview.hidden = true;
+
+    wrap.append(label, row, preview);
+    return wrap;
+  }
 
   wrap.append(label, input);
   return wrap;
@@ -3636,7 +3669,7 @@ const makeDeviceSet = (index, data = {}) => {
     head,
     deviceField('name-input', 'Model', data.model),
     deviceField('complaint-input', 'Complaint', data.complaints),
-    deviceField('lock-input', 'Lock / pattern', data.lock, true)
+    deviceField('lock-input', 'Lock / pattern', data.lock, true, { draw: true })
   );
   return set;
 };
@@ -3734,6 +3767,266 @@ $('#jobForm').addEventListener('input', (e) => {
   }
 }, true);
 
+
+// ########## UNLOCK PATTERN PAD ########## //
+//
+// The lock field takes a PIN, a password or a pattern, and a pattern typed as
+// words ("L shape", "starts top left") is not something the next person can act
+// on. This draws it: a 3x3 pad that writes a canonical string back into whichever
+// lock field opened it.
+//
+// The value stored is plain text, e.g. "Pattern 1-4-7-8-9", because that field
+// already holds free text on 1248 existing records and is read straight out onto
+// the card and the printed receipt. Nothing else has to learn a new shape, and a
+// lock that is not a pattern is left exactly as it is.
+//
+// Dots are numbered the way every Android device numbers them:
+//     1 2 3
+//     4 5 6
+//     7 8 9
+
+const PATTERN_MIN = 4;          // what Android itself enforces
+
+const patternOverlay = $('#patternOverlay');
+const patternGrid = $('#patternGrid');
+const patternPath = $('#patternPath');
+const patternDrag = $('#patternDrag');
+const patternReadout = $('#patternReadout');
+const patternSaveBtn = $('#patternSave');
+const patternReplacing = $('#patternReplacing');
+
+// Centres in the SVG's own 300x300 space, so the line never has to be measured
+// against the DOM - it stretches with the grid.
+const dotXY = (n) => ({ x: 50 + ((n - 1) % 3) * 100, y: 50 + Math.floor((n - 1) / 3) * 100 });
+
+// "Pattern 1-4-7-8-9" -> [1,4,7,8,9]. Anything else -> null, including a PIN
+// that happens to be digits, so an existing lock is never mistaken for one.
+const parsePattern = (value) => {
+  const text = String(value == null ? '' : value);
+  if (!/^\s*pattern\b/i.test(text)) return null;
+  const dots = (text.replace(/^\s*pattern\b/i, '').match(/[1-9]/g) || []).map(Number);
+  if (dots.length < PATTERN_MIN || dots.length > 9) return null;
+  if (new Set(dots).size !== dots.length) return null;
+  return dots;
+};
+
+const formatPattern = (dots) => 'Pattern ' + dots.join('-');
+
+// The dot a straight drag from `a` to `b` passes over, or 0 if it passes over
+// none. 1 to 3 goes through 2 and 1 to 9 goes through 5, the same as on a phone;
+// 1 to 5 and 2 to 7 are single steps and go through nothing.
+const dotBetween = (a, b) => {
+  const ra = Math.floor((a - 1) / 3), ca = (a - 1) % 3;
+  const rb = Math.floor((b - 1) / 3), cb = (b - 1) % 3;
+  if ((ra + rb) % 2 || (ca + cb) % 2) return 0;
+  const mid = ((ra + rb) / 2) * 3 + (ca + cb) / 2 + 1;
+  return mid === a || mid === b ? 0 : mid;
+};
+
+const drawPolyline = (el, dots) =>
+  el.setAttribute('points', dots.map(n => { const p = dotXY(n); return `${p.x},${p.y}`; }).join(' '));
+
+// A thumbnail of a saved pattern, shown under the field it belongs to so the
+// shop can check what was recorded without opening the pad again.
+const patternThumb = (dots) => {
+  const dot = (n) => { const p = dotXY(n); const on = dots.includes(n);
+    return `<circle cx="${p.x}" cy="${p.y}" r="${on ? 20 : 11}" class="${on ? 'on' : ''}" />`; };
+  return `<svg viewBox="0 0 300 300" aria-hidden="true" focusable="false">`
+       + `<polyline points="${dots.map(n => { const p = dotXY(n); return `${p.x},${p.y}`; }).join(' ')}" />`
+       + [1,2,3,4,5,6,7,8,9].map(dot).join('')
+       + `</svg>`;
+};
+
+// Keep the thumbnail under a lock field in step with what the field holds -
+// typed over by hand, cleared, or loaded from a saved job.
+const refreshLockPreview = (input) => {
+  const field = input.closest('.jf-field');
+  const preview = field?.querySelector('.jf-lock-preview');
+  const label = field?.querySelector('.jf-lock-draw-text');
+  if (!preview) return;
+  const dots = parsePattern(input.value);
+  if (label) label.textContent = dots ? 'Edit' : 'Draw';
+  if (!dots) { preview.hidden = true; preview.innerHTML = ''; return; }
+  preview.hidden = false;
+  preview.innerHTML = patternThumb(dots) +
+    `<span>Pattern <b>${dots.join(' – ')}</b></span>`;
+};
+
+const refreshAllLockPreviews = () =>
+  $$('#jobForm .jf-lock-row input').forEach(refreshLockPreview);
+
+// ---- the pad itself ----
+
+let patternDots = [];
+let patternTarget = null;      // the lock input that opened it
+let patternDrawing = false;
+// A lock screen starts a fresh pattern every time a finger lands, but the pad
+// also accepts tapping the dots one at a time, for a keyboard and for a mouse,
+// and that has to accumulate. So a touch only wipes what is there if the LAST
+// gesture actually drew something - a drag across two or more dots, or a
+// pattern loaded from the job.
+let patternRestartNext = false;
+let patternGestureDots = 0;
+
+const patternButtons = () => $$('#patternGrid .pattern-dot');
+
+const renderPattern = () => {
+  drawPolyline(patternPath, patternDots);
+  patternButtons().forEach((b, i) => {
+    const on = patternDots.includes(i + 1);
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-pressed', String(on));
+    const order = patternDots.indexOf(i + 1);
+    b.dataset.order = order < 0 ? '' : String(order + 1);
+  });
+  const enough = patternDots.length >= PATTERN_MIN;
+  patternSaveBtn.disabled = !enough;
+  patternReadout.textContent = patternDots.length === 0
+    ? `Drag across the dots, or tap them in order. At least ${PATTERN_MIN}.`
+    : enough
+      ? patternDots.join(' – ')
+      : `${patternDots.join(' – ')}  ·  ${PATTERN_MIN - patternDots.length} more to go`;
+  patternReadout.classList.toggle('short', patternDots.length > 0 && !enough);
+};
+
+const addPatternDot = (n) => {
+  if (!n || patternDots.includes(n)) return;
+  const last = patternDots[patternDots.length - 1];
+  if (last) {
+    const through = dotBetween(last, n);
+    if (through && !patternDots.includes(through)) patternDots.push(through);
+  }
+  patternDots.push(n);
+  renderPattern();
+};
+
+const clearPattern = () => {
+  patternDots = [];
+  patternRestartNext = false;
+  patternDrag.setAttribute('x2', patternDrag.getAttribute('x1') || '0');
+  patternDrag.setAttribute('y2', patternDrag.getAttribute('y1') || '0');
+  renderPattern();
+};
+
+const openPatternPad = (input) => {
+  patternTarget = input;
+  patternDots = parsePattern(input.value) || [];
+  patternRestartNext = patternDots.length > 0;   // redrawing replaces it
+
+  // Drawing a pattern over a PIN would throw the PIN away without saying so.
+  const existing = String(input.value || '').trim();
+  const overwriting = existing && !parsePattern(existing);
+  patternReplacing.classList.toggle('hidden', !overwriting);
+  if (overwriting) patternReplacing.textContent = `This will replace what is in the field: ${existing}`;
+
+  renderPattern();
+  patternOverlay.classList.add('active');
+  document.body.classList.add('no-scroll');
+};
+
+const closePatternPad = () => {
+  patternOverlay.classList.remove('active');
+  document.body.classList.remove('no-scroll');
+  patternDrawing = false;
+  patternTarget = null;
+};
+
+const savePattern = () => {
+  if (patternDots.length < PATTERN_MIN || !patternTarget) return;
+  patternTarget.value = formatPattern(patternDots);
+  refreshLockPreview(patternTarget);
+  closePatternPad();
+};
+
+// Build the nine dots once. They are real buttons, so the pad can be driven from
+// a keyboard as well as by dragging.
+[1, 2, 3, 4, 5, 6, 7, 8, 9].forEach(n => {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'pattern-dot';
+  b.dataset.dot = String(n);
+  b.setAttribute('aria-label', `Dot ${n}`);
+  b.setAttribute('aria-pressed', 'false');
+  b.onclick = () => addPatternDot(n);      // tap, and Enter/Space on a keyboard
+  patternGrid.appendChild(b);
+});
+
+// Dragging. pointermove targets the element the gesture STARTED on, so the dot
+// under the finger has to be looked up by coordinate.
+const dotUnder = (x, y) => {
+  const el = document.elementFromPoint(x, y);
+  const dot = el && el.closest && el.closest('.pattern-dot');
+  return dot ? Number(dot.dataset.dot) : 0;
+};
+
+const dragTo = (x, y) => {
+  if (!patternDots.length) { patternDrag.setAttribute('x2', patternDrag.getAttribute('x1')); return; }
+  const box = patternGrid.getBoundingClientRect();
+  const from = dotXY(patternDots[patternDots.length - 1]);
+  patternDrag.setAttribute('x1', from.x);
+  patternDrag.setAttribute('y1', from.y);
+  patternDrag.setAttribute('x2', ((x - box.left) / box.width) * 300);
+  patternDrag.setAttribute('y2', ((y - box.top) / box.height) * 300);
+};
+
+patternGrid.addEventListener('pointerdown', (e) => {
+  const n = dotUnder(e.clientX, e.clientY);
+  if (!n) return;
+  patternDrawing = true;
+  patternGrid.setPointerCapture?.(e.pointerId);
+  if (patternRestartNext) { patternDots = []; patternRestartNext = false; }
+  const before = patternDots.length;
+  addPatternDot(n);
+  patternGestureDots = patternDots.length - before;
+  dragTo(e.clientX, e.clientY);
+  e.preventDefault();
+});
+
+patternGrid.addEventListener('pointermove', (e) => {
+  if (!patternDrawing) return;
+  const before = patternDots.length;
+  addPatternDot(dotUnder(e.clientX, e.clientY));
+  patternGestureDots += patternDots.length - before;
+  dragTo(e.clientX, e.clientY);
+  e.preventDefault();
+});
+
+const endPatternDrag = () => {
+  if (!patternDrawing) return;
+  patternDrawing = false;
+  // One dot is a tap, so the next tap adds to it. Two or more was a drag, and
+  // the next touch starts over.
+  if (patternGestureDots > 1) patternRestartNext = true;
+  patternGestureDots = 0;
+  patternDrag.setAttribute('x2', patternDrag.getAttribute('x1'));
+  patternDrag.setAttribute('y2', patternDrag.getAttribute('y1'));
+};
+patternGrid.addEventListener('pointerup', endPatternDrag);
+patternGrid.addEventListener('pointercancel', endPatternDrag);
+patternGrid.addEventListener('pointerleave', endPatternDrag);
+
+$('#patternClear').onclick = clearPattern;
+patternSaveBtn.onclick = savePattern;
+$('#patternClose').onclick = closePatternPad;
+patternOverlay.onclick = (e) => { if (e.target === patternOverlay) closePatternPad(); };
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && patternOverlay.classList.contains('active')) closePatternPad();
+});
+
+// One delegated handler covers device 1 and every block added later.
+$('#jobForm').addEventListener('click', (e) => {
+  const btn = e.target.closest?.('.jf-lock-draw');
+  if (!btn) return;
+  const input = btn.closest('.jf-lock-row')?.querySelector('input');
+  if (input) openPatternPad(input);
+});
+
+// Typing in a lock field by hand keeps the thumbnail honest.
+$('#jobForm').addEventListener('input', (e) => {
+  if (e.target.closest?.('.jf-lock-row')) refreshLockPreview(e.target);
+});
+
+renderPattern();
 
 // ########## SEARCH_POUCH ########## //
 
