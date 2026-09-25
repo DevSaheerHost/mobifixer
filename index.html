@@ -193,7 +193,7 @@
 <nav class="status-nav">
   
     <a class="" href="#" data-text="">All
-    <span id="badge-pending" class="badge hidden" aria-hidden="true"></span>
+    <span id="badge-all" class="badge hidden" aria-hidden="true"></span>
   </a>
   
   <a class="active" href="#" data-text="pending">Pending
@@ -361,6 +361,25 @@
               </select>
               <i class="fa-solid fa-chevron-down"></i>
             </div>
+          </div>
+
+          <div class="jf-field">
+            <label for="assigned_to">Working on it <span class="jf-optional">optional</span></label>
+            <div class="jf-select">
+              <select name="assigned_to" id="assigned_to">
+                <option value="">Not assigned</option>
+              </select>
+              <i class="fa-solid fa-chevron-down"></i>
+            </div>
+            <p class="jf-hint">Who is actually fixing it. The name on the receipt is
+              whoever booked it in, which is not always the same person.</p>
+          </div>
+
+          <div class="jf-field">
+            <label for="ready_by">Ready by <span class="jf-optional">optional</span></label>
+            <input type="date" name="ready_by" id="ready_by" />
+            <p class="jf-hint" id="ready_by_hint">What you told the customer. The card will say
+              when it is due, and shout when it is late.</p>
           </div>
 
           <div class="jf-field">
@@ -1310,8 +1329,8 @@ Loading changelog...
     <li class="list-item">
       <p>Data Fetch/Update sound</p>
 <span>
-   <input type="checkbox" name="data_sound" id="data_theme" class="hidden" />
- <div class="toggle_btn active">
+   <input type="checkbox" name="data_sound" id="data_sound_toggle" class="hidden" />
+ <div class="toggle_btn">
    <div class="toggle_ball"></div>
  </div>
 </span>
@@ -1321,7 +1340,7 @@ Loading changelog...
       <p>Voice Alert</p>
       <span>
          <input type="checkbox" name="voice_alert" id="voice_alert" class="hidden"/>
-      <div class="toggle_btn active">
+      <div class="toggle_btn">
         <div class="toggle_ball"></div>
       </div>
       </span>
@@ -1335,8 +1354,8 @@ Loading changelog...
         <li class="list-item">
       <p>Show Notification</p>
    <span>
-         <input type="checkbox" name="voice_alert" id="voice_alert" class="hidden"/>
-      <div class="toggle_btn active">
+         <input type="checkbox" name="notifications" id="show_notification" class="hidden"/>
+      <div class="toggle_btn">
         <div class="toggle_ball"></div>
       </div>
       </span>
@@ -1969,6 +1988,23 @@ Stable Access</h3>
     <div class="pay-card pay-card-success">
       <p class="pay-card-value" id="pay-today">₹0</p>
       <p class="pay-card-label">Collected Today</p>
+    </div>
+  </div>
+
+  <!-- Collected Today answers "how did we do", but only at closing time. These
+       three come from the same payment dates already on the records. -->
+  <div class="pay-summary pay-summary-periods">
+    <div class="pay-card">
+      <p class="pay-card-value" id="pay-week">₹0</p>
+      <p class="pay-card-label">Last 7 days</p>
+    </div>
+    <div class="pay-card">
+      <p class="pay-card-value" id="pay-month">₹0</p>
+      <p class="pay-card-label">This month</p>
+    </div>
+    <div class="pay-card">
+      <p class="pay-card-value" id="pay-last-month">₹0</p>
+      <p class="pay-card-label">Last month</p>
     </div>
   </div>
 

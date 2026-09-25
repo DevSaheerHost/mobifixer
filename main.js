@@ -5,7 +5,9 @@ import { PATTERN_MIN, parsePattern, formatPattern, dotBetween, dotXY, patternSvg
 import { searchCard } from './searchCard.js';
 import { inventoryCard} from './inventoryCard.js';
 import { generateWhatsAppLink } from './generateWhatsappLink.js';
-import { jobDateKey, todayKey, buildCustomerIndex } from './jobMeta.js';
+import { jobDateKey, todayKey, buildCustomerIndex,
+         fromInputDate, toInputDate, periodTakings, openDuplicate,
+         digitsOf } from './jobMeta.js';
 
 // Firebase core import
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
@@ -636,7 +638,17 @@ get(itemsRef).then(snapshot => {
   }
 });
 
+// Settings switches that had markup but no wiring. Declared up here because
+// speakText and the new-job chime both run long before the Settings page is
+// ever opened. Defaults are chosen so that a shop which never touches Settings
+// sees no change: voice alerts were always on, the chime was never audible.
+const VOICE_ALERT_KEY = 'MF_VOICE_ALERT';
+const DATA_SOUND_KEY  = 'MF_DATA_SOUND';
+const voiceAlertEnabled = () => localStorage.getItem(VOICE_ALERT_KEY) !== 'off';
+const dataSoundEnabled  = () => localStorage.getItem(DATA_SOUND_KEY) === 'on';
+
 const speakText=(text, lang = 'en-IN', rate = 1, pitch = 1)=> {
+  if (!voiceAlertEnabled()) return;     // the "Voice Alert" switch in Settings
   if (!('speechSynthesis' in window)) {
     // showNotice({ title: '⚠️ Unsupported', body: 'Text-to-Speech not supported in this browser.', type: 'error' });
     
@@ -809,28 +821,38 @@ onChildAdded(itemsRef, (snapshot) => {
     unseen[item.status] = (unseen[item.status] || 0) + 1;
   }
 
-  // 🔊 sound (kept for parity; playback currently disabled)
+  // The new-job chime, behind the "Data Fetch/Update sound" switch in Settings.
+  // That switch had never been wired to anything and this play() had been
+  // commented out since the beginning, so the two dead halves are now one
+  // working one. Off by default. play() rejects until the page has been
+  // interacted with, which is normal and not worth a notice.
   const audio = document.getElementById("newSound");
-  if (audio) {
+  if (audio && dataSoundEnabled()) {
     audio.currentTime = 0;
-    //audio.play().catch(err => console.log("Audio play blocked:", err));
+    audio.play().catch(() => {});
   }
 
   // one coalesced render for the whole burst
   scheduleListRefresh();
 });
 
+// The All tab and the Pending tab both carried id="badge-pending", so
+// getElementById found the All one and the Pending tab's own badge was never
+// written to: a new pending job lit up All and Pending stayed blank forever.
+// The All tab now has its own id and shows the total across every status,
+// which is what a tab called All should say.
 const showUnseenCount = () => {
+  const paint = (el, n) => {
+    if (!el) return;
+    if (n > 0) { el.textContent = n > 99 ? '99+' : n; el.classList.remove("hidden"); }
+    else el.classList.add("hidden");
+  };
+  let total = 0;
   Object.keys(unseen).forEach(status => {
-    const badge = document.getElementById(`badge-${status}`);
-    if (!badge) return;
-    if (unseen[status] > 0) {
-      badge.textContent = unseen[status] > 99?'99+':unseen[status];
-      badge.classList.remove("hidden");
-    } else {
-      badge.classList.add("hidden");
-    }
+    total += unseen[status] || 0;
+    paint(document.getElementById(`badge-${status}`), unseen[status]);
   });
+  paint(document.getElementById('badge-all'), total);
 };
 
 
@@ -1349,6 +1371,7 @@ $('header').classList.toggle('slide-up', hash!='');
 
 
   if(hash ==='#add'){ 
+    ensureAssignableNames();
     window.scrollTo({
   top: 0,
   behavior: 'smooth'
@@ -1495,6 +1518,11 @@ const withTimeout = (p, ms, label) => Promise.race([
 ]);
 
 let dataIsEdit = false;
+
+// Which customer+model the duplicate warning has already been shown for, so
+// the second tap goes through. Cleared whenever the form is reset or a job is
+// saved - a warning belongs to the job it was raised for, not to the form.
+let duplicateWarnedFor = '';
 let editDataSn = 0;
 
 const setStatusValue = (status) => {
@@ -1532,12 +1560,40 @@ $('#jobForm').onsubmit = async (e) => {
   const notes = $('#notes').value.trim() || '';
   const amount = $('#amount').value.trim() || 0;
   const advance = $('#advance').value.trim() || 0;
+  // The date input speaks YYYY-MM-DD; records speak DD-MON-YYYY. Empty or
+  // unparseable comes back '' and is stored as '', which reads as "no promise"
+  // everywhere - the same as every record written before this field existed.
+  const readyBy = fromInputDate($('#ready_by')?.value);
+  const assignedTo = $('#assigned_to')?.value.trim() || '';
 
   if (!name || !number || !complaints || !model || !status) {
     showNotice({ title: 'Validation Error', body: 'All fields are required!', type: 'error', delay: 10 });
     return;
   }
   if(number.length<10 || number.length>10)return showNotice({title: 'Validation Error', body:'Invalid Number', type: 'error', delay:10})
+
+  // The same phone, from the same number, already open.
+  //
+  // Almost always two staff booking one phone, or a second tap on a slow
+  // connection - and a list with the same job in it twice is a list nobody
+  // trusts. It WARNS, it does not block: a customer can genuinely bring in two
+  // phones, so the second tap goes through. Editing is exempt, and so is a job
+  // whose twin has already been collected or returned.
+  if (!wasEdit) {
+    const clash = openDuplicate({ sn: null, number, devices: [{ model }] },
+                                buildCustomerIndex(data));
+    const key = `${digitsOf(number)}|${model.toLowerCase()}`;
+    if (clash && duplicateWarnedFor !== key) {
+      duplicateWarnedFor = key;
+      showNotice({
+        title: 'Already on the list?',
+        body: `#${clash.sn} for this number is still ${clash.status}. `
+            + 'Tap Add again if this really is a second phone.',
+        type: 'warn', delay: 12
+      });
+      return;
+    }
+  }
 
   let snToUse = editDataSn;
 
@@ -1574,6 +1630,7 @@ $('#jobForm').onsubmit = async (e) => {
       delay: 30
     });
     logActivity(wasEdit ? 'edit' : 'create', { sn: snToUse, customer: name });
+    duplicateWarnedFor = '';
     if (!wasEdit) createAlert();
 
     if (!wasEdit) {
@@ -1586,6 +1643,8 @@ $('#jobForm').onsubmit = async (e) => {
       $('#advance').value = '';
       $('#amount').value = '';
       $('#notes').value = '';
+      $('#ready_by').value = '';
+      fillAssignedSelect('');
       clearExtraDevices();
       updateBalanceHint();
       refreshAllLockPreviews();
@@ -1670,6 +1729,15 @@ if(wasEdit){
       altNumber,
       status,
       notes,
+      // The date the shop told the customer, '' when they did not say one.
+      // Always written, including '' - update() leaves keys it is not given
+      // alone, so without this, clearing the field in the edit form would leave
+      // the old promise on the record and the card would keep shouting.
+      readyBy,
+      // Who is fixing it, which is not necessarily `author` - that is whoever
+      // booked it in, and it is what the receipt prints. Same reason this is
+      // always written, including ''.
+      assignedTo,
       amount,
       advance,
       author: localStorage.getItem('author'),
@@ -1867,6 +1935,8 @@ document.onclick=e=>{
       $('#number').value = data.number || '';
       $('#alt_number').value= data.altNumber || ''
       $('#notes').value = data.notes || '';
+      $('#ready_by').value = toInputDate(data.readyBy);
+      fillAssignedSelect(data.assignedTo || '');
       $('#amount').value = data.amount || '';
       $('#advance').value = data.advance || '';
       // The select used to be missing "return", so loading one of those jobs left
@@ -2036,10 +2106,15 @@ search.addEventListener("input", () => {
     ...(Array.isArray(item.devices) ? item.devices.map(d => d?.complaints || '') : []),
   ].join(' ').toLowerCase();
 
+  // altNumber is searched too. The form has always asked for a second number
+  // and the record has always stored it, but nothing ever looked at it again -
+  // so a customer who gave their other number, or whose partner dropped the
+  // phone in, could not be found by the number they quote on the phone.
   const matchesBasic =
     String(item.sn).includes(query) ||
     item.name.toLowerCase().includes(q) ||
     item.number.includes(query) ||
+    (!!item.altNumber && String(item.altNumber).includes(query)) ||
     (q.length >= 3 && complaintText.includes(q));
 
   // Check model: old structure
@@ -2539,11 +2614,14 @@ $('.add').onclick = () => {
   dataIsEdit = false;
   editDataSn = 0;
   ['#name', '#number', '#alt_number', '#model', '#complaint', '#lock',
-   '#amount', '#advance', '#notes'].forEach(sel => {
+   '#amount', '#advance', '#notes', '#ready_by'].forEach(sel => {
     const el = $(sel);
     if (el) el.value = '';
   });
   setStatusValue('pending');
+  fillAssignedSelect('');
+  // A duplicate warning belongs to the job it was shown for, not to the form.
+  duplicateWarnedFor = '';
   clearExtraDevices();
   updateBalanceHint();
   refreshAllLockPreviews();
@@ -2799,6 +2877,15 @@ const renderPayments = () => {
   setTxt('pay-outstanding', inr(outstanding));
   setTxt('pay-due-count', due.length);
   setTxt('pay-today', inr(collectedToday));
+
+  // The same arithmetic over longer windows. collectedToday above is left as it
+  // was rather than replaced by takings.today: the two agree, and the shop's
+  // evening number should not start coming from new code on the day the month
+  // cards arrive. scripts/test-job-save.mjs pins that they match.
+  const takings = periodTakings(data);
+  setTxt('pay-week', inr(takings.week));
+  setTxt('pay-month', inr(takings.month));
+  setTxt('pay-last-month', inr(takings.lastMonth));
 
   if (!due.length) {
     listEl.innerHTML = `<li class="empty">🎉 No pending balances. All settled!</li>`;
@@ -4285,13 +4372,34 @@ $$('.toggle_btn').forEach(btn => {
       localStorage.setItem('theme', input.checked ? 'light' : 'dark');
     }
 
-    // The markup names this input voice_alert, so the previous branch here
-    // (input.name === 'notify') never matched and the setting did nothing.
-    if (input?.name === 'voice_alert') {
+    // Settings had TWO switches with name="voice_alert" and id="voice_alert":
+    // "Voice Alert" under Sounds and "Show Notification" under Notification.
+    // Both landed here, so both wrote the reminder setting - one setting drawn
+    // twice under two headings - and the code that restores state used
+    // querySelector, which finds only the first, so "Show Notification" was
+    // stuck reading "on" from the markup whatever the real setting was. The
+    // switch a shop goes looking for to turn notifications on always looked as
+    // though it already was. They are three separate settings now.
+    if (input?.name === 'notifications') {
       const on = input.checked;
       localStorage.setItem(REMINDER_ENABLED_KEY, on ? 'on' : 'off');
       // The user just turned reminders on, so ask and register now.
       if (on) askForPushPermission();
+    }
+
+    // Spoken error notices. speakText() used to run on every error notice with
+    // nothing able to stop it; this switch is why it exists. Default on, so
+    // nothing changes for a shop that never opens Settings.
+    if (input?.name === 'voice_alert') {
+      localStorage.setItem(VOICE_ALERT_KEY, input.checked ? 'on' : 'off');
+    }
+
+    // The new-job chime. The <audio> and the play() call have both been sitting
+    // here since the beginning with the play commented out, so this switch did
+    // nothing either. Default OFF: a shop that has never heard the chime should
+    // not suddenly start hearing it because this was wired up.
+    if (input?.name === 'data_sound') {
+      localStorage.setItem(DATA_SOUND_KEY, input.checked ? 'on' : 'off');
     }
   };
 });
@@ -4352,6 +4460,65 @@ const setShopInfo = (owner) =>{
 // stafref for each data show //
 
 
+// Who can be put against a job: the owner, everyone in the shop's staff list,
+// and whoever is signed in on this device. Read once and kept, because the
+// form is opened far more often than the staff list changes.
+//
+// It fails soft. If the read does not come back, the select keeps "Not
+// assigned" and whatever the job already had - a job must still be savable
+// when the staff node is missing or unreadable, which is the state every shop
+// was in before anyone opened Settings.
+let assignableNames = [];
+
+const fillAssignedSelect = (current = '') => {
+  const select = $('#assigned_to');
+  if (!select) return;
+  const me = localStorage.getItem('author') || '';
+  const names = [...new Set([...assignableNames, me].filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b));
+  // A name already on the job that is no longer in the list stays selectable,
+  // rather than being silently dropped to "Not assigned" the next time anyone
+  // edits the job. Same reasoning as setStatusValue.
+  if (current && !names.includes(current)) names.unshift(current);
+  select.innerHTML = '<option value="">Not assigned</option>' +
+    names.map(n => `<option value="${escAttr(n)}">${escAttr(n)}</option>`).join('');
+  select.value = current || '';
+};
+
+const escAttr = (v) => String(v == null ? '' : v)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+const loadAssignableNames = async () => {
+  if (!shopName) return;
+  try {
+    const [staffSnap, ownerSnap] = await Promise.all([
+      get(ref(db, `shops/${shopName}/staff`)),
+      get(ref(db, `shops/${shopName}/owner`)),
+    ]);
+    const names = [];
+    if (ownerSnap.exists() && ownerSnap.val()?.name) names.push(String(ownerSnap.val().name));
+    if (staffSnap.exists()) {
+      Object.values(staffSnap.val() || {}).forEach(st => { if (st?.name) names.push(String(st.name)); });
+    }
+    assignableNames = names;
+  } catch (err) {
+    console.warn('staff list unavailable for assignment:', err && err.message);
+  }
+  fillAssignedSelect($('#assigned_to')?.value || '');
+};
+
+// Read once, the first time the form is opened, rather than on every load.
+// Most visits never open it, and getStaff() below already reads the same node
+// for the Settings list - so doing this at boot would be two extra round trips
+// on a phone for something nobody is looking at yet.
+let assignableLoaded = false;
+const ensureAssignableNames = () => {
+  if (assignableLoaded) return;
+  assignableLoaded = true;
+  loadAssignableNames();
+};
+
 const getStaff = async () => {
   const stafRef = ref(db, `shops/${shopName}/staff`);
   const snapshot = await get(stafRef);
@@ -4366,10 +4533,9 @@ const getStaff = async () => {
 
   // Same row component as the rest of the settings pages, so a staff member
   // lines up with everything else instead of sitting flush to the card edge.
-  // Escaped: names and roles are typed by whoever signs in.
-  const esc = (v) => String(v == null ? '' : v)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  // Escaped with escAttr, which is the same escaper this file already defines
+  // a few lines up - there is no reason for two.
+  const esc = escAttr;
 
   Object.entries(data).forEach(([id, staff]) => {
     const el = document.createElement('li');
@@ -5518,15 +5684,23 @@ async function remindOpenJobs(rows) {
   showNotice({ title, body, type: 'info', delay: 6 });
 }
 
-// Reflect the stored setting on the Settings toggle, which was hardcoded to
-// "active" in the markup and never restored.
+// Reflect the stored settings on the Settings switches. All three were
+// hardcoded to "active" in the markup, and only the first was ever restored -
+// by a querySelector that, while two of them shared a name, could not have
+// reached the second anyway. A switch that always reads "on" is worse than no
+// switch, because the shop believes the setting is already what they want.
 (() => {
-  const input = document.querySelector('input[name="voice_alert"]');
-  const btn = input?.parentElement?.querySelector('.toggle_btn');
-  if (!input || !btn) return;
-  const on = reminderEnabled();
-  btn.classList.toggle('active', on);
-  input.checked = on;
+  const restore = (name, on) => {
+    document.querySelectorAll(`input[name="${name}"]`).forEach(input => {
+      const btn = input.parentElement?.querySelector('.toggle_btn');
+      if (!btn) return;
+      btn.classList.toggle('active', on);
+      input.checked = on;
+    });
+  };
+  restore('notifications', reminderEnabled());
+  restore('voice_alert', voiceAlertEnabled());
+  restore('data_sound', dataSoundEnabled());
 })();
 
 // ── Per-job reminders ────────────────────────────────────────────────────

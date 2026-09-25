@@ -27,7 +27,9 @@ import { PATTERN_MIN, parsePattern, formatPattern, dotBetween, patternSvg, patte
 // card, so the real exports run here rather than a copy of the rules.
 import { parseJobDate, jobDateKey, todayKey, daysBetween, jobAge, AGE_WARN, AGE_LATE,
          AGEING_STATUSES, buildCustomerIndex, earlierJobCount, repeatRepair,
-         REPEAT_WINDOW, waNumber, digitsOf } from '../jobMeta.js';
+         REPEAT_WINDOW, waNumber, digitsOf,
+         fromInputDate, toInputDate, promiseState, promiseText, PROMISE_STATUSES,
+         periodTakings, openDuplicate } from '../jobMeta.js';
 import { whatsAppMessage, generateWhatsAppLink } from '../generateWhatsappLink.js';
 
 const main = readFileSync('main.js', 'utf8');
@@ -745,6 +747,282 @@ console.log('\nOdds and ends');
   ck('it looks in every device on the job',
      /item\.devices\.map\(d => d\?\.complaints \|\| ''\)/.test(main));
   ck('the empty priority-view shell is gone', !/priority-view/.test(html));
+}
+
+console.log('\nThe date the shop promised');
+{
+  // <input type="date"> speaks YYYY-MM-DD, records speak DD-MON-YYYY.
+  ck('an input date becomes a record date', fromInputDate('2026-09-30') === '30-SEP-2026',
+     fromInputDate('2026-09-30'));
+  ck('and back again', toInputDate('30-SEP-2026') === '2026-09-30', toInputDate('30-SEP-2026'));
+  ck('the long month spelling reads too', toInputDate('30-SEPT-2026') === '2026-09-30',
+     toInputDate('30-SEPT-2026'));
+  ck('a single-digit day is padded', fromInputDate('2026-01-05') === '05-JAN-2026',
+     fromInputDate('2026-01-05'));
+  ck('an empty field is no promise, not a bad one', fromInputDate('') === '');
+  ck('and so is nothing at all', fromInputDate(null) === '' && fromInputDate(undefined) === '');
+  // Date rolls 31 February over to 2 or 3 March rather than failing.
+  ck('an impossible date is refused, not rolled over', fromInputDate('2026-02-31') === '',
+     fromInputDate('2026-02-31'));
+  ck('as is a month that does not exist', fromInputDate('2026-13-01') === '',
+     fromInputDate('2026-13-01'));
+  ck('and text that is not a date at all', fromInputDate('next tuesday') === '');
+  ck('a record with no promise converts to an empty field', toInputDate('') === ''
+     && toInputDate(undefined) === '');
+
+  // Pinned values. Writing these in terms of the code would let the code and
+  // the test move together and still pass - the mistake the ageing tests made.
+  const NOW = new Date(2026, 8, 25);            // 25 SEP 2026, a Friday
+  const st = (readyBy, status = 'pending') => promiseState({ status, readyBy }, NOW);
+
+  ck('due today says so', st('25-SEP-2026')?.level === 'today', JSON.stringify(st('25-SEP-2026')));
+  ck('tomorrow is its own level', st('26-SEP-2026')?.level === 'tomorrow');
+  ck('the day after is just a count', st('27-SEP-2026')?.level === 'later'
+     && st('27-SEP-2026')?.days === 2, JSON.stringify(st('27-SEP-2026')));
+  ck('yesterday is overdue by one', st('24-SEP-2026')?.level === 'overdue'
+     && st('24-SEP-2026')?.days === 1, JSON.stringify(st('24-SEP-2026')));
+  ck('and last week is overdue by seven', st('18-SEP-2026')?.days === 7,
+     JSON.stringify(st('18-SEP-2026')));
+  ck('days is always positive, whichever side of today it falls',
+     [st('01-JAN-2026'), st('01-JAN-2027')].every(x => x && x.days > 0));
+
+  ck('no promise, nothing to say', st('') === null && st(undefined) === null);
+  ck('an unparseable promise is ignored rather than guessed', st('soon') === null);
+
+  // A finished repair is ready, so the promise was kept. This is the whole
+  // reason PROMISE_STATUSES is not AGEING_STATUSES.
+  ck('a done job is never late', st('01-JAN-2026', 'done') === null);
+  ck('nor a collected one', st('01-JAN-2026', 'collected') === null);
+  ck('nor a returned one', st('01-JAN-2026', 'return') === null);
+  ck('but pending, progress and spare all are',
+     ['pending', 'progress', 'spare'].every(s2 => st('01-JAN-2026', s2)?.level === 'overdue'));
+
+  ck('the promise list is exactly the unfinished statuses',
+     JSON.stringify(PROMISE_STATUSES) === JSON.stringify(['pending', 'progress', 'spare']),
+     JSON.stringify(PROMISE_STATUSES));
+  // Three status lists now exist and none is a copy of another. If OPEN_STATUSES
+  // in main.js is ever changed, this fails so the other two get considered.
+  const openInMain = main.match(/const OPEN_STATUSES = (\[[^\]]*\])/);
+  ck('and matches OPEN_STATUSES in main.js, which it is not allowed to drift from',
+     !!openInMain && JSON.parse(openInMain[1].replace(/'/g, '"')).join(',') === PROMISE_STATUSES.join(','),
+     openInMain && openInMain[1]);
+  ck('while AGEING_STATUSES stays different, because done still ages',
+     AGEING_STATUSES.includes('done') && !PROMISE_STATUSES.includes('done'));
+
+  ck('the wording is short enough for a card',
+     [st('24-SEP-2026'), st('25-SEP-2026'), st('26-SEP-2026'), st('30-SEP-2026')]
+       .every(x => promiseText(x).length <= 13),
+     [st('24-SEP-2026'), st('25-SEP-2026'), st('26-SEP-2026'), st('30-SEP-2026')]
+       .map(promiseText).join(' / '));
+  ck('one day late is not "1 days late"', promiseText(st('24-SEP-2026')) === 'Due yesterday',
+     promiseText(st('24-SEP-2026')));
+  ck('and nothing produces nothing', promiseText(null) === '');
+}
+
+console.log('\nWhat the shop took, over more than one day');
+{
+  const NOW = new Date(2026, 8, 25);            // 25 SEP 2026
+  const job = (amount, when, status = 'collected', extra = {}) =>
+    ({ sn: Math.random(), status, amount: String(amount), paidInfo: { date: when }, ...extra });
+
+  const rows = [
+    job(100, '25-SEP-2026'),   // today
+    job(200, '24-SEP-2026'),   // this week
+    job(300, '19-SEP-2026'),   // 6 days ago: still inside the 7-day window
+    job(400, '18-SEP-2026'),   // 7 days ago: outside it
+    job(500, '01-SEP-2026'),   // this month
+    job(600, '31-AUG-2026'),   // last month
+    job(700, '01-AUG-2026'),   // last month
+    job(800, '31-JUL-2026'),   // older than that
+    job(900, '25-SEP-2026', 'pending'),                    // not collected
+    job(999, '25-SEP-2026', 'collected', { isDeleted: true }),  // deleted
+  ];
+  const t = periodTakings(rows, NOW);
+
+  ck('today is today',        t.today === 100, String(t.today));
+  ck('the week is 7 days rolling, today included', t.week === 600, String(t.week));
+  ck('the month is the calendar month so far', t.month === 1500, String(t.month));
+  ck('last month is the whole of the one before', t.lastMonth === 1300, String(t.lastMonth));
+
+  // Differences, not repeats of the line above. Each of these adds ONE row and
+  // asserts the total does not move - which an assertion restating the same
+  // number cannot tell you.
+  const without = (drop) => periodTakings(rows.filter(r => Number(r.amount) !== drop), NOW);
+  ck('the job 7 days ago is outside the week',
+     without(400).week === t.week, `${without(400).week} vs ${t.week}`);
+  ck('and July is outside last month',
+     without(800).lastMonth === t.lastMonth, `${without(800).lastMonth} vs ${t.lastMonth}`);
+  ck('a job that has not been collected counts towards none of it',
+     JSON.stringify(without(900)) === JSON.stringify(t), JSON.stringify(without(900)));
+  ck('nor does a deleted one',
+     JSON.stringify(without(999)) === JSON.stringify(t), JSON.stringify(without(999)));
+  // And the same check the other way: a row that SHOULD count, does.
+  ck('while dropping a row that counts does move the figure',
+     without(200).week === t.week - 200, String(without(200).week));
+
+  // A payment dated in the future is a typing slip - 2027 for 2026 - and it
+  // must not inflate any window. Nothing caught this until a mutation that
+  // dropped the lower bound on the week passed the whole suite.
+  const future = [job(1000, '25-SEP-2026'), job(5000, '01-OCT-2026'), job(9000, '25-SEP-2027')];
+  const ft = periodTakings(future, NOW);
+  ck('a payment dated later this month is not in this week', ft.week === 1000, String(ft.week));
+  ck('nor in today', ft.today === 1000, String(ft.today));
+  ck('nor in this month', ft.month === 1000, String(ft.month));
+  ck('and next year is in none of them',
+     ft.today + ft.week + ft.month + ft.lastMonth === 3000,
+     JSON.stringify(ft));
+
+  // No payment date: the job's own date is what the existing Collected Today
+  // card falls back to, so this does the same.
+  const fallback = periodTakings([{ sn: 1, status: 'collected', amount: '50', date: '25-SEP-2026' }], NOW);
+  ck('a job with no payment date falls back to its own', fallback.today === 50, String(fallback.today));
+
+  ck('an empty shop is zero everywhere, not NaN',
+     Object.values(periodTakings([], NOW)).every(v => v === 0));
+  ck('and so is no argument at all',
+     Object.values(periodTakings(undefined, NOW)).every(v => v === 0));
+  ck('a junk amount does not poison the total',
+     periodTakings([job('abc', '25-SEP-2026'), job(10, '25-SEP-2026')], NOW).today === 10);
+
+  // The month boundary is the trap: on the 1st, "this month" is one day and
+  // "last month" is a full one.
+  const FIRST = new Date(2026, 8, 1);
+  const onTheFirst = periodTakings(rows, FIRST);
+  ck('on the 1st, this month holds only the 1st', onTheFirst.month === 500, String(onTheFirst.month));
+  ck('and last month is August in full', onTheFirst.lastMonth === 1300, String(onTheFirst.lastMonth));
+
+  // January: last month is December of the previous year.
+  const JAN = new Date(2027, 0, 10);
+  const nyd = periodTakings([job(77, '15-DEC-2026'), job(88, '05-JAN-2027')], JAN);
+  ck('in January, last month is December of the year before', nyd.lastMonth === 77, String(nyd.lastMonth));
+  ck('and this month is January', nyd.month === 88, String(nyd.month));
+}
+
+console.log('\nThe same phone booked in twice');
+{
+  const j = (sn, number, status, model) =>
+    ({ sn, number, status, devices: [{ model }] });
+  const shop = [
+    j(1, '9876500000', 'pending',   'iPhone 12'),
+    j(2, '9876500000', 'collected', 'iPhone 12'),   // finished: not a clash
+    j(3, '9876500000', 'progress',  'Redmi 10'),
+    j(4, '9000000000', 'pending',   'iPhone 12'),   // different customer
+    j(5, '9876511111', 'return',    'Vivo Y21'),    // returned: also finished
+  ];
+  const idx = buildCustomerIndex(shop);
+  const about = (number, model) => openDuplicate({ sn: null, number, devices: [{ model }] }, idx);
+
+  ck('an open job for the same number and phone is a clash',
+     about('9876500000', 'iPhone 12')?.sn === 1, JSON.stringify(about('9876500000', 'iPhone 12')));
+  ck('and it says which status, so the warning can name it',
+     about('9876500000', 'iPhone 12')?.status === 'pending');
+  ck('a different phone from the same customer is its own clash',
+     about('9876500000', 'Redmi 10')?.sn === 3, JSON.stringify(about('9876500000', 'Redmi 10')));
+  ck('a phone this customer has never brought in is fine',
+     about('9876500000', 'Nokia 105') === null);
+  ck('and another customer with the same phone is fine',
+     about('9876522222', 'iPhone 12') === null);
+
+  // The whole point: an old, finished job must not block a new one. A customer
+  // coming back with the same phone a year later is normal business.
+  ck('a collected job is not a clash', about('9876500000', 'iPhone 12')?.sn !== 2);
+  ck('nor is a returned one', about('9876511111', 'Vivo Y21') === null);
+
+  // Numbers are stored however they were typed.
+  ck('the number is matched on digits, not on formatting',
+     about('98765 00000', 'iPhone 12')?.sn === 1, JSON.stringify(about('98765 00000', 'iPhone 12')));
+  ck('and the model ignores case and spacing',
+     about('9876500000', '  iphone 12  ')?.sn === 1);
+
+  // buildCustomerIndex already drops records with no number, so going through
+  // it cannot reach the guard. Hand it a Map that HAS an empty key - which is
+  // what the guard is actually for - or the check passes either way.
+  ck('a job with no number cannot clash with anything',
+     about('', 'iPhone 12') === null && about(null, 'iPhone 12') === null);
+  const blankKeyed = new Map([['', [j(6, '', 'pending', 'iPhone 12')]]]);
+  const blank = openDuplicate({ sn: null, number: '', devices: [{ model: 'iPhone 12' }] }, blankKeyed);
+  ck('and two jobs with no number are not each other', blank === null, JSON.stringify(blank));
+  ck('while the index itself never makes an empty key',
+     !buildCustomerIndex([{ sn: 1, number: '', status: 'pending' }]).has(''));
+  ck('and no index means no clash rather than a crash',
+     openDuplicate(j(9, '9876500000', 'pending', 'iPhone 12'), null) === null);
+  ck('nor does a job clash with itself',
+     openDuplicate(shop[0], idx) === null, JSON.stringify(openDuplicate(shop[0], idx)));
+
+  // Legacy records keep model at the top level rather than in devices[].
+  const legacy = buildCustomerIndex([{ sn: 7, number: '9876533333', status: 'pending', model: 'Nokia 105' }]);
+  ck('a pre-devices record still clashes',
+     openDuplicate({ sn: null, number: '9876533333', devices: [{ model: 'Nokia 105' }] }, legacy)?.sn === 7);
+
+  // It uses PROMISE_STATUSES - work not finished - not AGEING_STATUSES, which
+  // includes done. A repaired phone waiting for collection is finished work;
+  // a second job for it is a real second job.
+  const doneIdx = buildCustomerIndex([j(8, '9876544444', 'done', 'Oppo A78')]);
+  ck('a repaired, uncollected job does not block a new one',
+     openDuplicate({ sn: null, number: '9876544444', devices: [{ model: 'Oppo A78' }] }, doneIdx) === null);
+}
+
+console.log('\nThe form warns once, then lets it through');
+{
+  // The warning must not become a block: a customer really can bring in two
+  // phones, and a form that refuses is worse than a list with a duplicate.
+  ck('the guard only runs when adding, never when editing',
+     /if \(!wasEdit\) \{[\s\S]{0,200}openDuplicate\(/.test(main));
+  // The whole block, so "returns before writing" is checked against what is
+  // actually between the warning and the end of the branch - not against a
+  // `return` that might be anywhere in the next 400 characters.
+  const guard = main.slice(main.indexOf('if (clash && duplicateWarnedFor !== key)'));
+  const branch = guard.slice(0, guard.indexOf('\n    }') + 6);
+  ck('it warns and returns, without writing anything',
+     /showNotice\(/.test(branch) && /\n      return;\n    \}$/.test(branch)
+       && !/runTransaction|update\(|set\(/.test(branch), JSON.stringify(branch.slice(-40)));
+  ck('and remembers what it warned about, so the second tap saves',
+     /duplicateWarnedFor = key;/.test(main));
+  ck('the warning names the job it clashes with',
+     /#\$\{clash\.sn\} for this number is still \$\{clash\.status\}/.test(main));
+  ck('the memory is keyed on the customer and phone, not just on the form',
+     /const key = `\$\{digitsOf\(number\)\}\|\$\{model\.toLowerCase\(\)\}`/.test(main));
+  ck('and is cleared after a save',
+     /logActivity\(wasEdit \? 'edit' : 'create'[\s\S]{0,80}duplicateWarnedFor = '';/.test(main));
+  // Three places: the declaration, the reset after a save, and the reset when
+  // New is tapped. Exactly three - a fourth would mean it is being cleared
+  // somewhere that has not been thought about.
+  const clears = (main.match(/duplicateWarnedFor = '';/g) || []).length;
+  ck('it is cleared in exactly the three places it should be', clears === 3, String(clears));
+  const newHandler = main.slice(main.indexOf("$('.add').onclick"),
+                                main.indexOf("$('.add').onclick") + 900);
+  ck('and one of them is New, so a warning does not carry to the next customer',
+     /duplicateWarnedFor = '';/.test(newHandler));
+}
+
+console.log('\nWho is actually fixing it');
+{
+  ck('the form has a field for it', /id="assigned_to"/.test(html));
+  ck('and it defaults to nobody', /<option value="">Not assigned<\/option>/.test(html));
+  // Anchored to loadAssignableNames itself. Matching anywhere in main.js let
+  // the owner read be deleted and still pass, because five other places read
+  // the owner node for their own reasons.
+  const loader = main.slice(main.indexOf('const loadAssignableNames'),
+                            main.indexOf('loadAssignableNames();'));
+  ck('the names come from the shop\u2019s own staff list',
+     /get\(ref\(db, `shops\/\$\{shopName\}\/staff`\)\)/.test(loader));
+  ck('and from the owner, who is not in it',
+     /get\(ref\(db, `shops\/\$\{shopName\}\/owner`\)\)/.test(loader));
+  ck('both in one round trip, not two', /Promise\.all\(\[/.test(loader));
+  ck('a staff read that fails still leaves the job savable',
+     /catch \(err\) \{\s*\n\s*console\.warn\('staff list unavailable for assignment:/.test(main));
+  ck('a name no longer on the staff list is not silently dropped',
+     /if \(current && !names\.includes\(current\)\) names\.unshift\(current\);/.test(main));
+  ck('it is stored on the record', /\n      assignedTo,/.test(main));
+  ck('loaded back when the job is edited', /fillAssignedSelect\(data\.assignedTo \|\| ''\)/.test(main));
+  ck('cleared for a new job', /fillAssignedSelect\(''\)/.test(main));
+  ck('and the option text is escaped, like every other name in this app',
+     /<option value="\$\{escAttr\(n\)\}">\$\{escAttr\(n\)\}<\/option>/.test(main));
+
+  const card = readFileSync('cardLayout.js', 'utf8');
+  ck('the card shows it only when it differs from who booked the job in',
+     /\$\{assignedTo && assignedTo !== author/.test(card));
+  ck('and escapes it', /\$\{esc\(assignedTo\)\}/.test(card));
 }
 
 console.log(`\n${pass} passed, ${fail} failed\n`);

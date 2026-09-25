@@ -5330,6 +5330,25 @@ nav.status-naveeeeeeess{
 .pay-card-danger .pay-card-value { color: #ff6b6b; }
 .pay-card-success .pay-card-value { color: #34c759; }
 
+/* The second summary row: last 7 days, this month, last month. It sits
+   directly under the first, so it drops the top padding that would otherwise
+   double up into a 2rem gap between two rows of the same thing. A month's
+   takings is a longer number than a day's - six or seven digits with the
+   separators - and these cards are a third of a 390px screen, so the value is
+   a little smaller here and is allowed to shrink rather than overflow. */
+.pay-summary-periods {
+  padding-top: 0;
+}
+.pay-summary-periods .pay-card {
+  min-width: 0;
+  padding: 0.75rem 0.35rem;
+}
+.pay-summary-periods .pay-card-value {
+  font-size: 0.92rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .payments-list {
   list-style: none;
   padding: 0 1rem 6rem;
@@ -7818,6 +7837,56 @@ body.no-scroll {
 .home .list .list-item .age-late {
   background: rgba(255, 59, 59, 0.16);
   color: #ff8a8a;
+}
+
+/* Who is actually fixing it, beside who booked it in. Only drawn when the two
+   differ, so in a one-person shop this never appears at all. */
+.home .list .list-item .author_name .assigned {
+  margin-left: 0.6rem;
+  opacity: 0.75;
+  white-space: nowrap;
+}
+.home .list .list-item .author_name .assigned i {
+  margin-right: 0.25rem;
+  opacity: 0.8;
+}
+
+/* ---------- the date the shop promised ----------------------------------
+   Same pill as the age badge, and it takes the age badge's place rather than
+   sitting beside it: "3 days late" already says everything "12d" would, and
+   two numbers on one line is how the pattern chip went wrong. Wider than the
+   age pill because it carries words, so it gets a max-width and ellipsis on a
+   narrow phone rather than pushing the serial off the card. */
+
+.home .list .list-item .promise {
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 8.5rem;
+}
+
+.home .list .list-item .promise-overdue {
+  background: rgba(255, 59, 59, 0.18);
+  color: #ff8a8a;
+}
+
+.home .list .list-item .promise-today {
+  background: rgba(255, 184, 102, 0.16);
+  color: #ffc98a;
+}
+
+/* Tomorrow and later are information, not a warning: quiet, so that the red
+   and amber above keep meaning something. */
+.home .list .list-item .promise-tomorrow,
+.home .list .list-item .promise-later {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.55);
 }
 
 /* ---------- the same customer, and the same device, coming back ---------- */

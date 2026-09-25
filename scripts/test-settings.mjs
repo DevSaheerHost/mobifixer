@@ -159,5 +159,49 @@ console.log('\nThe row styling stays off the pages that have their own');
      /\.theme_page,\s*\n\.sound_page \{/.test(css));
 }
 
+console.log('\nEvery switch in Settings is its own setting, and shows its real state');
+{
+  // "Voice Alert" under Sounds and "Show Notification" under Notification both
+  // carried name="voice_alert" id="voice_alert". One setting drawn twice under
+  // two headings: flipping either wrote the reminder key, and the restore code
+  // used querySelector, which reaches only the first - so "Show Notification"
+  // read "on" from the markup whatever the real setting was. The switch a shop
+  // goes looking for to turn notifications on always looked as though it was.
+  const ids = [...html.matchAll(/id="([^"]+)"/g)].map(m => m[1]);
+  const dupes = [...new Set(ids.filter((v, i) => ids.indexOf(v) !== i))];
+  ck('no id is used twice anywhere in index.html', dupes.length === 0, dupes.join(', '));
+
+  const names = [...html.matchAll(/<input type="checkbox"[^>]*name="([^"]+)"/g)].map(m => m[1]);
+  ck('the three Settings switches have three different names',
+     new Set(names).size === names.length, names.join(', '));
+  ck('and the notification one is named for what it does',
+     names.includes('notifications') && /id="show_notification"/.test(html));
+
+  // None may ship pre-lit: the restore below is what decides.
+  const sound = region(html, 'SOUND_PAGE', '</main>', 'the sound page');
+  ck('no switch is hardcoded active in the markup',
+     !/toggle_btn active/.test(sound), (sound.match(/toggle_btn active/g) || []).join(''));
+
+  ck('all three are restored from storage, not just the first',
+     /restore\('notifications'/.test(main) && /restore\('voice_alert'/.test(main)
+       && /restore\('data_sound'/.test(main));
+  ck('and the restore reaches every matching input',
+     /querySelectorAll\(`input\[name="\$\{name\}"\]`\)/.test(main));
+
+  // Two switches that had markup and no wiring at all.
+  ck('Voice Alert actually gates the speaking',
+     /const speakText[\s\S]{0,120}if \(!voiceAlertEnabled\(\)\) return;/.test(main));
+  ck('and it defaults on, so nothing changes for a shop that never opens Settings',
+     /VOICE_ALERT_KEY\) !== 'off'/.test(main));
+  ck('the new-job chime is wired to its switch',
+     /if \(audio && dataSoundEnabled\(\)\) \{[\s\S]{0,120}audio\.play\(\)/.test(main));
+  ck('and it defaults OFF, because no shop has ever heard it',
+     /DATA_SOUND_KEY\) === 'on'/.test(main));
+
+  // The one dead switch left, deliberately untouched and reported instead.
+  ck('the auto-backup switch is still known to be unwired',
+     /id="autoBackupToggle"/.test(html) && !/autoBackupToggle/.test(main));
+}
+
 console.log(`\n${pass} passed, ${fail} failed\n`);
 process.exit(fail ? 1 : 0);

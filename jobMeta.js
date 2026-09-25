@@ -83,6 +83,73 @@ export const jobAge = (job, now = new Date()) => {
 };
 
 // ---------------------------------------------------------------------------
+// The date the shop promised
+//
+// Every customer asks "when will it be ready?", the shop answers, and until
+// now nothing wrote it down. An age badge says "this is old"; a promised date
+// says "you said today", which is the one a shop acts on.
+//
+// Optional and additive. A record without readyBy behaves exactly as before.
+
+// <input type="date"> speaks YYYY-MM-DD. Records speak DD-MON-YYYY, and keeping
+// one shape in the record means parseJobDate, jobDateKey and every existing
+// comparison work on it unchanged.
+export const fromInputDate = (value) => {
+  const m = String(value == null ? '' : value).trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return '';
+  const year = Number(m[1]), month = Number(m[2]) - 1, day = Number(m[3]);
+  if (month < 0 || month > 11 || day < 1 || day > 31) return '';
+  const d = new Date(year, month, day);
+  if (d.getMonth() !== month || d.getDate() !== day) return '';   // 2026-02-31
+  return `${String(day).padStart(2, '0')}-${MONTHS[month]}-${year}`;
+};
+
+export const toInputDate = (value) => {
+  const d = parseJobDate(value);
+  if (!d) return '';
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+// A promise only stands while the work is unfinished.
+//
+// This is the THIRD status list in the app and it is not either of the others:
+//   OPEN_STATUSES  (main.js)  - work not finished; drives the daily reminder
+//   AGEING_STATUSES (above)   - anything not handed back; includes "done",
+//                               because repaired-and-uncollected is how a phone
+//                               gets forgotten on a shelf
+//   PROMISE_STATUSES (here)   - work not finished, so it excludes "done": the
+//                               phone IS ready, the promise was kept, and
+//                               telling the shop it is overdue would be a lie.
+// It happens to equal OPEN_STATUSES today. scripts/test-job-save.mjs asserts
+// that, so if one moves the other has to be considered rather than drift.
+export const PROMISE_STATUSES = ['pending', 'progress', 'spare'];
+
+// null when there is nothing to say: no promise, or the work is done.
+// Otherwise { days, level }, where days is always positive and level is one of
+// overdue / today / tomorrow / later.
+export const promiseState = (job, now = new Date()) => {
+  if (!job || !PROMISE_STATUSES.includes(job.status)) return null;
+  const due = parseJobDate(job.readyBy);
+  if (!due) return null;
+  const days = daysBetween(now, due);      // positive = still to come
+  if (days < 0) return { days: -days, level: 'overdue' };
+  if (days === 0) return { days: 0, level: 'today' };
+  if (days === 1) return { days: 1, level: 'tomorrow' };
+  return { days, level: 'later' };
+};
+
+export const promiseText = (state) => {
+  if (!state) return '';
+  if (state.level === 'overdue') return state.days === 1 ? 'Due yesterday' : `${state.days} days late`;
+  if (state.level === 'today') return 'Due today';
+  if (state.level === 'tomorrow') return 'Due tomorrow';
+  // Shortest wording for the case that least deserves the room: the badge
+  // shares its line with the customer's name, and "Due in 12 days" pushed a
+  // name into an ellipsis to say something nobody needs to act on today.
+  return `In ${state.days} days`;
+};
+
+// ---------------------------------------------------------------------------
 // The same customer, and the same device, coming back
 
 // Phone numbers are stored however they were typed. Compare on digits alone.
@@ -115,6 +182,31 @@ export const earlierJobCount = (job, index) => {
   return list.filter(other => String(other.sn) !== String(job.sn)).length;
 };
 
+// The same customer walking in twice for the same phone.
+//
+// Not a repeat repair - that is a device coming BACK after being collected.
+// This is a job being typed in while an identical one is still open, which is
+// usually two staff booking the same phone, or the same person saving twice on
+// a slow connection. It is the most common way the list stops being trusted.
+//
+// Returns the open job it clashes with, or null. It never blocks: a customer
+// can genuinely bring in two phones. The form warns once and lets the second
+// tap through.
+export const openDuplicate = (job, index) => {
+  if (!job || !index) return null;
+  const digits = digitsOf(job.number);
+  if (!digits) return null;
+  const model = modelOf(job);
+  const list = index.get(digits) || [];
+  for (const other of list) {
+    if (String(other.sn) === String(job.sn)) continue;
+    if (!PROMISE_STATUSES.includes(other.status)) continue;   // finished: not a clash
+    if (model && modelOf(other) !== model) continue;          // a different phone
+    return { sn: other.sn, status: other.status, model: modelOf(other) };
+  }
+  return null;
+};
+
 export const REPEAT_WINDOW = 30;   // days
 
 // The same device, from the same number, already collected within the last
@@ -144,6 +236,53 @@ export const repeatRepair = (job, index) => {
     if (!closest || gap < closest.days) closest = { sn: other.sn, days: gap };
   }
   return closest;
+};
+
+// ---------------------------------------------------------------------------
+// What the shop took, over more than one day
+//
+// The Payments page has only ever shown Collected TODAY. At closing time that
+// is the number the shop wants; on the first of the month it is useless.
+// Everything here is derived from paidInfo.date, which collecting a payment
+// already writes, so no record changes and nothing new is stored.
+//
+// It counts `amount`, the job total, exactly as the existing Collected Today
+// card does - so the four figures agree with each other and with the number
+// the shop is used to. Where an advance was taken on an earlier day, that
+// earlier cash is counted on the day the job was finally collected rather than
+// the day it actually came in. Fixing that means recording each payment as it
+// happens, which is a bigger change than this and would move a number the shop
+// already reads every evening.
+
+// Handed over on this date: the payment date when there is one, else the date
+// the job was taken in, which is what the existing card falls back to.
+const collectedOn = (job) => parseJobDate(job?.paidInfo?.date || job?.date);
+
+const takingsWhere = (jobs, test) => (jobs || []).reduce((sum, job) => {
+  if (!job || job.isDeleted === true || job.status !== 'collected') return sum;
+  const when = collectedOn(job);
+  if (!when || !test(when)) return sum;
+  return sum + (Number(job.amount) || 0);
+}, 0);
+
+// today       - this calendar day
+// week        - the last 7 calendar days, today included, rolling rather than
+//               Monday-to-Sunday: a shop wants "the last week", not "since
+//               Monday", and on a Monday the second is nearly empty.
+// month       - this calendar month so far
+// lastMonth   - the whole of the previous calendar month, for comparison
+export const periodTakings = (jobs, now = new Date()) => {
+  const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  return {
+    today: takingsWhere(jobs, d => daysBetween(d, now) === 0),
+    week: takingsWhere(jobs, d => {
+      const ago = daysBetween(d, now);
+      return ago >= 0 && ago < 7;
+    }),
+    month: takingsWhere(jobs, d => d >= startOfThisMonth && d <= now),
+    lastMonth: takingsWhere(jobs, d => d >= startOfLastMonth && d < startOfThisMonth),
+  };
 };
 
 // ---------------------------------------------------------------------------

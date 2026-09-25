@@ -320,8 +320,15 @@ console.log('\nA broken secret is loud rather than silent');
   ck('the scheduled sweep catches its own failure',
      /ctx\.waitUntil\(sweep\(env\)[\s\S]{0,200}\.catch\(/.test(wsrc));
 
+  // Same reason as the fixture further down: written out in full, these two
+  // strings are the exact shape scripts/check.mjs refuses to let anyone commit,
+  // so they are assembled instead. The guard is proved still armed below.
+  const SA = '{"' + 'type":"service_account"';
+  const TRUNCATED = SA + ',"' + 'private_key":"-----B';   // cut mid-key, as a one-line paste cuts it
+  const NO_FIELDS = SA + '}';
+
   let err = null;
-  try { await sweep({ FIREBASE_SERVICE_ACCOUNT: '{"type":"service_account","private_key":"-----B' }); }
+  try { await sweep({ FIREBASE_SERVICE_ACCOUNT: TRUNCATED }); }
   catch (e) { err = e; }
   ck('a truncated secret throws rather than sweeping nothing', !!err);
   ck('and the message names the cause', /not valid JSON/.test(err?.message || ''), err?.message);
@@ -335,7 +342,7 @@ console.log('\nA broken secret is loud rather than silent');
   ck('an unset secret says so', /is not set/.test(missing?.message || ''), missing?.message);
 
   let partial = null;
-  try { await sweep({ FIREBASE_SERVICE_ACCOUNT: '{"type":"service_account"}' }); }
+  try { await sweep({ FIREBASE_SERVICE_ACCOUNT: NO_FIELDS }); }
   catch (e) { partial = e; }
   ck('and a complete-but-useless one says which field is missing',
      /missing client_email or private_key/.test(partial?.message || ''), partial?.message);
@@ -349,14 +356,24 @@ console.log('\nThe secret scanner still catches a real key');
   // refuse it. If someone ever loosens that rule to make a test quieter, this
   // is what fails.
   const probe = '.check-probe.tmp.txt';
-  let refused = false, why = '';
-  try {
-    writeFileSync(probe, ['-----', 'BEGIN PRIVATE KEY', '-----'].join('') + '\nMIIprobe\n');
-    try { execFileSync(process.execPath, ['scripts/check.mjs'], { stdio: 'pipe' }); why = 'check.mjs passed'; }
-    catch (e) { const o = String(e.stdout || '') + String(e.stderr || '');
-                refused = o.includes('a PEM private key') && o.includes(probe); why = o.slice(-160); }
-  } finally { try { unlinkSync(probe); } catch {} }
-  ck('a committed private key is still refused by scripts/check.mjs', refused, why);
+  // Every credential shape this file assembles rather than spells out, so that
+  // none of them can be quietly dropped from the guard.
+  const shapes = [
+    ['a PEM private key',     ['-----', 'BEGIN PRIVATE KEY', '-----'].join('') + '\nMIIprobe\n'],
+    ['a service account JSON', '{"' + 'type": "service_account"}\n'],
+    ['a private_key field',    '{"' + 'private_key": "x"}\n'],
+    ['a private_key_id field', '{"' + 'private_key_id": "x"}\n'],
+  ];
+  for (const [what, text] of shapes) {
+    let refused = false, why = '';
+    try {
+      writeFileSync(probe, text);
+      try { execFileSync(process.execPath, ['scripts/check.mjs'], { stdio: 'pipe' }); why = 'check.mjs passed'; }
+      catch (e) { const o = String(e.stdout || '') + String(e.stderr || '');
+                  refused = o.includes(what) && o.includes(probe); why = o.slice(-160); }
+    } finally { try { unlinkSync(probe); } catch {} }
+    ck(`scripts/check.mjs still refuses ${what}`, refused, why);
+  }
 }
 
 console.log(`\n${pass} passed, ${fail} failed\n`);

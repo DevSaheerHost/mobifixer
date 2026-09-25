@@ -14,7 +14,8 @@
 // component, searchCard.js, and keeps its own markup.)
 
 import { parsePattern, patternSvg, patternText } from './pattern.js';
-import { jobAge, earlierJobCount, repeatRepair } from './jobMeta.js';
+import { jobAge, earlierJobCount, repeatRepair,
+         promiseState, promiseText } from './jobMeta.js';
 
 const STATUS_LABEL = {
   pending:   'Pending',
@@ -94,6 +95,17 @@ export const cardSummary = (item = {}, meta = {}) => {
     <span class="trail">
       <span class="trail-top">
       ${(() => {
+        // What the shop promised beats how old it is. "12d" says a phone has
+        // been here a while; "3 days late" says the customer was told Tuesday.
+        // When there is a promise, it replaces the age badge rather than
+        // sitting next to it - two numbers on one line is how the pattern chip
+        // went wrong.
+        const promise = promiseState(item, meta.now);
+        if (promise) {
+          return `<span class="promise promise-${promise.level}"
+                    title="Promised ${esc(item.readyBy || '')}"
+                    >${esc(promiseText(promise))}</span>`;
+        }
         // How long this has been sitting. Nothing in the app said so before, and
         // a three-week-old repair looked exactly like this morning's. It shares
         // the serial's line: on its own row it made every card a line taller.
@@ -137,6 +149,7 @@ export const cardLayout = (item = {}, meta = {}) => {
   notes,
   time,
   author,
+  assignedTo,
   devices
   } = item;
 
@@ -304,6 +317,13 @@ export const cardLayout = (item = {}, meta = {}) => {
   ${author === me
     ? '<span class="you"><i class="fa-solid fa-user"></i> You</span>'
     : `<span>${esc(author) || 'Unknown'}</span>`}
+  ${assignedTo && assignedTo !== author
+    // Only worth the room when it differs from who booked it in. When the same
+    // person did both - which is most jobs in a one-person shop - repeating the
+    // name would say nothing.
+    ? `<span class="assigned" title="Working on it"
+         ><i class="fa-solid fa-screwdriver-wrench"></i> ${esc(assignedTo)}</span>`
+    : ''}
 </p>
     </div>
   `;

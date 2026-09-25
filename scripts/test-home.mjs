@@ -199,5 +199,44 @@ console.log('\nHeader and search');
      /header \.shop-selector-wrap\s*\{[^}]*overflow:\s*visible/.test(css));
 }
 
+console.log('\nThe tab badges point at the tabs they count');
+{
+  // The All tab and the Pending tab both carried id="badge-pending".
+  // getElementById returns the first, so every new pending job lit up All and
+  // the Pending tab's own badge was never written to at all.
+  const html = readFileSync('index.html', 'utf8');
+  const navStart = at(html, '<nav class="status-nav">', 'the status nav');
+  const nav = html.slice(navStart, html.indexOf('</nav>', navStart));
+  const badgeIds = [...nav.matchAll(/id="(badge-[^"]+)"/g)].map(m => m[1]);
+  ck('every tab badge has its own id',
+     new Set(badgeIds).size === badgeIds.length, badgeIds.join(', '));
+  ck('including one per status the counter tracks',
+     ['pending','spare','progress','done','collected','return']
+       .every(st => badgeIds.includes('badge-' + st)),
+     badgeIds.join(', '));
+  ck('and the All tab has its own', badgeIds.includes('badge-all'));
+
+  ck('the counter paints each status badge',
+     /paint\(document\.getElementById\(`badge-\$\{status\}`\), unseen\[status\]\)/.test(main));
+  ck('and gives All the total rather than one status',
+     /total \+= unseen\[status\] \|\| 0/.test(main)
+       && /paint\(document\.getElementById\('badge-all'\), total\)/.test(main));
+}
+
+console.log('\nSearch finds a customer by the other number they gave');
+{
+  // The form has asked for a second number, and the record has stored it,
+  // since the beginning. Nothing ever read it back, so a customer quoting the
+  // number their phone was booked under could not be found by it.
+  ck('the search matches altNumber',
+     /item\.altNumber[\s\S]{0,40}\.includes\(query\)/.test(main));
+  ck('and guards against records that have none',
+     /!!item\.altNumber && String\(item\.altNumber\)/.test(main));
+  ck('alongside sn, name, number and complaint',
+     /String\(item\.sn\)\.includes\(query\)/.test(main)
+       && /item\.number\.includes\(query\)/.test(main)
+       && /complaintText\.includes\(q\)/.test(main));
+}
+
 console.log(`\n${pass} passed, ${fail} failed\n`);
 process.exit(fail ? 1 : 0);
