@@ -6399,7 +6399,7 @@ header {
   height: auto;
   padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-top, 0px));
   padding-top: calc(0.75rem + env(safe-area-inset-top, 0px));
-  padding-bottom: 0.75rem;
+  padding-bottom: 0.6rem;
   background: var(--bg-secondary) !important;
   border: none;
   border-bottom: 1px solid var(--border-color);
@@ -6416,7 +6416,7 @@ header .shop-selector-wrap {
   justify-content: flex-start;
   gap: 0.35rem;
   overflow: visible;      /* it used to scroll sideways */
-  margin-bottom: 0.45rem;
+  margin-bottom: 0.3rem;
 }
 
 /* The shop name takes the space; the icons sit at the end. */
@@ -7897,7 +7897,10 @@ body.no-scroll {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0.35rem;
-  margin: 0.4rem 0 0.1rem;
+  /* The gap below has to be at least the gap above, or the figures read as part
+     of the search field rather than a row of their own. It was 6.4px above and
+     1.6px below, which is what that looked like. */
+  margin: 0.35rem 0 0.55rem;
 }
 
 .today-bar[hidden] {
@@ -7908,7 +7911,7 @@ body.no-scroll {
   display: flex;
   align-items: baseline;
   gap: 0.3rem;
-  padding: 0.3rem 0.55rem;
+  padding: 0.25rem 0.55rem;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-medium) !important;
