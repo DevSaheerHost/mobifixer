@@ -151,7 +151,21 @@ const dbDelete = async (env, path, token) => {
 };
 
 export async function sweep(env, now = Date.now()) {
-  const sa = JSON.parse(env.FIREBASE_SERVICE_ACCOUNT);
+  // Parsed by hand rather than with a bare JSON.parse, because the one way
+  // this has actually failed - a secret set from a multi-line file with
+  // `wrangler secret put`, which reads a single line - produces a SyntaxError
+  // whose message quotes the start of the input. Say what is wrong instead of
+  // echoing any part of the credential into the log.
+  const raw = env.FIREBASE_SERVICE_ACCOUNT;
+  if (!raw) throw new Error('FIREBASE_SERVICE_ACCOUNT is not set');
+  let sa;
+  try { sa = JSON.parse(raw); }
+  catch { throw new Error(
+    `FIREBASE_SERVICE_ACCOUNT is not valid JSON (${String(raw).length} chars` +
+    ' - truncated? set it with `wrangler secret put NAME < key.json`)'); }
+  if (!sa.client_email || !sa.private_key) {
+    throw new Error('FIREBASE_SERVICE_ACCOUNT is missing client_email or private_key');
+  }
   const access = await getCachedAccessToken(sa, fetch, now);
   const sent = { shops: 0, due: 0, pushes: 0, pruned: 0 };
 
@@ -200,13 +214,60 @@ export async function sweep(env, now = Date.now()) {
 
 export default {
   async scheduled(_event, env, ctx) {
-    ctx.waitUntil(sweep(env).then(r => console.log('sweep', JSON.stringify(r))));
+    // The .catch matters: without it a rejected sweep is an unhandled rejection
+    // inside waitUntil, which is the quietest way for this worker to do nothing
+    // once a minute forever. Errors here carry Google's response text and the
+    // length of the secret, never the secret.
+    ctx.waitUntil(sweep(env)
+      .then(r => console.log('sweep', JSON.stringify(r)))
+      .catch(e => console.error('sweep failed:', String((e && e.message) || e))));
   },
   // Manual trigger for checking the setup after deploy. Requires the same
   // secret, so it cannot be poked by anyone who finds the URL.
   async fetch(req, env) {
     const url = new URL(req.url);
-    if (url.pathname === '/health') return new Response('ok');
+
+    // /health answers the only question worth asking from outside: is this
+    // thing configured well enough to send anything at all.
+    //
+    // It reports configuration, never data and never secret material - the
+    // longest thing it will say about the service account is whether it parses
+    // and which project it names. /run is the one that touches the database,
+    // and that still needs RUN_KEY.
+    //
+    // It exists in this shape because the first deploy set
+    // FIREBASE_SERVICE_ACCOUNT from a multi-line JSON file with
+    // `wrangler secret put`, which reads a single line, so the secret was
+    // truncated - and a truncated secret fails silently once a minute inside
+    // ctx.waitUntil, with nothing to see from the outside.
+    if (url.pathname === '/health') {
+      const out = {
+        ok: false,
+        serviceAccount: 'missing',
+        canMintToken: false,
+        runKeySet: !!env.RUN_KEY,
+        databaseUrl: !!env.DATABASE_URL,
+        projectId: env.PROJECT_ID || null,
+      };
+      const raw = env.FIREBASE_SERVICE_ACCOUNT;
+      if (!raw) return Response.json(out);
+      out.serviceAccountLength = String(raw).length;
+      let sa;
+      try { sa = JSON.parse(raw); out.serviceAccount = 'parsed'; }
+      catch { out.serviceAccount = 'not-json (truncated? `wrangler secret put` reads one line)';
+              return Response.json(out); }
+      out.hasClientEmail = !!sa.client_email;
+      out.hasPrivateKey = !!sa.private_key;
+      out.saProject = sa.project_id || null;
+      if (!sa.client_email || !sa.private_key) {
+        out.serviceAccount = 'incomplete';
+        return Response.json(out);
+      }
+      try { out.canMintToken = !!(await getAccessToken(sa)); }
+      catch (e) { out.tokenError = String(e && e.message || e).slice(0, 200); }
+      out.ok = out.canMintToken;
+      return Response.json(out);
+    }
     if (url.pathname === '/run' && url.searchParams.get('key') === env.RUN_KEY && env.RUN_KEY) {
       try { return Response.json(await sweep(env)); }
       catch (e) { return new Response(String(e), { status: 500 }); }

@@ -11,5 +11,14 @@ PROJECT_ID = "c24o-c038b"
 DATABASE_URL = "https://c24o-c038b-default-rtdb.firebaseio.com"
 
 # Secrets are NOT set here — they would end up in git. Set them after deploy:
-#   wrangler secret put FIREBASE_SERVICE_ACCOUNT   (paste the whole JSON)
+#
+#   wrangler secret put FIREBASE_SERVICE_ACCOUNT < service-account.json
 #   wrangler secret put RUN_KEY                    (any random string; enables /run)
+#
+# Redirect the service account from the FILE. Do not paste it at the prompt:
+# the prompt reads a single line, and the key JSON is multi-line, so pasting
+# stores a truncated secret. A truncated secret fails once a minute inside
+# ctx.waitUntil with nothing visible from outside. Check it afterwards with
+# `curl https://mobifixer-push.mobifixer.workers.dev/health` — it reports
+# whether the secret parses and whether a token can be minted, and never
+# reports the secret itself.

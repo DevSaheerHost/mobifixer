@@ -12,7 +12,9 @@
  *
  *   node scripts/test-push.mjs
  */
-import { selectDue, buildMessage, isDeadToken, getCachedAccessToken, _resetTokenCache } from '../push-worker/worker.js';
+import worker, { selectDue, buildMessage, isDeadToken, getCachedAccessToken, _resetTokenCache, sweep } from '../push-worker/worker.js';
+import { readFileSync, writeFileSync, unlinkSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 
 let pass = 0, fail = 0;
 const ck = (name, cond, detail = '') => {
@@ -175,6 +177,186 @@ console.log('\nWhat sw.js draws when a push arrives');
   shown.length = 0;
   listeners.push({ data: { json: () => { throw new Error('bad json'); }, text: () => 'plain text' }, waitUntil: () => {} });
   ck('malformed JSON falls back to text', shown.length === 1, JSON.stringify(shown));
+}
+
+/* ---------------------------------------------------------------------------
+ * Getting a token saved in the first place.
+ *
+ * The worker can be running perfectly and still send nothing: it reads
+ * shops/<shop>/pushTokens, and if the shop has no token there, there is nowhere
+ * to deliver to. registerPush() was called once at load and returned early
+ * unless permission was ALREADY granted, so a person who allowed notifications
+ * and carried on never got a token written until their next load.
+ * ------------------------------------------------------------------------ */
+
+console.log('\nThe device registers when permission is given, not a load later');
+{
+  const main = readFileSync('main.js', 'utf8');
+
+  ck('asking for permission and registering is one step',
+     /async function askForPushPermission\(\)/.test(main));
+  ck('and it registers as soon as permission comes back granted',
+     /if \(permission !== 'granted'\) return;\s*\n\s*const result = await registerPush\(\);/.test(main));
+
+  // Both prompts must go through it; neither may call requestPermission alone.
+  // Comments stripped - main.js explains the change in prose, and the phrase
+  // "Notification.requestPermission()" appears in two of those explanations.
+  const code = main.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^[ \t]*\/\/.*$/gm, '');
+  const prompts = [...code.matchAll(/Notification\.requestPermission\(\)/g)].length;
+  ck('only one place asks the browser', prompts === 1, String(prompts));
+  ck('and the dead notification helper that was a second route is gone',
+     !/notification\s*=\s*\(msg\)/.test(main));
+  ck('while sw.js is still registered exactly once',
+     (code.match(/serviceWorker\.register\(/g) || []).length === 1,
+     String((code.match(/serviceWorker\.register\(/g) || []).length));
+  // Matched against the comment-stripped source. An earlier version of this
+  // check keyed on the explanatory comment above the call, which would have
+  // passed with the call itself deleted.
+  const calls = [...code.matchAll(/(?<!function )askForPushPermission\(\)/g)].length;
+  ck('both prompts call it, and nothing else does', calls === 2, String(calls));
+  ck('the reminder sheet goes through it, next to the reminder it just saved',
+     /logActivity\('reminder'[\s\S]{0,200}askForPushPermission\(\);/.test(code));
+  ck('so does the settings toggle', /if \(on\) askForPushPermission\(\);/.test(code));
+
+  ck('registerPush says why it failed rather than failing silently',
+     ["'not-configured'", "'no-shop'", "'unsupported'", "'not-granted'", "'no-token'", "'ok'"]
+       .every(r => main.includes('return ' + r)));
+  ck('a blocked permission is explained rather than re-prompted',
+     /Notification\.permission === 'denied'/.test(main) && /Notifications are blocked/.test(main));
+  ck('and success is confirmed, so it is testable from the shop floor',
+     /This device will be told even when the app is closed/.test(main));
+  // Anchored to the write itself. Matching the path anywhere in main.js passed
+  // with the write moved elsewhere, because the same path is spelt out again
+  // where a device unsubscribes.
+  const WRITE = /await update\(ref\(db, `shops\/\$\{shopName\}\/pushTokens\/\$\{pushDeviceId\(\)\}`\)/;
+  ck('the token is written under the shop, keyed by device', WRITE.test(code));
+
+  // And the worker reads that same node. Two halves of one contract, in two
+  // files, with nothing between them to keep them honest.
+  const wsrc = readFileSync('push-worker/worker.js', 'utf8');
+  ck('which is exactly the node the worker reads',
+     /dbGet\(env, `shops\/\$\{shop\}\/pushTokens`/.test(wsrc));
+}
+
+console.log('\n/health can say whether the worker is configured to send');
+{
+  const w = readFileSync('push-worker/worker.js', 'utf8');
+  ck('it reports whether the service account parses', /out\.serviceAccount = 'parsed'/.test(w));
+  ck('and names truncation, which is how it failed the first time',
+     /truncated\? `wrangler secret put` reads one line/.test(w));
+  ck('it reports whether a token can actually be minted', /out\.canMintToken = !!\(await getAccessToken\(sa\)\)/.test(w));
+  ck('and whether RUN_KEY was ever set', /runKeySet: !!env\.RUN_KEY/.test(w));
+
+  ck('and /run still needs the key', /url\.searchParams\.get\('key'\) === env\.RUN_KEY && env\.RUN_KEY/.test(w));
+}
+
+console.log('\n/health answers without handing out the service account');
+{
+  // Actually call it. Guessing at the source with regexes was how the first
+  // version of this check "passed" - it matched `out.hasPrivateKey =
+  // !!sa.private_key`, which is a boolean, and would have missed a real leak
+  // written any other way.
+  // The PEM markers are assembled rather than written out, so that this
+  // fixture does not trip scripts/check.mjs, which refuses to let anything
+  // shaped like a private key be committed. The guard is not being loosened to
+  // make room for the fixture - it is still proved below to catch a real one.
+  const BEGIN = '-----' + 'BEGIN PRIVATE KEY' + '-----';
+  const END = BEGIN.replace('BEGIN', 'END');
+  const FAKE_KEY = `${BEGIN}\nMIIfake0000SECRET0000KEYMATERIAL\n${END}\n`;
+  const FAKE_EMAIL = 'pusher@c24o-c038b.iam.gserviceaccount.com';
+  const sa = JSON.stringify({ type: 'service_account', project_id: 'c24o-c038b',
+    private_key_id: 'deadbeef', private_key: FAKE_KEY, client_email: FAKE_EMAIL });
+
+  const env = { FIREBASE_SERVICE_ACCOUNT: sa, PROJECT_ID: 'c24o-c038b',
+                DATABASE_URL: 'https://example.invalid', RUN_KEY: '' };
+  const res = await worker.fetch(new Request('https://w.dev/health'), env);
+  const body = await res.text();
+  const json = JSON.parse(body);
+
+  ck('it answers as JSON', res.status === 200 && typeof json === 'object');
+  ck('and says the service account parsed', json.serviceAccount === 'parsed', json.serviceAccount);
+  ck('that the key is present, as a boolean only', json.hasPrivateKey === true);
+  ck('and that RUN_KEY is not set, which is why /run is unusable',
+     json.runKeySet === false, String(json.runKeySet));
+
+  ck('the private key is not in the response', !body.includes('SECRET'), body.slice(0, 120));
+  ck('nor any part of the PEM', !/BEGIN PRIVATE KEY|MIIfake/.test(body));
+  ck('nor the service account address', !body.includes(FAKE_EMAIL), body.slice(0, 120));
+  ck('nor the raw secret', !body.includes('private_key_id') && !body.includes('deadbeef'));
+  ck('a fake key cannot mint a token, and it says so rather than pretending',
+     json.ok === false && json.canMintToken === false, JSON.stringify(json.ok));
+  ck('and any error it reports is short and not key material',
+     !json.tokenError || (json.tokenError.length <= 200 && !json.tokenError.includes('SECRET')),
+     String(json.tokenError));
+
+  // A truncated secret is the failure this endpoint was added for.
+  const cut = await worker.fetch(new Request('https://w.dev/health'),
+    { ...env, FIREBASE_SERVICE_ACCOUNT: sa.slice(0, 40) });
+  const cutJson = await cut.json();
+  ck('a truncated secret is named as such',
+     /not-json/.test(cutJson.serviceAccount), cutJson.serviceAccount);
+  ck('with its length, so the size is obvious at a glance',
+     cutJson.serviceAccountLength === 40, String(cutJson.serviceAccountLength));
+
+  const none = await (await worker.fetch(new Request('https://w.dev/health'),
+    { ...env, FIREBASE_SERVICE_ACCOUNT: '' })).json();
+  ck('and a missing one is not mistaken for a broken one',
+     none.serviceAccount === 'missing' && none.ok === false, none.serviceAccount);
+
+  // /run still guards the part that reads the database.
+  const run = await worker.fetch(new Request('https://w.dev/run'), env);
+  ck('/run is refused without the key', run.status === 404, String(run.status));
+  ck('and refused with a wrong one',
+     (await worker.fetch(new Request('https://w.dev/run?key=guess'), { ...env, RUN_KEY: 'real' })).status === 404);
+}
+
+console.log('\nA broken secret is loud rather than silent');
+{
+  // sweep() used to start with a bare JSON.parse and be handed to waitUntil
+  // with no .catch. A truncated secret therefore threw once a minute into
+  // nothing at all, which is exactly how this shipped looking healthy while
+  // sending nothing.
+  const wsrc = readFileSync('push-worker/worker.js', 'utf8');
+  ck('the scheduled sweep catches its own failure',
+     /ctx\.waitUntil\(sweep\(env\)[\s\S]{0,200}\.catch\(/.test(wsrc));
+
+  let err = null;
+  try { await sweep({ FIREBASE_SERVICE_ACCOUNT: '{"type":"service_account","private_key":"-----B' }); }
+  catch (e) { err = e; }
+  ck('a truncated secret throws rather than sweeping nothing', !!err);
+  ck('and the message names the cause', /not valid JSON/.test(err?.message || ''), err?.message);
+  ck('with the length, which is how truncation is spotted',
+     /47 chars/.test(err?.message || ''), err?.message);
+  ck('and does not quote the secret back into the log',
+     !/private_key|BEGIN/.test(err?.message || ''), err?.message);
+
+  let missing = null;
+  try { await sweep({}); } catch (e) { missing = e; }
+  ck('an unset secret says so', /is not set/.test(missing?.message || ''), missing?.message);
+
+  let partial = null;
+  try { await sweep({ FIREBASE_SERVICE_ACCOUNT: '{"type":"service_account"}' }); }
+  catch (e) { partial = e; }
+  ck('and a complete-but-useless one says which field is missing',
+     /missing client_email or private_key/.test(partial?.message || ''), partial?.message);
+}
+
+console.log('\nThe secret scanner still catches a real key');
+{
+  // The fixture above builds its PEM markers at runtime so it is not itself
+  // flagged. That only holds up if the guard is still armed, so prove it: drop
+  // a file shaped like a leaked key into the repo and make scripts/check.mjs
+  // refuse it. If someone ever loosens that rule to make a test quieter, this
+  // is what fails.
+  const probe = '.check-probe.tmp.txt';
+  let refused = false, why = '';
+  try {
+    writeFileSync(probe, ['-----', 'BEGIN PRIVATE KEY', '-----'].join('') + '\nMIIprobe\n');
+    try { execFileSync(process.execPath, ['scripts/check.mjs'], { stdio: 'pipe' }); why = 'check.mjs passed'; }
+    catch (e) { const o = String(e.stdout || '') + String(e.stderr || '');
+                refused = o.includes('a PEM private key') && o.includes(probe); why = o.slice(-160); }
+  } finally { try { unlinkSync(probe); } catch {} }
+  ck('a committed private key is still refused by scripts/check.mjs', refused, why);
 }
 
 console.log(`\n${pass} passed, ${fail} failed\n`);

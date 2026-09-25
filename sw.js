@@ -1,8 +1,14 @@
 // Notification handling for the Mobifixer service app.
 //
-// This worker deliberately does NOT cache anything. It exists so the page can
-// call registration.showNotification(), which is the only way to raise a
-// notification on Android Chrome (`new Notification()` throws there).
+// Two jobs, in this order: raise notifications, and cache the shell.
+//
+// Notifications come first because they are the reason this file exists.
+// registration.showNotification() is the only way to raise one on Android
+// Chrome (`new Notification()` throws there), and a push that arrives while
+// the app is closed can only be handled here - the page is not running.
+//
+// The caching half is further down and was added later; the comment here used
+// to say this worker cached nothing, which stopped being true then.
 
 // Reminders pushed while the app is closed. Messages are sent data-only on
 // purpose: with a `notification` payload FCM's own service worker draws the

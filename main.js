@@ -663,7 +663,6 @@ const speakText=(text, lang = 'en-IN', rate = 1, pitch = 1)=> {
 // Global data array
 let data = [];
 
-let notification;
 
 let unseenCount = 0;
 let unseen = {
@@ -2096,26 +2095,15 @@ searchOut.addEventListener("scroll", () => {
 
 
 
-// not calling yet. (this is the notification function )
+// The one place sw.js is registered. It also used to assign a `notification`
+// helper that asked for permission and drew its own notification - its own
+// comment said "not calling yet", and nothing ever called it in the two years
+// since. It is gone: a second route to Notification.requestPermission() that
+// bypasses askForPushPermission would prompt without registering the device,
+// which is the bug this change exists to fix.
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("sw.js").then(reg => {
-    // console.log("Service Worker registered:", reg);
-    
-    notification =(msg) => {
-      Notification.requestPermission().then(permission => {
-        if (permission === "granted") {
-          reg.showNotification("MOBIFIXER", {
-            body: "New Service added",
-            icon: "https://cdn-icons-png.flaticon.com/512/1827/1827349.png",
-            actions: [
-              { action: "view", title: "View" },
-              { action: "dismiss", title: "Cancel" }
-            ]
-          });
-        }
-      });
-    };
-  });
+  navigator.serviceWorker.register("sw.js").catch(err =>
+    console.warn('service worker registration failed:', err && err.message));
 }
 
 
@@ -4302,10 +4290,8 @@ $$('.toggle_btn').forEach(btn => {
     if (input?.name === 'voice_alert') {
       const on = input.checked;
       localStorage.setItem(REMINDER_ENABLED_KEY, on ? 'on' : 'off');
-      // The only place permission is requested: the user just asked for it.
-      if (on && 'Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission().catch(() => {});
-      }
+      // The user just turned reminders on, so ask and register now.
+      if (on) askForPushPermission();
     }
   };
 });
@@ -5715,10 +5701,9 @@ async function saveReminder(dueAt) {
     closeRemindSheet();
     showNotice({ title: 'Reminder set', body: `#${sn} · ${fmtWhen(dueAt)}`, type: 'info', delay: 4 });
     logActivity('reminder', { sn, detail: fmtWhen(dueAt) });
-    // Ask for permission only now — the person has just asked to be reminded.
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission().catch(() => {});
-    }
+    // Ask for permission only now - the person has just asked to be reminded -
+    // and register the device with it, rather than waiting for the next load.
+    askForPushPermission();
   } catch (err) {
     const h = $('#remindHint');
     h.textContent = 'Could not save the reminder. Check your connection and try again.';
@@ -5791,17 +5776,25 @@ function pushDeviceId() {
   return id;
 }
 
+// Returns a reason string on failure so the caller can say something useful,
+// and 'ok' when this device is registered for background reminders.
+//
+// This is called at load AND again the moment permission is granted. It used to
+// be load-only, which meant the token was written on the NEXT load after
+// someone allowed notifications - and most people allow and carry on. A shop
+// with no token in shops/<shop>/pushTokens gets nothing from the push worker,
+// however well the worker is running, because there is nowhere to send to.
 async function registerPush() {
-  if (!PUSH_VAPID_KEY) return;                       // not configured yet
-  if (!shopName) return;
-  if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
-  if (Notification.permission !== 'granted') return; // never prompt from here
+  if (!PUSH_VAPID_KEY) return 'not-configured';
+  if (!shopName) return 'no-shop';
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) return 'unsupported';
+  if (Notification.permission !== 'granted') return 'not-granted';  // never prompt from here
   try {
     // Loaded on demand: the messaging SDK is only fetched by shops that have
     // actually granted permission, not by everyone on every page load.
     const { getMessaging, getToken, isSupported } =
       await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-messaging.js');
-    if (!(await isSupported())) return;              // iOS Safari below 16.4, etc.
+    if (!(await isSupported())) return 'unsupported';   // iOS Safari below 16.4, etc.
 
     const reg = await navigator.serviceWorker.ready;
     const messaging = getMessaging(app);
@@ -5809,7 +5802,7 @@ async function registerPush() {
       vapidKey: PUSH_VAPID_KEY,
       serviceWorkerRegistration: reg                 // reuse sw.js; no firebase-messaging-sw.js
     });
-    if (!token) return;
+    if (!token) return 'no-token';
 
     await update(ref(db, `shops/${shopName}/pushTokens/${pushDeviceId()}`), {
       token,
@@ -5817,10 +5810,45 @@ async function registerPush() {
       ua: navigator.userAgent.slice(0, 120),
       updatedAt: Date.now()
     });
+    return 'ok';
   } catch (err) {
-    // Push is an enhancement. If the SDK, the service worker or the network
-    // fails, the in-app reminder path still works, so fail quietly.
+    // Push is an enhancement: the in-app reminder path still works without it.
+    // Quiet on the boot path, but the caller that the person just spoke to gets
+    // the reason and can say so.
     console.warn('push registration skipped:', err && err.message);
+    return 'error:' + ((err && err.message) || 'unknown');
+  }
+}
+
+// Ask for permission and, if it is given, register this device there and then.
+// Only called from the two places where the person has just asked to be
+// reminded, never on load.
+async function askForPushPermission() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'denied') {
+    showNotice({ title: 'Notifications are blocked',
+      body: 'Turn them on for this site in the browser settings, then set the reminder again.',
+      type: 'warn', delay: 8 });
+    return;
+  }
+  const permission = Notification.permission === 'granted'
+    ? 'granted'
+    : await Notification.requestPermission().catch(() => 'default');
+  if (permission !== 'granted') return;
+
+  const result = await registerPush();
+  if (result === 'ok') {
+    showNotice({ title: 'Reminders on',
+      body: 'This device will be told even when the app is closed.',
+      type: 'success', delay: 5 });
+  } else if (result === 'unsupported') {
+    showNotice({ title: 'Reminders while the app is open',
+      body: 'This browser cannot deliver notifications in the background, so they only appear with the app open.',
+      type: 'info', delay: 8 });
+  } else {
+    showNotice({ title: 'Background reminders not set up',
+      body: 'Reminders will still show while the app is open. Reopen the app to try again.',
+      type: 'warn', delay: 8 });
   }
 }
 
