@@ -14,6 +14,7 @@
 // component, searchCard.js, and keeps its own markup.)
 
 import { parsePattern, patternSvg, patternText } from './pattern.js';
+import { jobAge, earlierJobCount, repeatRepair } from './jobMeta.js';
 
 const STATUS_LABEL = {
   pending:   'Pending',
@@ -62,7 +63,11 @@ const lockValue = (lock) => {
           </button>`;
 };
 
-export const cardSummary = (item = {}) => {
+// `meta` carries what the row cannot work out from one job on its own: how many
+// other jobs this customer has had, and whether this device has been back
+// before. main.js builds it once per refresh and hands the same object to every
+// card, so these stay pure functions of their arguments.
+export const cardSummary = (item = {}, meta = {}) => {
   const { name, sn, status, amount, advance, devices, model } = item;
   const firstModel = (Array.isArray(devices) && devices.length && devices[0].model) || model || '';
   // An amount that was never entered is not a settled balance. Both come back
@@ -87,7 +92,17 @@ export const cardSummary = (item = {}) => {
     </span>
 
     <span class="trail">
+      <span class="trail-top">
+      ${(() => {
+        // How long this has been sitting. Nothing in the app said so before, and
+        // a three-week-old repair looked exactly like this morning's. It shares
+        // the serial's line: on its own row it made every card a line taller.
+        const age = jobAge(item, meta.now);
+        return age ? `<span class="age age-${age.level}" title="Taken in ${age.days} days ago"
+                        >${age.days}d</span>` : '';
+      })()}
       <span class="sn">${esc(sn)}</span>
+      </span>
       ${!hasAmount
         ? ''
         : balance > 0
@@ -106,7 +121,8 @@ export const cardSummary = (item = {}) => {
 // shop's page. Those fields are attacker-writable today because the database
 // has no rules on it yet. The `<i>unknown</i>` fallbacks stay outside esc() -
 // they are ours, not the customer's.
-export const cardLayout = ({
+export const cardLayout = (item = {}, meta = {}) => {
+  const {
   name,
   status,
   number,
@@ -122,10 +138,8 @@ export const cardLayout = ({
   time,
   author,
   devices
-}) => {
-  
+  } = item;
 
-  
   // ✅ Handle both old and new structures
   let deviceDetails = '';
   const me = localStorage.getItem('author')
@@ -168,8 +182,25 @@ export const cardLayout = ({
     `;
   }
 
+  // The same customer, and the same device, coming back. Both were invisible
+  // before: a number you had seen a dozen times looked like a new one.
+  const earlier = earlierJobCount(item, meta.customerIndex);
+  const repeat = repeatRepair(item, meta.customerIndex);
+  const historyRow = (earlier || repeat) ? `
+    <div class='job-history'>
+      ${earlier ? `<button type='button' class='history-btn' data-number='${esc(number)}'>
+          <i class='fa-regular fa-clock'></i>
+          ${earlier} earlier job${earlier === 1 ? '' : 's'}
+        </button>` : ''}
+      ${repeat ? `<span class='repeat-flag' title='Same device, collected ${repeat.days} days before this job was taken in'>
+          <i class='fa-solid fa-rotate-left'></i>
+          Back within ${repeat.days} day${repeat.days === 1 ? '' : 's'} of ${esc(repeat.sn)}
+        </span>` : ''}
+    </div>` : '';
+
   return `
   <div class="box">
+    ${historyRow}
     
   
       
@@ -262,6 +293,12 @@ export const cardLayout = ({
     <button class='remind-btn' data-sn='${sn}' aria-label='Set a reminder for this job'>
       <i class='fa-regular fa-bell'></i> Remind
     </button>
+
+    ${['collected', 'return'].includes(status) ? '' : `
+    <button class='tell-btn' data-sn='${esc(sn)}'
+            aria-label='Message this customer on WhatsApp about job ${esc(sn)}'>
+      <i class='fa-brands fa-whatsapp'></i> ${status === 'done' ? 'Tell customer' : 'Message'}
+    </button>`}
 
 <p class="author_name">
   ${author === me

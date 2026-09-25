@@ -4,7 +4,8 @@ import { PATTERN_MIN, parsePattern, formatPattern, dotBetween, dotXY, patternSvg
          patternText, pointsFor } from './pattern.js';
 import { searchCard } from './searchCard.js';
 import { inventoryCard} from './inventoryCard.js';
-import { generateWhatsAppLink} from './generateWhatsappLink.js';
+import { generateWhatsAppLink } from './generateWhatsappLink.js';
+import { jobDateKey, todayKey, buildCustomerIndex } from './jobMeta.js';
 
 // Firebase core import
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
@@ -764,13 +765,24 @@ $('#todayEntry').onclick=()=>{
 // 🔁 Debounced list refresh — coalesces the initial burst (and rapid live updates)
 // into a SINGLE re-render instead of one full filterByStatus() per record. This is
 // the main fix for slow loading, and it hides the loader only AFTER the burst settles.
+// Built once per refresh and handed to every card, so a card can ask "has this
+// customer been in before" in constant time. Per card it would be 500x500
+// comparisons on each refresh, which would undo the render work that took tab
+// switching from 157ms to 26ms.
+let cardMeta = { customerIndex: new Map(), now: new Date() };
+const rebuildCardMeta = () => {
+  cardMeta = { customerIndex: buildCustomerIndex(data), now: new Date() };
+};
+
 let refreshTimer = null;
 const scheduleListRefresh = () => {
   clearTimeout(refreshTimer);
   refreshTimer = setTimeout(() => {
     const activeStatus = document.querySelector("nav a.active")?.dataset.text.toLowerCase() || "pending";
+    rebuildCardMeta();
     filterByStatus(activeStatus);
     showUnseenCount();
+    paintTodayBar();
     // Approximate preview for other contexts; the #add router reads the authoritative
     // counter, so don't overwrite it while the add form is open.
     if (data.length && location.hash !== '#add') $('#new_sn').textContent = Math.max(...data.map(d => Number(d.sn) || 0)) + 1;
@@ -1084,7 +1096,7 @@ if (item.isDeleted === true) return;
     listItem.setAttribute("data-sn", item.sn);
     
     const nav = document.createElement("nav");
-    nav.innerHTML = cardSummary(item);
+    nav.innerHTML = cardSummary(item, cardMeta);
     // Closed by default. Everything worth scanning is on the summary row, and
     // 1248 fully-expanded cards is not a list anybody can read.
     //
@@ -1122,7 +1134,7 @@ const expandCard = (li) => {
   if (!li || li.dataset.bodyBuilt) return;
   const item = data.find(d => String(d.sn) === String(li.dataset.sn));
   if (!item) return;
-  li.insertAdjacentHTML('beforeend', cardLayout(item));
+  li.insertAdjacentHTML('beforeend', cardLayout(item, cardMeta));
   li.dataset.bodyBuilt = '1';
   setAutoHeightTextArea(li);
   paintReminderButtons(li);
@@ -2018,10 +2030,18 @@ search.addEventListener("input", () => {
   const q = query.toLowerCase();
 
   // Check SN, name, number (always exist)
+  // Complaints are searchable too. A tech looking for "battery" or "screen"
+  // had no way to find them - only SN, name, number and model matched.
+  const complaintText = [
+    item.complaints || '',
+    ...(Array.isArray(item.devices) ? item.devices.map(d => d?.complaints || '') : []),
+  ].join(' ').toLowerCase();
+
   const matchesBasic =
     String(item.sn).includes(query) ||
     item.name.toLowerCase().includes(q) ||
-    item.number.includes(query);
+    item.number.includes(query) ||
+    (q.length >= 3 && complaintText.includes(q));
 
   // Check model: old structure
   let matchesModel = false;
@@ -2426,6 +2446,46 @@ if (summaryRow && !e.target.closest('.pick') && !e.target.closest('.editIcon')) 
   const remindBtn = e.target.closest('.remind-btn');
   if (remindBtn) {
     openRemindSheet(remindBtn.dataset.sn);
+    return;
+  }
+
+  // Tell the customer where their repair is. generateWhatsAppLink has been in
+  // the repo since the beginning, imported and never called.
+  const tellBtn = e.target.closest('.tell-btn');
+  if (tellBtn) {
+    const svc = data.find(d => String(d.sn) === String(tellBtn.dataset.sn));
+    if (!svc) return;
+    const link = generateWhatsAppLink({
+      phone: svc.number,
+      status: svc.status,
+      customerName: svc.name,
+      deviceName: Array.isArray(svc.devices) && svc.devices.length ? svc.devices : svc.model,
+      jobId: svc.sn,
+      shopName: localStorage.getItem('shopName') || 'Mobifixer',
+      balance: (Number(svc.amount) || 0) - (Number(svc.advance) || 0),
+    });
+    if (!link) {
+      showNotice({ title: 'No number to message',
+        body: `${svc.number || 'This job'} is not a number WhatsApp can open.`,
+        type: 'error', delay: 6 });
+      return;
+    }
+    window.open(link, '_blank', 'noopener');
+    logActivity('message', { sn: svc.sn, customer: svc.name });
+    return;
+  }
+
+  // "3 earlier jobs" runs the search that already matches on number.
+  const historyBtn = e.target.closest('.history-btn');
+  if (historyBtn) {
+    const num = historyBtn.dataset.number || '';
+    const box = $('#search');
+    if (box) {
+      location.hash = '';
+      box.value = num;
+      box.dispatchEvent(new Event('input', { bubbles: true }));
+      box.focus();
+    }
     return;
   }
 
@@ -4068,6 +4128,40 @@ $('#jobForm').addEventListener('input', (e) => {
 });
 
 renderPattern();
+
+// Three numbers under the shop name: what came in today, what is repaired and
+// waiting to be picked up, and what is still owed. The header said none of it.
+// The arithmetic is the payments page's, reused rather than written again.
+const paintTodayBar = () => {
+  const bar = $('#todayBar');
+  if (!bar) return;
+
+  const live = data.filter(d => d && d.isDeleted !== true);
+  const key = todayKey();
+  const inToday = live.filter(d => jobDateKey(d.date) === key).length;
+  const ready = live.filter(d => d.status === 'done').length;
+  const owed = live
+    .filter(d => d.status !== 'collected' && d.status !== 'return')
+    .reduce((sum, d) => sum + Math.max(0, serviceBalance(d)), 0);
+
+  $('#today-in').textContent = inToday;
+  $('#today-ready').textContent = ready;
+  $('#today-owed').textContent = inr(owed);
+  bar.querySelector('[data-go="done"]').classList.toggle('is-zero', ready === 0);
+  // Nothing loaded yet is not the same as a quiet day; stay hidden until it is.
+  bar.hidden = live.length === 0;
+};
+
+$('#todayBar').onclick = (e) => {
+  const stat = e.target.closest('.today-stat');
+  if (!stat) return;
+  if (stat.dataset.go === 'owed') { location.hash = '#payments'; return; }
+  const want = stat.dataset.go === 'done' ? 'done' : 'all';
+  const tab = [...$$('nav.status-nav a')]
+    .find(a => (a.dataset.text || '').toLowerCase() === want);
+  if (tab) { location.hash = ''; tab.click(); }
+};
+
 
 // ########## SEARCH_POUCH ########## //
 

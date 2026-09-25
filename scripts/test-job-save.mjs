@@ -23,6 +23,12 @@ import { readFileSync, existsSync } from 'node:fs';
 // live in pattern.js now, so the test runs the real exports.
 import { PATTERN_MIN, parsePattern, formatPattern, dotBetween, patternSvg, patternText }
   from '../pattern.js';
+// Ageing, customer history and repeat repairs decide what a shop sees on a
+// card, so the real exports run here rather than a copy of the rules.
+import { parseJobDate, jobDateKey, todayKey, daysBetween, jobAge, AGE_WARN, AGE_LATE,
+         AGEING_STATUSES, buildCustomerIndex, earlierJobCount, repeatRepair,
+         REPEAT_WINDOW, waNumber, digitsOf } from '../jobMeta.js';
+import { whatsAppMessage, generateWhatsAppLink } from '../generateWhatsappLink.js';
 
 const main = readFileSync('main.js', 'utf8');
 
@@ -473,7 +479,8 @@ console.log('\nThe card body is built when the card is opened, not before');
   // parsing 79 ms -> 48 ms, and switching status tabs 157 ms -> 23 ms.
   const render = between(main, 'const nextSlice = activeFiltered.slice', "// Fill in a card's body",
                          'the render loop');
-  ck('the render loop writes only the summary row', /nav\.innerHTML = cardSummary\(item\)/.test(render));
+  ck('the render loop writes only the summary row',
+     /nav\.innerHTML = cardSummary\(item, cardMeta\)/.test(render));
   ck('and no longer builds the body', !/cardLayout\(item\)/.test(render),
      (render.match(/.*cardLayout\(item\).*/) || [''])[0].trim());
   ck('expandCard builds it on first open', /const expandCard = \(li\) => \{/.test(main));
@@ -481,7 +488,7 @@ console.log('\nThe card body is built when the card is opened, not before');
   ck('the toggle calls it before uncollapsing',
      /expandCard\(parent\); parent\.classList\.toggle\('collapse'\);/.test(main));
   ck('it appends rather than reparsing the row it is added to',
-     /li\.insertAdjacentHTML\('beforeend', cardLayout\(item\)\)/.test(main));
+     /li\.insertAdjacentHTML\('beforeend', cardLayout\(item, cardMeta\)\)/.test(main));
 
   // The two things that used to sweep the whole list after every render.
   ck('the note boxes are sized per card', /const setAutoHeightTextArea = \(root = document\) =>/.test(main));
@@ -553,6 +560,191 @@ console.log('\nThe bulk bar can set every status a job can have');
   ck('and it offers nothing the card cannot show',
      bulkOptions.every(o => CARD_STATUSES.includes(o)),
      bulkOptions.filter(o => !CARD_STATUSES.includes(o)).join(','));
+}
+
+/* ---------------------------------------------------------------------------
+ * Four things the app knew but never said.
+ * ------------------------------------------------------------------------ */
+
+const daysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n);
+  const M = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  return `${String(d.getDate()).padStart(2,'0')}-${M[d.getMonth()]}-${d.getFullYear()}`; };
+
+console.log('\nDates parse the way the records were actually written');
+{
+  // toLocaleDateString wrote SEP on older browsers and SEPT on newer ones, so
+  // one shop has both spellings on file.
+  ck('SEP parses', +parseJobDate('22-SEP-2026') === +new Date(2026, 8, 22));
+  ck('SEPT parses to the same day', +parseJobDate('22-SEPT-2026') === +new Date(2026, 8, 22));
+  ck('lowercase parses', +parseJobDate('22-sept-2026') === +new Date(2026, 8, 22));
+  ck('a single-digit day parses', +parseJobDate('1-JAN-2026') === +new Date(2026, 0, 1));
+  ck('and normalises to one key', jobDateKey('1-SEPT-2026') === '01-SEP-2026', jobDateKey('1-SEPT-2026'));
+  ck('both spellings give the same key', jobDateKey('22-SEP-2026') === jobDateKey('22-SEPT-2026'));
+
+  for (const bad of ['', null, undefined, 'yesterday', '2026-09-22', '32-SEP-2026', '22-XXX-2026'])
+    ck(`${JSON.stringify(bad)} is not a date`, parseJobDate(bad) === null, String(parseJobDate(bad)));
+  // 31 February rolls over to March in a Date constructor; it must not parse.
+  ck('31-FEB is rejected rather than rolled over', parseJobDate('31-FEB-2026') === null);
+
+  ck('days are counted by calendar day',
+     daysBetween(new Date(2026, 8, 1, 23, 59), new Date(2026, 8, 2, 0, 1)) === 1);
+  ck('today is zero days old', daysBetween(new Date(), new Date()) === 0);
+  ck('todayKey matches what a job written today would hold',
+     todayKey(new Date(2026, 8, 22)) === '22-SEP-2026', todayKey(new Date(2026, 8, 22)));
+}
+
+console.log('\nA job that has been sitting says so');
+{
+  const at = (days, status = 'pending') => jobAge({ status, date: daysAgo(days) });
+
+  // Pin the actual numbers. Every check below is written in terms of AGE_WARN
+  // and AGE_LATE so the boundaries stay right if they are ever retuned - but
+  // that means moving a threshold would slide the whole suite with it and pass.
+  // These two are what stop that.
+  ck('amber starts at a week', AGE_WARN === 7, String(AGE_WARN));
+  ck('and red at a month', AGE_LATE === 30, String(AGE_LATE));
+  ck('the repeat window is a month too', REPEAT_WINDOW === 30, String(REPEAT_WINDOW));
+
+  ck('a job taken in today is not flagged', at(0) === null);
+  ck('nor one from yesterday', at(1) === null);
+  ck(`nor at ${AGE_WARN - 1} days`, at(AGE_WARN - 1) === null, JSON.stringify(at(AGE_WARN - 1)));
+  ck(`amber at exactly ${AGE_WARN}`, at(AGE_WARN)?.level === 'warn', JSON.stringify(at(AGE_WARN)));
+  ck(`still amber at ${AGE_LATE - 1}`, at(AGE_LATE - 1)?.level === 'warn');
+  ck(`red at exactly ${AGE_LATE}`, at(AGE_LATE)?.level === 'late', JSON.stringify(at(AGE_LATE)));
+  ck('and red long after', at(400)?.level === 'late');
+  ck('the day count is the real one', at(45)?.days === 45, String(at(45)?.days));
+
+  // "done" ages deliberately: repaired and never collected is how a phone gets
+  // forgotten. main.js has its own OPEN_STATUSES for unfinished WORK, and that
+  // one leaves done out - the two lists mean different things.
+  for (const st of ['pending', 'progress', 'spare', 'done'])
+    ck(`${st} ages`, at(45, st)?.level === 'late', st);
+  for (const st of ['collected', 'return'])
+    ck(`${st} is finished and never ages`, at(400, st) === null, st);
+  ck('the ageing list is not main.js\'s unfinished-work list',
+     AGEING_STATUSES.includes('done') && !/const OPEN_STATUSES = \['pending', 'progress', 'spare', 'done'\]/.test(main));
+
+  ck('a job with an unreadable date is not guessed at',
+     jobAge({ status: 'pending', date: 'sometime' }) === null);
+  ck('nor one dated in the future', jobAge({ status: 'pending', date: daysAgo(-5) }) === null,
+     JSON.stringify(jobAge({ status: 'pending', date: daysAgo(-5) })));
+}
+
+console.log('\nThe same customer, and the same device, coming back');
+{
+  const jobs = [
+    { sn: 1, number: '9876500001', status: 'collected', date: daysAgo(40),
+      paidInfo: { date: daysAgo(30) }, devices: [{ model: 'Redmi Note 12' }] },
+    { sn: 2, number: '98765 00001', status: 'collected', date: daysAgo(500),
+      devices: [{ model: 'Redmi Note 12' }] },
+    { sn: 3, number: '9876500001', status: 'done', date: daysAgo(22),
+      devices: [{ model: 'Redmi Note 12' }] },
+    { sn: 4, number: '9876500002', status: 'pending', date: daysAgo(1),
+      devices: [{ model: 'Oppo F21' }] },
+    { sn: 5, number: '9876500001', status: 'pending', date: daysAgo(1), isDeleted: true,
+      devices: [{ model: 'Redmi Note 12' }] },
+  ];
+  const index = buildCustomerIndex(jobs);
+
+  ck('numbers are matched on their digits, however they were typed',
+     digitsOf('98765 00001') === '9876500001' && digitsOf('+91-98765-00001') === '919876500001');
+  ck('a deleted job is not counted as history', earlierJobCount(jobs[2], index) === 2,
+     String(earlierJobCount(jobs[2], index)));
+  ck('a customer with no history reads zero', earlierJobCount(jobs[3], index) === 0);
+  ck('a job never counts itself', earlierJobCount(jobs[0], index) === 2,
+     String(earlierJobCount(jobs[0], index)));
+
+  const repeat = repeatRepair(jobs[2], index);
+  ck('a device back inside the window is flagged', repeat?.sn === 1, JSON.stringify(repeat));
+  ck('with the gap since it was handed over', repeat?.days === 8, String(repeat?.days));
+  ck('measured from the payment date, not the job date',
+     repeat?.days === daysBetween(parseJobDate(daysAgo(30)), parseJobDate(daysAgo(22))));
+  ck('the older one is too long ago to count', repeat?.sn !== 2);
+
+  const outside = repeatRepair(
+    { sn: 9, number: '9876500001', date: daysAgo(30 - REPEAT_WINDOW - 1), devices: [{ model: 'Redmi Note 12' }] },
+    index);
+  ck(`nothing is flagged past ${REPEAT_WINDOW} days`, outside === null, JSON.stringify(outside));
+  ck('a different device is not a repeat',
+     repeatRepair({ sn: 9, number: '9876500001', date: daysAgo(22), devices: [{ model: 'Oppo F21' }] }, index) === null);
+  ck('and neither is a different customer',
+     repeatRepair({ sn: 9, number: '9999999999', date: daysAgo(22), devices: [{ model: 'Redmi Note 12' }] }, index) === null);
+  ck('a job taken in BEFORE the earlier one was collected is not a repeat',
+     repeatRepair({ sn: 9, number: '9876500001', date: daysAgo(35), devices: [{ model: 'Redmi Note 12' }] }, index) === null);
+}
+
+console.log('\nTelling the customer, which the app could already do and never did');
+{
+  ck('main.js finally calls it', /generateWhatsAppLink\(\{/.test(main));
+  // Comments stripped: the file explains in prose what it used to do, and the
+  // words "trackingLink" and "never called" both appear in that explanation.
+  ck('and the dead tracking link is gone from the message',
+     !/trackingLink/.test(stripComments(readFileSync('generateWhatsappLink.js', 'utf8'))));
+
+  const base = { phone: '7592949476', customerName: 'User', jobId: 71,
+                 deviceName: [{ model: 'Vivo Y28 5G' }], shopName: 'Mobifixer' };
+
+  const done = whatsAppMessage({ ...base, status: 'done', balance: 2300 });
+  ck('a finished job says it is ready', /ready to collect/i.test(done), done.slice(0, 60));
+  ck('and what is left to pay', done.includes('₹2,300'), done);
+  ck('a settled one does not ask for money',
+     /Nothing left to pay/.test(whatsAppMessage({ ...base, status: 'done', balance: 0 })));
+  ck('a job on the bench says it was received',
+     /received your Vivo Y28 5G/.test(whatsAppMessage({ ...base, status: 'pending' })));
+  ck('and one waiting on a part says so',
+     /waiting on a spare part/.test(whatsAppMessage({ ...base, status: 'spare' })));
+  ck('the job number is always in it', [ 'done', 'pending', 'spare' ]
+     .every(status => whatsAppMessage({ ...base, status }).includes('#71')));
+  ck('a nameless customer still gets a greeting',
+     whatsAppMessage({ ...base, customerName: '-', status: 'done' }).startsWith('Hello,'));
+
+  // wa.me wants digits and a country code, and records hold whatever was typed.
+  ck('ten digits get the country code', waNumber('7592949476') === '917592949476');
+  ck('punctuation is stripped first', waNumber('+91 75929-49476') === '917592949476');
+  ck('a number that already has one is left alone', waNumber('917592949476') === '917592949476');
+  for (const bad of ['', '123', null, '1'.repeat(16)])
+    ck(`${JSON.stringify(bad)} cannot be messaged`, waNumber(bad) === null, String(waNumber(bad)));
+
+  ck('the link is encoded', /^https:\/\/wa\.me\/917592949476\?text=Hello%20User/.test(
+     generateWhatsAppLink({ ...base, status: 'done', balance: 100 })));
+  for (const status of ['collected', 'return'])
+    ck(`${status} has nothing to say`, generateWhatsAppLink({ ...base, status }) === null);
+  ck('and an undialable number gets no link',
+     generateWhatsAppLink({ ...base, phone: '12', status: 'done' }) === null);
+  ck('the card offers it on every other status',
+     /\$\{\['collected', 'return'\]\.includes\(status\) \? '' : `/.test(card));
+}
+
+console.log('\nThe day, and the index behind it');
+{
+  ck('the header has somewhere to put it', /id="todayBar"/.test(html));
+  ck('taken in today, ready, and owed', ['today-in', 'today-ready', 'today-owed']
+     .every(id => html.includes(`id="${id}"`)));
+  ck('it reuses the payments page arithmetic rather than a second copy',
+     /serviceBalance\(d\)/.test(between(main, 'const paintTodayBar', '\n};', 'paintTodayBar')));
+  ck('it hides itself before anything has loaded',
+     /bar\.hidden = live\.length === 0;/.test(main));
+  ck('a deleted job is not counted',
+     /data\.filter\(d => d && d\.isDeleted !== true\)/.test(main));
+  ck('and it is repainted with the list', /paintTodayBar\(\);/.test(
+     between(main, 'const scheduleListRefresh = () => {', '\n};', 'scheduleListRefresh')));
+
+  // The index is what keeps this off the render path.
+  ck('the customer index is built once per refresh, not per card',
+     /rebuildCardMeta\(\);/.test(between(main, 'const scheduleListRefresh = () => {', '\n};', 'refresh'))
+       && /buildCustomerIndex\(data\)/.test(main));
+  ck('and nothing builds one inside the render loop',
+     !/buildCustomerIndex/.test(between(main, 'const nextSlice = activeFiltered.slice',
+                                        "// Fill in a card's body", 'the render loop')));
+}
+
+console.log('\nOdds and ends');
+{
+  ck('the search finds a complaint, not just the device',
+     /complaintText\.includes\(q\)/.test(main));
+  ck('it looks in every device on the job',
+     /item\.devices\.map\(d => d\?\.complaints \|\| ''\)/.test(main));
+  ck('the empty priority-view shell is gone', !/priority-view/.test(html));
 }
 
 console.log(`\n${pass} passed, ${fail} failed\n`);

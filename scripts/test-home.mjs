@@ -110,8 +110,10 @@ console.log('\nCustomer data is escaped');
 
 console.log('\nEvery list builder renders the same row');
 {
-  ck('all three call cardSummary', (main.match(/cardSummary\(item\)/g) || []).length === 3,
-     String((main.match(/cardSummary\(item\)/g) || []).length));
+  // The live one passes cardMeta as well; the other two are in createCardsyyyy,
+  // which has been dead since 2.6.0 and is left alone.
+  ck('all three call cardSummary', (main.match(/cardSummary\(item[,)]/g) || []).length === 3,
+     String((main.match(/cardSummary\(item[,)]/g) || []).length));
   ck('and all three start closed', (main.match(/classList\.add\('collapse'\)/g) || []).length === 3);
   ck('nothing builds its own nav markup any more', !/nav\.innerHTML\s*=\s*`/.test(main));
 }

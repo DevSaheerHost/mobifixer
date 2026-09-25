@@ -140,6 +140,20 @@
       </span>
     </div>
 
+    <!-- The header carried the shop name and three icons and said nothing about
+         the day. Each figure taps through to the list that explains it. -->
+    <div class="today-bar" id="todayBar" hidden>
+      <button type="button" class="today-stat" data-go="today">
+        <b id="today-in">0</b><span>in</span>
+      </button>
+      <button type="button" class="today-stat" data-go="done">
+        <b id="today-ready">0</b><span>ready</span>
+      </button>
+      <button type="button" class="today-stat" data-go="owed">
+        <b id="today-owed">₹0</b><span>owed</span>
+      </button>
+    </div>
+
     <div class="search-bar">
       <i class="fa-solid fa-magnifying-glass search-icon" aria-hidden="true"></i>
       <input type="text" name="search" id="search" placeholder="Name, number, SN or device"
@@ -1329,12 +1343,6 @@ Loading changelog...
     </li>
   </ul>
 
-</main>
-
-<main class="priority-view hidden">
-  <div class="card">
-    
-  </div>
 </main>
 
 <main class="creditPage">

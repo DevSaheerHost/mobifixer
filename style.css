@@ -6390,6 +6390,13 @@ li nav h3.sn {
    ======================================================================== */
 
 header {
+  /* `.header, header { height: 140px }` in the INVENTORY STYLE block is meant
+     for the inventory page's .header div and catches the bare element too, so
+     every <header> in the app has been pinned to 140px. The home header's
+     contents happened to fit under that until the day's figures were added;
+     then the search bar started painting 18px below the header's own bottom
+     border. `.settings_page .header` already needed the same escape hatch. */
+  height: auto;
   padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-top, 0px));
   padding-top: calc(0.75rem + env(safe-area-inset-top, 0px));
   padding-bottom: 0.75rem;
@@ -6409,7 +6416,7 @@ header .shop-selector-wrap {
   justify-content: flex-start;
   gap: 0.35rem;
   overflow: visible;      /* it used to scroll sideways */
-  margin-bottom: 0.65rem;
+  margin-bottom: 0.45rem;
 }
 
 /* The shop name takes the space; the icons sit at the end. */
@@ -7773,4 +7780,166 @@ body.no-scroll {
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
+}
+
+/* ===========================================================================
+   AGE, CUSTOMER HISTORY, AND THE DAY'S NUMBERS
+   ---------------------------------------------------------------------------
+   Three things the app knew but never said: how long a job has been sitting,
+   whether this customer has been in before, and what the day looks like.
+   ======================================================================== */
+
+/* ---------- how old a job is ---------- */
+
+/* The age sits beside the serial rather than above it - on its own row it made
+   every card in the list a line taller. */
+.home .list .list-item .trail-top {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+
+.home .list .list-item .age {
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.home .list .list-item .age-warn {
+  background: rgba(255, 184, 102, 0.14);
+  color: #ffb866;
+}
+
+.home .list .list-item .age-late {
+  background: rgba(255, 59, 59, 0.16);
+  color: #ff8a8a;
+}
+
+/* ---------- the same customer, and the same device, coming back ---------- */
+
+.job-history {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.history-btn,
+.repeat-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px !important;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.history-btn {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  cursor: pointer;
+}
+
+.history-btn:active {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+/* A device back inside a month is rework, not new business. */
+.repeat-flag {
+  background: rgba(255, 184, 102, 0.12);
+  border: 1px solid rgba(255, 184, 102, 0.3);
+  color: #ffb866;
+}
+
+/* ---------- tell the customer ---------- */
+
+/* Same pill as Print and Remind beside it, in WhatsApp's green so it is
+   obvious which one leaves the app. Without a background of its own it picked
+   up the browser's default button fill and came out as a white slab. */
+.card-actions-row .tell-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.9rem;
+  background: transparent;
+  color: #4ad07d;
+  border: 1px solid rgba(74, 208, 125, 0.4);
+  border-radius: 100px !important;
+  font-family: inherit;
+  font-size: 12px;
+  box-shadow: none;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.card-actions-row .tell-btn:active {
+  background: rgba(74, 208, 125, 0.14);
+}
+
+.card-actions-row .tell-btn i {
+  font-size: 0.95rem;
+}
+
+/* ---------- the day, under the shop name ---------- */
+
+/* One line, not three stacked tiles. Stacked, the bar cost 58px and pushed the
+   sticky header to 171px - a fifth of the screen gone before a single job. */
+.today-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.35rem;
+  margin: 0.4rem 0 0.1rem;
+}
+
+.today-bar[hidden] {
+  display: none;
+}
+
+.today-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  padding: 0.3rem 0.55rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-medium) !important;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.today-stat:active {
+  background: var(--card-bg);
+}
+
+.today-stat b {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-heading);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.today-stat span {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+/* Phones waiting to be picked up are the ones worth chasing, so they only
+   stand out when there are any. */
+.today-stat[data-go="done"] b {
+  color: var(--accent-color);
+}
+
+.today-stat[data-go="done"].is-zero b {
+  color: var(--text-heading);
 }
