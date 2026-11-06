@@ -1,0 +1,37 @@
+# Node + Capacitor
+node_modules/
+package-lock.json
+
+# The web payload the APK ships. Assembled by scripts/build-www.mjs from the
+# files already in this repo, so it is a build output, not a source.
+www/
+
+# Android build output. The android/ project itself IS committed - it carries
+# the manifest, the permissions and the native config - but nothing Gradle
+# generates is.
+android/build/
+android/app/build/
+android/.gradle/
+android/local.properties
+android/app/release/
+android/capacitor-cordova-android-plugins/
+*.apk
+*.aab
+
+# Signing material. A keystore must never be committed: whoever holds it can
+# ship an update that installs over a real shop's app. CI reads it from
+# repository secrets.
+*.keystore
+*.jks
+keystore.properties
+
+.DS_Store
+
+# Written by `cap sync` from www/ and capacitor.config.json. Committing it
+# would put a second copy of the whole web app - 9MB - in the repository, and
+# a stale one as soon as anything changes.
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+android/app/capacitor.build.gradle
+android/capacitor.settings.gradle

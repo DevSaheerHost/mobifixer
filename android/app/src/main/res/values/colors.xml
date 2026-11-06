@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        The app module's colours override the ones in the capacitor library,
+        which are Material's indigo and pink defaults. Left alone they tint the
+        status bar and every system control a colour that appears nowhere in
+        this app.
+
+        Every value here is copied from the :root palette at the top of
+        style.css, so the native chrome and the page agree. scripts/test-native.mjs
+        reads both files and fails when they drift.
+    -->
+    <color name="colorPrimary">#0d1117</color>        <!-- --bg-color -->
+    <color name="colorPrimaryDark">#0d1117</color>    <!-- --bg-color -->
+    <color name="colorAccent">#0ba2ff</color>         <!-- --accent-color -->
+
+    <!--
+        The window behind the WebView. Without it the system default (white)
+        shows between the splash and the first paint of index.html, and again
+        on rotation - a white flash in a dark app reads as a fault.
+    -->
+    <color name="appBackground">#0d1117</color>
+</resources>
