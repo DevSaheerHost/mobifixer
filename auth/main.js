@@ -11,6 +11,11 @@ import {
   deleteUser
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 
+// One source of truth for the key the app reads on the other side. This module
+// is plain arithmetic with no dependencies, so importing it here costs nothing
+// and cannot drift from native.js.
+import { NOTIFY_ASK_KEY } from "../nativeLogic.js";
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyAWQP1HENutTN4cPyMM86norOGMSXDnc2g",
@@ -211,6 +216,12 @@ $('#loginForm').onsubmit = async (e) => {
       const user = userCredential.user;
       localStorage.setItem('shopName', identifier);
       localStorage.setItem('uid', user.uid);
+      // Tell the app a sign-in just happened. It asks for notification
+      // permission once, after it has the shop's job list - asking here would
+      // put an Android dialog in front of a page that is about to navigate
+      // away. Signup ends at this screen too, so this covers both routes.
+      // Inert on the website: nothing there reads it.
+      localStorage.setItem(NOTIFY_ASK_KEY, '1');
       // No message on success: the app opening is the confirmation, and an
       // inline strip would be wiped by the navigation a moment later.
       location = "/";

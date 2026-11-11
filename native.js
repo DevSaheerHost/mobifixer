@@ -17,6 +17,7 @@ import {
   compareVersions, updateDecision, pendingDigests, dueReminders,
   reminderId, digestId, JOB_ACTIONS, actionStatus,
   DIGEST_DEFAULT_DAYS,
+  notifyAskDecision, NOTIFY_ASK_KEY, NOTIFY_ASKED_KEY,
 } from './nativeLogic.js';
 
 // ---------------------------------------------------------------------------
@@ -108,6 +109,72 @@ export const askNotificationPermission = async () => {
   if (!r) return 'error';
   if (r.display === 'granted') { await ensureChannel(); return 'granted'; }
   return r.display === 'denied' ? 'denied' : 'dismissed';
+};
+
+/** The login screen sets this on its way to the app. See nativeLogic.js. */
+export const markSignedIn = () => {
+  try { localStorage.setItem(NOTIFY_ASK_KEY, '1'); } catch (_) {}
+};
+
+/**
+ * Ask for notification permission, once, just after signing in.
+ *
+ * The flag is cleared whatever the answer, so a sign-in asks at most once and
+ * a reload of the app does not ask at all. On a refusal the shop is told
+ * plainly that reminders are off and where to turn them on, rather than being
+ * left to wonder why a reminder they set never arrived.
+ */
+export const maybeAskNotificationPermission = async () => {
+  if (!isNative()) return { asked: false, reason: 'not-native' };
+
+  let justSignedIn = false;
+  let timesAsked = 0;
+  try {
+    justSignedIn = localStorage.getItem(NOTIFY_ASK_KEY) === '1';
+    timesAsked = parseInt(localStorage.getItem(NOTIFY_ASKED_KEY) || '0', 10) || 0;
+  } catch (_) {}
+
+  const LN = plugin('LocalNotifications');
+  if (!LN) return { asked: false, reason: 'no-plugin' };
+
+  const current = await safe('checkPermissions', () => LN.checkPermissions(), null);
+  const permission = (current && current.display) || 'prompt';
+
+  const { ask, reason } = notifyAskDecision({ justSignedIn, permission, timesAsked });
+
+  // Consume the flag either way: this sign-in has had its turn.
+  if (justSignedIn) { try { localStorage.removeItem(NOTIFY_ASK_KEY); } catch (_) {} }
+
+  if (!ask) {
+    // Granted is the happy path and needs no channel work here - the channel
+    // is created when permission is granted, and again before scheduling.
+    if (permission === 'granted') await ensureChannel();
+    return { asked: false, reason };
+  }
+
+  try { localStorage.setItem(NOTIFY_ASKED_KEY, String(timesAsked + 1)); } catch (_) {}
+
+  const outcome = await askNotificationPermission();
+
+  if (outcome === 'granted') {
+    // Permission arrived after the launch sync already ran and found none, so
+    // schedule now rather than leaving the shop until the next list refresh.
+    await syncNotifications();
+    host.showNotice({
+      title: 'Reminders on',
+      body: 'This phone will now remind you about jobs still waiting.',
+      type: 'info', delay: 5,
+    });
+  } else if (outcome === 'denied' || outcome === 'dismissed') {
+    host.showNotice({
+      title: 'Reminders are off',
+      body: 'Android is blocking notifications, so reminders you set will not arrive. '
+          + 'You can turn them on in Settings \u203a Apps \u203a Mobifixer \u203a Notifications.',
+      type: 'warn', delay: 10,
+    });
+  }
+
+  return { asked: true, reason, outcome };
 };
 
 const registerActions = () => safe('registerActionTypes', async () => {
@@ -379,6 +446,11 @@ export const initNative = async (hostApi = {}) => {
   }
 
   await syncNotifications();
+
+  // After the first sync, so a shop that already granted permission sees its
+  // reminders scheduled before any dialog, and not awaited into the update
+  // check below: the dialog is the user's to answer in their own time.
+  await maybeAskNotificationPermission();
 
   if (autoUpdateOn()) {
     // Deliberately not awaited. A slow or unreachable update server must not

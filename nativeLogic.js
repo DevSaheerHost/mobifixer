@@ -182,6 +182,55 @@ export const digestId = (at) => ID_BASE.digest
 // test can prove that every button maps to a status the app actually has, and
 // that nothing else does.
 
+// ---------------------------------------------------------------------------
+// Notification permission
+//
+// Android 13 made POST_NOTIFICATIONS a runtime permission, denied until the
+// user is asked. Nothing in this app asked, so on a modern phone every
+// reminder and every digest was scheduled and then silently dropped:
+// syncNotifications would return reason 'not-granted' and no one saw a thing.
+//
+// WHEN TO ASK. Not on first launch: the shop has not seen the app yet and has
+// nothing to say yes to, and a refusal is close to permanent. Signing in is
+// the first moment the app has a shop, a job list and a reason - so that is
+// the trigger. Signup funnels through the login screen, so one hook covers
+// both.
+//
+// AND WHEN TO STOP. Android stops showing the dialog after the second refusal
+// and resolves straight to denied, so asking on every sign-in would be
+// invisible to the user and useless to us. Two asks, then never again; the
+// shop can still turn it on in Android settings.
+
+export const NOTIFY_ASK_KEY = 'MF_NOTIFY_ASK';        // '1' set by the login screen
+export const NOTIFY_ASKED_KEY = 'MF_NOTIFY_ASKED';    // how many times we have asked
+export const NOTIFY_ASK_LIMIT = 2;
+
+/**
+ * Ask for notification permission now?
+ *
+ * @param justSignedIn  the login screen set the flag on the way here
+ * @param permission    'granted' | 'denied' | 'prompt' | 'prompt-with-rationale'
+ * @param timesAsked    how many dialogs this install has already shown
+ * @returns { ask, reason } - reason is for the log, and for the tests
+ */
+export const notifyAskDecision = ({
+  justSignedIn = false,
+  permission = 'prompt',
+  timesAsked = 0,
+} = {}) => {
+  // Granted wins over everything: never show a dialog we do not need, even on
+  // a fresh sign-in.
+  if (permission === 'granted') return { ask: false, reason: 'already-granted' };
+  if (!justSignedIn) return { ask: false, reason: 'not-a-sign-in' };
+  if (permission === 'denied') return { ask: false, reason: 'already-denied' };
+
+  const n = Number(timesAsked);
+  const asked = Number.isFinite(n) && n > 0 ? n : 0;
+  if (asked >= NOTIFY_ASK_LIMIT) return { ask: false, reason: 'asked-enough' };
+
+  return { ask: true, reason: 'sign-in' };
+};
+
 export const JOB_ACTIONS = [
   { id: 'status-progress',  title: 'Start',     status: 'progress' },
   { id: 'status-done',      title: 'Done',      status: 'done' },

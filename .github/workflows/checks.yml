@@ -32,6 +32,8 @@ jobs:
         run: node scripts/test-settings.mjs
       - name: Job save/edit tests
         run: node scripts/test-job-save.mjs
+      - name: Notification permission tests
+        run: node scripts/test-notify-permission.mjs
 
   apk:
     runs-on: ubuntu-latest
