@@ -37,9 +37,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # @capacitor/cli 8 declares engines.node >=22, and cap sync is a hard
+      # [fatal] below that. The syntax job stays on 20; it only runs node.
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
+          cache: npm
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
