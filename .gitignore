@@ -1,6 +1,8 @@
-# Node + Capacitor
+# Node + Capacitor. package-lock.json IS committed: it pins every
+# transitive dependency to an exact version and integrity hash, so CI and a
+# shop's build install the same bytes rather than whatever the ^ ranges
+# resolve to that day.
 node_modules/
-package-lock.json
 
 # The web payload the APK ships. Assembled by scripts/build-www.mjs from the
 # files already in this repo, so it is a build output, not a source.

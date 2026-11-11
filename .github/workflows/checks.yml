@@ -65,11 +65,11 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-${{ hashFiles('android/**/*.gradle', 'android/gradle/wrapper/gradle-wrapper.properties', 'package.json') }}
+          key: gradle-${{ hashFiles('android/**/*.gradle', 'android/gradle/wrapper/gradle-wrapper.properties', 'package-lock.json') }}
           restore-keys: gradle-
 
-      # package-lock.json is not committed, so npm ci has nothing to read.
-      - run: npm install
+      - name: Install dependencies from the lockfile
+        run: npm ci
 
       - name: Assemble www/ and sync it into the native project
         run: node scripts/build-www.mjs && npx cap sync android
