@@ -1,0 +1,115 @@
+apply plugin: 'com.android.application'
+
+// ---------------------------------------------------------------------------
+// Release signing.
+//
+// The keystore and its passwords are never in this repo - .gitignore blocks
+// *.jks, *.keystore and keystore.properties - because whoever holds the key
+// can ship an update that installs over a real shop's app. They come from one
+// of two places:
+//
+//   local  android/keystore.properties  (git-ignored; see README)
+//   CI     MF_KEYSTORE_FILE / MF_KEYSTORE_PASSWORD / MF_KEY_ALIAS / MF_KEY_PASSWORD
+//
+// With none of it present the release build still runs and produces an
+// UNSIGNED apk, with a warning below, so an unrelated `gradle tasks` on a
+// fresh clone does not fail. An unsigned apk will not install on a phone.
+def signingProps = new Properties()
+// android/keystore.properties, beside local.properties. A relative storeFile
+// inside it is resolved against android/ too, so the two agree.
+def signingPropsFile = rootProject.file('keystore.properties')
+if (signingPropsFile.exists()) {
+    signingPropsFile.withInputStream { signingProps.load(it) }
+}
+
+def signingValue = { String propKey, String envKey ->
+    def v = signingProps.getProperty(propKey) ?: System.getenv(envKey)
+    return (v != null && !v.trim().isEmpty()) ? v.trim() : null
+}
+
+def storeFilePath  = signingValue('storeFile',     'MF_KEYSTORE_FILE')
+def storePasswordV = signingValue('storePassword', 'MF_KEYSTORE_PASSWORD')
+def keyAliasV      = signingValue('keyAlias',      'MF_KEY_ALIAS')
+def keyPasswordV   = signingValue('keyPassword',   'MF_KEY_PASSWORD')
+
+def resolvedStore = storeFilePath ? rootProject.file(storeFilePath) : null
+def missingStore = resolvedStore != null && !resolvedStore.exists()
+
+def canSignRelease = resolvedStore != null && resolvedStore.exists() &&
+        storePasswordV != null && keyAliasV != null && keyPasswordV != null
+
+if (missingStore) {
+    logger.warn("WARNING: keystore not found at ${resolvedStore.absolutePath} - release will be UNSIGNED")
+} else if (!canSignRelease) {
+    logger.warn('WARNING: no release signing configured - release will be UNSIGNED and will not install')
+}
+
+android {
+    namespace = "com.mobifixer.app"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "com.mobifixer.app"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    signingConfigs {
+        release {
+            if (canSignRelease) {
+                storeFile resolvedStore
+                storePassword storePasswordV
+                keyAlias keyAliasV
+                keyPassword keyPasswordV
+                // Which signature schemes to use is left to AGP. minSdkVersion
+                // is 24 and the v2 scheme landed in API 24, so v2 alone covers
+                // every phone this app runs on and v1 (JAR signing) buys
+                // nothing. Verified with apksigner: v2 true, v1 false.
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (canSignRelease) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

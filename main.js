@@ -802,6 +802,11 @@ const scheduleListRefresh = () => {
     paintReminderButtons();
     if ($('#staticText')) $('#staticText').textContent = 'No Pending works';
     $('.loader').classList.add('hidden');
+    // The Android wrapper listens for this and puts the phone's scheduled
+    // notifications back in step with the list. Dispatched rather than called
+    // so main.js carries no reference to the native layer, and so the website
+    // - where nothing is listening - pays nothing for it.
+    window.dispatchEvent(new CustomEvent('mf:list-refreshed'));
   }, 80);
 };
 
@@ -5793,6 +5798,54 @@ function checkDueReminders() {
 
 function watchReminders() {
   if (!shopName) return;
+
+// ---------------------------------------------------------------------------
+// The Android wrapper
+//
+// Everything below is a no-op on the website: native.js checks for Capacitor
+// first and returns. It is imported unconditionally so index.html stays one
+// file for both, and so a bug in the native path shows up in the browser
+// harnesses rather than only on a phone.
+//
+// main.js owns the data and the database; native.js owns the device. They meet
+// here, in one object, rather than native.js opening its own Firebase
+// connection - a second connection would double the reads and could disagree
+// with this one about what a job's status is.
+import('./native.js').then(async (native) => {
+  await native.initNative({
+    shopName,
+    getJobs: () => data,
+    getReminders: () => Object.fromEntries([...remindersBySn.entries()]),
+
+    // The same write the status radio makes, so a status set from a
+    // notification is indistinguishable from one set on the card: same
+    // activity log entry, same listeners, same everything.
+    setStatus: async (sn, status) => {
+      try {
+        await update(ref(db, `shops/${shopName}/service/${sn}`), { status });
+        logActivity('status', { sn, detail: status + ' (from notification)' });
+        return true;
+      } catch (err) {
+        console.warn('status from notification failed:', err && err.message);
+        return false;
+      }
+    },
+
+    openJob: (sn) => {
+      location.hash = '';
+      $$('nav a').forEach(a => a.classList.remove('active'));
+      filterBySn(sn);
+    },
+
+    showNotice,
+  });
+
+  // Keep the device's scheduled notifications in step with the list. The list
+  // refresh is already coalesced, so this rides along with it rather than
+  // adding a second timer of its own.
+  window.addEventListener('mf:list-refreshed', () => { native.syncNotifications(); });
+}).catch(err => console.warn('native layer unavailable:', err && err.message));
+
   onValue(remindersRef(), snap => {
     remindersBySn.clear();
     const all = snap.val() || {};

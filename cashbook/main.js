@@ -2369,6 +2369,13 @@ const startMeme = () => {
   // Auto-stop when video ends
   videoEl.addEventListener('ended', () => stopMeme(), { once: true });
 
+  // And when it cannot play at all. Without this the overlay covers the app
+  // until the page is reloaded: 'ended' never fires for a video that 404s, and
+  // the play() rejection is already swallowed. The Android build leaves these
+  // 23MB of videos out of the APK, so there it fails every time - but a video
+  // that fails to load on the website hung the overlay just the same.
+  videoEl.addEventListener('error', () => stopMeme(), { once: true });
+
 
 
 

@@ -32,3 +32,72 @@ jobs:
         run: node scripts/test-settings.mjs
       - name: Job save/edit tests
         run: node scripts/test-job-save.mjs
+      - name: Notification permission tests
+        run: node scripts/test-notify-permission.mjs
+
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # @capacitor/cli 8 declares engines.node >=22, and cap sync is a hard
+      # [fatal] below that. The syntax job stays on 20; it only runs node.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      # The runner image ships an Android SDK, but not necessarily the pieces
+      # android/variables.gradle pins. Ask for those two by name so a bump to
+      # compileSdk there is the only edit needed.
+      - name: Install the SDK pieces variables.gradle pins
+        run: |
+          sdk="$(command -v sdkmanager \
+            || echo "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager")"
+          # The runner pre-accepts the licences for what it ships; this covers
+          # anything installed below that it did not.
+          yes | "$sdk" --licenses > /dev/null 2>&1 || true
+          "$sdk" --install "platforms;android-36" "build-tools;36.0.0"
+
+      # Maven Central answers 429 often enough to fail a cold build, so keep
+      # the resolved dependencies between runs.
+      - name: Cache the Gradle dependency cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('android/**/*.gradle', 'android/gradle/wrapper/gradle-wrapper.properties', 'package-lock.json') }}
+          restore-keys: gradle-
+
+      - name: Install dependencies from the lockfile
+        run: npm ci
+
+      - name: Assemble www/ and sync it into the native project
+        run: node scripts/build-www.mjs && npx cap sync android
+
+      - name: Build the debug APK
+        run: ./gradlew assembleDebug --no-daemon
+        working-directory: android
+
+      # Guard the two things build-www.mjs is responsible for: the payload is
+      # in the APK, and the 23MB of meme videos are not.
+      - name: Check the APK carries the web payload and not the videos
+        run: |
+          apk=android/app/build/outputs/apk/debug/app-debug.apk
+          for f in assets/public/index.html assets/public/nativeLogic.js; do
+            unzip -l "$apk" "$f" | grep -q "$f" || { echo "missing from APK: $f"; exit 1; }
+          done
+          if unzip -l "$apk" | grep -q 'assets/public/cashbook/assets/video'; then
+            echo "the pruned videos are in the APK"; exit 1
+          fi
+          echo "payload present, videos absent, $(stat -c%s "$apk") bytes"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mobifixer-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
