@@ -10,9 +10,9 @@
         style.css, so the native chrome and the page agree. scripts/test-native.mjs
         reads both files and fails when they drift.
     -->
-    <color name="colorPrimary">#0d1117</color>        <!-- --bg-color -->
-    <color name="colorPrimaryDark">#0d1117</color>    <!-- --bg-color -->
-    <color name="colorAccent">#0ba2ff</color>         <!-- --accent-color -->
+    <color name="colorPrimary">#0d1117</color>        <!-- bg-color -->
+    <color name="colorPrimaryDark">#0d1117</color>    <!-- bg-color -->
+    <color name="colorAccent">#0ba2ff</color>         <!-- accent-color -->
 
     <!--
         The window behind the WebView. Without it the system default (white)
