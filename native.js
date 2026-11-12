@@ -219,7 +219,13 @@ export const syncNotifications = async () => {
       channelId: CHANNEL_JOBS,
       title: `Reminder - ${who}`,
       body: `#${r.sn}${device ? ' - ' + device : ''}`,
-      schedule: { at: new Date(Number(r.dueAt)), allowWhileIdle: true },
+      // isExactNotification:false deliberately. The plugin defaults it to
+      // true, and a true in the batch makes schedule() throw up Android's
+      // "Alarms & reminders" settings screen before it will schedule
+      // anything. This app does not need the minute: allowWhileIdle still
+      // wakes the phone out of Doze, and the reminder lands in a window
+      // around the time, which is the trade the manifest describes.
+      schedule: { at: new Date(Number(r.dueAt)), allowWhileIdle: true, isExactNotification: false },
       actionTypeId: 'JOB',
       extra: { sn: String(r.sn), kind: 'reminder' },
     });
@@ -234,7 +240,7 @@ export const syncNotifications = async () => {
         channelId: CHANNEL_JOBS,
         title: d.title,
         body: d.body,
-        schedule: { at: d.at, allowWhileIdle: true },
+        schedule: { at: d.at, allowWhileIdle: true, isExactNotification: false },
         extra: { kind: 'digest', sns: d.sns.slice(0, 20) },
       });
     }

@@ -112,5 +112,31 @@ console.log('\nThe wiring is actually connected');
   ck('the keys are namespaced', NOTIFY_ASK_KEY.startsWith('MF_') && NOTIFY_ASKED_KEY.startsWith('MF_'));
 }
 
+// ---------------------------------------------------------------------------
+// The second permission screen. The plugin defaults isExactNotification to
+// true, and one true in a batch makes schedule() push Android's "Alarms &
+// reminders" settings screen in front of the user before scheduling anything.
+// This app does not need the minute, so it opts out - and the manifest drops
+// the permission to match. The two have to move together: opting out while
+// still declaring it leaves a sensitive permission Play will ask about, and
+// declaring nothing while still asking for exact alarms silently downgrades.
+console.log('\nIt does not ask for exact alarms');
+{
+  const native = readFileSync('native.js', 'utf8');
+  const schedules = native.match(/schedule:\s*\{[^}]*\}/g) || [];
+  ck('every schedule sets isExactNotification', schedules.length > 0
+    && schedules.every(s => /isExactNotification:\s*false/.test(s)), schedules);
+  ck('  and there are two of them, reminder and digest', schedules.length === 2, schedules.length);
+  ck('allowWhileIdle is kept, so Doze still wakes the phone',
+    schedules.every(s => /allowWhileIdle:\s*true/.test(s)), schedules);
+
+  const manifest = readFileSync('android/app/src/main/AndroidManifest.xml', 'utf8');
+  ck('the manifest removes SCHEDULE_EXACT_ALARM',
+    /SCHEDULE_EXACT_ALARM[\s\S]{0,80}tools:node="remove"/.test(manifest));
+  ck('  with the tools namespace it needs', manifest.includes('xmlns:tools="http://schemas.android.com/tools"'));
+  ck('USE_EXACT_ALARM is still never declared', !/<uses-permission[^>]*USE_EXACT_ALARM/.test(manifest));
+  ck('POST_NOTIFICATIONS is still not blocked', !/POST_NOTIFICATIONS[\s\S]{0,80}tools:node="remove"/.test(manifest));
+}
+
 console.log(`\n${pass} passed, ${fail} failed\n`);
 process.exit(fail ? 1 : 0);

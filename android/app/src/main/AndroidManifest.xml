@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools">
 
     <application
         android:allowBackup="true"
@@ -40,19 +41,33 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <!--
-        Everything a notification needs - POST_NOTIFICATIONS, WAKE_LOCK,
-        RECEIVE_BOOT_COMPLETED so reminders survive a restart, and
-        SCHEDULE_EXACT_ALARM so one set for 4pm arrives at 4pm - is declared by
+        Everything a notification needs - POST_NOTIFICATIONS, WAKE_LOCK and
+        RECEIVE_BOOT_COMPLETED so reminders survive a restart - is declared by
         @capacitor/local-notifications and merged in at build time. They are
         not repeated here; duplicating them would mean two places to keep right.
 
         Deliberately NOT declared: USE_EXACT_ALARM. It is granted without
         asking, but Google Play only allows it for alarm and calendar apps, so
-        a build carrying it would be rejected. SCHEDULE_EXACT_ALARM is the one
-        the user can grant; where they have not, Android fires the reminder in
-        a window around the time instead of on the minute, which is the right
-        trade for "remind me about this phone".
+        a build carrying it would be rejected.
+
+        And SCHEDULE_EXACT_ALARM is removed below, rather than merely left
+        ungranted. The plugin declares it and defaults every notification to
+        isExactNotification:true, which makes schedule() push Android's
+        "Alarms & reminders" settings screen in front of the shop before it
+        will schedule anything - a second permission screen, for a repair log,
+        on the way in. native.js passes isExactNotification:false instead, so
+        nothing asks for an exact alarm and this permission is dead weight: a
+        sensitive one that Play questions for an app that is not a clock.
+
+        The reminder still wakes the phone out of Doze, via
+        setAndAllowWhileIdle; it lands in a window around the time rather than
+        on the minute, which is the right trade for "remind me about this
+        phone". To go back to exact timing, drop the tools:node="remove" and
+        the isExactNotification:false in native.js together - one without the
+        other is the broken state.
     -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"
+                     tools:node="remove" />
 
     <!--
         Lets the app hand a downloaded APK to Android's package installer, for
