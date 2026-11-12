@@ -45,6 +45,7 @@ export const FILES = [
   'data.js',
   'native.js',
   'nativeLogic.js',
+  'presence.js',
   'icon-192.jpg',
   'mixkit.wav',
   'update.mp3',

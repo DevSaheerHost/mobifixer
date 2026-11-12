@@ -14,8 +14,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebas
 
 import { onAuthStateChanged, getAuth, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 // Realtime Database import
-import { getDatabase, ref, onChildAdded, onChildChanged, update, query, limitToLast, orderByKey, remove , onValue, push, goOffline, goOnline}
+import { getDatabase, ref, onChildAdded, onChildChanged, update, query, limitToLast, orderByKey, remove , onValue, push, goOffline, goOnline, onDisconnect, serverTimestamp}
 from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+import { startPresence } from './presence.js';
+
 // DOM helpers
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
@@ -5138,7 +5140,17 @@ onAuthStateChanged(auth, async (user) => {
     localStorage.removeItem('role');
     alert("This account does not have access to that shop.");
     location='./auth/index.html';
+    return;
   }
+
+  // Report this device as connected, now that the shop is known to be this
+  // account's. After the mismatch branch on purpose: a refused sign-in must
+  // not leave a presence row on a shop it does not belong to.
+  startPresence({
+    db, ref, onValue, onDisconnect, update, set, serverTimestamp,
+    shopName,
+    author: localStorage.getItem('author') || '',
+  });
 });
 /* ########## END SHOP ACCESS ########## */
 
