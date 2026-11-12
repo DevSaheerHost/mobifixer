@@ -532,6 +532,64 @@ export const checkApkUpdate = async ({ notify = true } = {}) => {
 };
 
 // ---------------------------------------------------------------------------
+// Offering the app to someone using the website
+//
+// checkApkUpdate above answers 'not-native' in a browser and stops, which is
+// right for an UPDATE - there is no installed app to update. The effect was
+// that the website never mentioned the APK at all: someone using MobiFixer in
+// Chrome had no way to learn an installable version exists, which is the one
+// thing the website should tell them.
+//
+// Deliberately narrow:
+//   - Android only. An .apk is no use to a desktop or an iPhone, and an
+//     offer that cannot be accepted is just an obstacle.
+//   - Not inside the app, where it would be absurd.
+//   - Once per version. It records the version as offered when the sheet
+//     opens, not when it is answered, so ignoring it is also an answer. A
+//     newer version asks once more.
+const APK_OFFER_KEY = 'MF_APK_OFFERED';
+
+const isAndroidBrowser = () =>
+  typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent || '');
+
+export const checkApkOffer = async () => {
+  if (isNative()) return { update: false, reason: 'already-installed' };
+  if (!APK_UPDATES) return { update: false, reason: 'apk-updates-disabled' };
+  if (!isAndroidBrowser()) return { update: false, reason: 'not-android' };
+
+  const manifest = await safe('apk offer manifest', async () => {
+    const res = await fetch(APK_MANIFEST + '?t=' + Date.now(), { cache: 'no-store' });
+    return res.ok ? res.json() : null;
+  });
+  if (!manifest) return { update: false, reason: 'manifest-unreachable' };
+  if (!manifest.url) return { update: false, reason: 'manifest-has-no-url' };
+
+  let seen = null;
+  try { seen = localStorage.getItem(APK_OFFER_KEY); } catch (_) { /* private window */ }
+  if (seen === manifest.version) {
+    return { update: false, reason: 'already-offered', offered: manifest.version };
+  }
+  try { localStorage.setItem(APK_OFFER_KEY, manifest.version); } catch (_) { /* ditto */ }
+
+  // Not the changelog. Someone who has never had the app does not care what
+  // changed in it; they care what it does that the browser does not.
+  host.showUpdateSheet({
+    title: 'Install the MobiFixer app',
+    version: manifest.version,
+    size: Number(manifest.size) || 0,
+    notes: 'Reminders before a phone is due back.\n'
+         + 'Keeps working when the shop internet does not.\n'
+         + 'Opens straight from your home screen.',
+    confirmLabel: 'Download',
+    hint: 'Downloads in your browser, then tap the file to install. '
+        + 'You sign in with the same shop and password.',
+    onConfirm: () => openUrl(manifest.url),
+  });
+
+  return { update: true, reason: 'offered', to: manifest.version };
+};
+
+// ---------------------------------------------------------------------------
 // Sharing the app
 //
 // Android's WebView has no Web Share API - navigator.share is a Chrome thing
@@ -597,7 +655,16 @@ let started = false;
 
 export const initNative = async (hostApi = {}) => {
   host = { ...host, ...hostApi };
-  if (!isNative() || started) return { native: isNative(), started };
+  if (!isNative() || started) {
+    // Off the device there is nothing native to start - but there is one
+    // thing worth saying, and until now the website never said it: an
+    // installable app exists. Not awaited; a slow or unreachable manifest
+    // must not hold up the job list.
+    if (!isNative()) {
+      checkApkOffer().then(r => logUpdate('apk-offer', r)).catch(() => {});
+    }
+    return { native: isNative(), started };
+  }
   started = true;
 
   // First, and before anything that could throw: the app has started, so do

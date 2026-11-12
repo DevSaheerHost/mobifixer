@@ -308,6 +308,7 @@ console.log('\nThe back button, run rather than read');
           addListener: (ev, fn) => { listeners[ev] = fn; return { remove: noop }; },
           exitApp: async () => { calls.push('exitApp'); },
           minimizeApp: async () => { calls.push('minimizeApp'); },
+          getInfo: async () => ({ version: '5.1.7' }),
         },
         Share: {
           share: async (opts) => { calls.push('share'); shareArgs.push(opts); },
@@ -388,6 +389,35 @@ console.log('\nThe back button, run rather than read');
        shown.length === beforeHash && calls.includes('history.back'));
   }
 
+  // The thing 5.1.6 could not do: notice a newer APK. Run on a fake device
+  // at 5.1.7 against a manifest at 5.1.8, because "it should work now" is
+  // exactly what was believed about 5.1.6.
+  {
+    const sheets = [];
+    globalThis.fetch = async (u) => String(u).includes('apk.json')
+      ? { ok: true, json: async () => ({
+            version: '5.1.8',
+            url: 'https://example.test/mobifixer-5.1.8.apk',
+            size: 6429095,
+            notes: 'A newer one.',
+          }) }
+      : { ok: false, status: 404, json: async () => ({}) };
+    await native.initNative({ showUpdateSheet: (o) => sheets.push(o) });
+
+    const r = await native.checkApkUpdate();
+    ck('a device at 5.1.7 notices 5.1.8', r.update === true, `${r.reason}`);
+    ck('  and is shown the install sheet',
+       sheets.some(x => x.title === 'New version ready to install' && x.version === '5.1.8'));
+
+    // The same version must not read as an update, or every install would
+    // download forever.
+    globalThis.fetch = async (u) => String(u).includes('apk.json')
+      ? { ok: true, json: async () => ({ version: '5.1.7', url: 'https://example.test/x.apk' }) }
+      : { ok: false, status: 404, json: async () => ({}) };
+    const same = await native.checkApkUpdate();
+    ck('  but the same version is not an update', same.update === false, same.reason);
+  }
+
   // Sharing, run rather than matched. navigator.share does not exist in the
   // WebView, so if the plugin were not reached the button would do nothing at
   // all on the one platform that matters.
@@ -401,6 +431,84 @@ console.log('\nThe back button, run rather than read');
   } else {
     ck('shareApp reaches the native share sheet', false, 'shareApp was not exported');
   }
+
+  delete globalThis.window;
+  delete globalThis.localStorage;
+  delete globalThis.fetch;
+}
+
+console.log('\nThe website offers the app, run rather than read');
+{
+  // checkApkUpdate answers 'not-native' in a browser and stops - correct for
+  // an update, but it meant the website never mentioned the APK at all.
+  // Someone using MobiFixer in Chrome could not learn an installable version
+  // existed. Run here, off the device, because that is the only place this
+  // path exists.
+  const MANIFEST = {
+    version: '9.9.9',
+    url: 'https://example.test/releases/download/v9.9.9/mobifixer-9.9.9.apk',
+    size: 6429095,
+    notes: 'irrelevant to someone who has never had it',
+  };
+
+  const store = {};
+  globalThis.localStorage = {
+    getItem: (k) => (k in store ? store[k] : null),
+    setItem: (k, v) => { store[k] = String(v); },
+    removeItem: (k) => { delete store[k]; },
+  };
+  globalThis.window = {
+    Capacitor: { isNativePlatform: () => false, Plugins: {} },   // a browser
+    addEventListener: () => {},
+    open: () => {},
+  };
+  globalThis.fetch = async (u) => String(u).includes('apk.json')
+    ? { ok: true, json: async () => MANIFEST }
+    : { ok: false, status: 404, json: async () => ({}) };
+
+  const setUA = (ua) => Object.defineProperty(globalThis, 'navigator',
+    { value: { userAgent: ua }, configurable: true, writable: true });
+
+  const native = await import('../native.js');
+  const sheets = [];
+  const hostApi = { showUpdateSheet: (o) => sheets.push(o), showNotice: () => {} };
+
+  setUA('Mozilla/5.0 (Linux; Android 13; Pixel)');
+  let r;
+  // Through initNative, which is how the website actually reaches it.
+  await native.initNative(hostApi);
+  // initNative does not await the offer, so let the microtasks drain.
+  await new Promise((res) => setTimeout(res, 20));
+
+  ck('an Android browser is offered the app', sheets.length >= 1);
+  const sheet = sheets[sheets.length - 1] || {};
+  ck('  the sheet is an install, not an update', sheet.title === 'Install the MobiFixer app');
+  ck('  it names the version and the size',
+     sheet.version === '9.9.9' && sheet.size === MANIFEST.size);
+  ck('  and says what the app does, not what changed in it',
+     /Reminders before a phone is due back/.test(sheet.notes || '')
+     && !(sheet.notes || '').includes('irrelevant'));
+  ck('  Download is what the button says', sheet.confirmLabel === 'Download');
+
+  // Once per version: asking again on every page load would be an obstacle.
+  const after = sheets.length;
+  r = await native.checkApkOffer();
+  ck('it does not ask twice for the same version',
+     r.update === false && r.reason === 'already-offered' && sheets.length === after);
+
+  // A newer one earns one more ask.
+  MANIFEST.version = '9.9.10';
+  r = await native.checkApkOffer();
+  ck('a newer version asks once more', r.update === true && sheets.length === after + 1);
+
+  // An .apk is no use to either of these, and an offer that cannot be
+  // accepted is just something to dismiss.
+  setUA('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)');
+  r = await native.checkApkOffer();
+  ck('an iPhone is not offered an apk', r.update === false && r.reason === 'not-android');
+  setUA('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)');
+  r = await native.checkApkOffer();
+  ck('nor a desktop', r.update === false && r.reason === 'not-android');
 
   delete globalThis.window;
   delete globalThis.localStorage;
