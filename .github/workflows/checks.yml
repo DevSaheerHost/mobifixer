@@ -12,6 +12,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: npm
+      # The suite reads repo files only, with one exception: it pins the
+      # notification plugin's own parsing contract, which needs the plugin
+      # installed. That test skips without it, so install rather than let the
+      # one assertion that would have caught 5.1.1 quietly not run.
+      - run: npm ci
       - name: Syntax-check every JavaScript file
         run: node scripts/check.mjs
       - name: Cashbook shop-authorization regression tests

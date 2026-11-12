@@ -20,7 +20,7 @@
  *
  *   node scripts/test-notify-permission.mjs
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import {
   notifyAskDecision, NOTIFY_ASK_KEY, NOTIFY_ASKED_KEY, NOTIFY_ASK_LIMIT,
 } from '../nativeLogic.js';
@@ -142,15 +142,24 @@ console.log('\nIt does not ask for exact alarms');
 
   // Pin the plugin contract the two assertions above rest on, so a plugin
   // upgrade that moves the flag fails here and not on a shop's phone.
-  const lnDir = 'node_modules/@capacitor/local-notifications/android/src/main/kotlin/com/capacitorjs/plugins/localnotifications';
-  const notif = readFileSync(`${lnDir}/LocalNotification.kt`, 'utf8');
-  const sched = readFileSync(`${lnDir}/LocalNotificationSchedule.kt`, 'utf8');
-  ck('the plugin reads the flag off the notification',
-    /getBoolean\("isExactNotification",\s*true\)/.test(notif));
-  ck('  the schedule parser does not read it at all',
-    !/isExactNotification/.test(sched));
-  ck('  but it does read allowWhileIdle, which is why that one works',
-    /getBoolean\("allowWhileIdle"/.test(sched));
+  //
+  // Skipped rather than fatal when the plugin is not installed: the rest of
+  // this suite reads only files in the repo and has to keep running on a bare
+  // checkout. CI installs dependencies, so there it is checked for real.
+  const lnDir = 'node_modules/@capacitor/local-notifications/android/src/main'
+    + '/kotlin/com/capacitorjs/plugins/localnotifications';
+  if (!existsSync(`${lnDir}/LocalNotification.kt`)) {
+    console.log('  skip   plugin contract (run npm ci to check it)');
+  } else {
+    const notif = readFileSync(`${lnDir}/LocalNotification.kt`, 'utf8');
+    const sched = readFileSync(`${lnDir}/LocalNotificationSchedule.kt`, 'utf8');
+    ck('the plugin reads the flag off the notification',
+      /getBoolean\("isExactNotification",\s*true\)/.test(notif));
+    ck('  the schedule parser does not read it at all',
+      !/isExactNotification/.test(sched));
+    ck('  but it does read allowWhileIdle, which is why that one works',
+      /getBoolean\("allowWhileIdle"/.test(sched));
+  }
 
   const manifest = readFileSync('android/app/src/main/AndroidManifest.xml', 'utf8');
   ck('the manifest removes SCHEDULE_EXACT_ALARM',
