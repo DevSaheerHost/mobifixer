@@ -21,7 +21,38 @@
     ".read": false,
     ".write": false,
 
+    // Who may see every shop.
+    //
+    // Membership is per shop, so without this an admin is just another
+    // account and the rules refuse them - correctly. The exception is a list
+    // of uids, held in the database and checked by the rules on the server,
+    // NOT a flag the client sets: a client-side "if admin" is a suggestion,
+    // and anyone who reads the bundle can make the same suggestion.
+    //
+    // Nothing can write this node. Root is denied and no rule below re-opens
+    // it, so the only way in is the Firebase console, which is what makes it
+    // worth trusting. An account cannot promote itself.
+    //
+    // Each account may read ITS OWN entry and no other, so the app can tell
+    // whether to show the admin page without publishing the list of admins.
+    "admins": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": false
+      }
+    },
+
     "shops": {
+      // Listing the shops at all. A per-shop rule cannot do this: enumerating
+      // names is a read of the parent. Admins only; for everyone else this is
+      // false and the per-shop rules below decide.
+      //
+      // Be clear about what this grants: a read allowed at a shallower path
+      // cascades, so an admin can read every shop's customers, not only the
+      // metadata the dashboard draws. That is inherent to an admin who can
+      // list shops, and worth knowing rather than discovering.
+      ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
+
       "$shop": {
         // Four ways an account is recognised. The 2026-09 export holds three
         // record shapes - owner.uid (7 shops), a top-level uid from the
@@ -36,7 +67,7 @@
         // denies it and no new shop could ever be created. It lets a signed-in
         // account discover which names are free, which the public owner/email
         // lookup already reveals for names that are taken.
-        ".read": "auth != null && (!data.exists() || data.child('uid').val() === auth.uid || data.child('owner/uid').val() === auth.uid || data.child('members').child(auth.uid).exists())",
+        ".read": "auth != null && (!data.exists() || data.child('uid').val() === auth.uid || data.child('owner/uid').val() === auth.uid || data.child('members').child(auth.uid).exists() || root.child('admins').child(auth.uid).val() === true)",
 
         ".write": "auth != null && (!data.exists() || data.child('uid').val() === auth.uid || data.child('owner/uid').val() === auth.uid || data.child('members').child(auth.uid).exists())",
 

@@ -54,6 +54,7 @@ const OWNER = 'uid-owner-1';
 const MEMBER = 'uid-member-2';
 const LEGACY = 'uid-legacy-3';
 const STRANGER = 'uid-stranger-9';
+const ADMIN = 'uid-admin-7';
 
 let pass = 0, fail = 0;
 const ok = (label, got, want) => {
@@ -152,6 +153,50 @@ ok('but its owner cannot read it', await read('shops/emailonly', EMAILONLY), 'de
 ok('  nor their own jobs', await read('shops/emailonly/service', EMAILONLY), 'deny');
 ok('  and cannot self-claim to repair it',
    await write(`shops/emailonly/members/${EMAILONLY}`, { claimedVia: 'client-claim' }, EMAILONLY), 'deny');
+
+console.log('\nThe admin, and the limits on one');
+// An admin is a uid in /admins, checked by the rules on the server. The
+// dangerous half of this is not "can the admin read" - it is everything the
+// exception must NOT grant: writing, self-promotion, or any change to what a
+// normal account can already do.
+await seed('admins', { [ADMIN]: true });
+
+ok('an admin can list the shops', await read('shops', ADMIN), 'allow');
+ok('  and read one it is not a member of', await read('shops/ownershop', ADMIN), 'allow');
+ok('  including its presence map', await read('shops/ownershop/presence', ADMIN), 'allow');
+ok('  and the audit trail', await read('shops/ownershop/authAudit', ADMIN), 'allow');
+
+// Read-only, deliberately. Controls come later and will be their own rules.
+ok('an admin CANNOT write to a shop',
+   await write('shops/ownershop/service/99', { name: 'x' }, ADMIN), 'deny');
+ok('  nor delete one', await write('shops/ownershop', null, ADMIN), 'deny');
+ok('  nor write the shop list', await write('shops', { hijacked: true }, ADMIN), 'deny');
+
+// The list is what makes an admin an admin, so nothing may touch it.
+ok('nobody can promote themselves', await write(`admins/${STRANGER}`, true, STRANGER), 'deny');
+ok('  not even an admin', await write(`admins/${STRANGER}`, true, ADMIN), 'deny');
+ok('  and an admin cannot demote another', await write(`admins/${ADMIN}`, null, ADMIN), 'deny');
+
+// An account may ask whether IT is an admin, so the app knows what to show,
+// without the list of admins being readable by anyone who asks.
+ok('an account can read its own entry', await read(`admins/${ADMIN}`, ADMIN), 'allow');
+ok('  a stranger can read theirs, which is absent', await read(`admins/${STRANGER}`, STRANGER), 'allow');
+ok('  but not somebody else\'s', await read(`admins/${ADMIN}`, STRANGER), 'deny');
+ok('  and the list cannot be enumerated', await read('admins', ADMIN), 'deny');
+
+// The exception must not have loosened anything for everyone else.
+ok('a non-admin still cannot list the shops', await read('shops', STRANGER), 'deny');
+ok('  nor read a shop it has no part in', await read('shops/ownershop', STRANGER), 'deny');
+ok('  and the owner still reads its own', await read('shops/ownershop', OWNER), 'allow');
+ok('  and still writes to it', await write('shops/ownershop/service/3', { name: 'ok' }, OWNER), 'allow');
+
+console.log('\nPresence, which the dashboard reads');
+ok('a member reports itself', await write('shops/teamshop/presence/d1',
+   { online: true, platform: 'apk', lastSeen: 1 }, MEMBER), 'allow');
+ok('  a stranger cannot', await write('shops/teamshop/presence/d2',
+   { online: true, platform: 'web', lastSeen: 1 }, STRANGER), 'deny');
+ok('  nor anonymously', await write('shops/teamshop/presence/d3', { online: true }), 'deny');
+ok('  and a stranger cannot read who is online', await read('shops/teamshop/presence', STRANGER), 'deny');
 
 console.log('\nThe audit trail and the click counter');
 ok('a refused attempt is still recorded', await write('shops/ownershop/authAudit/x', { outcome: 'mismatch' }, STRANGER), 'allow');
