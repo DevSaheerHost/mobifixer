@@ -85,18 +85,24 @@ jobs:
         run: ./gradlew assembleDebug --no-daemon
         working-directory: android
 
-      # Guard the two things build-www.mjs is responsible for: the payload is
-      # in the APK, and the 23MB of meme videos are not.
-      - name: Check the APK carries the web payload and not the videos
+      # Guard what build-www.mjs is responsible for: this app is in the APK,
+      # and the other apps in this repo are not. They were 7.1MB of a 9.4MB
+      # payload that nothing in Mobifixer could reach, and the easiest way for
+      # them to come back is for someone to add a directory to DIRS without
+      # checking whether the app links to it.
+      - name: Check the APK carries this app and not the others
         run: |
           apk=android/app/build/outputs/apk/debug/app-debug.apk
-          for f in assets/public/index.html assets/public/nativeLogic.js; do
+          for f in assets/public/index.html assets/public/nativeLogic.js \
+                   assets/public/auth/main.js; do
             unzip -l "$apk" "$f" | grep -q "$f" || { echo "missing from APK: $f"; exit 1; }
           done
-          if unzip -l "$apk" | grep -q 'assets/public/cashbook/assets/video'; then
-            echo "the pruned videos are in the APK"; exit 1
-          fi
-          echo "payload present, videos absent, $(stat -c%s "$apk") bytes"
+          for d in cashbook accessories ordertraker invoice; do
+            if unzip -l "$apk" | grep -q "assets/public/$d/"; then
+              echo "$d is back in the APK; nothing in the app can reach it"; exit 1
+            fi
+          done
+          echo "this app present, the others absent, $(stat -c%s "$apk") bytes"
 
       - uses: actions/upload-artifact@v4
         with:

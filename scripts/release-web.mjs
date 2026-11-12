@@ -36,6 +36,7 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, rmSync, statSync }
   from 'node:fs';
 import { join, relative } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { compareVersions } from '../nativeLogic.js';
@@ -142,7 +143,12 @@ export const notesFor = (changelog, version) => {
 // ---------------------------------------------------------------------------
 // Running it
 
-const isMain = process.argv[1] && process.argv[1].endsWith('release-web.mjs');
+// Compare the resolved URLs, not the filename. endsWith('release-web.mjs')
+// is also true of test-release-web.mjs, so importing this module from its own
+// tests ran this block and exited before a single assertion had run - a suite
+// that passed loudly while testing nothing.
+const isMain = process.argv[1]
+  && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
   const checkOnly = process.argv.includes('--check');
   const root = process.cwd();

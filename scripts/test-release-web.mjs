@@ -131,5 +131,33 @@ console.log('\nThe app asks the website, not itself');
   ck('checkWebUpdate returns the notes', /notes:\s*manifest\.notes/.test(native));
 }
 
+// ---------------------------------------------------------------------------
+// The sibling apps are out of the payload entirely now, which makes the
+// "only this app triggers an update" rule true by construction rather than
+// only by the hash. Both still matter: the hash is what stops a payload
+// change from prompting a restart, and this is what stops 7MB of unreachable
+// files being carried and re-downloaded in the first place.
+console.log('\nThe other apps are not in the payload');
+{
+  const build = readFileSync('scripts/build-www.mjs', 'utf8');
+  const dirs = (build.match(/const DIRS = \[([\s\S]*?)\]/) || [])[1] || '';
+  for (const d of ['cashbook', 'accessories', 'ordertraker', 'invoice']) {
+    ck(`${d} is not copied into the payload`, !dirs.includes(`'${d}'`), dirs.trim());
+  }
+  ck('the login screen still is', dirs.includes("'auth'"));
+  ck('its images still are', dirs.includes("'assets'"));
+
+  for (const d of ['cashbook', 'accessories', 'ordertraker', 'invoice']) {
+    ck(`  and ${d} is listed as deliberate, not forgotten`,
+      new RegExp(`'${d}':\\s*'a separate app`).test(build));
+  }
+
+  // updates/ is written at the repo root by this very script. build-www.mjs
+  // fails on any top-level entry it has not been told about, so leaving it
+  // unlisted breaks the next build after the first release.
+  ck('updates/ is classified, so a published release does not break the build',
+    /'updates':/.test(build));
+}
+
 console.log(`\n${pass} passed, ${fail} failed\n`);
 process.exit(fail ? 1 : 0);

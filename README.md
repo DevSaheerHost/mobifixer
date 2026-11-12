@@ -125,13 +125,19 @@ It publishes only when **both** are true:
 1. the Mobifixer app's own files changed, and
 2. `package.json` carries a higher version than the published one.
 
-The first condition is the important one. This repo holds several apps, and
-`cashbook/`, `accessories/`, `ordertraker/` and `invoice/` all ship inside the
-payload without being reachable from the Mobifixer app. A change to one of
-them is not a change to this app and must not ask a shop to restart for
-something they cannot see, so the trigger is a hash over `APP_PATHS` in the
-release script rather than over the whole payload. Keep that list in step with
-`build-www.mjs`.
+The first condition is the important one. This repo holds several apps, and a
+change to one of the others is not a change to this app: it must not ask a
+shop to restart for something they cannot see. So the trigger is a hash over
+`APP_PATHS` in the release script rather than over the whole payload. Keep
+that list in step with `build-www.mjs`.
+
+`cashbook/`, `accessories/`, `ordertraker/` and `invoice/` are not in the
+payload at all. They used to be — 7.1MB of a 9.4MB payload — and nothing in
+Mobifixer could reach any of them: `accessories` is opened by an absolute
+`github.io` URL, which loads the website copy, and the rest are not linked
+at all. Dropping them took the payload to 2.4MB and the over-the-air bundle
+to 1.4MB, which is what a shop on mobile data downloads per update. CI fails
+if one reappears in the APK.
 
 The second makes a release deliberate. The shop is shown what changed, and
 that text is the `CHANGELOG.md` section for the version — so add an entry
