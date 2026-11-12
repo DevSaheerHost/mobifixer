@@ -299,7 +299,12 @@ const handleAction = async (event) => {
 // it. The APK itself only has to change when the native side does - a new
 // plugin, a new permission - which is rare.
 
-export const WEB_MANIFEST = './updates/web.json';
+// Absolute, and deliberately so. With androidScheme https and no server.url
+// the WebView serves the APK's own files from https://localhost, so a
+// relative './updates/web.json' asks the bundle about its own update and is
+// answered by a 404 every time. It has to name the website.
+export const UPDATE_HOST = 'https://mobifixer.vercel.app';
+export const WEB_MANIFEST = `${UPDATE_HOST}/updates/web.json`;
 
 const buildVersion = async () => {
   // What this build of the web layer says it is. Written by
@@ -350,7 +355,10 @@ export const checkWebUpdate = async ({ apply = true } = {}) => {
   // what they typed.
   const set = await safe('set', async () => { await U.set(bundle); return true; }, false);
   return set
-    ? { update: true, reason: 'ready-next-launch', from: current, to: manifest.version }
+    ? {
+        update: true, reason: 'ready-next-launch',
+        from: current, to: manifest.version, notes: manifest.notes || '',
+      }
     : { update: false, reason: 'set-failed', offered: manifest.version };
 };
 
@@ -366,7 +374,7 @@ export const checkWebUpdate = async ({ apply = true } = {}) => {
 // path goes quiet; the web updater above keeps working either way.
 
 export const SELF_INSTALL = true;
-export const APK_MANIFEST = './updates/apk.json';
+export const APK_MANIFEST = `${UPDATE_HOST}/updates/apk.json`;   // absolute, for the same reason
 
 const apkVersion = async () => {
   const App = plugin('App');
@@ -462,10 +470,17 @@ export const initNative = async (hostApi = {}) => {
     // Deliberately not awaited. A slow or unreachable update server must not
     // hold up the list of today's jobs.
     checkWebUpdate().then(r => {
-      if (r.update) host.showNotice({
-        title: 'Update ready',
-        body: 'Close and reopen the app to use the new version.',
-        type: 'info', delay: 8,
+      if (!r.update) return;
+      // Name the version and say what changed. A shop asked to restart in the
+      // middle of a working day deserves to know what for, and the notes come
+      // from the CHANGELOG entry for that version rather than a second copy
+      // that would drift from it.
+      const first = (r.notes || '').split('\n').map(s => s.trim())
+        .filter(Boolean).slice(0, 3).join(' ');
+      host.showNotice({
+        title: `Update ready${r.to ? ' - ' + r.to : ''}`,
+        body: (first ? first + ' ' : '') + 'Close and reopen the app to use it.',
+        type: 'info', delay: 10,
       });
     });
   }

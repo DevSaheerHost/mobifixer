@@ -1,4 +1,27 @@
 apply plugin: 'com.android.application'
+import groovy.json.JsonSlurper
+
+// ---------------------------------------------------------------------------
+// Version.
+//
+// One source of truth: package.json, which is also what build-www.mjs stamps
+// into the payload and what the release script publishes. Hardcoding it here
+// as well meant the APK called itself 1.0 while the payload called itself
+// 5.1.0 - and because the self-updater compares the manifest against
+// App.getInfo().version, publishing a manifest at the real version would have
+// told every install it was out of date, forever, however many times it
+// downloaded the same APK.
+//
+// versionCode has to be a single increasing integer, so it is derived:
+// 5.1.0 -> 50100. Minor and patch therefore have to stay under 100, which is
+// checked below rather than silently wrapping into the next minor.
+def pkg = new JsonSlurper().parse(rootProject.file('../package.json'))
+def (vMajor, vMinor, vPatch) = (pkg.version as String).tokenize('.').collect { it.toInteger() }
+if (vMinor > 99 || vPatch > 99) {
+    throw new GradleException("package.json version ${pkg.version}: minor and patch must stay under 100 for versionCode to keep increasing")
+}
+def appVersionName = pkg.version as String
+def appVersionCode = vMajor * 10000 + vMinor * 100 + vPatch
 
 // ---------------------------------------------------------------------------
 // Release signing.
@@ -51,8 +74,8 @@ android {
         applicationId "com.mobifixer.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode appVersionCode
+        versionName appVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

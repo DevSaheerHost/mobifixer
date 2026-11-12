@@ -56,19 +56,15 @@ const FILES = [
 const DIRS = [
   'assets',
   'auth',
-  'cashbook',
-  'accessories',
-  'ordertraker',
-  'invoice',
 ];
 
 // Copied as part of a directory above, then dropped again. Paths are relative
 // to the repo root. Each one has to earn its place on a shop's phone.
-const PRUNE = {
-  'cashbook/assets/video': '23MB of meme videos for the party easter egg; they '
-    + 'stay on the website, and the overlay now closes itself when one will not load',
-  'cashbook/screenshots': 'store listing screenshots, not used by the app',
-};
+//
+// Empty since the sibling apps left the payload: the two entries here were
+// both inside cashbook/, which is no longer copied at all. Kept because the
+// next directory that ships a folder no shop needs belongs here.
+const PRUNE = {};
 
 // Named so the next reader knows the omissions are deliberate, not oversights.
 const DELIBERATELY_OMITTED = {
@@ -80,6 +76,21 @@ const DELIBERATELY_OMITTED = {
   'README.md': 'repository documentation',
   'node_modules': 'build-time only',
   'android': 'the native project that wraps this payload',
+  'updates': 'the over-the-air bundle this script\'s output is zipped into; '
+    + 'shipping it inside itself would nest a copy of the app in every release',
+
+  // The other apps in this repo. They were in the payload and nothing in
+  // Mobifixer could reach any of them: accessories is linked by an absolute
+  // github.io URL, which opens the website, and the rest are not linked at
+  // all. Together they were 7.1MB of a 9.4MB payload - carried in the APK,
+  // and downloaded again by every shop on every over-the-air update, for
+  // files the app has no route to. They stay on the website, where they are
+  // reached directly.
+  'cashbook': 'a separate app; reached on the website, never from inside this one',
+  'accessories': 'a separate app; the two buttons that open it use an absolute '
+    + 'URL, so they load the website copy whether or not it ships here',
+  'ordertraker': 'a separate app; nothing in this one links to it',
+  'invoice': 'a separate app; nothing in this one links to it',
 };
 
 const copied = [];
