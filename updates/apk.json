@@ -1,0 +1,6 @@
+{
+  "version": "5.1.1",
+  "url": "https://github.com/DevSaheerHost/mobifixer/releases/download/v5.1.1/mobifixer-5.1.1.apk",
+  "notes": "Reminders now actually arrive, and the app can update itself.\n- Android was silently blocking every reminder. The app never asked permission to notify you, so reminders and the daily summary were scheduled and then dropped without a word. It now asks once, when you sign in, and tells you where to switch them on if you say no.\n- No second \"Alarms and reminders\" screen on the way in. A reminder set for 4pm may arrive a few minutes either side rather than on the minute, which is the right trade for a phone waiting to be collected.\n- New versions can arrive without reinstalling. The app checks for an update, downloads it, and applies it the next time you open it - never in the middle of booking in a phone - with a note saying what changed. A broken update undoes itself.\n- Smaller: the install is about half the size, and an update downloads 1.4MB instead of 7MB. Four other apps were shipping inside this one with no way to open them.",
+  "builtAt": "2026-11-12T06:31:18.201Z"
+}
