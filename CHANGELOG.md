@@ -25,6 +25,14 @@ and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ---
 
 
+## [5.1.1] - 2026-11-12
+
+Reminders now actually arrive, and the app can update itself.
+- Android was silently blocking every reminder. The app never asked permission to notify you, so reminders and the daily summary were scheduled and then dropped without a word. It now asks once, when you sign in, and tells you where to switch them on if you say no.
+- No second "Alarms and reminders" screen on the way in. A reminder set for 4pm may arrive a few minutes either side rather than on the minute, which is the right trade for a phone waiting to be collected.
+- New versions can arrive without reinstalling. The app checks for an update, downloads it, and applies it the next time you open it - never in the middle of booking in a phone - with a note saying what changed. A broken update undoes itself.
+- Smaller: the install is about half the size, and an update downloads 1.4MB instead of 7MB. Four other apps were shipping inside this one with no way to open them.
+
 # CREATED CASHBOOK APP [2025-11-8]
 
 ## [5.0.0] - 2025-11-17
