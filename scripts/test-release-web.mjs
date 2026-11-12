@@ -248,5 +248,65 @@ console.log('\nThe app does not install APKs any more');
     /told-in-app/.test(native));
 }
 
+// ---------------------------------------------------------------------------
+// Being told. A new version reached shops with nothing to announce it: the
+// APK check was never called, and the web one used the notice, which slides
+// away after a few seconds and is missed by anyone mid-job.
+console.log('\nThe shop is actually told about an update');
+{
+  const html = readFileSync('index.html', 'utf8');
+  const css = readFileSync('style.css', 'utf8');
+  const mainJs = readFileSync('main.js', 'utf8');
+  const native = readFileSync('native.js', 'utf8');
+
+  ck('there is an update sheet in the page', /id="updateOverlay"/.test(html));
+  ck('  with somewhere to put the version', /id="updateVersion"/.test(html));
+  ck('  somewhere to put what changed', /id="updateNotes"/.test(html));
+  ck('  a button to accept and one to defer',
+    /id="updateGo"/.test(html) && /id="updateLater"/.test(html));
+  ck('it is styled, not an unstyled block', /\.update_sheet_overlay/.test(css));
+  ck('  and matches the sheet it sits beside', /\.update-sheet \.sheet-handle/.test(css));
+
+  ck('main.js builds the sheet', /function showUpdateSheet/.test(mainJs));
+  ck('  and hands it to the native layer', /showUpdateSheet,/.test(mainJs));
+  // The notes come off the network. They are the one thing here that an
+  // attacker could choose, so they must never become markup.
+  ck('  notes go in as text, never as markup',
+    /list\.textContent = ''/.test(mainJs) && !/updateNotes[\s\S]{0,400}innerHTML/.test(mainJs));
+
+  ck('native.js offers the web update in the sheet',
+    /checkWebUpdate\(\)[\s\S]{0,400}showUpdateSheet/.test(native));
+  ck('  and applies it only when they tap', /onConfirm: \(\) => applyWebUpdate\(\)/.test(native));
+  ck('  reload is what swaps the bundle over', /U\.reload\(\)/.test(native));
+  ck('native.js offers the APK update in the sheet too',
+    /confirmLabel: 'Download'/.test(native));
+  ck('  which opens the browser, not an installer', /onConfirm: \(\) => openUrl\(manifest\.url\)/.test(native));
+  ck('the website is not broken by any of it',
+    /showUpdateSheet: \(\) => \{\}/.test(native));
+}
+
+// ---------------------------------------------------------------------------
+// The About page said v5.0.0 on an APK that was 5.1.3. CURRENT_VERSION was a
+// constant someone had to remember to edit, and nobody had since 5.0.0 - so
+// the "App updated!" notice had not fired once in five releases either.
+console.log('\nThe version it shows is the version it is');
+{
+  const mainJs = readFileSync('main.js', 'utf8');
+  const html = readFileSync('index.html', 'utf8');
+
+  ck('the version is read, not typed', /fetch\('\.\/build\.json'/.test(mainJs));
+  ck('  and is no longer a hardcoded constant', !/const CURRENT_VERSION = '[\d.]+'/.test(mainJs));
+  ck('  it fills every .version on the page', /querySelectorAll\('\.version'\)/.test(mainJs));
+  ck('the About page has a .version to fill', /class="version"/.test(html));
+
+  // build.json is written by build-www.mjs from package.json, so the number
+  // shown is the payload's own - including one that arrived over the air.
+  const build = readFileSync('scripts/build-www.mjs', 'utf8');
+  ck('build.json carries the version', /build\.json/.test(build) && /version/.test(build));
+
+  ck('a first run does not announce an update it did not have',
+    /if \(LAST_VERSION\)/.test(mainJs));
+}
+
 console.log(`\n${pass} passed, ${fail} failed\n`);
 process.exit(fail ? 1 : 0);

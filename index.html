@@ -1474,6 +1474,28 @@ Loading changelog...
   </div>
 </div>
 
+<!-- ########## UPDATE AVAILABLE ########## -->
+<div class="update_sheet_overlay" id="updateOverlay">
+  <div class="update-sheet" role="dialog" aria-modal="true" aria-labelledby="updateTitle">
+    <span class="sheet-handle"></span>
+
+    <div class="flex_between">
+      <h3 id="updateTitle">Update available</h3>
+      <i class="fa-solid fa-xmark close_update" id="updateClose" role="button" tabindex="0" aria-label="Close"></i>
+    </div>
+
+    <p class="update-version" id="updateVersion">—</p>
+    <ul class="update-notes" id="updateNotes"></ul>
+
+    <div class="update-actions">
+      <button type="button" class="update-later" id="updateLater">Later</button>
+      <button type="button" class="update-go" id="updateGo">Update now</button>
+    </div>
+
+    <p class="update-hint" id="updateHint"></p>
+  </div>
+</div>
+
 <!-- ########## PATTERN VIEWER (read only) ########## -->
 <div class="pattern_view_overlay" id="patternViewOverlay">
   <div class="pattern-view" role="dialog" aria-modal="true" aria-labelledby="patternViewTitle">

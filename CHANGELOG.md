@@ -25,6 +25,13 @@ and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ---
 
 
+## [5.1.4] - 2026-11-12
+
+A new version now asks to be installed, instead of hoping you noticed.
+- An update shows a sheet you have to answer, with the version and what changed in it. Before this it was a notice that slid away after a few seconds, so anyone in the middle of booking in a phone simply missed it - and a new APK was never announced at all, because the check for one had never been wired up.
+- Nothing updates behind your back. A web update applies when you tap Update now, because it reloads the screens and would lose anything half-typed. An APK update opens the download in your browser, where you confirm the install.
+- The About page shows the version you are actually running. It had said v5.0.0 since v5.0.0, whatever was installed - and because of that, the "App updated!" notice had not appeared for five releases.
+
 ## [5.1.3] - 2026-11-12
 
 Android was warning people the app might be harmful. It no longer installs its own updates, which is what set that off.

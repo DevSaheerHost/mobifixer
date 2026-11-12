@@ -4715,22 +4715,37 @@ const triggerDownload = (blob, filename)=> {
 
 //#####################################################################//
 
-// put it down 👇 
-const CURRENT_VERSION = '5.0.0';
-const LAST_VERSION = localStorage.getItem('app_version') || null;
+// The running version, read rather than typed. build.json is written by
+// scripts/build-www.mjs from package.json, so this is the version of the
+// payload actually running - including one that arrived over the air, which a
+// constant in this file could never know about. It was hardcoded at '5.0.0'
+// and had been wrong since 5.0.1: the About page told every shop the wrong
+// version, and the "App updated!" notice never fired again after 5.0.0.
+let CURRENT_VERSION = null;
 
-if (LAST_VERSION !== CURRENT_VERSION) {
-    // show notice
+const applyVersion = (version) => {
+  CURRENT_VERSION = version;
+  document.querySelectorAll('.version').forEach(el => { el.textContent = 'v' + version; });
+
+  const LAST_VERSION = localStorage.getItem('app_version') || null;
+  if (LAST_VERSION === version) return;
+  // Not on a first run: there is nothing to have updated from, and a shop
+  // opening the app for the first time does not need a version number.
+  if (LAST_VERSION) {
     showNotice({
-        title: "App updated!",
-        body: "You are now using version " + CURRENT_VERSION,
-        type: "info",
-        delay: 5 // seconds or use animation timing
+      title: "App updated!",
+      body: "You are now using version " + version,
+      type: "info",
+      delay: 5
     });
+  }
+  localStorage.setItem('app_version', version);
+};
 
-    // update last seen version
-    localStorage.setItem('app_version', CURRENT_VERSION);
-}
+fetch('./build.json', { cache: 'no-store' })
+  .then(r => (r.ok ? r.json() : null))
+  .then(b => { if (b && b.version) applyVersion(b.version); })
+  .catch(() => {});
 
 // (Previously a second 'beforeunload' listener wrote app_version here. It is
 // already written above on the same path, and 'beforeunload' disqualifies the
@@ -5811,6 +5826,68 @@ function watchReminders() {
 // here, in one object, rather than native.js opening its own Firebase
 // connection - a second connection would double the reads and could disagree
 // with this one about what a job's status is.
+// ---------------------------------------------------------------------------
+// "Update available"
+//
+// A sheet, not the transient notice. The notice slides away after a few
+// seconds and a shop in the middle of booking in a phone will miss it, which
+// is how a new version can sit unnoticed for weeks. This one waits to be
+// answered, and either button is an answer.
+//
+// It never applies anything by itself. A web update swaps the screens out
+// from under whatever is on them, and an APK update sends the shop off to the
+// browser; neither should happen because a dialog appeared while someone was
+// typing.
+const updateOverlay = document.querySelector('#updateOverlay');
+let updateConfirm = null;
+
+function closeUpdateSheet() {
+  if (updateOverlay) updateOverlay.classList.remove('active');
+  updateConfirm = null;
+}
+
+/**
+ * @param version      what is being offered
+ * @param notes        the CHANGELOG section for it, as plain text
+ * @param confirmLabel what the primary button says
+ * @param hint         one line under the buttons, for what happens next
+ * @param onConfirm    run when they tap it; the sheet closes either way
+ */
+function showUpdateSheet({ version, notes = '', confirmLabel = 'Update now', hint = '', onConfirm }) {
+  if (!updateOverlay) return;
+
+  document.querySelector('#updateVersion').textContent = version ? 'Version ' + version : '';
+  document.querySelector('#updateHint').textContent = hint;
+  document.querySelector('#updateGo').textContent = confirmLabel;
+
+  // textContent throughout: these lines come from a manifest off the network,
+  // and nothing from there is allowed to become markup.
+  const list = document.querySelector('#updateNotes');
+  list.textContent = '';
+  const lines = String(notes).split('\n').map(s => s.trim()).filter(Boolean);
+  lines.forEach((line, i) => {
+    const li = document.createElement('li');
+    const bullet = line.startsWith('-') || line.startsWith('*');
+    li.textContent = bullet ? line.replace(/^[-*]+\s*/, '') : line;
+    if (!bullet && i === 0) li.classList.add('update-lead');
+    list.appendChild(li);
+  });
+
+  updateConfirm = onConfirm;
+  updateOverlay.classList.add('active');
+}
+
+document.querySelector('#updateGo')?.addEventListener('click', () => {
+  const go = updateConfirm;
+  closeUpdateSheet();
+  if (typeof go === 'function') go();
+});
+document.querySelector('#updateLater')?.addEventListener('click', closeUpdateSheet);
+document.querySelector('#updateClose')?.addEventListener('click', closeUpdateSheet);
+updateOverlay?.addEventListener('click', (e) => {
+  if (e.target === updateOverlay) closeUpdateSheet();
+});
+
 import('./native.js').then(async (native) => {
   await native.initNative({
     shopName,
@@ -5838,6 +5915,7 @@ import('./native.js').then(async (native) => {
     },
 
     showNotice,
+    showUpdateSheet,
   });
 
   // Keep the device's scheduled notifications in step with the list. The list

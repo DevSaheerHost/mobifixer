@@ -8015,3 +8015,124 @@ body.no-scroll {
 .today-stat[data-go="done"].is-zero b {
   color: var(--text-heading);
 }
+
+/* ########## UPDATE AVAILABLE SHEET ##########
+   Same bottom-sheet language as the reminder sheet: a shop should not have to
+   learn a second kind of dialog to be told the app has a new version. */
+.update_sheet_overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+  z-index: 60;                /* above the reminder sheet, below nothing else */
+}
+.update_sheet_overlay.active { opacity: 1; visibility: visible; }
+
+.update-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-secondary, #161b22);
+  color: var(--text-color);
+  border-radius: 20px 20px 0 0;
+  border-top: 1px solid var(--border-color);
+  /* The handle is positioned absolutely at top:10px by the global rule, so
+     the content needs clearance or the title sits under it. */
+  padding: 1.75rem 1.1rem calc(1.4rem + env(safe-area-inset-bottom));
+  transform: translateY(100%);
+  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  max-height: 88vh;
+  overflow-y: auto;
+}
+.update_sheet_overlay.active .update-sheet { transform: translateY(0); }
+
+.update-sheet .sheet-handle {
+  display: block;
+  width: 42px;
+  height: 4px;
+  border-radius: 99px;
+  background: var(--border-color);
+  margin: 0 auto 0.9rem;
+}
+.update-sheet h3 { font-size: 1.05rem; }
+.update-sheet .close_update { padding: 0.4rem 0.6rem; cursor: pointer; }
+
+.update-version {
+  display: inline-block;
+  margin: 0.1rem 0 0.8rem;
+  padding: 0.18rem 0.6rem;
+  border-radius: 99px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent-color);
+  border: 1px solid var(--accent-color);
+}
+
+.update-notes {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+.update-notes li {
+  position: relative;
+  padding-left: 1.1rem;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  opacity: 0.92;
+}
+.update-notes li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 6px;
+  height: 6px;
+  border-radius: 99px;
+  background: var(--accent-color);
+}
+.update-notes li.update-lead::before { display: none; }
+.update-notes li.update-lead {
+  padding-left: 0;
+  font-weight: 600;
+  opacity: 1;
+}
+
+.update-actions {
+  display: flex;
+  gap: 0.6rem;
+}
+.update-actions button {
+  flex: 1;
+  padding: 0.8rem 1rem;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border-color);
+}
+.update-later {
+  background: transparent;
+  color: var(--text-color);
+}
+.update-go {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: #04121f;
+}
+.update-actions button:active { transform: scale(0.985); }
+
+.update-hint {
+  margin: 0.75rem 0 0;
+  font-size: 0.8rem;
+  opacity: 0.65;
+  text-align: center;
+  min-height: 1rem;
+}

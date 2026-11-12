@@ -30,6 +30,13 @@ import {
  * app install other apps, and on a sideloaded APK signed by a key with no
  * history behind it, it is the kind of thing Play Protect blocks on.
  */
+/** Apply a web bundle that has already been downloaded and set. */
+export const applyWebUpdate = () => safe('reload', async () => {
+  const U = plugin('CapacitorUpdater');
+  if (U && U.reload) await U.reload();
+  return true;
+}, false);
+
 const openUrl = (url) => {
   try { window.open(url, '_blank'); return true; }
   catch (_) { return false; }
@@ -87,6 +94,7 @@ let host = {
   setStatus: async () => false,
   openJob: () => {},
   showNotice: () => {},
+  showUpdateSheet: () => {},     // the website has no sheet; calling it is a no-op
   shopName: '',
 };
 
@@ -452,6 +460,17 @@ export const checkApkUpdate = async ({ notify = true } = {}) => {
     return { update: true, reason: 'told-in-app', to: manifest.version };
   }
 
+  // The sheet first: it waits to be answered, where a notification can sit
+  // unread in the shade for a week. The notification stays as well, for the
+  // shop who is not looking at the app when the check runs.
+  host.showUpdateSheet({
+    version: manifest.version,
+    notes,
+    confirmLabel: 'Download',
+    hint: 'Opens in your browser. You confirm the install.',
+    onConfirm: () => openUrl(manifest.url),
+  });
+
   await ensureChannel();
   const first = notes.split('\n').map(s => s.trim()).filter(Boolean)[0] || '';
   const posted = await safe('apk update notice', async () => {
@@ -520,6 +539,16 @@ export const initNative = async (hostApi = {}) => {
     // hold up the list of today's jobs.
     checkWebUpdate().then(r => {
       if (!r.update) return;
+      // Downloaded and set already; reload() is what swaps the screens over.
+      // Asking first, because that throws away anything half-typed.
+      host.showUpdateSheet({
+        version: r.to,
+        notes: r.notes || '',
+        confirmLabel: 'Update now',
+        hint: 'Takes a second. Or it applies next time you open the app.',
+        onConfirm: () => applyWebUpdate(),
+      });
+      return;
       // Name the version and say what changed. A shop asked to restart in the
       // middle of a working day deserves to know what for, and the notes come
       // from the CHANGELOG entry for that version rather than a second copy
