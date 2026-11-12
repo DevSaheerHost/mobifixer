@@ -101,6 +101,44 @@ With none of this configured the release build still runs, but warns and
 produces `app-release-unsigned.apk` instead of `app-release.apk` — the name is
 the giveaway, and an unsigned APK will not install on a phone.
 
+### Updating the app without a new APK
+
+The APK carries its own copy of the site, so editing the website reaches
+browser users and nobody else. `@capgo/capacitor-updater` closes that gap: the
+app polls `https://mobifixer.vercel.app/updates/web.json`, downloads the
+bundle it names, and applies it **at the next launch** — never mid-session,
+because reloading under someone halfway through booking in a phone would lose
+what they typed. If the new bundle fails to start, `notifyAppReady` never
+fires and the next launch rolls back to the one the APK shipped with.
+
+`scripts/release-web.mjs` writes both files, and CI runs it on every push to
+`main`:
+
+```bash
+node scripts/build-www.mjs
+node scripts/release-web.mjs --check   # say what would happen, write nothing
+node scripts/release-web.mjs           # write updates/web.json + the bundle
+```
+
+It publishes only when **both** are true:
+
+1. the Mobifixer app's own files changed, and
+2. `package.json` carries a higher version than the published one.
+
+The first condition is the important one. This repo holds several apps, and
+`cashbook/`, `accessories/`, `ordertraker/` and `invoice/` all ship inside the
+payload without being reachable from the Mobifixer app. A change to one of
+them is not a change to this app and must not ask a shop to restart for
+something they cannot see, so the trigger is a hash over `APP_PATHS` in the
+release script rather than over the whole payload. Keep that list in step with
+`build-www.mjs`.
+
+The second makes a release deliberate. The shop is shown what changed, and
+that text is the `CHANGELOG.md` section for the version — so add an entry
+under `## [x.y.z]` when you bump it, or the notice will name a version with
+nothing to say about it. An app change with no version bump is reported in the
+CI summary and skipped, not published.
+
 ### A Play Store build
 
 Google Play forbids an app updating itself, so a Play build must drop

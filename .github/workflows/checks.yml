@@ -34,6 +34,8 @@ jobs:
         run: node scripts/test-job-save.mjs
       - name: Notification permission tests
         run: node scripts/test-notify-permission.mjs
+      - name: Over-the-air release tests
+        run: node scripts/test-release-web.mjs
 
   apk:
     runs-on: ubuntu-latest
@@ -101,3 +103,56 @@ jobs:
           name: mobifixer-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+
+  # Publishes the over-the-air update the APK polls. Only on main, because
+  # Vercel serves updates/ from there and a bundle announced from a branch
+  # would be offered to every shop before it was merged.
+  #
+  # It is a no-op unless the Mobifixer app itself changed AND package.json
+  # carries a higher version - a push that only touches cashbook, accessories,
+  # ordertraker or invoice publishes nothing, by design.
+  release:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [syntax, apk]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The commit below is pushed back to main, so check out the branch
+          # rather than the detached commit the trigger gives us.
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+
+      - name: Assemble the payload
+        run: node scripts/build-www.mjs
+
+      - name: Publish an update if, and only if, this app changed
+        id: release
+        run: |
+          node scripts/release-web.mjs | tee release.out
+          if git status --porcelain updates/ | grep -q .; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+          { echo '```'; cat release.out; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          rm -f release.out
+
+      - name: Commit it, so Vercel serves it
+        if: steps.release.outputs.published == 'true'
+        run: |
+          version=$(node -p "require('./updates/web.json').version")
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add updates/
+          # skip ci: this commit changes only the published bundle, and
+          # re-running the workflow on it would find nothing to do anyway.
+          git commit -m "Publish web update ${version} [skip ci]"
+          for i in 1 2 3 4; do git push origin main && break || sleep $((2 ** i)); done
+
