@@ -25,6 +25,12 @@ and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ---
 
 
+## [5.1.2] - 2026-11-12
+
+Fixes a 5.1.1 bug that trapped the app on the "Alarms and reminders" screen.
+- Opening the app sent you straight to that system screen, and coming back sent you there again, with the toggle greyed out so there was nothing you could do about it. 5.1.1 told Android the reminders did not need an exact alarm, but put that setting in the wrong place, so Android never saw it and kept asking for a permission the app no longer has.
+- Reminders behave as 5.1.1 intended: no system screen, and a reminder lands in a window around the time you set.
+
 ## [5.1.1] - 2026-11-12
 
 Reminders now actually arrive, and the app can update itself.

@@ -1,6 +1,6 @@
 {
   "name": "mobifixer",
-  "version": "5.1.1",
+  "version": "5.1.2",
   "private": true,
   "description": "Mobifixer - phone repair shop management. Web app and Android wrapper.",
   "type": "module",

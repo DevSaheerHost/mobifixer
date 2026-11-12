@@ -124,11 +124,33 @@ console.log('\nIt does not ask for exact alarms');
 {
   const native = readFileSync('native.js', 'utf8');
   const schedules = native.match(/schedule:\s*\{[^}]*\}/g) || [];
-  ck('every schedule sets isExactNotification', schedules.length > 0
-    && schedules.every(s => /isExactNotification:\s*false/.test(s)), schedules);
-  ck('  and there are two of them, reminder and digest', schedules.length === 2, schedules.length);
+  ck('there are two schedules, reminder and digest', schedules.length === 2, schedules.length);
   ck('allowWhileIdle is kept, so Doze still wakes the phone',
     schedules.every(s => /allowWhileIdle:\s*true/.test(s)), schedules);
+
+  // WHERE the flag goes is the whole bug 5.1.1 shipped. It was inside
+  // schedule:{}, which the plugin's schedule parser never reads, so it stayed
+  // at its default of true and every schedule() reopened Android's "Alarms &
+  // reminders" screen. syncNotifications runs again on resume, so returning
+  // from that screen opened it again - and with the permission dropped from
+  // the manifest the toggle was dead, so there was no way out of the loop.
+  ck('the flag is NOT inside schedule, where it is ignored',
+    schedules.every(s => !/isExactNotification/.test(s)), schedules);
+  const onNotification = native.match(/^\s*isExactNotification:\s*false,/gm) || [];
+  ck('  it is on the notification itself, once per notification',
+    onNotification.length === 2, onNotification.length);
+
+  // Pin the plugin contract the two assertions above rest on, so a plugin
+  // upgrade that moves the flag fails here and not on a shop's phone.
+  const lnDir = 'node_modules/@capacitor/local-notifications/android/src/main/kotlin/com/capacitorjs/plugins/localnotifications';
+  const notif = readFileSync(`${lnDir}/LocalNotification.kt`, 'utf8');
+  const sched = readFileSync(`${lnDir}/LocalNotificationSchedule.kt`, 'utf8');
+  ck('the plugin reads the flag off the notification',
+    /getBoolean\("isExactNotification",\s*true\)/.test(notif));
+  ck('  the schedule parser does not read it at all',
+    !/isExactNotification/.test(sched));
+  ck('  but it does read allowWhileIdle, which is why that one works',
+    /getBoolean\("allowWhileIdle"/.test(sched));
 
   const manifest = readFileSync('android/app/src/main/AndroidManifest.xml', 'utf8');
   ck('the manifest removes SCHEDULE_EXACT_ALARM',

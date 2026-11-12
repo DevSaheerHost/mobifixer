@@ -219,13 +219,20 @@ export const syncNotifications = async () => {
       channelId: CHANNEL_JOBS,
       title: `Reminder - ${who}`,
       body: `#${r.sn}${device ? ' - ' + device : ''}`,
-      // isExactNotification:false deliberately. The plugin defaults it to
-      // true, and a true in the batch makes schedule() throw up Android's
-      // "Alarms & reminders" settings screen before it will schedule
-      // anything. This app does not need the minute: allowWhileIdle still
-      // wakes the phone out of Doze, and the reminder lands in a window
-      // around the time, which is the trade the manifest describes.
-      schedule: { at: new Date(Number(r.dueAt)), allowWhileIdle: true, isExactNotification: false },
+      // On the notification, NOT inside schedule. The plugin reads this one
+      // off the notification object (LocalNotification.kt) and defaults it to
+      // true; LocalNotificationSchedule parses only every/count/repeats/at/on
+      // and allowWhileIdle, so a flag put in there is silently dropped and
+      // the default stands. One true in the batch makes schedule() open
+      // Android's "Alarms & reminders" screen before it will schedule
+      // anything - and since syncNotifications runs again on every resume,
+      // coming back from that screen opens it again, forever.
+      //
+      // This app does not need the minute: allowWhileIdle still wakes the
+      // phone out of Doze, and the reminder lands in a window around the
+      // time, which is the trade the manifest describes.
+      isExactNotification: false,
+      schedule: { at: new Date(Number(r.dueAt)), allowWhileIdle: true },
       actionTypeId: 'JOB',
       extra: { sn: String(r.sn), kind: 'reminder' },
     });
@@ -240,7 +247,8 @@ export const syncNotifications = async () => {
         channelId: CHANNEL_JOBS,
         title: d.title,
         body: d.body,
-        schedule: { at: d.at, allowWhileIdle: true, isExactNotification: false },
+        isExactNotification: false,          // on the notification; see above
+        schedule: { at: d.at, allowWhileIdle: true },
         extra: { kind: 'digest', sns: d.sns.slice(0, 20) },
       });
     }
