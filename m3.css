@@ -401,3 +401,31 @@ h4 { font-size: 1rem;    line-height: 1.5;  letter-spacing: 0.009em;  font-weigh
   padding-bottom: env(safe-area-inset-bottom);
   background: var(--md-surface);
 }
+
+/* ---- dialogs ------------------------------------------------------------
+   Material's basic dialog: 28dp corners, surface-container-high so it reads
+   as lifted off the screen behind it, and the actions as text buttons on the
+   right. Both are text buttons on purpose - leaving is not the encouraged
+   action, so neither gets a filled button's weight. */
+.md3 .confirm_overlay { background: var(--md-scrim); }
+
+.md3 .confirm-dialog {
+  background: var(--md-surface-container-high);
+  border: none;
+  border-radius: var(--md-shape-xl);
+  box-shadow: var(--md-elev-3);
+}
+.md3 .confirm-dialog h3 {
+  color: var(--md-on-surface);
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 2rem;
+}
+.md3 .confirm-dialog p { color: var(--md-on-surface-variant); }
+
+.md3 .confirm-actions button {
+  color: var(--md-primary);
+  border-radius: var(--md-shape-full);
+  min-height: 40px;
+}
+.md3 .confirm-actions button:active { background: rgba(11, 162, 255, 0.12); }

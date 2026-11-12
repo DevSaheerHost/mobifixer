@@ -123,6 +123,7 @@ let host = {
   showNotice: () => {},
   showUpdateSheet: () => {},     // the website has no sheet; calling it is a no-op
   closeTopLayer: () => false,    // the website uses the browser's own back
+  showExitConfirm: () => {},     // only the APK can leave; the browser has its own back
   shopName: '',
 };
 
@@ -545,21 +546,37 @@ export const initNative = async (hostApi = {}) => {
       LN.addListener('localNotificationActionPerformed', handleAction));
   }
 
+  // The App plugin, declared ONCE and before first use. A second
+  // `const App = plugin('App')` used to sit below the back-button block,
+  // which put this reference in its temporal dead zone: initNative threw
+  // ReferenceError here and every line after it - the back listener, the
+  // resume listener, syncNotifications, the permission prompt and both update
+  // checks - silently never ran. Shipped that way in 5.1.6.
+  const App = plugin('App');
+
   // Android's back button. Without this Capacitor's default runs, which exits
   // the app - so back from an open sheet closed the whole thing.
   if (App && App.addListener) {
     safe('addListener back', () => App.addListener('backButton', ({ canGoBack }) => {
       if (host.closeTopLayer()) return;        // a sheet was open; that was the step
       if (canGoBack) { window.history.back(); return; }
-      // Nothing left to undo. Send the app to the background rather than
-      // killing it, so coming back is instant and nothing is lost.
-      safe('minimize', async () => { if (App.minimizeApp) await App.minimizeApp(); });
+
+      // Home screen, nothing left to undo. Back here means leave, so ask
+      // first: on a till in a shop this button gets caught by a thumb, and
+      // leaving without warning looks like the app crashed.
+      //
+      // The dialog itself is main.js's, reached the same way the update sheet
+      // is, so there is one place that knows how a dialog in this app looks.
+      // It also registers as a layer, so a second back press closes the
+      // dialog rather than stacking another one.
+      host.showExitConfirm({
+        onConfirm: () => safe('exit', async () => { if (App.exitApp) await App.exitApp(); }),
+      });
     }));
   }
 
   // Reschedule when the app comes back to the front: the clock has moved, and
   // another device may have finished half the list.
-  const App = plugin('App');
   if (App && App.addListener) {
     safe('addListener resume', () => App.addListener('appStateChange', ({ isActive }) => {
       if (isActive) syncNotifications();

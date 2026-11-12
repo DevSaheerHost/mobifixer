@@ -1499,6 +1499,24 @@ Loading changelog...
   </div>
 </div>
 
+<!-- ########## EXIT CONFIRM ########## -->
+<!--
+  Android's back on the home screen means leave. A plain exit is indistinguishable
+  from a crash to the person holding the phone, so it asks. A Material 3 basic
+  dialog, not a bottom sheet: this is a decision, not a panel of content.
+-->
+<div class="confirm_overlay" id="exitOverlay">
+  <div class="confirm-dialog" role="dialog" aria-modal="true"
+       aria-labelledby="exitTitle" aria-describedby="exitBody">
+    <h3 id="exitTitle">Close Mobifixer?</h3>
+    <p id="exitBody">Everything saved stays saved. You can open it again any time.</p>
+    <div class="confirm-actions">
+      <button type="button" class="confirm-cancel" id="exitCancel">Stay</button>
+      <button type="button" class="confirm-go" id="exitConfirm">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- ########## PATTERN VIEWER (read only) ########## -->
 <div class="pattern_view_overlay" id="patternViewOverlay">
   <div class="pattern-view" role="dialog" aria-modal="true" aria-labelledby="patternViewTitle">

@@ -205,5 +205,131 @@ console.log('\nVibration');
      (code.match(/(?<!navigator\.)\bvibrate\(\[/g) || []).length === 4);
 }
 
+console.log('\nThe exit dialog in main.js');
+{
+  const src  = readFileSync('main.js', 'utf8');
+  const html = readFileSync('index.html', 'utf8');
+
+  ck('the dialog exists in the markup', html.includes('id="exitOverlay"'));
+  ck('  with both answers', html.includes('id="exitConfirm"') && html.includes('id="exitCancel"'));
+  ck('  and is announced as a dialog',
+     /id="exitOverlay"[\s\S]{0,200}role="dialog"[\s\S]{0,120}aria-modal="true"/.test(html));
+
+  ck('showExitConfirm is handed to the native layer', /showExitConfirm,/.test(src));
+  // Back pressed twice would otherwise open a second dialog over the first,
+  // and the first would still be there behind it.
+  ck('it refuses to stack a second dialog',
+     /function showExitConfirm[\s\S]{0,400}classList\.contains\('active'\)\) return;/.test(src));
+  // So that a back press while the question is up answers "stay".
+  ck('the dialog is the first layer back closes',
+     /const layers = \[[\s\S]{0,160}'#exitOverlay\.active'/.test(src));
+  ck('  and Stay is what gets focus, not Close',
+     /showExitConfirm[\s\S]{0,500}#exitCancel'\)\?\.focus\(\)/.test(src));
+}
+
+console.log('\nThe back button, run rather than read');
+{
+  // 5.1.6 shipped with `const App = plugin('App')` declared BELOW a block that
+  // used App, putting that use in its temporal dead zone. initNative threw
+  // ReferenceError there, so the back listener, the resume listener,
+  // syncNotifications, the permission prompt and both update checks never ran.
+  //
+  // Nothing static would have caught it: the file parses, and node --check
+  // passes. A TDZ error only exists when the function runs. So this runs it,
+  // against a fake Capacitor, and asserts what got wired up.
+  const listeners = {};
+  const calls = [];
+  const noop = async () => ({});
+
+  globalThis.window = {
+    Capacitor: {
+      isNativePlatform: () => true,
+      Plugins: {
+        App: {
+          addListener: (ev, fn) => { listeners[ev] = fn; return { remove: noop }; },
+          exitApp: async () => { calls.push('exitApp'); },
+          minimizeApp: async () => { calls.push('minimizeApp'); },
+        },
+        LocalNotifications: {
+          addListener: (ev, fn) => { listeners[ev] = fn; return { remove: noop }; },
+          createChannel: noop, schedule: noop, getPending: async () => ({ notifications: [] }),
+          cancel: noop, registerActionTypes: noop,
+          checkPermissions: async () => ({ display: 'granted' }),
+          requestPermissions: async () => ({ display: 'granted' }),
+        },
+      },
+    },
+    addEventListener: () => {},
+    location: { href: '' },
+    history: { back: () => calls.push('history.back') },
+    matchMedia: () => ({ matches: false }),
+  };
+  globalThis.localStorage = {
+    _d: {},
+    getItem(k) { return k in this._d ? this._d[k] : null; },
+    setItem(k, v) { this._d[k] = String(v); },
+    removeItem(k) { delete this._d[k]; },
+  };
+  globalThis.fetch = async () => ({ ok: false, status: 503, json: async () => ({}) });
+
+  let threw = null;
+  const shown = [];
+  let native;
+  try {
+    native = await import('../native.js');
+    await native.initNative({
+      shopName: 'testshop',
+      getJobs: () => [],
+      getReminders: () => ({}),
+      closeTopLayer: () => false,
+      showNotice: () => {},
+      showUpdateSheet: () => {},
+      showExitConfirm: (o) => shown.push(o),
+    });
+  } catch (err) {
+    threw = err;
+  }
+
+  ck('initNative does not throw', !threw, threw && `${threw.constructor.name}: ${threw.message}`);
+  ck('the back button listener is registered', typeof listeners.backButton === 'function');
+  ck('  so is the resume listener, which sat after it',
+     typeof listeners.appStateChange === 'function');
+
+  if (typeof listeners.backButton === 'function') {
+    // Home screen, nothing open: it must ask, not leave.
+    listeners.backButton({ canGoBack: false });
+    ck('back on the home screen asks before leaving', shown.length === 1);
+    ck('  and does not leave on its own', !calls.includes('exitApp'));
+    ck('  it no longer minimises silently', !calls.includes('minimizeApp'));
+
+    if (shown[0] && typeof shown[0].onConfirm === 'function') {
+      await shown[0].onConfirm();
+      ck('  confirming is what exits', calls.includes('exitApp'));
+    } else {
+      ck('  confirming is what exits', false, 'no onConfirm was handed over');
+    }
+
+    // An open sheet is one step back and must not raise the exit question.
+    // Re-registering with a host whose closeTopLayer reports it handled the
+    // press is the only way to reach that branch from here.
+    const beforeSheet = shown.length;
+    await native.initNative({ closeTopLayer: () => true });
+    listeners.backButton({ canGoBack: false });
+    ck('back with a sheet open closes the sheet instead of asking to exit',
+       shown.length === beforeSheet);
+
+    // And a page reached by hash is a step back, not an exit either.
+    await native.initNative({ closeTopLayer: () => false });
+    const beforeHash = shown.length;
+    listeners.backButton({ canGoBack: true });
+    ck('back inside the app goes back, rather than asking to exit',
+       shown.length === beforeHash && calls.includes('history.back'));
+  }
+
+  delete globalThis.window;
+  delete globalThis.localStorage;
+  delete globalThis.fetch;
+}
+
 console.log(`\n${pass} passed, ${fail} failed\n`);
 process.exit(fail ? 1 : 0);

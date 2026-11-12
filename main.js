@@ -5959,6 +5959,42 @@ updateOverlay?.addEventListener('click', (e) => {
 });
 
 // ---------------------------------------------------------------------------
+// Leaving the app
+//
+// native.js calls this when back is pressed on the home screen with nothing
+// left to close. It owns the decision; this owns how the dialog looks, the
+// same split as showUpdateSheet, so there is one place that knows what a
+// dialog in this app looks like.
+const exitOverlay = document.querySelector('#exitOverlay');
+let exitConfirmFn = null;
+
+function closeExitConfirm() {
+  if (exitOverlay) exitOverlay.classList.remove('active');
+  exitConfirmFn = null;
+}
+
+/** @param onConfirm run when they choose to leave; the dialog closes either way */
+function showExitConfirm({ onConfirm } = {}) {
+  if (!exitOverlay) return;
+  // Back pressed twice in a row must not stack a second dialog on the first.
+  if (exitOverlay.classList.contains('active')) return;
+  exitConfirmFn = onConfirm;
+  exitOverlay.classList.add('active');
+  // So the quiet option is the one under the thumb, and Enter does not leave.
+  document.querySelector('#exitCancel')?.focus();
+}
+
+document.querySelector('#exitConfirm')?.addEventListener('click', () => {
+  const go = exitConfirmFn;
+  closeExitConfirm();
+  if (typeof go === 'function') go();
+});
+document.querySelector('#exitCancel')?.addEventListener('click', closeExitConfirm);
+exitOverlay?.addEventListener('click', (e) => {
+  if (e.target === exitOverlay) closeExitConfirm();
+});
+
+// ---------------------------------------------------------------------------
 // Material touch feedback
 //
 // A ripple from the point of contact, which is what an Android control does
@@ -5993,6 +6029,8 @@ document.addEventListener('pointerdown', (e) => {
 // nothing left does back mean leave.
 const closeTopLayer = () => {
   const layers = [
+    // First: a back press while the exit question is up answers "stay".
+    '#exitOverlay.active',
     '#updateOverlay.active',
     '#remindOverlay.active',
     '#patternOverlay.active',
@@ -6040,6 +6078,7 @@ import('./native.js').then(async (native) => {
 
     showNotice,
     showUpdateSheet,
+    showExitConfirm,
     closeTopLayer,
   });
 

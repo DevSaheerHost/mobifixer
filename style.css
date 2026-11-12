@@ -8147,3 +8147,64 @@ body.no-scroll {
   white-space: pre-line;
   text-align: center;
 }
+
+/* ---- confirm dialog -----------------------------------------------------
+   Used by the exit question on the hardware back button. A centred dialog
+   rather than a bottom sheet: this asks for a decision, it is not a panel of
+   content to scroll. Base styling here, Material 3 refinement in m3.css, the
+   same split as the update sheet. */
+.confirm_overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.55);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  z-index: 70;                /* above the update sheet: it can be asked over */
+}
+.confirm_overlay.active { opacity: 1; visibility: visible; }
+
+.confirm-dialog {
+  width: 100%;
+  max-width: 320px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 1.5rem;
+  transform: scale(0.92);
+  transition: transform 0.2s ease;
+}
+.confirm_overlay.active .confirm-dialog { transform: scale(1); }
+
+.confirm-dialog h3 {
+  margin: 0 0 0.6rem;
+  font-size: 1.2rem;
+  color: var(--text-heading);
+}
+.confirm-dialog p {
+  margin: 0 0 1.4rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+.confirm-actions button {
+  padding: 0.65rem 1.1rem;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--accent-color);
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.confirm-actions button:active { transform: scale(0.98); }
