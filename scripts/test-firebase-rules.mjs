@@ -123,6 +123,36 @@ ok('  and claimed', await write('shops/brandnew', { shop: 'brandnew', owner: { u
 ok('  but a taken one cannot be overwritten', await write('shops/ownershop', { hijacked: true }, STRANGER), 'deny');
 ok('nobody unauthenticated can claim a name', await write('shops/anothernew', { shop: 'x' }), 'deny');
 
+console.log('\nA shop with an email but no uid anywhere is LOCKED OUT');
+// This shape is why these rules are not the whole story. SECURITY-AUDIT.md F4
+// says enforcement went on once every shop resolved to `member` "by uid in
+// either location, or by the email on the record" - so the email was a real
+// fallback for shops carrying no uid. main.js:5060 implements it: match the
+// shop's email, then write members/$uid to repair the record.
+//
+// These rules have no email anchor, so that repair cannot run: the write is
+// denied at the same rule that denied the read. The shop can still be found
+// (the public leaf), the owner can still sign in, and then every read fails.
+// main.js treats an unreadable shop as `allow`, so they are not signed out -
+// they get an app with nothing in it.
+//
+// The one shop the operator calls real carries two uids, so it is unaffected.
+// This is pinned as the known limit of the deployed rules, not as desired
+// behaviour; the fix is an email anchor in the rule itself:
+//   auth.token.email === data.child('owner/email').val()
+// which is server-enforced and strictly stronger than the client check.
+await seed('shops/emailonly', {
+  shop: 'emailonly',
+  owner: { name: 'Owner', email: 'owner@example.com' },
+  service: { 1: { name: 'A customer' } },
+});
+const EMAILONLY = 'uid-email-owner-4';
+ok('the shop can still be found before login', await read('shops/emailonly/owner/email'), 'allow');
+ok('but its owner cannot read it', await read('shops/emailonly', EMAILONLY), 'deny');
+ok('  nor their own jobs', await read('shops/emailonly/service', EMAILONLY), 'deny');
+ok('  and cannot self-claim to repair it',
+   await write(`shops/emailonly/members/${EMAILONLY}`, { claimedVia: 'client-claim' }, EMAILONLY), 'deny');
+
 console.log('\nThe audit trail and the click counter');
 ok('a refused attempt is still recorded', await write('shops/ownershop/authAudit/x', { outcome: 'mismatch' }, STRANGER), 'allow');
 ok('  but a stranger cannot read the trail', await read('shops/ownershop/authAudit', STRANGER), 'deny');
