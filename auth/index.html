@@ -148,6 +148,23 @@
     </div>
   </main>
 
+  <!--
+    The install offer for someone arriving from a shared link.
+
+    It belongs here and not only in the app: main.js sends anyone without a
+    shop in localStorage straight to this page, so a brand new visitor - the
+    exact person who should hear that an app exists - never reached the code
+    that offers it. Hidden until the manifest is read and only on Android,
+    where an .apk is of any use.
+  -->
+  <aside class="get-app hidden" id="getApp">
+    <div class="get-app-text">
+      <strong>Get the Android app</strong>
+      <span id="getAppMeta">Reminders, and it keeps working without internet.</span>
+    </div>
+    <a class="get-app-btn" id="getAppLink" href="#" rel="noopener">Download</a>
+  </aside>
+
   <div class="loader hidden">
     <div class="loading-card">
       <span class="spinner" aria-hidden="true"></span>
@@ -156,6 +173,9 @@
   </div>
 
   <script type="module" charset="utf-8" src="./main.js"></script>
+  <!-- Separate from main.js on purpose: that one imports Firebase from a CDN,
+       and the install offer must not depend on it. -->
+  <script type="module" charset="utf-8" src="./get-app.js"></script>
 </body>
 
 </html>

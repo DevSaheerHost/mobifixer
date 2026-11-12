@@ -401,3 +401,58 @@ input:focus-visible {
 .hidden {
   display: none;
 }
+
+/* ---- install offer -------------------------------------------------------
+   Shown on this page because main.js redirects anyone without a shop here,
+   so a visitor from a shared link sees the login screen and nothing else.
+   Revealed by main.js once the manifest is read, and only on Android. */
+.get-app {
+  /* Every `main` on this page is position:absolute inset:0, so a card in
+     normal flow lands underneath it at the top of the screen, above the
+     brand, before anyone knows what this is. Pinned to the bottom instead:
+     there if wanted, never in front of the form. */
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(1rem + env(safe-area-inset-bottom));
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: min(380px, calc(100% - 2rem));
+  padding: 0.8rem 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-medium);
+  box-shadow: 0 12px 32px -12px var(--shadow-color);
+}
+.get-app.hidden { display: none; }
+
+.get-app-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.get-app-text strong {
+  font-size: 0.92rem;
+  color: var(--text-heading);
+  font-weight: 600;
+}
+.get-app-text span {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.get-app-btn {
+  flex: 0 0 auto;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  background: var(--accent-color);
+  color: #04121f;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+.get-app-btn:active { transform: scale(0.98); }

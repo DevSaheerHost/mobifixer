@@ -415,6 +415,77 @@ console.log('\nThe plaintext-password branch is gone');
      (authSrc.match(/await createUserWithEmailAndPassword/g) || []).length === 1);
 }
 
+console.log('\nThe install offer on the login page');
+{
+  const html = readFileSync('auth/index.html', 'utf8');
+  const mod  = await import('../auth/get-app.js');
+
+  ck('the login page carries the offer card', /id="getApp"/.test(html));
+  ck('  with a version line and a link',
+     /id="getAppMeta"/.test(html) && /id="getAppLink"/.test(html));
+  ck('  hidden until the manifest answers', /class="get-app hidden"/.test(html));
+  // auth/main.js imports Firebase from a CDN. An offer tacked onto the end of
+  // it would not appear at all if that were slow or blocked, and it has
+  // nothing to do with signing in.
+  ck('  loaded separately from the Firebase module',
+     /src="\.\/get-app\.js"/.test(html) && !readFileSync('auth/main.js', 'utf8').includes('getApp'));
+
+  ck('the line names the version, the size and why',
+     mod.offerLine({ version: '5.1.7', size: 6429095 })
+       === 'Version 5.1.7  \u00b7  6.1 MB  \u00b7  reminders and offline use');
+  ck('  and leaves the size out when it is not known',
+     !mod.offerLine({ version: '5.1.7', size: 0 }).includes('MB'));
+
+  ck('Android is recognised', mod.isAndroidBrowser('Mozilla/5.0 (Linux; Android 13; Pixel)'));
+  ck('  an iPhone is not', !mod.isAndroidBrowser('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)'));
+  ck('  nor a desktop', !mod.isAndroidBrowser('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)'));
+  ck('inside the app is recognised',
+     mod.insideApp({ Capacitor: { isNativePlatform: () => true } }));
+  ck('  and a plain browser is not', !mod.insideApp({}));
+
+  // Run it against a fake page, so the card is actually filled in.
+  const makeDoc = () => {
+    const nodes = {
+      '#getApp': { classes: new Set(['get-app', 'hidden']),
+                   classList: { remove(c) { nodes['#getApp'].classes.delete(c); } } },
+      '#getAppMeta': { textContent: '' },
+      '#getAppLink': { href: '', attrs: {}, setAttribute(k, v) { this.attrs[k] = v; } },
+    };
+    return { querySelector: (sel) => nodes[sel] || null, nodes };
+  };
+  const MANIFEST = { version: '5.1.7', size: 6429095, url: 'https://example.test/m.apk' };
+  const winFor = (ua, manifest = MANIFEST, ok = true) => ({
+    navigator: { userAgent: ua },
+    fetch: async () => ({ ok, json: async () => manifest }),
+  });
+
+  let doc = makeDoc();
+  let r = await mod.showOffer({ doc, win: winFor('Linux; Android 13') });
+  ck('an Android visitor is shown the card', r.shown === true);
+  ck('  it is no longer hidden', !doc.nodes['#getApp'].classes.has('hidden'));
+  ck('  the link points at the apk', doc.nodes['#getAppLink'].href === MANIFEST.url);
+  ck('  and opens outside this page', doc.nodes['#getAppLink'].attrs.target === '_blank');
+  ck('  the line is filled in', doc.nodes['#getAppMeta'].textContent.includes('5.1.7'));
+
+  doc = makeDoc();
+  r = await mod.showOffer({ doc, win: winFor('iPhone; CPU iPhone OS 17_0') });
+  ck('an iPhone is not offered an apk', r.shown === false && r.reason === 'not-android');
+  ck('  and the card stays hidden', doc.nodes['#getApp'].classes.has('hidden'));
+
+  doc = makeDoc();
+  r = await mod.showOffer({ doc, win: { ...winFor('Linux; Android 13'),
+                                        Capacitor: { isNativePlatform: () => true } } });
+  ck('inside the app it offers nothing', r.shown === false && r.reason === 'already-installed');
+
+  // An offer it cannot complete is worse than none: it would link nowhere.
+  doc = makeDoc();
+  r = await mod.showOffer({ doc, win: winFor('Linux; Android 13', MANIFEST, false) });
+  ck('an unreachable manifest shows nothing', r.shown === false && r.reason === 'manifest-unreachable');
+  doc = makeDoc();
+  r = await mod.showOffer({ doc, win: winFor('Linux; Android 13', { version: '5.1.7' }) });
+  ck('  nor does one with no url', r.shown === false && r.reason === 'manifest-incomplete');
+}
+
 console.log('\nThe proposed rules match the shapes that exist');
 {
   const rules = readRules('firebase/service-app.rules.json').rules;

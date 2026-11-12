@@ -407,3 +407,4 @@ $('#signupForm').onsubmit = async (e) => {
 // disabled in auth/index.html, so nobody could reach it, but leaving the
 // handler in place meant one stray class change would have switched it back on.
 // Email + password login and the reset flow above cover everything it did.
+
