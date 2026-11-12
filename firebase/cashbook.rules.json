@@ -1,7 +1,44 @@
+// TARGET rules for the CASHBOOK app (project recat-auth-test).
+// DO NOT APPLY YET - see the blocker below.
+//
+// Comments are // lines, not "//" keys. Firebase accepts exactly one
+// top-level property, "rules", and reads every key inside it as a child
+// node, so a "//" entry is rejected outright ("Expected '{'"). The earlier
+// draft of this file used five of them and could never have been applied.
+//
+// BLOCKER, measured rather than assumed
+// scripts/audit-membership.mjs against the live database (2026-11-12):
+//
+//     11 shops | READY 1 | MAPPABLE 1 | NO-UID 9
+//
+// Only ONE shop has a members map. Nine have no Firebase Auth identity at
+// all: they were created by cashbook/auth/index.html, which writes the
+// password into the database (:125) and compares it in the browser (:141).
+// There is no uid for a members map to be keyed by, so no amount of logging
+// in will self-claim them. Applying these rules now locks out 10 of 11 shops
+// permanently, which is the precise failure the audit warns about.
+//
+// Order of work, therefore:
+//   1. Move the nine password-in-database shops onto Firebase Auth. Until
+//      that happens these rules cannot be applied at all.
+//   2. Backfill members for them and for "mobi fixer" (MAPPABLE).
+//   3. Re-run the audit. Only when it reports READY for every shop, set
+//      ENFORCE_MEMBERSHIP = true in cashbook/main.js and apply this file.
+//
+// Separately and more urgently: while /users is world-readable, those nine
+// passwords are readable by anyone on the internet. No database rule fixes
+// that - the field has to stop being stored.
+//
+// UNRESOLVED in the rules below
+//   - loginUser reads /users/$shop BEFORE signing in, which these rules deny.
+//   - /feedback and /auditLogs are not covered, so the root deny applies and
+//     the app's writes to them would start failing.
+//   - The $shop wildcard at the root also matches authAudit, feedback,
+//     auditLogs and clicks; for those root.child('users').child($shop) does
+//     not exist, so they are denied by accident rather than by design.
+// None of these are safe to leave as they are; they are listed so the next
+// pass over this file starts from the real list.
 {
-  "//": "TARGET rules for the CASHBOOK app (project recat-auth-test). DO NOT APPLY YET.",
-  "//BLOCKER": "STILL DO NOT APPLY. Phase 1 (client-side) now writes /users/$shop/members/$uid on signup and claims it on first login, but existing shops are only mapped as their owners log in. Run scripts/audit-membership.mjs and set ENFORCE_MEMBERSHIP=true first. Applying these rules before every active shop is mapped locks those shops out.",
-  "//UNRESOLVED": "Two known gaps in these rules: loginUser reads /users/$shop BEFORE signing in (unauthenticated, would be denied), and /feedback + /auditLogs are not covered here at all.",
   "rules": {
     ".read": false,
     ".write": false,
@@ -11,17 +48,16 @@
         ".read": "auth != null && data.child('members').child(auth.uid).exists()",
         ".write": "auth != null && (data.child('members').child(auth.uid).exists() || !data.exists())",
 
+        // Public lookup so a member can find the shop before signing in.
         "signupInfo": {
-          "email": {
-            ".read": true,
-            "//": "public lookup so a member can find the shop before signing in"
-          }
+          "email": { ".read": true }
         }
       }
     },
 
+    // The ledger itself: {username}/{YYYY-MM-DD}/{in|out|liquid}, plus
+    // goals/reminders/recycleBin/counters.
     "$shop": {
-      "//": "the ledger itself: {username}/{YYYY-MM-DD}/{in|out|liquid}, plus goals/reminders/recycleBin/counters",
       ".read": "auth != null && root.child('users').child($shop).child('members').child(auth.uid).exists()",
       ".write": "auth != null && root.child('users').child($shop).child('members').child(auth.uid).exists()"
     }

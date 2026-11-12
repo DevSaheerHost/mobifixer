@@ -22,7 +22,7 @@
  *
  *   node scripts/test-shop-access.mjs
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { readRules, rulesFileProblems } from './read-rules.mjs';
 
 const src = readFileSync('main.js', 'utf8');
@@ -431,8 +431,12 @@ console.log('\nThe proposed rules match the shapes that exist');
   // accepts one top-level property, "rules", and reads every key inside it as
   // a child node, so a "//" comment key is rejected outright. Comments have to
   // be // lines. Checked here so that shape cannot be committed again.
-  const problems = rulesFileProblems('firebase/service-app.rules.json');
-  ck('Firebase would accept the file as written', problems.length === 0, problems.join('; '));
+  // Every rules file, not just this one: the cashbook draft carried five of
+  // those comment keys and was equally unapplicable.
+  for (const f of readdirSync('firebase').filter(n => n.endsWith('.rules.json')).sort()) {
+    const problems = rulesFileProblems(`firebase/${f}`);
+    ck(`Firebase would accept ${f} as written`, problems.length === 0, problems.join('; '));
+  }
 }
 
 console.log('\nThe rebuilt auth screens');
