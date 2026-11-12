@@ -41,6 +41,20 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <!--
+        VIBRATE, for the buzz on a saved job, an error toast and a voice alert.
+
+        This was the whole of the bug: main.js has called navigator.vibrate()
+        in four places since long before this manifest existed, and without
+        this line the WebView accepts the call, returns normally and does not
+        vibrate. Nothing logs, nothing throws - it just silently never happened.
+
+        It is a normal permission, so it is granted at install and asks the
+        shop nothing. It is the one permission the vibration needs; there is no
+        runtime request to make.
+    -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!--
         Everything a notification needs - POST_NOTIFICATIONS, WAKE_LOCK and
         RECEIVE_BOOT_COMPLETED so reminders survive a restart - is declared by
         @capacitor/local-notifications and merged in at build time. They are

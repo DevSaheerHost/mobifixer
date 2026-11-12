@@ -174,5 +174,36 @@ console.log('\nIt does not ask for exact alarms');
   ck('POST_NOTIFICATIONS is still not blocked', !/POST_NOTIFICATIONS[\s\S]{0,80}tools:node="remove"/.test(manifest));
 }
 
+console.log('\nVibration');
+{
+  // The failure this pins down was invisible: main.js called
+  // navigator.vibrate() in four places for months, and with no VIBRATE
+  // permission the WebView took the call, returned normally and did nothing.
+  // No error, no log. Only a device told you.
+  const manifest = readFileSync('android/app/src/main/AndroidManifest.xml', 'utf8');
+  ck('the manifest declares VIBRATE',
+    /<uses-permission[^>]*android\.permission\.VIBRATE/.test(manifest));
+  ck('  and does not then remove it',
+    !/VIBRATE[\s\S]{0,80}tools:node="remove"/.test(manifest));
+
+  const src = readFileSync('main.js', 'utf8');
+  const code = src.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+
+  ck('there is one vibrate helper', /const vibrate = \(pattern\) =>/.test(src));
+  ck('  it feature-detects, because iOS Safari has no vibrate at all',
+    /typeof navigator\.vibrate === 'function'/.test(src));
+  ck('  and it swallows a refusal rather than failing the caller',
+    /const vibrate[\s\S]{0,400}try \{[\s\S]{0,300}catch/.test(src));
+
+  // Three of the four original calls had no guard, so a notice on a browser
+  // without the API threw halfway through building the toast. Every call goes
+  // through the helper now; a bare one anywhere is that bug coming back.
+  const bare = (code.match(/navigator\.vibrate\(/g) || []).length;
+  ck('no call site uses navigator.vibrate directly', bare === 1,
+     `${bare} occurrences; only the one inside the helper is allowed`);
+  ck('every buzz goes through the helper',
+     (code.match(/(?<!navigator\.)\bvibrate\(\[/g) || []).length === 4);
+}
+
 console.log(`\n${pass} passed, ${fail} failed\n`);
 process.exit(fail ? 1 : 0);

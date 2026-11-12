@@ -647,6 +647,33 @@ const DATA_SOUND_KEY  = 'MF_DATA_SOUND';
 const voiceAlertEnabled = () => localStorage.getItem(VOICE_ALERT_KEY) !== 'off';
 const dataSoundEnabled  = () => localStorage.getItem(DATA_SOUND_KEY) === 'on';
 
+/**
+ * One short buzz, or a pattern of them.
+ *
+ * This did nothing at all in the APK until android.permission.VIBRATE was
+ * declared: without it navigator.vibrate() returns normally and simply does
+ * not vibrate, which is why it looked like working code.
+ *
+ * It is also absent on iOS Safari, where calling it throws. Three of the four
+ * call sites had no guard, so one notice on an unsupported browser took the
+ * rest of showNotice() down with it - the toast would stop mid-build. The
+ * website serves this same file, so that was reachable.
+ *
+ * Chromium additionally wants the person to have tapped the page at least
+ * once (sticky activation) before it will vibrate, so a notice raised before
+ * the first tap can still be silent. That is the browser's rule and not
+ * something to work around.
+ */
+const vibrate = (pattern) => {
+  try {
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      navigator.vibrate(pattern);
+    }
+  } catch (_) {
+    // Exposed but refused. Never worth failing a toast or a job save over.
+  }
+};
+
 const speakText=(text, lang = 'en-IN', rate = 1, pitch = 1)=> {
   if (!voiceAlertEnabled()) return;     // the "Voice Alert" switch in Settings
   if (!('speechSynthesis' in window)) {
@@ -661,7 +688,7 @@ const speakText=(text, lang = 'en-IN', rate = 1, pitch = 1)=> {
   msg.pitch = pitch;      // Voice pitch (0 – 2)
 
   // Vibration + speak
-  if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+  vibrate([80, 40, 80]);
   window.speechSynthesis.cancel(); // Stop any previous speech
   window.speechSynthesis.speak(msg);
 }
@@ -2216,18 +2243,18 @@ function processQueue() {
   console.log('New notice was created')
   // Pattern: vibrate → pause → vibrate
   if (type==='error' || type ==='warn') {
-    navigator.vibrate([50, 50, 50]);
+    vibrate([50, 50, 50]);
     //speakText("നന്ദി, വീണ്ടും വരുക kumar ഏട്ടാ!", "ml-IN", 1.1, 1);
   }
   if (type==='error') {
     speakText(body);
   }
   if (type ==='info') {
-    navigator.vibrate([50, 70, 50]);
+    vibrate([50, 70, 50]);
    // speakText(body);
   }
   if (type ==='success') {
-    navigator.vibrate([50]);
+    vibrate([50]);
   }
 //navigator.vibrate([50, 50, 50]);
   // newNorice swipe position events
