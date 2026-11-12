@@ -1,35 +1,72 @@
+// Rules for the SERVICE app (project c24o-c038b).
+// Firebase console > Realtime Database > Rules. Test in the Rules Playground
+// before publishing.
+//
+// Comments are // lines, not "//" keys. Firebase's parser treats every key
+// inside "rules" as a child node and rejects a string there outright
+// ("Expected '{'"), which is why the earlier draft of this file could never
+// have been applied.
+//
+// WHY THESE MATTER AT ALL
+// The Firebase config ships inside the APK and on the website, as it must.
+// These rules are therefore the only thing between the internet and the data:
+// without them anyone who reads that config can call the REST API directly
+// and read or write every shop without ever opening the app. Every check in
+// main.js is irrelevant to someone who does that.
 {
-  "//": "PROPOSED rules for the SERVICE app (project c24o-c038b). Not applied. Test in the Rules Playground first.",
-  "//PREAUTH": "Login and reset read ONLY shops/$shop/owner/email and shops/$shop/email, never the whole shop node. RTDB checks permission at the location you read, so a public carve-out on a child does NOT rescue a denied read of the parent - reading shops/$shop unauthenticated fails outright. Both email paths are public for that reason; everything else needs auth.",
-  "//SHAPES": "The 2026-09 export shows three record shapes, all covered below: owner as an object with owner.uid (7 shops), owner as a bare name string with a top-level uid and email (2 shops, from the removed Google sign-in), and one shop carrying both.",
-  "//ROOT": "The root stays denied. That also closes the legacy /service (103 records) and /lastSn left over from before the multi-tenant restructure - nothing in the codebase reads them, and they are world-readable today.",
   "rules": {
+    // The root stays shut. That also closes the legacy /service (103 records)
+    // and /lastSn left from before the multi-tenant restructure: nothing reads
+    // them and they are world-readable today.
     ".read": false,
     ".write": false,
 
     "shops": {
       "$shop": {
-        ".read": "auth != null && (data.child('uid').val() === auth.uid || data.child('owner/uid').val() === auth.uid)",
-        ".write": "auth != null && (data.child('uid').val() === auth.uid || data.child('owner/uid').val() === auth.uid || !data.exists())",
+        // Four ways an account is recognised. The 2026-09 export holds three
+        // record shapes - owner.uid (7 shops), a top-level uid from the
+        // removed Google sign-in (2 shops), and one shop carrying both - and
+        // members/$uid is the fourth. main.js:5011 reads that map and :5031
+        // treats a uid in it as a member, so leaving it out would lock out
+        // every member who is not the owner.
+        //
+        // !data.exists() is for signup: it runs runTransaction on
+        // shops/$name, and a transaction needs read as well as write at that
+        // path. On a free name the node does not exist, so an owner-uid test
+        // denies it and no new shop could ever be created. It lets a signed-in
+        // account discover which names are free, which the public owner/email
+        // lookup already reveals for names that are taken.
+        ".read": "auth != null && (!data.exists() || data.child('uid').val() === auth.uid || data.child('owner/uid').val() === auth.uid || data.child('members').child(auth.uid).exists())",
 
+        ".write": "auth != null && (!data.exists() || data.child('uid').val() === auth.uid || data.child('owner/uid').val() === auth.uid || data.child('members').child(auth.uid).exists())",
+
+        // Login and password reset read these BEFORE anyone is signed in.
+        // RTDB checks permission at the location being read, and a public
+        // child does not rescue a denied parent - so these two leaves are
+        // public and nothing else is. Reading shops/$shop unauthenticated
+        // still fails.
         "owner": {
-          "email": {
-            ".read": true,
-            "//": "public on purpose: the pre-auth login lookup needs it"
-          }
+          "email": { ".read": true }
         },
+        "email": { ".read": true },
 
-        "email": {
-          ".read": true,
-          "//": "same, for the two records that keep the email at the top level"
+        // logShopAccess records refused attempts too, and an account making
+        // one is by definition not a member. Appendable by any signed-in
+        // account so the refusal is still recorded; readable only by the
+        // shop, through the rule above.
+        "authAudit": {
+          ".write": "auth != null"
         }
       }
     },
 
+    // Write-only analytics, written from a settings toggle after sign-in, so
+    // requiring auth costs nothing and stops anonymous flooding.
     "clicks": {
-      ".read": false,
-      ".write": true,
-      "//": "write-only analytics"
+      "$shop": {
+        ".read": false,
+        ".write": "auth != null"
+      }
     }
   }
 }
