@@ -56,7 +56,7 @@ export const APP_PATHS = [
   'index.html', 'main.js', 'style.css', 'sw.js', 'manifest.json',
   'cardLayout.js', 'jobMeta.js', 'pattern.js', 'generateWhatsappLink.js',
   'searchCard.js', 'searchPouchCard.js', 'inventoryCard.js', 'data.js',
-  'native.js', 'nativeLogic.js',
+  'native.js', 'nativeLogic.js', 'm3.css',
   'icon-192.jpg', 'mixkit.wav', 'update.mp3', 'disconnect.mp3',
   'CHANGELOG.md', 'Error 404.json', 'Loading Animation.json',
   'auth/', 'assets/',

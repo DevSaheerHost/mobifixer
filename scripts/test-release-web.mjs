@@ -47,6 +47,21 @@ console.log('\nOnly this app triggers an update');
 
   ck('the two lists do not overlap',
     !NOT_APP_PATHS.some(n => APP_PATHS.includes(n)));
+
+  // The comment above APP_PATHS asks for it to be kept in step with the lists
+  // build-www.mjs ships, and nothing enforced that. m3.css was shipped in
+  // 5.1.6 and never added here, so the entire Material 3 stylesheet could
+  // change - the password eye fix among it - and no install would ever be
+  // prompted to restart. Checked against the real lists now, not a copy.
+  {
+    const { FILES, DIRS } = await import('./build-www.mjs');
+    const missing = [
+      ...FILES.filter(f => !isAppPath(f)),
+      ...DIRS.map(d => d + '/').filter(d => !isAppPath(d + 'x')),
+    ].filter(f => !NOT_APP_PATHS.some(n => f.startsWith(n.replace(/\/$/, ''))));
+    ck('everything the payload ships can trigger an update', missing.length === 0,
+       missing.join(', '));
+  }
   ck('a path outside both lists is not the app', !isAppPath('push-worker/worker.js'));
   ck('backslashes do not smuggle a path past the check', !isAppPath('cashbook\\main.js'));
 }

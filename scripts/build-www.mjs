@@ -28,7 +28,7 @@ const out = join(root, 'www');
 const checkOnly = process.argv.includes('--check');
 
 // Everything the app serves. Directories are copied whole.
-const FILES = [
+export const FILES = [
   'index.html',
   'manifest.json',
   'main.js',
@@ -54,7 +54,7 @@ const FILES = [
   'Loading Animation.json',
 ];
 
-const DIRS = [
+export const DIRS = [
   'assets',
   'auth',
 ];

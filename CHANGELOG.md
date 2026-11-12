@@ -25,6 +25,14 @@ and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ---
 
 
+## [5.1.8] - 2026-11-12
+
+- The eye for showing your password had slipped out of the password box and was sitting underneath it, half over the border. It is back inside the box, on the right, where you tap it.
+- Opening the website on an Android phone now offers the app, on the sign-in screen as well as inside it. A link you share with another shop finally leads somewhere that can install it.
+- Everything in 5.1.7, for anyone who skipped it: vibration, the back button asking before it closes, Share MobiFixer in Settings, and an update message that says what is actually about to happen.
+
+---
+
 ## [5.1.7] - 2026-11-12
 
 Fixes what 5.1.6 broke, and adds sharing.
