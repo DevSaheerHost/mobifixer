@@ -415,6 +415,41 @@ console.log('\nThe plaintext-password branch is gone');
      (authSrc.match(/await createUserWithEmailAndPassword/g) || []).length === 1);
 }
 
+console.log('\nThe show/hide password eye');
+{
+  const css = readFileSync('auth/style.css', 'utf8');
+  const m3  = readFileSync('m3.css', 'utf8');
+  const html = readFileSync('auth/index.html', 'utf8');
+
+  // auth/index.html loads ../m3.css AFTER its own stylesheet, and the ripple
+  // rule there sets position: relative on every control. `.md3 button` scores
+  // (0,1,1) against a bare `.pw-toggle` at (0,1,0), so from 5.1.6 the eye was
+  // dragged out of the field and into the flow underneath it, left-aligned.
+  // Measured in a browser at the time: position computed to relative and the
+  // wrapper grew from 54px to 98px.
+  ck('the auth page loads m3.css after its own', 
+     html.indexOf('../m3.css') > html.indexOf('./style.css'));
+  ck('m3 still positions every control for the ripple',
+     /\.md3 button,[\s\S]{0,120}position: relative;/.test(m3));
+  ck('so the eye wins on specificity',
+     /\.md3 \.pw-toggle,\s*\n\.pw-toggle \{[\s\S]{0,120}position: absolute;/.test(css));
+  ck('  and keeps its centring transform the same way',
+     /\.md3 \.pw-toggle:active,\s*\n\.pw-toggle:active \{[^}]*translateY\(-50%\)/.test(css));
+  ck('  the cause carries the warning, not just the fix',
+     /CAREFUL[\s\S]{0,400}position: relative[\s\S]{0,400}must say `\.md3`/.test(m3));
+
+  // It is still a real button that reveals a real field.
+  const authSrc = readFileSync('auth/main.js', 'utf8');
+  ck('every password field has an eye',
+     (html.match(/class="pw-toggle"/g) || []).length === 2);
+  ck('  each names the field it reveals',
+     (html.match(/data-for="(login_businessPass|signup_businessPassword)"/g) || []).length === 2);
+  ck('  and the handler flips type, state and label',
+     /input\.type = reveal \? 'text' : 'password'/.test(authSrc)
+     && /aria-pressed', String\(reveal\)/.test(authSrc)
+     && /aria-label', reveal \? 'Hide password' : 'Show password'/.test(authSrc));
+}
+
 console.log('\nThe install offer on the login page');
 {
   const html = readFileSync('auth/index.html', 'utf8');

@@ -242,6 +242,13 @@ input:-webkit-autofill:focus {
   caret-color: var(--text-color);
 }
 
+/* The .md3 prefix is not decoration. m3.css loads after this file and sets
+   `position: relative` on every control for the ripple's containing block -
+   `.md3 button` (0,1,1) outranks a bare `.pw-toggle` (0,1,0), which dropped
+   this button out of the field and into the flow below it, left-aligned,
+   from 5.1.6 onward. An absolutely positioned element is already a
+   containing block, so the ripple is unaffected by winning here. */
+.md3 .pw-toggle,
 .pw-toggle {
   position: absolute;
   top: 50%;
@@ -259,6 +266,8 @@ input:-webkit-autofill:focus {
 }
 
 .pw-toggle:hover { color: var(--text-color); }
+/* Same reason: keep the centring transform out of reach of a later rule. */
+.md3 .pw-toggle:active,
 .pw-toggle:active { transform: translateY(-50%) scale(0.92); }
 
 .pw-toggle svg {

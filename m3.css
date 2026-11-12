@@ -141,6 +141,14 @@ h4 { font-size: 1rem;    line-height: 1.5;  letter-spacing: 0.009em;  font-weigh
    STATE LAYER + RIPPLE
    A press on Android is a layer over the component, and a ripple from the
    point of contact. Applied to everything that behaves like a control.
+
+   CAREFUL: `position: relative` below lands on EVERY button, and `.md3 button`
+   (0,1,1) outranks a plain component class (0,1,0). A control that positions
+   itself - auth's password eye sat absolutely inside its field - is yanked
+   back into the flow by it, which is how 5.1.6 dropped that eye underneath
+   the password box. A component that positions itself must say `.md3` in its
+   own selector to win. An already-positioned element is its own containing
+   block, so the ripple still works.
    ======================================================================== */
 .md3 button,
 .md3 .btn,
