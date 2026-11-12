@@ -1,7 +1,7 @@
 {
-  "version": "5.1.4",
-  "url": "https://mobifixer.vercel.app/updates/mobifixer-5.1.4.zip",
-  "appHash": "e8ade3729ce6f1ca17bfc4f4362537731135a85bbc057fca859134ad5d6df691",
-  "notes": "A new version now asks to be installed, instead of hoping you noticed.\n- An update shows a sheet you have to answer, with the version and what changed in it. Before this it was a notice that slid away after a few seconds, so anyone in the middle of booking in a phone simply missed it - and a new APK was never announced at all, because the check for one had never been wired up.\n- Nothing updates behind your back. A web update applies when you tap Update now, because it reloads the screens and would lose anything half-typed. An APK update opens the download in your browser, where you confirm the install.\n- The About page shows the version you are actually running. It had said v5.0.0 since v5.0.0, whatever was installed - and because of that, the \"App updated!\" notice had not appeared for five releases.",
-  "builtAt": "2026-11-12T10:13:59.276Z"
+  "version": "5.1.5",
+  "url": "https://mobifixer.vercel.app/updates/mobifixer-5.1.5.zip",
+  "appHash": "fdf1b21a1e147869dbaa55d8628ff75837a49215e6141971cba3e1e4a24fc77f",
+  "notes": "Updates never actually arrived. They do now.\n- The app downloaded a new version and then stopped dead. It was telling the updater to swap the files over in a way that shuts the whole page down mid-sentence, so the step that announces the update never ran - which is why no update has ever appeared, on any version.\n- The About page now says what the last check did: up to date, could not reach the server, the download did not finish. A phone has no error log, so a check that failed quietly looked exactly like one with nothing to do.",
+  "builtAt": "2026-11-12T10:36:11.641Z"
 }
