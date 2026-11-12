@@ -1,7 +1,7 @@
 {
-  "version": "5.1.5",
-  "url": "https://mobifixer.vercel.app/updates/mobifixer-5.1.5.zip",
-  "appHash": "fdf1b21a1e147869dbaa55d8628ff75837a49215e6141971cba3e1e4a24fc77f",
-  "notes": "Updates never actually arrived. They do now.\n- The app downloaded a new version and then stopped dead. It was telling the updater to swap the files over in a way that shuts the whole page down mid-sentence, so the step that announces the update never ran - which is why no update has ever appeared, on any version.\n- The About page now says what the last check did: up to date, could not reach the server, the download did not finish. A phone has no error log, so a check that failed quietly looked exactly like one with nothing to do.",
-  "builtAt": "2026-11-12T10:36:11.641Z"
+  "version": "5.1.6",
+  "url": "https://mobifixer.vercel.app/updates/mobifixer-5.1.6.zip",
+  "appHash": "289924da1bb89671738cf2e4f1fdae1f22562c74b984ec606c270f6eae2db51b",
+  "notes": "Looks and behaves like an Android app now.\n- Rebuilt on Material 3: the chips along the top are proper filter chips, the New button is a floating action button, cards sit on their own shade instead of being outlined, and headings are no longer painted in the link colour. The blue is unchanged - it already met the contrast Material asks for.\n- The back button works. It closes whatever sheet or panel is open, one step at a time, and only leaves the app when there is nothing left to close. Until now it quit the app outright, losing whatever you were typing.\n- Buttons ripple from where you touch them, and the app draws behind the status bar instead of leaving a black strip.\n- Two unused plugins removed from the build.",
+  "builtAt": "2026-11-12T11:13:28.200Z"
 }
