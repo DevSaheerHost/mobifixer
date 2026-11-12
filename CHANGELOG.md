@@ -25,6 +25,12 @@ and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ---
 
 
+## [5.1.5] - 2026-11-12
+
+Updates never actually arrived. They do now.
+- The app downloaded a new version and then stopped dead. It was telling the updater to swap the files over in a way that shuts the whole page down mid-sentence, so the step that announces the update never ran - which is why no update has ever appeared, on any version.
+- The About page now says what the last check did: up to date, could not reach the server, the download did not finish. A phone has no error log, so a check that failed quietly looked exactly like one with nothing to do.
+
 ## [5.1.4] - 2026-11-12
 
 A new version now asks to be installed, instead of hoping you noticed.

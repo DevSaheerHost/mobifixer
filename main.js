@@ -4742,6 +4742,49 @@ const applyVersion = (version) => {
   localStorage.setItem('app_version', version);
 };
 
+// What the last update check did, in words, on the About page. There is no
+// console on a shop's phone, and a check that failed silently looks exactly
+// like one that found nothing - so it says which.
+const UPDATE_REASONS = {
+  'ok': 'up to date',
+  'none': 'no result yet',
+  'up-to-date': 'up to date',
+  'ready-next-launch': 'downloaded, applies next time you open the app',
+  'not-native': 'only checked in the app, not the website',
+  'no-plugin': 'the updater is missing from this build',
+  'manifest-unreachable': 'could not reach the update server',
+  'manifest-has-no-url': 'the update server gave no download link',
+  'download-failed': 'the download did not finish',
+  'stage-failed': 'downloaded, but could not be prepared',
+  'auto-update-off': 'turned off in settings',
+  'apk-updates-disabled': 'app updates are off in this build',
+  'notified': 'a new app version is available',
+  'told-in-app': 'a new app version is available',
+  'not-notified': 'a new app version is available',
+  'notify-failed': 'a new version exists, but the notice failed',
+};
+
+function renderUpdateStatus() {
+  const el = document.querySelector('#updateStatus');
+  if (!el) return;
+  let all = {};
+  try { all = JSON.parse(localStorage.getItem('MF_UPDATE_LOG') || '{}'); } catch (_) {}
+
+  const lines = ['web', 'apk'].map(kind => {
+    const r = all[kind];
+    if (!r) return null;
+    const what = UPDATE_REASONS[r.reason] || r.reason;
+    const when = r.at ? new Date(r.at).toLocaleString() : '';
+    const label = kind === 'web' ? 'Screens' : 'App';
+    return `${label}: ${what}${r.to ? ' (' + r.to + ')' : ''}${when ? ' - ' + when : ''}`;
+  }).filter(Boolean);
+
+  el.textContent = lines.length ? lines.join('\n') : 'Update check has not run yet.';
+}
+
+renderUpdateStatus();
+window.addEventListener('mf:update-checked', renderUpdateStatus);
+
 fetch('./build.json', { cache: 'no-store' })
   .then(r => (r.ok ? r.json() : null))
   .then(b => { if (b && b.version) applyVersion(b.version); })

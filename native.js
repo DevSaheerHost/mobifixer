@@ -30,7 +30,34 @@ import {
  * app install other apps, and on a sideloaded APK signed by a key with no
  * history behind it, it is the kind of thing Play Protect blocks on.
  */
-/** Apply a web bundle that has already been downloaded and set. */
+export const UPDATE_LOG_KEY = 'MF_UPDATE_LOG';
+
+/**
+ * Record what the last update check actually did.
+ *
+ * There is no console on a shop's phone. Without this, a check that fails
+ * silently - an unreachable manifest, a download that dies halfway, a bundle
+ * the plugin rejects - looks exactly like one that found nothing to do, and
+ * the only way to tell them apart is to guess. The reason codes are the ones
+ * checkWebUpdate and checkApkUpdate already return.
+ */
+const logUpdate = (kind, result) => {
+  try {
+    const line = {
+      kind,
+      at: new Date().toISOString(),
+      reason: (result && result.reason) || 'none',
+      from: (result && result.from) || (result && result.current) || null,
+      to: (result && result.to) || (result && result.offered) || null,
+    };
+    const all = JSON.parse(localStorage.getItem(UPDATE_LOG_KEY) || '{}');
+    all[kind] = line;
+    localStorage.setItem(UPDATE_LOG_KEY, JSON.stringify(all));
+    window.dispatchEvent(new CustomEvent('mf:update-checked'));
+  } catch (_) {}
+};
+
+/** Apply a web bundle that has already been downloaded and staged. */
 export const applyWebUpdate = () => safe('reload', async () => {
   const U = plugin('CapacitorUpdater');
   if (U && U.reload) await U.reload();
@@ -386,16 +413,19 @@ export const checkWebUpdate = async ({ apply = true } = {}) => {
     U.download({ url: manifest.url, version: manifest.version }), null);
   if (!bundle) return { update: false, reason: 'download-failed', offered: manifest.version };
 
-  // set() takes effect at the next launch, not now. Reloading the WebView out
-  // from under someone who is halfway through booking in a phone would lose
-  // what they typed.
-  const set = await safe('set', async () => { await U.set(bundle); return true; }, false);
-  return set
+  // next(), NOT set(). The plugin's set() is documented as a terminal
+  // operation: it destroys the JavaScript context and reloads immediately, so
+  // the promise never resolves and nothing after it runs - which is why this
+  // function never returned and the update notice never appeared. next()
+  // stages the bundle for the next background or restart and resolves
+  // normally, which is what the comment here always claimed set() did.
+  const staged = await safe('next', async () => { await U.next(bundle); return true; }, false);
+  return staged
     ? {
         update: true, reason: 'ready-next-launch',
         from: current, to: manifest.version, notes: manifest.notes || '',
       }
-    : { update: false, reason: 'set-failed', offered: manifest.version };
+    : { update: false, reason: 'stage-failed', offered: manifest.version };
 };
 
 // ---------------------------------------------------------------------------
@@ -532,12 +562,15 @@ export const initNative = async (hostApi = {}) => {
 
   // Not awaited: a slow or unreachable update server must not hold up the
   // list of today's jobs.
-  checkApkUpdate();
+  checkApkUpdate().then(r => logUpdate('apk', r)).catch(() => {});
+
+  if (!autoUpdateOn()) logUpdate('web', { reason: 'auto-update-off' });
 
   if (autoUpdateOn()) {
     // Deliberately not awaited. A slow or unreachable update server must not
     // hold up the list of today's jobs.
     checkWebUpdate().then(r => {
+      logUpdate('web', r);
       if (!r.update) return;
       // Downloaded and set already; reload() is what swaps the screens over.
       // Asking first, because that throws away anything half-typed.

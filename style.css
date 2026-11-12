@@ -8136,3 +8136,14 @@ body.no-scroll {
   text-align: center;
   min-height: 1rem;
 }
+
+/* The update readout on the About page. Quiet by default: it matters when
+   something went wrong, and should not shout the rest of the time. */
+.update-status {
+  margin: 0.5rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  opacity: 0.55;
+  white-space: pre-line;
+  text-align: center;
+}

@@ -16,7 +16,7 @@
  *
  *   node scripts/test-release-web.mjs
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import {
   releaseDecision, notesFor, isAppPath, APP_PATHS, NOT_APP_PATHS, UPDATE_HOST,
 } from './release-web.mjs';
@@ -242,7 +242,9 @@ console.log('\nThe app does not install APKs any more');
   ck('checkApkUpdate is actually called at start-up',
     /initNative[\s\S]*checkApkUpdate\(\)/.test(native));
   ck('  and is not awaited, so a slow server cannot hold up the job list',
-    /\n  checkApkUpdate\(\);/.test(native));
+    !/await checkApkUpdate/.test(native));
+  ck('  its result is recorded, so a silent failure can be read back',
+    /checkApkUpdate\(\)\.then\(r => logUpdate/.test(native));
 
   ck('it still falls back to an in-app notice without permission',
     /told-in-app/.test(native));
@@ -306,6 +308,61 @@ console.log('\nThe version it shows is the version it is');
 
   ck('a first run does not announce an update it did not have',
     /if \(LAST_VERSION\)/.test(mainJs));
+}
+
+// ---------------------------------------------------------------------------
+// The update downloaded and then nothing happened, on a real phone, twice.
+// The plugin's set() is documented as terminal: it destroys the JavaScript
+// context and reloads immediately, so "await U.set(...)" never resolves and
+// nothing after it runs - which is why checkWebUpdate never returned and the
+// notice never appeared. next() stages the bundle and resolves normally.
+console.log('\nStaging a bundle does not kill the page');
+{
+  const native = readFileSync('native.js', 'utf8');
+  const defs = 'node_modules/@capgo/capacitor-updater/dist/esm/definitions.d.ts';
+
+  ck('the bundle is staged with next()', /U\.next\(bundle\)/.test(native));
+  ck('  and set() is not awaited anywhere', !/await U\.set\(/.test(native));
+  ck('reload() is still how Update now applies it', /U\.reload\(\)/.test(native));
+
+  if (!existsSync(defs)) {
+    console.log('  skip   plugin contract (run npm ci to check it)');
+  } else {
+    const d = readFileSync(defs, 'utf8');
+    // Pin why: if a plugin upgrade makes set() safe, or renames next(), this
+    // is where it should be noticed.
+    ck('the plugin still documents set() as destroying the context',
+      /set\(options: BundleId\)/.test(d) && /destroys the current JavaScript context/.test(d));
+    ck('  and still offers next() as the non-destructive one',
+      /next\(options: BundleId\): Promise<BundleInfo>/.test(d));
+  }
+}
+
+// ---------------------------------------------------------------------------
+// A phone has no console. Every failure above was invisible on the device and
+// had to be guessed at from the outside; this is so the next one is read.
+console.log('\nThe update check says what it did');
+{
+  const native = readFileSync('native.js', 'utf8');
+  const mainJs = readFileSync('main.js', 'utf8');
+  const html = readFileSync('index.html', 'utf8');
+
+  ck('native.js records every check', /const logUpdate = /.test(native));
+  ck('  the web one', /logUpdate\('web'/.test(native));
+  ck('  the APK one', /logUpdate\('apk'/.test(native));
+  ck('  and records when checking is switched off',
+    /auto-update-off/.test(native));
+  ck('  storing the reason the function already returns', /reason: \(result && result\.reason\)/.test(native));
+
+  ck('the About page has somewhere to show it', /id="updateStatus"/.test(html));
+  ck('main.js turns reason codes into words', /UPDATE_REASONS/.test(mainJs));
+  ck('  including the ones that mean something went wrong',
+    /'manifest-unreachable'/.test(mainJs) && /'download-failed'/.test(mainJs)
+    && /'stage-failed'/.test(mainJs));
+  ck('  and does not leave a bare code on screen when it is unknown',
+    /UPDATE_REASONS\[r\.reason\] \|\| r\.reason/.test(mainJs));
+  ck('it refreshes when a check finishes', /mf:update-checked/.test(mainJs)
+    && /mf:update-checked/.test(native));
 }
 
 console.log(`\n${pass} passed, ${fail} failed\n`);
