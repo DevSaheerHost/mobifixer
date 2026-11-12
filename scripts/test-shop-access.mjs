@@ -23,6 +23,7 @@
  *   node scripts/test-shop-access.mjs
  */
 import { readFileSync } from 'node:fs';
+import { readRules, rulesFileProblems } from './read-rules.mjs';
 
 const src = readFileSync('main.js', 'utf8');
 
@@ -175,7 +176,7 @@ console.log('\nA shop carrying two different uids');
   ck('the signup uid is accepted', a.outcome === 'member', a.outcome);
   ck('the migration uid is accepted too', b.outcome === 'member', b.outcome);
   ck('this matches what the rules accept',
-     JSON.parse(readFileSync('firebase/service-app.rules.json','utf8'))
+     readRules('firebase/service-app.rules.json')
        .rules.shops.$shop['.read'].includes("data.child('uid')"));
   const c = await run(shopWith({ owner: { uid: 'uid-from-signup', email: 'a@b.test' }, uid: 'uid-from-migration' }),
                       { uid: 'uid-neither', email: 'thief@evil.test' });
@@ -416,7 +417,7 @@ console.log('\nThe plaintext-password branch is gone');
 
 console.log('\nThe proposed rules match the shapes that exist');
 {
-  const rules = JSON.parse(readFileSync('firebase/service-app.rules.json', 'utf8')).rules;
+  const rules = readRules('firebase/service-app.rules.json').rules;
   const shop = rules.shops.$shop;
   ck('read checks both uid locations',
      shop['.read'].includes("data.child('uid')") && shop['.read'].includes("data.child('owner/uid')"));
@@ -425,6 +426,13 @@ console.log('\nThe proposed rules match the shapes that exist');
   ck('the top-level email is publicly readable too', shop.email?.['.read'] === true);
   ck('no password carve-out is left', !('password' in shop));
   ck('the root is denied', rules['.read'] === false && rules['.write'] === false);
+
+  // Two earlier drafts of this file could never have been applied: Firebase
+  // accepts one top-level property, "rules", and reads every key inside it as
+  // a child node, so a "//" comment key is rejected outright. Comments have to
+  // be // lines. Checked here so that shape cannot be committed again.
+  const problems = rulesFileProblems('firebase/service-app.rules.json');
+  ck('Firebase would accept the file as written', problems.length === 0, problems.join('; '));
 }
 
 console.log('\nThe rebuilt auth screens');
