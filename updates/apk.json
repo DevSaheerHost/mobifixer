@@ -1,6 +1,6 @@
 {
-  "version": "5.1.2",
-  "url": "https://github.com/DevSaheerHost/mobifixer/releases/download/v5.1.2/mobifixer-5.1.2.apk",
-  "notes": "Fixes a 5.1.1 bug that trapped the app on the \"Alarms and reminders\" screen.\n- Opening the app sent you straight to that system screen, and coming back sent you there again, with the toggle greyed out so there was nothing you could do about it. 5.1.1 told Android the reminders did not need an exact alarm, but put that setting in the wrong place, so Android never saw it and kept asking for a permission the app no longer has.\n- Reminders behave as 5.1.1 intended: no system screen, and a reminder lands in a window around the time you set.",
-  "builtAt": "2026-11-12T06:48:45.256Z"
+  "version": "5.1.3",
+  "url": "https://github.com/DevSaheerHost/mobifixer/releases/download/v5.1.3/mobifixer-5.1.3.apk",
+  "notes": "Android was warning people the app might be harmful. It no longer installs its own updates, which is what set that off.\n- \"Harmful app blocked\" on install. The app asked for permission to install other apps, so it could update itself, and Android blocks that on an app downloaded outside the Play Store from a publisher it has not seen before. That permission is gone.\n- Updates still reach you. When a new version is out you get a notification; tapping it opens the download in your browser, which shows the progress and then asks you to install it, the same as any other download.\n- A new version was never actually announced before this - the check existed but nothing ran it.",
+  "builtAt": "2026-11-12T09:53:11.622Z"
 }
