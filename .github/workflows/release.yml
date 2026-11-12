@@ -170,7 +170,29 @@ jobs:
           git add updates/apk.json
           git diff --cached --quiet && { echo "apk.json unchanged"; exit 0; }
           git commit -m "Point apk.json at the $version release [skip ci]"
-          for i in 1 2 3 4; do git push origin main && break || sleep $((2 ** i)); done
+
+          # Rebase before each attempt, and fail loudly if none of them land.
+          #
+          # The previous loop did neither. checks.yml publishes the web bundle
+          # and pushes to main while this job is still building the APK, so by
+          # the time this pushes, main has moved and the push is rejected as
+          # non-fast-forward. Sleeping cannot fix that - without a rebase every
+          # retry is rejected identically - and the loop's exit status was the
+          # sleep, which succeeds, so the step reported success having pushed
+          # nothing. 5.1.8 shipped with apk.json still naming 5.1.7, which is
+          # the file every installed app polls: the release existed and no
+          # install could see it.
+          pushed=0
+          for i in 1 2 3 4; do
+            git fetch origin main
+            git rebase origin/main || { git rebase --abort || true; echo "rebase failed"; exit 1; }
+            if git push origin HEAD:main; then pushed=1; break; fi
+            sleep $((2 ** i))
+          done
+          [ "$pushed" = 1 ] || {
+            echo "apk.json was not pushed - no install would ever see $version"
+            exit 1
+          }
 
       - uses: actions/upload-artifact@v4
         with:

@@ -62,6 +62,23 @@ console.log('\nOnly this app triggers an update');
     ck('everything the payload ships can trigger an update', missing.length === 0,
        missing.join(', '));
   }
+
+  // apk.json is the file every installed app polls. The step that pushes it
+  // used to retry a rejected push without rebasing - and checks.yml pushes to
+  // main while release.yml is still building, so the rejection was certain.
+  // Worse, the loop ended on `sleep`, whose success became the step's, so it
+  // reported success having pushed nothing. 5.1.8 was published with apk.json
+  // still naming 5.1.7: the release existed and no install could see it.
+  {
+    const wf = readFileSync('.github/workflows/release.yml', 'utf8');
+    const step = wf.slice(wf.indexOf('Commit apk.json'));
+    ck('the apk.json push rebases before retrying',
+       /git fetch origin main[\s\S]{0,200}git rebase origin\/main/.test(step));
+    ck('  and fails the job when nothing was pushed',
+       /pushed=1/.test(step) && /\[ "\$pushed" = 1 \] \|\|[\s\S]{0,160}exit 1/.test(step));
+    ck('  so a rejected push can no longer pass as success',
+       !/git push origin main && break \|\| sleep/.test(step));
+  }
   ck('a path outside both lists is not the app', !isAppPath('push-worker/worker.js'));
   ck('backslashes do not smuggle a path past the check', !isAppPath('cashbook\\main.js'));
 }
