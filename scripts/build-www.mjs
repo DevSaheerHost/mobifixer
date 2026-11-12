@@ -33,6 +33,7 @@ const FILES = [
   'manifest.json',
   'main.js',
   'style.css',
+  'm3.css',
   'sw.js',
   'cardLayout.js',
   'jobMeta.js',

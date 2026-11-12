@@ -1,0 +1,403 @@
+/* ===========================================================================
+   MATERIAL 3 — tokens
+   ===========================================================================
+   Loaded after style.css, so it redefines the tokens style.css already uses.
+   821 of the rules in that file read these through var(), so changing them
+   here moves the whole app rather than needing every rule rewritten.
+
+   The source colour is this app's own #0ba2ff. Material would normally pull
+   dark-theme primary down to tone 80 - a pale, washed blue - but #0ba2ff
+   measures 6.9:1 against the #0d1117 surface, which clears AA for body text,
+   so the brand colour stays and Material supplies the structure around it.
+   ======================================================================== */
+
+:root {
+  /* ---- colour roles ---------------------------------------------------- */
+  --md-primary: #0ba2ff;
+  --md-on-primary: #00243a;
+  --md-primary-container: #00456b;
+  --md-on-primary-container: #cbe6ff;
+
+  --md-secondary: #b4c9d8;
+  --md-on-secondary: #1e333f;
+  --md-secondary-container: #344956;
+  --md-on-secondary-container: #d0e5f4;
+
+  --md-error: #ffb4ab;
+  --md-on-error: #690005;
+  --md-error-container: #93000a;
+  --md-on-error-container: #ffdad6;
+
+  --md-success: #7ddba0;
+  --md-on-success: #00391d;
+
+  /* Material dark raises a surface by tone, not by a drop shadow. These are
+     the five container steps; a thing that sits on top of another uses the
+     next one up. */
+  --md-surface: #0d1117;
+  --md-surface-container-lowest: #080b0f;
+  --md-surface-container-low: #141a21;
+  --md-surface-container: #181f27;
+  --md-surface-container-high: #222a33;
+  --md-surface-container-highest: #2d353f;
+
+  --md-on-surface: #e2e6ea;
+  --md-on-surface-variant: #bfc8d0;
+  --md-outline: #8a949d;
+  --md-outline-variant: #3f474f;
+
+  --md-inverse-surface: #e2e6ea;
+  --md-inverse-on-surface: #171c22;
+  --md-scrim: rgba(0, 0, 0, 0.6);
+
+  /* ---- state layers ----------------------------------------------------
+     Material expresses press and hover as a translucent layer of the
+     foreground colour over the component, not as a different colour. */
+  --md-state-hover: 0.08;
+  --md-state-focus: 0.10;
+  --md-state-pressed: 0.10;
+  --md-state-drag: 0.16;
+
+  /* ---- shape scale ----------------------------------------------------- */
+  --md-shape-none: 0;
+  --md-shape-xs: 4px;
+  --md-shape-sm: 8px;
+  --md-shape-md: 12px;
+  --md-shape-lg: 16px;
+  --md-shape-xl: 28px;
+  --md-shape-full: 999px;
+
+  /* ---- motion ----------------------------------------------------------
+     Emphasised easing is the one Material uses for anything the user is
+     watching arrive or leave; standard is for small state changes. */
+  --md-ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --md-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --md-ease-decelerate: cubic-bezier(0, 0, 0, 1);
+  --md-dur-short: 150ms;
+  --md-dur-medium: 300ms;
+  --md-dur-long: 450ms;
+
+  /* ---- elevation -------------------------------------------------------
+     Kept low and soft. On a dark theme the tonal steps above do most of the
+     separating; these are for things that genuinely float. */
+  --md-elev-1: 0 1px 2px rgba(0,0,0,.30), 0 1px 3px 1px rgba(0,0,0,.15);
+  --md-elev-2: 0 1px 2px rgba(0,0,0,.30), 0 2px 6px 2px rgba(0,0,0,.15);
+  --md-elev-3: 0 4px 8px 3px rgba(0,0,0,.15), 0 1px 3px rgba(0,0,0,.30);
+
+  /* =======================================================================
+     The app's own names, pointed at the roles above. This is what carries
+     Material through the 821 var() call sites already in style.css.
+     ==================================================================== */
+  --bg-color: var(--md-surface);
+  --bg-secondary: var(--md-surface-container-low);
+  --card-bg: var(--md-surface-container);
+  --card-hover: var(--md-surface-container-high);
+
+  --text-color: var(--md-on-surface);
+  --text-muted: var(--md-on-surface-variant);
+  --text-heading: var(--md-on-surface);
+  --text-black: var(--md-on-primary);
+
+  --accent-color: var(--md-primary);
+  --accent-hover: var(--md-on-primary-container);
+  --danger-color: var(--md-error);
+  --success-color: var(--md-success);
+
+  --border-color: var(--md-outline-variant);
+  --shadow-color: rgba(0, 0, 0, 0.5);
+
+  --radius-small: var(--md-shape-sm);
+  --radius-medium: var(--md-shape-md);
+  --radius-large: var(--md-shape-lg);
+
+  --transition-fast: var(--md-dur-short) var(--md-ease-standard);
+  --transition-medium: var(--md-dur-medium) var(--md-ease-emphasized);
+  --transition-slow: var(--md-dur-long) var(--md-ease-emphasized);
+}
+
+/* ===========================================================================
+   TYPE SCALE
+   Material's scale, mapped onto the headings and body text already in use.
+   Poppins stays: the scale is about size, weight and tracking, not the face.
+   ======================================================================== */
+body {
+  font-size: 14px;
+  line-height: 1.43;
+  letter-spacing: 0.0125em;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1 { font-size: 1.75rem; line-height: 1.29; letter-spacing: 0;        font-weight: 600; }
+h2 { font-size: 1.5rem;  line-height: 1.33; letter-spacing: 0;        font-weight: 600; }
+h3 { font-size: 1.25rem; line-height: 1.4;  letter-spacing: 0;        font-weight: 600; }
+h4 { font-size: 1rem;    line-height: 1.5;  letter-spacing: 0.009em;  font-weight: 600; }
+
+/* Material reserves the primary colour for things you can act on. A heading
+   painted in it reads as a link the user keeps failing to tap. */
+.md3 h3, .md3 h4, .md3 .section-title { color: var(--md-on-surface); }
+
+/* ===========================================================================
+   STATE LAYER + RIPPLE
+   A press on Android is a layer over the component, and a ripple from the
+   point of contact. Applied to everything that behaves like a control.
+   ======================================================================== */
+.md3 button,
+.md3 .btn,
+.md3 .chip,
+.md3 [role="button"] {
+  position: relative;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--md-dur-short) var(--md-ease-standard),
+              box-shadow var(--md-dur-short) var(--md-ease-standard),
+              transform var(--md-dur-short) var(--md-ease-standard);
+}
+
+.md3 button::after,
+.md3 .btn::after,
+.md3 .chip::after,
+.md3 [role="button"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--md-dur-short) var(--md-ease-standard);
+}
+.md3 button:active::after,
+.md3 .btn:active::after,
+.md3 .chip:active::after,
+.md3 [role="button"]:active::after { opacity: var(--md-state-pressed); }
+
+/* The ripple itself, spawned in JS from the touch point. */
+.md3 .md-ripple {
+  position: absolute;
+  border-radius: 50%;
+  transform: scale(0);
+  background: currentColor;
+  opacity: 0.16;
+  pointer-events: none;
+  animation: md-ripple var(--md-dur-long) var(--md-ease-decelerate) forwards;
+}
+@keyframes md-ripple {
+  to { transform: scale(2.4); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .md3 .md-ripple { display: none; }
+  .md3 *, .md3 *::before, .md3 *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ===========================================================================
+   COMPONENTS
+   ======================================================================== */
+
+/* ---- filled button ------------------------------------------------------
+   Material's filled button is a full-height pill, label in on-primary. */
+.md3 .btn-primary,
+.md3 .update-go,
+.md3 .remind-set {
+  background: var(--md-primary);
+  color: var(--md-on-primary);
+  border: none;
+  border-radius: var(--md-shape-full);
+  padding: 0.65rem 1.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  letter-spacing: 0.007em;
+  min-height: 40px;
+  box-shadow: none;
+}
+.md3 .btn-primary:active,
+.md3 .update-go:active { box-shadow: var(--md-elev-1); }
+
+/* ---- sheet actions ------------------------------------------------------
+   Full-width rows inside a bottom sheet. Material treats these as list
+   items, not buttons: tonal surface, large corner, icon then label. */
+.md3 .add_customer {
+  background: var(--md-surface-container-high);
+  color: var(--md-on-surface);
+  border: none;
+  border-radius: var(--md-shape-lg);
+  min-height: 56px;
+  padding: 0 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+.md3 .add_customer a { color: inherit; text-decoration: none; }
+.md3 .add_customer:active { background: var(--md-surface-container-highest); }
+.md3 .add_customer i { color: var(--md-primary); }
+
+/* ---- outlined button --------------------------------------------------- */
+.md3 .update-later,
+.md3 .remind-clear,
+.md3 .btn-outline {
+  background: transparent;
+  color: var(--md-primary);
+  border: 1px solid var(--md-outline);
+  border-radius: var(--md-shape-full);
+  padding: 0.65rem 1.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  min-height: 40px;
+}
+
+/* ---- FAB ----------------------------------------------------------------
+   16dp corner, primary-container, elevation 3. Not a plain blue rectangle. */
+.md3 .add,
+.md3 .fab {
+  background: var(--md-primary-container);
+  color: var(--md-on-primary-container);
+  border-radius: var(--md-shape-lg);
+  box-shadow: var(--md-elev-3);
+  border: none;
+  min-height: 56px;
+  padding: 0 1.25rem;
+  font-weight: 600;
+}
+.md3 .add a { color: inherit; text-decoration: none; }
+.md3 .add:active { box-shadow: var(--md-elev-2); }
+
+/* ---- filter chips -------------------------------------------------------
+   Material chips are 8dp rounded rectangles, not pills. Selected gets the
+   secondary container, an inset check's worth of padding, and no border. */
+.md3 nav.status-nav a,
+.md3 .home nav.status-nav a,
+.md3 .chip,
+.md3 .filter-chip,
+.md3 .remind-chip {
+  background: transparent;
+  color: var(--md-on-surface-variant);
+  border: 1px solid var(--md-outline);
+  border-radius: var(--md-shape-sm);
+  padding: 0.4rem 1rem;
+  min-height: 32px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.007em;
+}
+.md3 nav.status-nav a.active,
+.md3 .home nav.status-nav a.active,
+.md3 .chip.active,
+.md3 .chip[aria-selected="true"],
+.md3 .filter-chip.active {
+  background: var(--md-secondary-container);
+  color: var(--md-on-secondary-container);
+  border-color: transparent;
+}
+
+/* ---- cards --------------------------------------------------------------
+   A filled card: one tonal step up from the surface it sits on, 12dp, and
+   no border. The border was doing the job the tone now does. */
+.md3 .card,
+.md3 .info-card,
+.md3 .option-card,
+.md3 .pay-card,
+.md3 .stat-detail-card,
+.md3 .shop-card-section,
+.md3 .box {
+  background: var(--md-surface-container);
+  border: none;
+  border-radius: var(--md-shape-md);
+  box-shadow: none;
+}
+.md3 .card:active,
+.md3 .option-card:active,
+.md3 .pay-card:active { background: var(--md-surface-container-high); }
+
+/* ---- text fields --------------------------------------------------------
+   Material's outlined field: 4dp top corners, outline-variant at rest,
+   2px primary when focused. */
+.md3 input[type="text"],
+.md3 input[type="search"],
+.md3 input[type="tel"],
+.md3 input[type="number"],
+.md3 input[type="email"],
+.md3 input[type="password"],
+.md3 input[type="datetime-local"],
+.md3 textarea,
+.md3 select {
+  background: var(--md-surface-container-low);
+  color: var(--md-on-surface);
+  border: 1px solid var(--md-outline-variant);
+  border-radius: var(--md-shape-xs);
+  padding: 0.85rem 1rem;
+  font-size: 1rem;
+  min-height: 48px;
+  transition: border-color var(--md-dur-short) var(--md-ease-standard);
+}
+.md3 input:focus,
+.md3 textarea:focus,
+.md3 select:focus {
+  outline: none;
+  border-color: var(--md-primary);
+  border-width: 2px;
+  padding: calc(0.85rem - 1px) calc(1rem - 1px);
+}
+.md3 ::placeholder { color: var(--md-on-surface-variant); opacity: 1; }
+
+/* ---- bottom sheets ------------------------------------------------------
+   28dp top corners, surface-container-low, scrim behind. */
+.md3 .remind-sheet,
+.md3 .update-sheet,
+.md3 .bottom-sheet {
+  background: var(--md-surface-container-low);
+  border-radius: var(--md-shape-xl) var(--md-shape-xl) 0 0;
+  border-top: none;
+  box-shadow: var(--md-elev-3);
+}
+.md3 .remind_sheet_overlay,
+.md3 .update_sheet_overlay,
+.md3 .bottom_sheet_overlay { background: var(--md-scrim); }
+
+.md3 .sheet-handle {
+  background: var(--md-outline-variant);
+  width: 32px;
+  height: 4px;
+}
+
+/* ---- navigation bar -----------------------------------------------------
+   Material's nav bar: surface-container, the active item in a pill of
+   secondary-container behind the icon. */
+.md3 nav,
+.md3 .bottom-nav {
+  background: var(--md-surface-container);
+  border-top: none;
+  box-shadow: var(--md-elev-2);
+}
+.md3 nav a { color: var(--md-on-surface-variant); }
+.md3 nav a.active { color: var(--md-on-secondary-container); }
+.md3 nav a.active i {
+  background: var(--md-secondary-container);
+  border-radius: var(--md-shape-full);
+  padding: 0.25rem 1rem;
+}
+
+/* ---- the notice, as a Material snackbar -------------------------------- */
+.md3 .notice {
+  background: var(--md-inverse-surface);
+  color: var(--md-inverse-on-surface);
+  border-radius: var(--md-shape-xs);
+  box-shadow: var(--md-elev-3);
+  border: none;
+}
+.md3 .notice.error { background: var(--md-error-container); color: var(--md-on-error-container); }
+
+/* ---- dividers ----------------------------------------------------------- */
+.md3 hr { border: none; border-top: 1px solid var(--md-outline-variant); }
+
+/* ===========================================================================
+   EDGE TO EDGE
+   The WebView runs behind the status and navigation bars, so the app's own
+   background continues under them instead of leaving two black straps.
+   ======================================================================== */
+.md3 body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--md-surface);
+}

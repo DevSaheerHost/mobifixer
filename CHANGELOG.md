@@ -25,6 +25,14 @@ and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ---
 
 
+## [5.1.6] - 2026-11-12
+
+Looks and behaves like an Android app now.
+- Rebuilt on Material 3: the chips along the top are proper filter chips, the New button is a floating action button, cards sit on their own shade instead of being outlined, and headings are no longer painted in the link colour. The blue is unchanged - it already met the contrast Material asks for.
+- The back button works. It closes whatever sheet or panel is open, one step at a time, and only leaves the app when there is nothing left to close. Until now it quit the app outright, losing whatever you were typing.
+- Buttons ripple from where you touch them, and the app draws behind the status bar instead of leaving a black strip.
+- Two unused plugins removed from the build.
+
 ## [5.1.5] - 2026-11-12
 
 Updates never actually arrived. They do now.

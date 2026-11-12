@@ -122,6 +122,7 @@ let host = {
   openJob: () => {},
   showNotice: () => {},
   showUpdateSheet: () => {},     // the website has no sheet; calling it is a no-op
+  closeTopLayer: () => false,    // the website uses the browser's own back
   shopName: '',
 };
 
@@ -542,6 +543,18 @@ export const initNative = async (hostApi = {}) => {
   if (LN && LN.addListener) {
     safe('addListener action', () =>
       LN.addListener('localNotificationActionPerformed', handleAction));
+  }
+
+  // Android's back button. Without this Capacitor's default runs, which exits
+  // the app - so back from an open sheet closed the whole thing.
+  if (App && App.addListener) {
+    safe('addListener back', () => App.addListener('backButton', ({ canGoBack }) => {
+      if (host.closeTopLayer()) return;        // a sheet was open; that was the step
+      if (canGoBack) { window.history.back(); return; }
+      // Nothing left to undo. Send the app to the background rather than
+      // killing it, so coming back is instant and nothing is lost.
+      safe('minimize', async () => { if (App.minimizeApp) await App.minimizeApp(); });
+    }));
   }
 
   // Reschedule when the app comes back to the front: the clock has moved, and

@@ -5931,6 +5931,60 @@ updateOverlay?.addEventListener('click', (e) => {
   if (e.target === updateOverlay) closeUpdateSheet();
 });
 
+// ---------------------------------------------------------------------------
+// Material touch feedback
+//
+// A ripple from the point of contact, which is what an Android control does
+// when you press it. Delegated from the document, so it covers buttons and
+// chips that are built after this runs - which is most of them, since the job
+// list is rendered from data.
+document.addEventListener('pointerdown', (e) => {
+  const el = e.target.closest('button, .btn, .chip, .remind-chip, [role="button"]');
+  if (!el || el.disabled) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const rect = el.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  const ripple = document.createElement('span');
+  ripple.className = 'md-ripple';
+  ripple.style.width = ripple.style.height = size + 'px';
+  ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+  ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+  el.appendChild(ripple);
+  ripple.addEventListener('animationend', () => ripple.remove());
+}, { passive: true });
+
+// ---------------------------------------------------------------------------
+// The hardware back button
+//
+// Android's back is expected to undo one step. Until now it did nothing at
+// all here, which means Capacitor's default took over and closed the app -
+// so a shop who opened a sheet and pressed back lost the screen they were on
+// and whatever they had typed into it.
+//
+// Anything stacked on top gets closed first, newest first; only when there is
+// nothing left does back mean leave.
+const closeTopLayer = () => {
+  const layers = [
+    '#updateOverlay.active',
+    '#remindOverlay.active',
+    '#patternOverlay.active',
+    '#patternViewOverlay.active',
+    '.bottom_sheet_overlay.active',
+    '.modal-overlay.active',
+  ];
+  for (const sel of layers) {
+    const el = document.querySelector(sel);
+    if (el) { el.classList.remove('active'); return true; }
+  }
+  // A page reached by hash, rather than an overlay.
+  if (location.hash && location.hash !== '#') { history.back(); return true; }
+  return false;
+};
+window.addEventListener('mf:back', (e) => {
+  if (closeTopLayer()) e.preventDefault();
+});
+
 import('./native.js').then(async (native) => {
   await native.initNative({
     shopName,
@@ -5959,6 +6013,7 @@ import('./native.js').then(async (native) => {
 
     showNotice,
     showUpdateSheet,
+    closeTopLayer,
   });
 
   // Keep the device's scheduled notifications in step with the list. The list
