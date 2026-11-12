@@ -20,6 +20,7 @@ import { readFileSync } from 'node:fs';
 import {
   releaseDecision, notesFor, isAppPath, APP_PATHS, NOT_APP_PATHS, UPDATE_HOST,
 } from './release-web.mjs';
+import { apkManifest } from './release-apk.mjs';
 
 let pass = 0, fail = 0;
 const ck = (label, cond, got) => {
@@ -157,6 +158,57 @@ console.log('\nThe other apps are not in the payload');
   // unlisted breaks the next build after the first release.
   ck('updates/ is classified, so a published release does not break the build',
     /'updates':/.test(build));
+}
+
+// ---------------------------------------------------------------------------
+// The APK half. The web updater replaces HTML and JavaScript; this one is for
+// the rarer change the native side needs, and it points at a GitHub Release
+// asset rather than Vercel - a permanent public URL that needs no login.
+console.log('\nThe APK manifest');
+{
+  const m = apkManifest({ version: '5.1.1', repo: 'DevSaheerHost/mobifixer', notes: ' hi \n' });
+  ck('names the version', m.version === '5.1.1', m);
+  ck('points at the release asset', m.url ===
+    'https://github.com/DevSaheerHost/mobifixer/releases/download/v5.1.1/mobifixer-5.1.1.apk', m.url);
+  ck('  the tag carries the v, the file does not', /\/v5\.1\.1\/mobifixer-5\.1\.1\.apk$/.test(m.url), m.url);
+  ck('trims the notes', m.notes === 'hi', m.notes);
+  ck('stamps a build time', !Number.isNaN(Date.parse(m.builtAt)), m.builtAt);
+
+  let threw = false;
+  try { apkManifest({ repo: 'a/b' }); } catch { threw = true; }
+  ck('refuses without a version', threw);
+  threw = false;
+  try { apkManifest({ version: '1.0.0', repo: 'nope' }); } catch { threw = true; }
+  ck('refuses a repo that is not owner/name', threw);
+
+  // checkApkUpdate compares against App.getInfo().version, which is the APK's
+  // versionName. If that stayed hardcoded at 1.0 while the manifest said
+  // 5.1.0, every install would be told it was out of date forever, however
+  // many times it downloaded the same file.
+  const gradle = readFileSync('android/app/build.gradle', 'utf8');
+  ck('the APK takes its versionName from package.json',
+    /versionName\s+appVersionName/.test(gradle));
+  ck('  and its versionCode is derived from the same place',
+    /versionCode\s+appVersionCode/.test(gradle));
+  ck('  nothing is hardcoded any more', !/versionName\s+"1\.0"/.test(gradle));
+  ck('  a minor or patch over 99 is rejected rather than wrapping',
+    /vMinor > 99 \|\| vPatch > 99/.test(gradle));
+}
+
+console.log('\nThe release workflow');
+{
+  const wf = readFileSync('.github/workflows/release.yml', 'utf8');
+  ck('it is driven by a tag, not every push', /tags:\s*\['v\*'\]/.test(wf));
+  ck('it refuses to run without the signing secrets', /Missing repository secrets/.test(wf));
+  ck('it checks the tag matches package.json', /tag v\$tag but package.json/.test(wf));
+  ck('it verifies the APK is signed before publishing',
+    /apksigner verify/.test(wf) && /grep -q '\^Verifies\$'/.test(wf));
+  ck('  and fails if it is not', /signature does not verify/.test(wf));
+  ck('it checks the built versionName is the one being released',
+    /APK versionName \$name but releasing/.test(wf));
+  ck('the keystore is removed whatever happens', /if: always\(\)[\s\S]{0,120}rm -f/.test(wf));
+  ck('the keystore is written outside the workspace', /RUNNER_TEMP\/release\.jks/.test(wf));
+  ck('no secret is ever echoed', !/echo .*secrets\./.test(wf));
 }
 
 console.log(`\n${pass} passed, ${fail} failed\n`);

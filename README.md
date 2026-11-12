@@ -84,22 +84,54 @@ keyPassword=...
 `cd android && ./gradlew assembleRelease` now produces a signed APK at
 `android/app/build/outputs/apk/release/app-release.apk`.
 
-In CI, set these four as repository secrets instead of using the properties
-file; the build reads either:
+With none of this configured the release build still runs, but warns and
+produces `app-release-unsigned.apk` instead of `app-release.apk` — the name is
+the giveaway, and an unsigned APK will not install on a phone.
 
-| | |
+### Cutting a release
+
+`.github/workflows/release.yml` builds the signed APK, publishes it as a
+GitHub Release and points `updates/apk.json` at it. It is driven by a tag, not
+by every push, because a release installs over a real shop's app:
+
+```bash
+# bump the version, add a CHANGELOG entry under ## [5.1.1], commit, then
+git tag v5.1.1 && git push origin v5.1.1
+```
+
+The tag has to match `package.json`, which is also the APK's `versionName` and
+what the updater compares against — the workflow refuses to run if they
+disagree. `versionCode` is derived from the same place (`5.1.1` → `50101`), so
+minor and patch have to stay under 100.
+
+Add these four **repository secrets** first (Settings → Secrets and variables →
+Actions). Without them the workflow stops at the first step rather than
+publishing something that will not install:
+
+| secret | what it holds |
 |---|---|
-| `MF_KEYSTORE_FILE` | path to the keystore on the runner |
+| `MF_KEYSTORE_BASE64` | the keystore itself: `base64 -w0 mobifixer-release.jks` |
 | `MF_KEYSTORE_PASSWORD` | store password |
 | `MF_KEY_ALIAS` | key alias |
 | `MF_KEY_PASSWORD` | key password |
 
-The keystore itself is a binary, so a runner gets it by storing it
-base64-encoded in a fifth secret and decoding it to a path during the job.
+A keystore is a binary, so it travels base64-encoded; the job decodes it to a
+path outside the workspace and deletes it again whatever happens. Before
+publishing, the job runs `apksigner verify` and fails unless it prints
+`Verifies` — an unsigned APK reaching the Releases tab would be worse than a
+red build. `workflow_dispatch` runs it with `dry_run` on by default, which
+builds and verifies but publishes nothing.
 
-With none of this configured the release build still runs, but warns and
-produces `app-release-unsigned.apk` instead of `app-release.apk` — the name is
-the giveaway, and an unsigned APK will not install on a phone.
+Two manifests end up driving two different kinds of update:
+
+| | replaces | lives at |
+|---|---|---|
+| `updates/web.json` | HTML, CSS, JavaScript — almost every change | Vercel, from this repo |
+| `updates/apk.json` | the app itself, when the native side moves | Vercel, pointing at the Release asset |
+
+The APK is attached to the Release rather than committed here: a permanent
+public URL that needs no GitHub login, and no 8MB binary per release in the
+repository.
 
 ### Updating the app without a new APK
 
