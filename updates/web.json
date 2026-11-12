@@ -1,7 +1,7 @@
 {
-  "version": "5.1.6",
-  "url": "https://mobifixer.vercel.app/updates/mobifixer-5.1.6.zip",
-  "appHash": "289924da1bb89671738cf2e4f1fdae1f22562c74b984ec606c270f6eae2db51b",
-  "notes": "Looks and behaves like an Android app now.\n- Rebuilt on Material 3: the chips along the top are proper filter chips, the New button is a floating action button, cards sit on their own shade instead of being outlined, and headings are no longer painted in the link colour. The blue is unchanged - it already met the contrast Material asks for.\n- The back button works. It closes whatever sheet or panel is open, one step at a time, and only leaves the app when there is nothing left to close. Until now it quit the app outright, losing whatever you were typing.\n- Buttons ripple from where you touch them, and the app draws behind the status bar instead of leaving a black strip.\n- Two unused plugins removed from the build.",
-  "builtAt": "2026-11-12T11:13:28.200Z"
+  "version": "5.1.7",
+  "url": "https://mobifixer.vercel.app/updates/mobifixer-5.1.7.zip",
+  "appHash": "ac8d5119a0bbe25374f78dc2c3bd85ea35f6bb99d9cf76d1f1c58930a1e56986",
+  "notes": "Fixes what 5.1.6 broke, and adds sharing.\n- 5.1.6 had a fault that switched off reminders and update checks. A single misplaced line stopped the native layer starting, so reminders were never scheduled, the app never noticed a new version, and the back button did nothing. Nothing reported it, in the app or anywhere else. If you are on 5.1.6, this is the update worth installing - and it had to be sent to you by hand, because 5.1.6 could not tell you about it.\n- The phone vibrates again on a saved job, an error and a voice alert. The permission for it was never declared, so Android accepted every request and quietly ignored it.\n- Back on the home screen now asks before closing, instead of dropping the app to the background where it looked like a crash. Stay keeps you where you are.\n- Share MobiFixer, in Settings. Opens your phone's own share sheet and sends a link to the app.\n- The update message now says what is actually about to happen - whether there is anything to install, how big the download is, and that your jobs, staff and settings are untouched by it.",
+  "builtAt": "2026-11-12T14:53:43.530Z"
 }
