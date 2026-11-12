@@ -138,7 +138,12 @@ console.log('\nIt does not ask for exact alarms');
     schedules.every(s => !/isExactNotification/.test(s)), schedules);
   const onNotification = native.match(/^\s*isExactNotification:\s*false,/gm) || [];
   ck('  it is on the notification itself, once per notification',
-    onNotification.length === 2, onNotification.length);
+    onNotification.length === 3, onNotification.length);   // reminder, digest, apk-update
+  // The update notice is posted by a different code path and would reopen the
+  // same settings screen on its own if it were left exact.
+  ck('  including the update notice',
+    /kind: 'apk-update'[\s\S]{0,200}|isExactNotification: false,[\s\S]{0,300}kind: 'apk-update'/.test(native)
+    && /isExactNotification: false,[\s\S]{0,200}extra: \{ kind: 'apk-update'/.test(native));
 
   // Pin the plugin contract the two assertions above rest on, so a plugin
   // upgrade that moves the flag fails here and not on a shop's phone.

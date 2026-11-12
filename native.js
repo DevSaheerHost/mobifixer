@@ -15,10 +15,25 @@
 
 import {
   compareVersions, updateDecision, pendingDigests, dueReminders,
-  reminderId, digestId, JOB_ACTIONS, actionStatus,
+  reminderId, digestId, apkUpdateId, JOB_ACTIONS, actionStatus,
   DIGEST_DEFAULT_DAYS,
   notifyAskDecision, NOTIFY_ASK_KEY, NOTIFY_ASKED_KEY,
 } from './nativeLogic.js';
+
+/**
+ * Hand a URL to the phone's browser.
+ *
+ * Used for the APK download. The browser downloads it with a real progress
+ * notification and the shop taps that to install, which means ANDROID'S
+ * BROWSER is the installer and this app is not - so this app does not need
+ * REQUEST_INSTALL_PACKAGES, and no longer asks for it. That permission lets an
+ * app install other apps, and on a sideloaded APK signed by a key with no
+ * history behind it, it is the kind of thing Play Protect blocks on.
+ */
+const openUrl = (url) => {
+  try { window.open(url, '_blank'); return true; }
+  catch (_) { return false; }
+};
 
 // ---------------------------------------------------------------------------
 // Is there a device under us?
@@ -284,8 +299,13 @@ export const syncNotifications = async () => {
 // works with the app still closed needs a native BroadcastReceiver, which is
 // Kotlin in android/ rather than anything here.
 const handleAction = async (event) => {
-  const sn = event && event.notification && event.notification.extra
-    && event.notification.extra.sn;
+  const extra = (event && event.notification && event.notification.extra) || {};
+
+  // The update notice. Tapping it opens the download in the browser; it never
+  // installs anything by itself.
+  if (extra.kind === 'apk-update' && extra.url) { openUrl(extra.url); return; }
+
+  const sn = extra.sn;
   const status = actionStatus(event && event.actionId);
 
   if (!sn) return;
@@ -373,15 +393,22 @@ export const checkWebUpdate = async ({ apply = true } = {}) => {
 // ---------------------------------------------------------------------------
 // Updating the APK itself
 //
-// Only needed when the native side changes. The app downloads the new APK and
-// hands it to Android's package installer, which asks the user to confirm -
-// nothing installs silently.
+// Only needed when the native side changes - a plugin, a permission, a
+// Capacitor upgrade - which no amount of new JavaScript can deliver. Almost
+// every change goes out through the web updater above instead.
 //
-// This is for the APK that shops download directly. Google Play forbids an app
-// updating itself, so a Play build sets SELF_INSTALL to false and this whole
-// path goes quiet; the web updater above keeps working either way.
+// This app does NOT install the APK. It posts a notification; tapping it opens
+// the download in the phone's browser, which shows its own progress and then
+// hands the file to Android's installer. The shop confirms there, as they
+// would for anything else they downloaded.
+//
+// That is a deliberate retreat from doing it in-app. Installing from inside
+// needs REQUEST_INSTALL_PACKAGES - a permission that lets this app install
+// other apps - and on a sideloaded APK whose signing key has no history,
+// Play Protect blocks the install outright: "Harmful app blocked". Shops do
+// not tap past that, and they should not have to.
 
-export const SELF_INSTALL = true;
+export const APK_UPDATES = true;         // a Play build would set this false
 export const APK_MANIFEST = `${UPDATE_HOST}/updates/apk.json`;   // absolute, for the same reason
 
 const apkVersion = async () => {
@@ -390,9 +417,14 @@ const apkVersion = async () => {
   return (info && info.version) || '0.0.0';
 };
 
-export const checkApkUpdate = async ({ apply = false } = {}) => {
+/**
+ * Is there a newer APK, and if so tell the shop about it.
+ *
+ * @param notify  post the notification (false just reports, for the tests)
+ */
+export const checkApkUpdate = async ({ notify = true } = {}) => {
   if (!isNative()) return { update: false, reason: 'not-native' };
-  if (!SELF_INSTALL) return { update: false, reason: 'self-install-disabled' };
+  if (!APK_UPDATES) return { update: false, reason: 'apk-updates-disabled' };
 
   const manifest = await safe('apk manifest', async () => {
     const res = await fetch(APK_MANIFEST + '?t=' + Date.now(), { cache: 'no-store' });
@@ -402,38 +434,43 @@ export const checkApkUpdate = async ({ apply = false } = {}) => {
 
   const current = await apkVersion();
   const decision = updateDecision(current, manifest.version, { minimum: manifest.minimum });
-  if (!decision.update || !apply) {
-    return { ...decision, current, offered: manifest.version, notes: manifest.notes || '' };
-  }
+  const notes = manifest.notes || '';
+  if (!decision.update) return { ...decision, current, offered: manifest.version, notes };
   if (!manifest.url) return { update: false, reason: 'manifest-has-no-url' };
+  if (!notify) return { update: true, reason: 'not-notified', to: manifest.version, url: manifest.url, notes };
 
-  const Filesystem = plugin('Filesystem');
-  const FileOpener = plugin('FileOpener');
-  if (!Filesystem || !FileOpener) return { update: false, reason: 'no-plugin' };
+  const LN = plugin('LocalNotifications');
+  if (!LN) return { update: false, reason: 'no-plugin' };
+  if (!(await notificationsAllowed())) {
+    // No permission to post a notice, so say it in the app instead rather
+    // than leave a new version sitting there unmentioned.
+    host.showNotice({
+      title: `Update available - ${manifest.version}`,
+      body: 'Open mobifixer.vercel.app to download it.',
+      type: 'info', delay: 10,
+    });
+    return { update: true, reason: 'told-in-app', to: manifest.version };
+  }
 
-  const name = `mobifixer-${manifest.version}.apk`;
-  const saved = await safe('downloadFile', () => Filesystem.downloadFile({
-    url: manifest.url,
-    path: name,
-    directory: 'CACHE',
-  }), null);
-  if (!saved || !saved.path) return { update: false, reason: 'download-failed' };
-
-  // Opening an .apk hands it to Android's installer, which shows its own
-  // confirmation. If the user has not allowed this app to install packages,
-  // Android takes them to that setting first - we neither bypass nor pre-empt
-  // it.
-  const opened = await safe('fileOpener', async () => {
-    await FileOpener.open({
-      filePath: saved.path,
-      contentType: 'application/vnd.android.package-archive',
+  await ensureChannel();
+  const first = notes.split('\n').map(s => s.trim()).filter(Boolean)[0] || '';
+  const posted = await safe('apk update notice', async () => {
+    await LN.schedule({
+      notifications: [{
+        id: apkUpdateId(),
+        channelId: CHANNEL_JOBS,
+        title: `Update available - ${manifest.version}`,
+        body: (first ? first + ' ' : '') + 'Tap to download.',
+        isExactNotification: false,
+        extra: { kind: 'apk-update', url: manifest.url },
+      }],
     });
     return true;
   }, false);
 
-  return opened
-    ? { update: true, reason: 'installer-opened', from: current, to: manifest.version }
-    : { update: false, reason: 'installer-refused', offered: manifest.version };
+  return posted
+    ? { update: true, reason: 'notified', from: current, to: manifest.version }
+    : { update: false, reason: 'notify-failed', offered: manifest.version };
 };
 
 // ---------------------------------------------------------------------------
@@ -473,6 +510,10 @@ export const initNative = async (hostApi = {}) => {
   // reminders scheduled before any dialog, and not awaited into the update
   // check below: the dialog is the user's to answer in their own time.
   await maybeAskNotificationPermission();
+
+  // Not awaited: a slow or unreachable update server must not hold up the
+  // list of today's jobs.
+  checkApkUpdate();
 
   if (autoUpdateOn()) {
     // Deliberately not awaited. A slow or unreachable update server must not

@@ -211,5 +211,42 @@ console.log('\nThe release workflow');
   ck('no secret is ever echoed', !/echo .*secrets\./.test(wf));
 }
 
+// ---------------------------------------------------------------------------
+// Play Protect blocked the install: "Harmful app blocked". The app declared
+// REQUEST_INSTALL_PACKAGES so it could install the new APK itself, and on a
+// sideloaded APK whose signing key has no history that is what gets blocked.
+// The app now opens the download in the browser instead, so the browser is
+// the installer and this permission is not needed.
+console.log('\nThe app does not install APKs any more');
+{
+  const native = readFileSync('native.js', 'utf8');
+  const manifest = readFileSync('android/app/src/main/AndroidManifest.xml', 'utf8');
+
+  ck('the manifest does not declare REQUEST_INSTALL_PACKAGES',
+    !/<uses-permission[^>]*REQUEST_INSTALL_PACKAGES/.test(manifest));
+  ck('  and says why, so it is not added back by reflex',
+    /Deliberately NOT declared: REQUEST_INSTALL_PACKAGES/.test(manifest));
+
+  ck('nothing downloads the APK in-app any more', !/Filesystem/.test(native));
+  ck('  and nothing hands it to the installer', !/FileOpener/.test(native));
+  ck('SELF_INSTALL is gone', !/SELF_INSTALL/.test(native));
+  ck('  replaced by a flag a Play build can turn off', /export const APK_UPDATES/.test(native));
+
+  ck('the update is offered as a notification', /kind: 'apk-update'/.test(native));
+  ck('  carrying the download url', /url: manifest\.url/.test(native));
+  ck('  and tapping it opens the browser',
+    /extra\.kind === 'apk-update'[\s\S]{0,120}openUrl\(extra\.url\)/.test(native));
+  ck('openUrl opens externally, not in the app', /window\.open\(url, '_blank'\)/.test(native));
+
+  // It existed but nothing ever called it, so a new APK was never mentioned.
+  ck('checkApkUpdate is actually called at start-up',
+    /initNative[\s\S]*checkApkUpdate\(\)/.test(native));
+  ck('  and is not awaited, so a slow server cannot hold up the job list',
+    /\n  checkApkUpdate\(\);/.test(native));
+
+  ck('it still falls back to an in-app notice without permission',
+    /told-in-app/.test(native));
+}
+
 console.log(`\n${pass} passed, ${fail} failed\n`);
 process.exit(fail ? 1 : 0);

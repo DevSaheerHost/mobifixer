@@ -172,6 +172,12 @@ export const dueReminders = (reminders, { now = Date.now(), limit = 60 } = {}) =
 export const ID_BASE = { reminder: 100000, digest: 200000, update: 300000 };
 
 export const reminderId = (sn) => ID_BASE.reminder + (Math.abs(Number(sn) || 0) % 99999);
+/**
+ * The one id the APK-update notice uses. Fixed, so a second check replaces the
+ * notice rather than stacking another one beside it.
+ */
+export const apkUpdateId = () => ID_BASE.update;
+
 export const digestId = (at) => ID_BASE.digest
   + (Math.floor(new Date(at).getTime() / 86400000) % 99999);
 

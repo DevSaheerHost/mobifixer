@@ -70,15 +70,21 @@
                      tools:node="remove" />
 
     <!--
-        Lets the app hand a downloaded APK to Android's package installer, for
-        the self-update in native.js. Android still shows its own confirmation
-        and will send the user to a settings screen first if they have not
-        allowed this app to install packages - nothing installs quietly.
+        Deliberately NOT declared: REQUEST_INSTALL_PACKAGES.
 
-        This is for the APK shops download directly. Google Play forbids an app
-        updating itself, so a Play build drops this line and sets SELF_INSTALL
-        to false in native.js; the over-the-air web updates keep working either
-        way, because they replace HTML and JavaScript rather than the app.
+        It was here, for the in-app APK update: the app downloaded the new APK
+        and handed it to Android's installer. It worked, but it is the
+        permission that lets an app install other apps, and on a sideloaded
+        APK signed by a key with no history behind it Play Protect blocked the
+        install outright - "Harmful app blocked", with Install anyway in small
+        text underneath. A shop will not tap past that, and should not have to.
+
+        So the app no longer installs anything. It posts a notification, and
+        tapping it opens the download in the phone's browser, which shows its
+        own progress and hands the file to the installer itself. The browser
+        holds the permission; this app does not need it.
+
+        Web updates are unaffected: they replace HTML and JavaScript inside the
+        app and never touch the APK.
     -->
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 </manifest>

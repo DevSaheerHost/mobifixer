@@ -25,6 +25,13 @@ and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ---
 
 
+## [5.1.3] - 2026-11-12
+
+Android was warning people the app might be harmful. It no longer installs its own updates, which is what set that off.
+- "Harmful app blocked" on install. The app asked for permission to install other apps, so it could update itself, and Android blocks that on an app downloaded outside the Play Store from a publisher it has not seen before. That permission is gone.
+- Updates still reach you. When a new version is out you get a notification; tapping it opens the download in your browser, which shows the progress and then asks you to install it, the same as any other download.
+- A new version was never actually announced before this - the check existed but nothing ran it.
+
 ## [5.1.2] - 2026-11-12
 
 Fixes a 5.1.1 bug that trapped the app on the "Alarms and reminders" screen.
