@@ -1,7 +1,7 @@
 {
-  "version": "5.1.1",
-  "url": "https://mobifixer.vercel.app/updates/mobifixer-5.1.1.zip",
-  "appHash": "989a71caa2ded7631b9214e8fc1c6e31efa5fdadc1951786aa53a0b12d4699ef",
-  "notes": "Reminders now actually arrive, and the app can update itself.\n- Android was silently blocking every reminder. The app never asked permission to notify you, so reminders and the daily summary were scheduled and then dropped without a word. It now asks once, when you sign in, and tells you where to switch them on if you say no.\n- No second \"Alarms and reminders\" screen on the way in. A reminder set for 4pm may arrive a few minutes either side rather than on the minute, which is the right trade for a phone waiting to be collected.\n- New versions can arrive without reinstalling. The app checks for an update, downloads it, and applies it the next time you open it - never in the middle of booking in a phone - with a note saying what changed. A broken update undoes itself.\n- Smaller: the install is about half the size, and an update downloads 1.4MB instead of 7MB. Four other apps were shipping inside this one with no way to open them.",
-  "builtAt": "2026-11-12T06:26:55.998Z"
+  "version": "5.1.2",
+  "url": "https://mobifixer.vercel.app/updates/mobifixer-5.1.2.zip",
+  "appHash": "3092f67b52107a80a1b5347a1f2e73f223de7106a0d6d881b2ca7654edb95f85",
+  "notes": "Fixes a 5.1.1 bug that trapped the app on the \"Alarms and reminders\" screen.\n- Opening the app sent you straight to that system screen, and coming back sent you there again, with the toggle greyed out so there was nothing you could do about it. 5.1.1 told Android the reminders did not need an exact alarm, but put that setting in the wrong place, so Android never saw it and kept asking for a permission the app no longer has.\n- Reminders behave as 5.1.1 intended: no system screen, and a reminder lands in a window around the time you set.",
+  "builtAt": "2026-11-12T06:43:43.714Z"
 }
