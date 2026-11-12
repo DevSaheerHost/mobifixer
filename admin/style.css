@@ -1,0 +1,305 @@
+/* The admin dashboard.
+   Its own stylesheet: this page is not shipped in the APK and shares no
+   markup with the app, so it carries only what it uses. Same palette and
+   type as the app, so it reads as the same product. */
+
+:root {
+  --bg: #0d1117;
+  --surface: #141a21;
+  --surface-2: #181f27;
+  --surface-3: #222a33;
+  --text: #e6edf3;
+  --muted: #9aa5b1;
+  --heading: #ffffff;
+  --accent: #0ba2ff;
+  --online: #2ecc71;
+  --offline: #6b7785;
+  --inactive: #f0a132;
+  --never: #8b5cf6;
+  --border: rgba(255, 255, 255, 0.12);
+  --radius: 14px;
+  --radius-sm: 10px;
+  --shadow: 0 16px 40px -20px rgba(0, 0, 0, 0.8);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+  background:
+    radial-gradient(70rem 32rem at 50% -14rem, rgba(11, 162, 255, 0.14), transparent 60%),
+    var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}
+
+.hidden { display: none !important; }
+
+/* ---------- sign in ---------- */
+
+.gate {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+}
+.gate-card {
+  width: 100%;
+  max-width: 360px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2rem 1.5rem;
+  box-shadow: var(--shadow);
+}
+.gate-card h1 { font-size: 1.4rem; color: var(--heading); text-align: center; }
+.gate-sub {
+  margin: 0.45rem 0 1.5rem;
+  font-size: 0.875rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.field { display: block; margin-bottom: 1rem; }
+.field-label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+input {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 16px;            /* 16px exactly, or iOS zooms the page on focus */
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+input::placeholder { color: var(--muted); opacity: 0.7; }
+input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(11, 162, 255, 0.2);
+}
+
+.btn {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #04121f;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn:disabled { opacity: 0.6; cursor: default; }
+.btn:active:not(:disabled) { transform: scale(0.99); }
+
+.msg {
+  margin-bottom: 1rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  background: rgba(255, 59, 59, 0.12);
+  border: 1px solid rgba(255, 59, 59, 0.3);
+}
+.msg.ok { background: rgba(0, 195, 106, 0.12); border-color: rgba(0, 195, 106, 0.3); }
+
+/* ---------- dashboard ---------- */
+
+.board { max-width: 1100px; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0 1.25rem;
+}
+.brand { display: flex; align-items: center; gap: 0.6rem; }
+.brand h1 { font-size: 1.25rem; color: var(--heading); font-weight: 600; }
+
+/* Pulses only while the connection is live, so a dead socket is visible
+   rather than being mistaken for "every shop happens to be offline". */
+.dot-live {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--offline);
+}
+.dot-live.live {
+  background: var(--online);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.5); }
+  50%      { box-shadow: 0 0 0 6px rgba(46, 204, 113, 0); }
+}
+
+.ghost {
+  padding: 0.5rem 0.95rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.ghost:active { background: var(--surface-2); }
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  gap: 0.7rem;
+  margin-bottom: 1.25rem;
+}
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.9rem 1rem;
+}
+.stat .n {
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--heading);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.stat .k { margin-top: 0.15rem; font-size: 0.75rem; color: var(--muted); }
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.controls input[type="search"] { flex: 1 1 220px; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.chip {
+  padding: 0.45rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.chip[aria-selected="true"] {
+  background: rgba(11, 162, 255, 0.16);
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.rows { display: flex; flex-direction: column; gap: 0.6rem; }
+
+.row {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.row-head {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.9rem 1rem;
+  background: none;
+  border: none;
+  color: inherit;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.row-head:active { background: var(--surface-2); }
+
+.dot { width: 10px; height: 10px; border-radius: 50%; flex: 0 0 auto; }
+.dot.online   { background: var(--online); box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.16); }
+.dot.offline  { background: var(--offline); }
+.dot.inactive { background: var(--inactive); }
+.dot.never    { background: var(--never); }
+
+.who { min-width: 0; }
+.name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--heading);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sub {
+  margin-top: 0.1rem;
+  font-size: 0.76rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.right { display: flex; align-items: center; gap: 0.5rem; }
+.pill {
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: var(--surface-3);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.pill.apk { background: rgba(11, 162, 255, 0.16); color: #7cc9ff; }
+.pill.web { background: rgba(139, 92, 246, 0.16); color: #c4b5fd; }
+
+.devices {
+  border-top: 1px solid var(--border);
+  padding: 0.5rem 1rem 0.9rem;
+  background: var(--surface-2);
+}
+.device {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0;
+  font-size: 0.8rem;
+}
+.device .dot { width: 7px; height: 7px; }
+.device .who2 { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.device .when { color: var(--muted); font-size: 0.74rem; white-space: nowrap; }
+.no-devices { padding: 0.6rem 0; font-size: 0.8rem; color: var(--muted); }
+
+.empty { margin-top: 1.5rem; text-align: center; color: var(--muted); font-size: 0.875rem; }
+
+.foot {
+  margin-top: 1.75rem;
+  text-align: center;
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot-live.live { animation: none; }
+  * { transition: none !important; }
+}
+
+/* On a phone the pills and the detail line compete for one row, and the line
+   lost - "1248 jobs" was being cut to "1...". Let it wrap instead; two short
+   lines beat one truncated one. */
+@media (max-width: 560px) {
+  .sub { white-space: normal; }
+  .row-head { align-items: start; }
+  .right { padding-top: 0.1rem; }
+}

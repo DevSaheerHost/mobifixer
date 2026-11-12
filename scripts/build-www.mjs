@@ -88,6 +88,12 @@ const DELIBERATELY_OMITTED = {
   // and downloaded again by every shop on every over-the-air update, for
   // files the app has no route to. They stay on the website, where they are
   // reached directly.
+  // Website only, and deliberately. The shops dashboard reads across every
+  // shop, so the less of it that exists on a shop's phone the better: it is
+  // not in the payload, not in the APK, and not downloaded by any shop in an
+  // over-the-air update.
+  'admin': 'the shops dashboard; website only, and no shop should carry it',
+
   'cashbook': 'a separate app; reached on the website, never from inside this one',
   'accessories': 'a separate app; the two buttons that open it use an absolute '
     + 'URL, so they load the website copy whether or not it ships here',

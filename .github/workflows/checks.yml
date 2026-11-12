@@ -42,6 +42,8 @@ jobs:
         run: node scripts/test-notify-permission.mjs
       - name: Presence tests
         run: node scripts/test-presence.mjs
+      - name: Admin dashboard tests
+        run: node scripts/test-admin.mjs
       - name: Over-the-air release tests
         run: node scripts/test-release-web.mjs
       # Skips cleanly when the emulator is not running. Start it with

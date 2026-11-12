@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MobiFixer · Shops</title>
+<meta name="description" content="Every shop, who is connected, and from what.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+<!-- Sign in. The same accounts as the app; the rules decide who gets past. -->
+<main class="gate" id="gate">
+  <div class="gate-card">
+    <h1>Shops</h1>
+    <p class="gate-sub" id="gateSub">Sign in with your MobiFixer account.</p>
+    <p class="msg hidden" id="gateMsg" role="status" aria-live="polite"></p>
+    <form id="gateForm" novalidate>
+      <label class="field" for="email">
+        <span class="field-label">Email</span>
+        <input type="email" id="email" autocomplete="email" autocapitalize="none"
+               spellcheck="false" inputmode="email" placeholder="you@example.com">
+      </label>
+      <label class="field" for="password">
+        <span class="field-label">Password</span>
+        <input type="password" id="password" autocomplete="current-password" placeholder="Your password">
+      </label>
+      <button class="btn" id="signin" type="submit">Sign in</button>
+    </form>
+  </div>
+</main>
+
+<!-- The dashboard. -->
+<main class="board hidden" id="board">
+  <header class="topbar">
+    <div class="brand">
+      <span class="dot-live" id="liveDot" aria-hidden="true"></span>
+      <h1>Shops</h1>
+    </div>
+    <button class="ghost" id="signout" type="button">Sign out</button>
+  </header>
+
+  <section class="stats" id="stats" aria-label="Totals"></section>
+
+  <div class="controls">
+    <input type="search" id="search" placeholder="Search shop, owner or email"
+           autocapitalize="none" spellcheck="false" aria-label="Search shops">
+    <div class="chips" id="filters" role="tablist" aria-label="Filter by status"></div>
+  </div>
+
+  <section class="rows" id="rows" aria-live="polite"></section>
+  <p class="empty hidden" id="empty">No shops match that.</p>
+
+  <footer class="foot">
+    <span id="footNote">—</span>
+  </footer>
+</main>
+
+<script type="module" src="./main.js"></script>
+</body>
+</html>
