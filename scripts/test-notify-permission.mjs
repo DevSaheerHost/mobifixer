@@ -227,6 +227,64 @@ console.log('\nThe exit dialog in main.js');
      /showExitConfirm[\s\S]{0,500}#exitCancel'\)\?\.focus\(\)/.test(src));
 }
 
+console.log('\nSharing the app');
+{
+  const src  = readFileSync('native.js', 'utf8');
+  const main = readFileSync('main.js', 'utf8');
+  const html = readFileSync('index.html', 'utf8');
+
+  ck('Settings has a share row', /id="shareApp"/.test(html));
+  ck('  it is a button, not a dead link',
+     /<button[^>]*class="row"[^>]*id="shareApp"/.test(html));
+
+  // Android's WebView has no navigator.share at all, so the plugin is the
+  // only thing that reaches the system sheet from the APK.
+  ck('the share plugin is a dependency',
+     Boolean(JSON.parse(readFileSync('package.json', 'utf8')).dependencies['@capacitor/share']));
+  ck('shareApp asks the native plugin first', /plugin\('Share'\)/.test(src));
+  ck('  falls back to navigator.share for the phone browser',
+     /navigator\.share === 'function'/.test(src));
+  ck('  and to the clipboard where there is neither',
+     /clipboard\.writeText/.test(src));
+  ck('  it reports which path it took, so the button is never silent',
+     /how: 'native'/.test(src) && /how: 'clipboard'/.test(src) && /how: 'unavailable'/.test(src));
+
+  // A raw .apk landing in a chat is what makes Android shout about unknown
+  // sources. The link is the site, which offers the download itself.
+  ck('it shares the site, not the apk file',
+     /export const SHARE_URL = UPDATE_HOST;/.test(src) && !/SHARE_URL[\s\S]{0,80}\.apk/.test(src));
+  ck('main.js tells them when it only managed the clipboard',
+     /how === 'clipboard'[\s\S]{0,200}Link copied/.test(main));
+}
+
+console.log('\nWhat the update pop-up says');
+{
+  const src  = readFileSync('native.js', 'utf8');
+  const main = readFileSync('main.js', 'utf8');
+
+  // The two are not the same event and must not read as if they were: one is
+  // a download plus Android's installer, the other is already on the device.
+  ck('the APK sheet says it is an install',
+     /title: 'New version ready to install'/.test(src));
+  ck('  names the download and the tap that follows',
+     /Downloads in your browser, then tap the file to install/.test(src));
+  ck('  and promises the jobs survive it',
+     /jobs, staff and settings stay exactly as they are/.test(src));
+  ck('the web sheet says there is nothing to install',
+     /title: 'Update ready'/.test(src) && /Already downloaded/.test(src));
+  ck('  and its button says what it does', /confirmLabel: 'Restart now'/.test(src));
+
+  ck('the sheet takes a title at all', /function showUpdateSheet\(\{ title = /.test(main));
+  ck('  and sets it rather than leaving the markup default',
+     /#updateTitle'\)\.textContent = title/.test(main));
+
+  // On mobile data, 8 MB is worth knowing before tapping Download.
+  ck('the APK size is shown when known', /size: Number\(manifest\.size\) \|\| 0/.test(src));
+  ck('  rendered as MB beside the version', /1048576\)\.toFixed\(1\) \+ ' MB'/.test(main));
+  ck('  and absent rather than "0 MB" when unknown',
+     /Number\(size\) > 0 \?/.test(main));
+}
+
 console.log('\nThe back button, run rather than read');
 {
   // 5.1.6 shipped with `const App = plugin('App')` declared BELOW a block that
@@ -239,6 +297,7 @@ console.log('\nThe back button, run rather than read');
   // against a fake Capacitor, and asserts what got wired up.
   const listeners = {};
   const calls = [];
+  const shareArgs = [];
   const noop = async () => ({});
 
   globalThis.window = {
@@ -249,6 +308,9 @@ console.log('\nThe back button, run rather than read');
           addListener: (ev, fn) => { listeners[ev] = fn; return { remove: noop }; },
           exitApp: async () => { calls.push('exitApp'); },
           minimizeApp: async () => { calls.push('minimizeApp'); },
+        },
+        Share: {
+          share: async (opts) => { calls.push('share'); shareArgs.push(opts); },
         },
         LocalNotifications: {
           addListener: (ev, fn) => { listeners[ev] = fn; return { remove: noop }; },
@@ -324,6 +386,20 @@ console.log('\nThe back button, run rather than read');
     listeners.backButton({ canGoBack: true });
     ck('back inside the app goes back, rather than asking to exit',
        shown.length === beforeHash && calls.includes('history.back'));
+  }
+
+  // Sharing, run rather than matched. navigator.share does not exist in the
+  // WebView, so if the plugin were not reached the button would do nothing at
+  // all on the one platform that matters.
+  if (native && native.shareApp) {
+    const r = await native.shareApp();
+    ck('shareApp reaches the native share sheet', r.shared === true && r.how === 'native');
+    const a = shareArgs[0] || {};
+    ck('  and hands it the site link', a.url === native.SHARE_URL);
+    ck('  with a title and a line of text',
+       Boolean(a.title) && Boolean(a.text) && a.text.length > 40);
+  } else {
+    ck('shareApp reaches the native share sheet', false, 'shareApp was not exported');
   }
 
   delete globalThis.window;

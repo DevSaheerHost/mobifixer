@@ -19,7 +19,7 @@
  *   node scripts/release-apk.mjs                 write both
  *   node scripts/release-apk.mjs --check         print, write nothing
  */
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { notesFor } from './release-web.mjs';
@@ -28,15 +28,20 @@ import { notesFor } from './release-web.mjs';
  * The manifest native.js checkApkUpdate expects: a version to compare and a
  * url to fetch. Pure, so the tests can check the URL shape without a release.
  */
-export const apkManifest = ({ version, repo, notes = '', builtAt = null }) => {
+export const apkManifest = ({ version, repo, notes = '', size = 0, builtAt = null }) => {
   if (!version) throw new Error('apkManifest needs a version');
   if (!repo || !repo.includes('/')) throw new Error(`apkManifest needs owner/name, got ${repo}`);
-  return {
+  const m = {
     version,
     url: `https://github.com/${repo}/releases/download/v${version}/mobifixer-${version}.apk`,
     notes: notes.trim(),
     builtAt: builtAt || new Date().toISOString(),
   };
+  // Only when known. The update sheet shows it beside the version, because
+  // this is a phone and the shop may be on mobile data; an absent size shows
+  // nothing rather than "0 MB".
+  if (Number(size) > 0) m.size = Number(size);
+  return m;
 };
 
 export const FALLBACK_NOTES = 'No CHANGELOG entry for this version.';
@@ -58,7 +63,16 @@ if (isMain) {
   const changelog = existsSync(join(root, 'CHANGELOG.md'))
     ? readFileSync(join(root, 'CHANGELOG.md'), 'utf8') : '';
   const notes = notesFor(changelog, version) || FALLBACK_NOTES;
-  const manifest = apkManifest({ version, repo, notes });
+
+  // The workflow builds mobifixer-<version>.apk beside this script's cwd and
+  // then runs it, so the file is normally right here. Measured rather than
+  // declared, and simply left out when it is not - a wrong size is worse than
+  // no size.
+  const apkPath = join(root, `mobifixer-${version}.apk`);
+  const size = existsSync(apkPath) ? statSync(apkPath).size : 0;
+  if (!size) console.log(`no ${apkPath} to measure; apk.json will carry no size`);
+
+  const manifest = apkManifest({ version, repo, notes, size });
 
   if (checkOnly) {
     console.log('NOTES.md would be:\n' + notes + '\n');

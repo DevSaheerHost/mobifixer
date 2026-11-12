@@ -5917,16 +5917,26 @@ function closeUpdateSheet() {
 }
 
 /**
+ * @param title        the headline; a new APK to install is not the same
+ *                     event as a web bundle that is already downloaded, and
+ *                     one word of heading saves a paragraph of explaining
  * @param version      what is being offered
+ * @param size         bytes, if known - shown beside the version, because
+ *                     this is a phone on mobile data
  * @param notes        the CHANGELOG section for it, as plain text
  * @param confirmLabel what the primary button says
  * @param hint         one line under the buttons, for what happens next
  * @param onConfirm    run when they tap it; the sheet closes either way
  */
-function showUpdateSheet({ version, notes = '', confirmLabel = 'Update now', hint = '', onConfirm }) {
+function showUpdateSheet({ title = 'Update available', version, size = 0, notes = '',
+                           confirmLabel = 'Update now', hint = '', onConfirm }) {
   if (!updateOverlay) return;
 
-  document.querySelector('#updateVersion').textContent = version ? 'Version ' + version : '';
+  document.querySelector('#updateTitle').textContent = title;
+
+  const mb = Number(size) > 0 ? (Number(size) / 1048576).toFixed(1) + ' MB' : '';
+  const line = [version ? 'Version ' + version : '', mb].filter(Boolean).join('  ·  ');
+  document.querySelector('#updateVersion').textContent = line;
   document.querySelector('#updateHint').textContent = hint;
   document.querySelector('#updateGo').textContent = confirmLabel;
 
@@ -5956,6 +5966,35 @@ document.querySelector('#updateLater')?.addEventListener('click', closeUpdateShe
 document.querySelector('#updateClose')?.addEventListener('click', closeUpdateSheet);
 updateOverlay?.addEventListener('click', (e) => {
   if (e.target === updateOverlay) closeUpdateSheet();
+});
+
+// ---------------------------------------------------------------------------
+// Share the app
+//
+// Set once native.js has loaded. The button is wired before that happens, so
+// it imports the module itself if it is tapped first - a dead button in the
+// first second would be the kind of bug nobody can reproduce.
+let nativeLayer = null;
+
+$('#shareApp')?.addEventListener('click', async () => {
+  const mod = nativeLayer || await import('./native.js').catch(() => null);
+  if (!mod) {
+    showNotice({ title: 'Could not share', body: 'Try again in a moment.', type: 'error' });
+    return;
+  }
+
+  const { shared, how } = await mod.shareApp();
+  if (how === 'clipboard') {
+    showNotice({ title: 'Link copied', body: 'Paste it wherever you like.', type: 'success' });
+  } else if (!shared) {
+    showNotice({
+      title: 'Sharing unavailable',
+      body: mod.SHARE_URL,
+      type: 'warn',
+    });
+  }
+  // 'native' and 'web-share' handed it to the system sheet; it says its own
+  // piece, and a toast on top of that is noise.
 });
 
 // ---------------------------------------------------------------------------
@@ -6051,6 +6090,7 @@ window.addEventListener('mf:back', (e) => {
 });
 
 import('./native.js').then(async (native) => {
+  nativeLayer = native;
   await native.initNative({
     shopName,
     getJobs: () => data,

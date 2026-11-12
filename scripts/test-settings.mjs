@@ -55,7 +55,7 @@ const ROUTES = new Set([...routeBlock.matchAll(/['"]([^'"]*)['"]\s*:/g)].map(m =
 console.log('\nEvery row goes somewhere');
 {
   const rows = settings.match(/<li class="list-item">[\s\S]*?<\/li>/g) || [];
-  ck('eleven rows, down from eighteen', rows.length === 11, String(rows.length));
+  ck('twelve rows: eleven, down from eighteen, plus Share', rows.length === 12, String(rows.length));
 
   const inert = rows.filter(r => !/class="row"[^>]*href=/.test(r) && !/class="row[^"]*"[^>]*id=/.test(r));
   ck('none of them is inert', inert.length === 0,
@@ -77,7 +77,7 @@ console.log('\nEvery row goes somewhere');
 
   const ids = [...settings.matchAll(/class="row[^"]*" type="button" id="([^"]+)"/g)].map(m => m[1]);
   ck('every button id has a handler in main.js',
-     ids.length === 3 && ids.every(id => main.includes(`$('#${id}')`)), ids.join(', '));
+     ids.length === 4 && ids.every(id => main.includes(`$('#${id}')`)), ids.join(', '));
 }
 
 console.log('\nThe markup is valid');

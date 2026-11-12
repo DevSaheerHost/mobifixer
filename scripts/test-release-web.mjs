@@ -277,7 +277,7 @@ console.log('\nThe shop is actually told about an update');
     /list\.textContent = ''/.test(mainJs) && !/updateNotes[\s\S]{0,400}innerHTML/.test(mainJs));
 
   ck('native.js offers the web update in the sheet',
-    /checkWebUpdate\(\)[\s\S]{0,400}showUpdateSheet/.test(native));
+    /checkWebUpdate\(\)[\s\S]{0,700}showUpdateSheet/.test(native));
   ck('  and applies it only when they tap', /onConfirm: \(\) => applyWebUpdate\(\)/.test(native));
   ck('  reload is what swaps the bundle over', /U\.reload\(\)/.test(native));
   ck('native.js offers the APK update in the sheet too',

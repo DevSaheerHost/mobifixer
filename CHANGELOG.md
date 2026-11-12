@@ -25,6 +25,18 @@ and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ---
 
 
+## [5.1.7] - 2026-11-12
+
+Fixes what 5.1.6 broke, and adds sharing.
+
+- 5.1.6 had a fault that switched off reminders and update checks. A single misplaced line stopped the native layer starting, so reminders were never scheduled, the app never noticed a new version, and the back button did nothing. Nothing reported it, in the app or anywhere else. If you are on 5.1.6, this is the update worth installing - and it had to be sent to you by hand, because 5.1.6 could not tell you about it.
+- The phone vibrates again on a saved job, an error and a voice alert. The permission for it was never declared, so Android accepted every request and quietly ignored it.
+- Back on the home screen now asks before closing, instead of dropping the app to the background where it looked like a crash. Stay keeps you where you are.
+- Share MobiFixer, in Settings. Opens your phone's own share sheet and sends a link to the app.
+- The update message now says what is actually about to happen - whether there is anything to install, how big the download is, and that your jobs, staff and settings are untouched by it.
+
+---
+
 ## [5.1.6] - 2026-11-12
 
 Looks and behaves like an Android app now.

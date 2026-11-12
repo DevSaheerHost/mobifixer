@@ -495,11 +495,18 @@ export const checkApkUpdate = async ({ notify = true } = {}) => {
   // The sheet first: it waits to be answered, where a notification can sit
   // unread in the shade for a week. The notification stays as well, for the
   // shop who is not looking at the app when the check runs.
+  // A new APK is a different event from a web bundle that is already on the
+  // device: it is a download, then a tap, then Android's own installer. Three
+  // steps the shop did not ask for, so the sheet names all three and promises
+  // the one thing they actually worry about - that the jobs survive it.
   host.showUpdateSheet({
+    title: 'New version ready to install',
     version: manifest.version,
+    size: Number(manifest.size) || 0,
     notes,
     confirmLabel: 'Download',
-    hint: 'Opens in your browser. You confirm the install.',
+    hint: 'Downloads in your browser, then tap the file to install. '
+        + 'Your jobs, staff and settings stay exactly as they are.',
     onConfirm: () => openUrl(manifest.url),
   });
 
@@ -510,8 +517,8 @@ export const checkApkUpdate = async ({ notify = true } = {}) => {
       notifications: [{
         id: apkUpdateId(),
         channelId: CHANNEL_JOBS,
-        title: `Update available - ${manifest.version}`,
-        body: (first ? first + ' ' : '') + 'Tap to download.',
+        title: `MobiFixer ${manifest.version} is ready`,
+        body: (first ? first + ' ' : '') + 'Tap to download and install.',
         isExactNotification: false,
         extra: { kind: 'apk-update', url: manifest.url },
       }],
@@ -522,6 +529,65 @@ export const checkApkUpdate = async ({ notify = true } = {}) => {
   return posted
     ? { update: true, reason: 'notified', from: current, to: manifest.version }
     : { update: false, reason: 'notify-failed', offered: manifest.version };
+};
+
+// ---------------------------------------------------------------------------
+// Sharing the app
+//
+// Android's WebView has no Web Share API - navigator.share is a Chrome thing
+// and simply does not exist here - so the APK needs the native plugin to
+// reach the system share sheet. The website does have navigator.share on a
+// phone, and on a desktop browser has neither, so there are three paths and
+// the last one is the clipboard.
+//
+// The link is the site, not the APK file. A raw .apk arriving in WhatsApp is
+// exactly what makes a phone shout about unknown sources; the site opens in a
+// browser, works there, and offers the download itself.
+export const SHARE_URL = UPDATE_HOST;
+export const SHARE_TITLE = 'MobiFixer';
+export const SHARE_TEXT =
+  'MobiFixer - a job book for phone repair shops. Book in a phone, follow it ' +
+  'through to collected, and get a reminder before you promised it back.';
+
+/**
+ * @returns {Promise<{shared: boolean, how: string}>} how is 'native',
+ * 'web-share', 'clipboard' or 'unavailable' - main.js tells the shop what
+ * happened, and a silent button is the one thing worse than a slow one.
+ */
+export const shareApp = async () => {
+  const Share = plugin('Share');
+  if (Share && Share.share) {
+    const ok = await safe('share', async () => {
+      await Share.share({
+        title: SHARE_TITLE,
+        text: SHARE_TEXT,
+        url: SHARE_URL,
+        dialogTitle: 'Share MobiFixer',
+      });
+      return true;
+    }, false);
+    // Dismissing the share sheet rejects, which is not a failure worth
+    // reporting - but a missing plugin is, so fall through rather than lie.
+    if (ok) return { shared: true, how: 'native' };
+  }
+
+  if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+    try {
+      await navigator.share({ title: SHARE_TITLE, text: SHARE_TEXT, url: SHARE_URL });
+      return { shared: true, how: 'web-share' };
+    } catch (_) {
+      // Cancelled, or refused for want of a user gesture. Clipboard next.
+    }
+  }
+
+  if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+    try {
+      await navigator.clipboard.writeText(`${SHARE_TEXT} ${SHARE_URL}`);
+      return { shared: true, how: 'clipboard' };
+    } catch (_) { /* fall through */ }
+  }
+
+  return { shared: false, how: 'unavailable' };
 };
 
 // ---------------------------------------------------------------------------
@@ -604,11 +670,16 @@ export const initNative = async (hostApi = {}) => {
       if (!r.update) return;
       // Downloaded and set already; reload() is what swaps the screens over.
       // Asking first, because that throws away anything half-typed.
+      // Already downloaded, so this one really is a second. Different wording
+      // from the APK sheet on purpose: nothing to install, nothing to confirm
+      // in Android, and no reason to make it sound like there is.
       host.showUpdateSheet({
+        title: 'Update ready',
         version: r.to,
         notes: r.notes || '',
-        confirmLabel: 'Update now',
-        hint: 'Takes a second. Or it applies next time you open the app.',
+        confirmLabel: 'Restart now',
+        hint: 'Already downloaded - it takes a second. '
+            + 'Or leave it and it applies next time you open the app.',
         onConfirm: () => applyWebUpdate(),
       });
       return;
