@@ -69,7 +69,24 @@
         // lookup already reveals for names that are taken.
         ".read": "auth != null && (!data.exists() || data.child('uid').val() === auth.uid || data.child('owner/uid').val() === auth.uid || data.child('members').child(auth.uid).exists() || root.child('admins').child(auth.uid).val() === true)",
 
-        ".write": "auth != null && (!data.exists() || data.child('uid').val() === auth.uid || data.child('owner/uid').val() === auth.uid || data.child('members').child(auth.uid).exists())",
+        // The shop's own write, plus one condition: a suspended shop writes
+        // nothing. Enforced here rather than in the app, because a client
+        // check is a request and this is the one control that has to hold
+        // against somebody who has read the bundle.
+        //
+        // Reads are deliberately still allowed while suspended, so the app
+        // can show WHY it is locked and deliver the admin's message. A shop
+        // that can see nothing just looks broken.
+        //
+        // Second: the admin's controls are left exactly as they were. The
+        // per-leaf rules below grant an admin, but they cannot take anything
+        // AWAY from the shop: a grant at a shallower path wins, and this one
+        // already covers the whole subtree. Without these comparisons a shop
+        // could clear its own signOutAfter and rewrite the message sent to
+        // it - which is precisely what the tests caught when they were
+        // missing. adminMessage/seenAt is deliberately not compared, because
+        // the shop marks its own message as read.
+        ".write": "auth != null && (!data.exists() || data.child('uid').val() === auth.uid || data.child('owner/uid').val() === auth.uid || data.child('members').child(auth.uid).exists()) && root.child('shops').child($shop).child('suspended').val() !== true && newData.child('suspended').val() === data.child('suspended').val() && newData.child('signOutAfter').val() === data.child('signOutAfter').val() && newData.child('adminMessage/title').val() === data.child('adminMessage/title').val() && newData.child('adminMessage/body').val() === data.child('adminMessage/body').val() && newData.child('adminMessage/at').val() === data.child('adminMessage/at').val()",
 
         // Login and password reset read these BEFORE anyone is signed in.
         // RTDB checks permission at the location being read, and a public
@@ -77,9 +94,52 @@
         // public and nothing else is. Reading shops/$shop unauthenticated
         // still fails.
         "owner": {
-          "email": { ".read": true }
+          "email": {
+            ".read": true,
+            // The admin may correct it, including on a suspended shop. This
+            // is the address the login lookup reads, so it is also the most
+            // dangerous field on the record: setting it wrong locks the shop
+            // out of its own sign-in. The dashboard confirms it by name.
+            ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
+            ".validate": "newData.isString() && newData.val().length <= 200"
+          },
+          "name": {
+            ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
+            ".validate": "newData.isString() && newData.val().length <= 120"
+          }
+          // owner/uid is deliberately absent: an admin may fix a name or an
+          // address, never reassign which account owns a shop. That would be
+          // a takeover with an audit trail saying "admin".
         },
         "email": { ".read": true },
+
+        // Locked by an admin. Only an admin may set or clear it, and the
+        // shop's own write rule above reads it on every write.
+        "suspended": {
+          ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
+          ".validate": "newData.isBoolean()"
+        },
+
+        // Everything signed in before this moment is turned out. The app
+        // compares it against when its own session started, so raising it
+        // signs out every device at once without touching any password.
+        "signOutAfter": {
+          ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
+          ".validate": "newData.isNumber() && newData.val() <= now + 60000"
+        },
+
+        // One message from the admin, shown in the app.
+        "adminMessage": {
+          ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
+          "title": { ".validate": "newData.isString() && newData.val().length <= 80" },
+          "body":  { ".validate": "newData.isString() && newData.val().length <= 500" },
+          // The shop marks it read. Allowed even while suspended, or the
+          // message explaining the suspension could never be dismissed.
+          "seenAt": {
+            ".write": "auth != null && (root.child('shops').child($shop).child('members').child(auth.uid).exists() || root.child('shops').child($shop).child('owner/uid').val() === auth.uid || root.child('shops').child($shop).child('uid').val() === auth.uid || root.child('admins').child(auth.uid).val() === true)",
+            ".validate": "newData.isNumber()"
+          }
+        },
 
         // logShopAccess records refused attempts too, and an account making
         // one is by definition not a member. Appendable by any signed-in

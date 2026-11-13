@@ -198,6 +198,67 @@ ok('  a stranger cannot', await write('shops/teamshop/presence/d2',
 ok('  nor anonymously', await write('shops/teamshop/presence/d3', { online: true }), 'deny');
 ok('  and a stranger cannot read who is online', await read('shops/teamshop/presence', STRANGER), 'deny');
 
+console.log('\nThe admin controls, and what they must not reach');
+// Admin write was denied outright until these leaves existed. The point of
+// the tests is that it still is, everywhere else.
+ok('an admin suspends a shop', await write('shops/teamshop/suspended', true, ADMIN), 'allow');
+ok('  the shop can still READ, so the app can say why',
+   await read('shops/teamshop', OWNER), 'allow');
+ok('  but writes nothing at all now',
+   await write('shops/teamshop/service/50', { name: 'blocked' }, OWNER), 'deny');
+ok('  not even as a member', await write('shops/teamshop/service/51', { name: 'x' }, MEMBER), 'deny');
+ok('  nor its own presence', await write('shops/teamshop/presence/d9', { online: true }, MEMBER), 'deny');
+ok('  and cannot lift its own suspension',
+   await write('shops/teamshop/suspended', false, OWNER), 'deny');
+ok('the admin lifts it', await write('shops/teamshop/suspended', false, ADMIN), 'allow');
+ok('  and the shop writes again', await write('shops/teamshop/service/52', { name: 'ok' }, OWNER), 'allow');
+ok('suspended must be a boolean, not a note',
+   await write('shops/teamshop/suspended', 'yes please', ADMIN), 'deny');
+
+console.log('\n  forcing a sign-out');
+ok('an admin sets the cut-off', await write('shops/teamshop/signOutAfter', Date.now(), ADMIN), 'allow');
+ok('  a shop cannot clear it', await write('shops/teamshop/signOutAfter', 0, OWNER), 'deny');
+ok('  and it cannot be set in the future', await write('shops/teamshop/signOutAfter', Date.now() + 86400000, ADMIN), 'deny');
+
+console.log('\n  a message to the shop');
+ok('an admin writes one',
+   await write('shops/teamshop/adminMessage', { title: 'Payment due', body: 'Please call.', at: Date.now() }, ADMIN), 'allow');
+ok('  the shop reads it', await read('shops/teamshop/adminMessage', OWNER), 'allow');
+ok('  and marks it seen', await write('shops/teamshop/adminMessage/seenAt', Date.now(), MEMBER), 'allow');
+ok('  but cannot rewrite what it says',
+   await write('shops/teamshop/adminMessage/body', 'no thanks', OWNER), 'deny');
+ok('  a stranger can do neither', await write('shops/teamshop/adminMessage/seenAt', 1, STRANGER), 'deny');
+ok('  and an over-long body is refused',
+   await write('shops/teamshop/adminMessage/body', 'x'.repeat(501), ADMIN), 'deny');
+
+// Seen while suspended, because the message explaining it must be dismissable.
+await write('shops/teamshop/suspended', true, ADMIN);
+ok('  a suspended shop can still dismiss it',
+   await write('shops/teamshop/adminMessage/seenAt', Date.now(), MEMBER), 'allow');
+await write('shops/teamshop/suspended', false, ADMIN);
+
+console.log('\n  the owner record');
+ok('an admin fixes the owner name', await write('shops/teamshop/owner/name', 'Corrected', ADMIN), 'allow');
+ok('  and the address the login reads', await write('shops/teamshop/owner/email', 'new@shop.test', ADMIN), 'allow');
+ok('  but cannot reassign who owns the shop',
+   await write('shops/teamshop/owner/uid', 'uid-admin-7', ADMIN), 'deny');
+ok('  nor replace the owner object wholesale',
+   await write('shops/teamshop/owner', { uid: ADMIN, name: 'Mine' }, ADMIN), 'deny');
+
+console.log('\n  everything an admin still cannot touch');
+ok('jobs', await write('shops/teamshop/service/99', { name: 'x' }, ADMIN), 'deny');
+ok('staff', await write('shops/teamshop/staff/x', { name: 'x' }, ADMIN), 'deny');
+ok('stock', await write('shops/teamshop/stock/x', { name: 'x' }, ADMIN), 'deny');
+ok('the shop as a whole', await write('shops/teamshop', null, ADMIN), 'deny');
+ok('another shop\'s members', await write('shops/teamshop/members/uid-admin-7', { x: 1 }, ADMIN), 'deny');
+ok('the shop list', await write('shops', { x: 1 }, ADMIN), 'deny');
+
+console.log('\n  and a stranger gets none of it');
+ok('cannot suspend', await write('shops/ownershop/suspended', true, STRANGER), 'deny');
+ok('cannot force a sign-out', await write('shops/ownershop/signOutAfter', Date.now(), STRANGER), 'deny');
+ok('cannot write a message', await write('shops/ownershop/adminMessage', { title: 'hi' }, STRANGER), 'deny');
+ok('cannot edit the owner', await write('shops/ownershop/owner/email', 'me@evil.test', STRANGER), 'deny');
+
 console.log('\nThe audit trail and the click counter');
 ok('a refused attempt is still recorded', await write('shops/ownershop/authAudit/x', { outcome: 'mismatch' }, STRANGER), 'allow');
 ok('  but a stranger cannot read the trail', await read('shops/ownershop/authAudit', STRANGER), 'deny');
