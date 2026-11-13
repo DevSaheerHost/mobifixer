@@ -1,7 +1,7 @@
 {
-  "version": "5.1.8",
-  "url": "https://github.com/DevSaheerHost/mobifixer/releases/download/v5.1.8/mobifixer-5.1.8.apk",
-  "notes": "- The eye for showing your password had slipped out of the password box and was sitting underneath it, half over the border. It is back inside the box, on the right, where you tap it.\n- Opening the website on an Android phone now offers the app, on the sign-in screen as well as inside it. A link you share with another shop finally leads somewhere that can install it.\n- Everything in 5.1.7, for anyone who skipped it: vibration, the back button asking before it closes, Share MobiFixer in Settings, and an update message that says what is actually about to happen.",
-  "builtAt": "2026-11-12T19:00:46.626Z",
-  "size": 6432998
+  "version": "5.1.9",
+  "url": "https://github.com/DevSaheerHost/mobifixer/releases/download/v5.1.9/mobifixer-5.1.9.apk",
+  "notes": "- A reminder that fell due while the app was shut could announce itself several times over when you next opened it, stacking identical notices. It appears once now.\n- When a change cannot be saved, the app says why instead of showing \"permission denied\". If MobiFixer has locked your shop, it tells you that, and that nothing you have already saved is lost.\n- Reminders, the back button, notifications and update checks were all dead in 5.1.6 and came back in 5.1.8. If you are still on 5.1.6 or earlier, this is the one to install.\n- Behind the scenes: this version reports whether the shop is connected, so support can see at a glance whether a problem is the app or the connection.",
+  "builtAt": "2026-11-13T06:04:34.438Z",
+  "size": 6440256
 }
