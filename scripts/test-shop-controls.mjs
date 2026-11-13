@@ -104,6 +104,30 @@ console.log('\nWired into the app');
   ck('  it covers the exit sheet as well', /\.lock_overlay[\s\S]{0,300}z-index: 200/.test(css));
 }
 
+console.log('\nA refused write says why');
+{
+  const main = readFileSync('main.js', 'utf8');
+
+  // "permission denied" is what the database says and it is useless to a
+  // shop. The usual reason is that an admin locked them - and the lock screen
+  // says so, but only on a client new enough to have it. sw.js is
+  // stale-while-revalidate, so after every deploy the previous bundle is
+  // served for one more visit; a shop can be locked and running code that
+  // cannot explain it. So the reason is read at the moment of the refusal.
+  ck('there is one explanation for a refused write', /async function explainDenied/.test(main));
+  ck('  it recognises what the database actually returns',
+     /permission\[_ \]denied/i.test(main));
+  ck('  and reads the lock flag rather than trusting a listener',
+     /explainDenied[\s\S]{0,700}shops\/\$\{shopName\}\/suspended/.test(main));
+  ck('  a locked shop is told it is locked', /explainDenied[\s\S]{0,900}This shop is locked/.test(main));
+  ck('  and told its data is safe', /explainDenied[\s\S]{0,1100}Nothing already saved is lost/.test(main));
+
+  // The path this was reported on.
+  ck('the status change uses it', /Error updating status[\s\S]{0,120}explainDenied/.test(main));
+  ck('  and no longer shows the raw message there',
+     !/Data didn't update! Please try again later/.test(main));
+}
+
 console.log('\nThe dashboard side');
 {
   const js = readFileSync('admin/main.js', 'utf8');

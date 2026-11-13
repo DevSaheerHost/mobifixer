@@ -1906,14 +1906,9 @@ const itemRef = ref(db, `shops/${shopName}/service/${sn}`);
         delay: 5000
       });
       })
-      .catch(err => {  
-        console.error("❌ Error updating status:", err)  
-        showNotice({  
-          title: 'ERROR',  
-          body: `Data didn't update! Please try again later. REASON: ${err.message}`,  
-          type: 'error',  
-          delay: 6000  
-        })  
+      .catch(err => {
+        console.error("Error updating status:", err);
+        explainDenied(err, `Could not update #${sn}`);
       });
 
 }
@@ -5997,6 +5992,41 @@ async function fireReminder(rem) {
 // Keyed on dueAt as well as sn so that setting a NEW reminder for the same
 // job still fires.
 const firedThisSession = new Set();
+
+/**
+ * Say why a write was refused.
+ *
+ * "permission denied" is what the database says and it is useless to a shop:
+ * the usual reason is that an admin has locked them, and the lock screen
+ * explains that - but only on a client new enough to have it, and the service
+ * worker serves the previous bundle for one more visit after every deploy.
+ * So the reason is read here, at the moment of the refusal, rather than
+ * relying on a listener that an older client may not be running.
+ */
+async function explainDenied(err, fallbackTitle) {
+  const denied = /permission[_ ]denied/i.test((err && (err.code || err.message)) || '');
+  if (denied && shopName) {
+    const locked = await get(ref(db, `shops/${shopName}/suspended`))
+      .then(s => s.val() === true).catch(() => false);
+    if (locked) {
+      showNotice({
+        title: 'This shop is locked',
+        body: 'Changes cannot be saved while it is locked. Contact MobiFixer to unlock it. '
+            + 'Nothing already saved is lost.',
+        type: 'error', delay: 12,
+      });
+      return true;
+    }
+  }
+  showNotice({
+    title: fallbackTitle,
+    body: denied
+      ? 'The database refused that change. If it keeps happening, sign out and in again.'
+      : `Could not save: ${(err && err.message) || 'unknown error'}`,
+    type: 'error', delay: 8,
+  });
+  return false;
+}
 
 function checkDueReminders() {
   const now = Date.now();
