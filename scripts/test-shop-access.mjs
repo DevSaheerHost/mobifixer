@@ -273,7 +273,10 @@ console.log('\nThe audit trail');
   const entry = s.audit[0];
   ck('writes to the shop\'s own authAudit node', entry?.path === 'shops/demoshop/authAudit');
   ck('records the uid and the outcome', entry?.value.uid === OWNER_UID && entry?.value.outcome === 'member');
-  ck('records whether enforcement was on', entry?.value.enforced === true);
+  // The harness runs the real code with enforcement as it is in main.js,
+  // which is off since the 2026-11-13 rollback. What matters is that the
+  // flag is RECORDED, so the audit says which regime each outcome came from.
+  ck('records whether enforcement was on', typeof entry?.value.enforced === 'boolean');
   const keys = Object.keys(entry?.value || {}).sort().join(',');
   ck('and records nothing else', keys === 'at,enforced,outcome,uid', keys);
 
@@ -290,9 +293,20 @@ console.log('\nThe audit trail');
 
 console.log('\nEnforcement');
 {
-  // Flipped on after the export showed every shop resolves to member - by uid
-  // in either location, or by the email on the record. Only mismatch denies.
-  ck('ENFORCE_SHOP_ACCESS is on', /const ENFORCE_SHOP_ACCESS = true;/.test(src));
+  // OFF since 2026-11-13. Signing in on the website looped: an account that
+  // can read a shop but matches none of its uids falls through to 'mismatch',
+  // and mismatch signs out, so the app bounced to the login page and the
+  // login page signed straight back in. Granting admins read across every
+  // shop created exactly that account - before it, the read was denied and
+  // the answer was 'no-record', which never denies.
+  //
+  // Pinned off rather than merely not pinned on, so turning it back on is a
+  // deliberate act that fails this test until the mismatch path is fixed.
+  ck('ENFORCE_SHOP_ACCESS is rolled back', /const ENFORCE_SHOP_ACCESS = false;/.test(src));
+  ck('  and the reason is recorded where it is read',
+     /live incident: signing in on the website looped/.test(src));
+  ck('  the rules are what enforce it now, not this constant',
+     /refused by the server whatever/.test(src));
   ck('the only denial is a definite mismatch',
      /outcome === 'mismatch' && ENFORCE_SHOP_ACCESS/.test(CALLBACK));
   ck('no other outcome signs anybody out',

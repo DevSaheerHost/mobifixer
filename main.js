@@ -4999,7 +4999,23 @@ if (navigator.hardwareConcurrency <= 4) {
  *
  * Turning it on is one constant. Turning it back off is the same constant.
  */
-const ENFORCE_SHOP_ACCESS = true;
+// ROLLED BACK 2026-11-13, live incident: signing in on the website looped.
+//
+// An account that can READ a shop but matches none of its uids falls through
+// to 'mismatch', and mismatch signs out - so the app bounced to the login
+// page, the login page signed in again, and round it went. Granting admins
+// read across every shop created exactly that account: before it, such a read
+// was denied and resolveShopAccess answered 'no-record', which never denies.
+//
+// Turning this off is cheap now in a way it was not when it was written. It
+// was a guard rail for a database with NO rules; the rules are published and
+// enforcing, so cross-shop reads and writes are refused by the server whatever
+// this constant says. What is lost is the client-side bounce, not a boundary.
+//
+// logShopAccess still records every outcome to shops/<shop>/authAudit, so the
+// real outcomes keep accumulating while this is off and the fix can be judged
+// on data rather than on a guess.
+const ENFORCE_SHOP_ACCESS = false;
 
 // Audit trail. uid and outcome only: never an email, a password or a token
 // (and never the shop's data). Fire and forget - a login must not fail, or
