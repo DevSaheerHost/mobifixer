@@ -126,5 +126,33 @@ console.log('\nMessage content');
   ck('singular wording for one job', one.swNotifs[0].t==='1 job still open', one.swNotifs[0].t);
 }
 
+console.log('\nA due reminder fires once, not once per snapshot');
+{
+  const main = readFileSync('main.js', 'utf8');
+  const fn = main.slice(main.indexOf('function checkDueReminders'),
+                        main.indexOf('function watchReminders'));
+
+  // fireReminder is async - it awaits the service worker, then writes
+  // fired:true. checkDueReminders runs on EVERY reminders snapshot as well as
+  // a 30s tick, and each snapshot rebuilds remindersBySn with fresh objects
+  // that drop any flag set on the old ones. So until the write landed, every
+  // pass fired again. Measured in a browser: five snapshots gave five
+  // identical overdue toasts, which is what was reported from the website.
+  ck('there is a guard against firing twice', /firedThisSession/.test(main));
+  ck('  it is a session-wide set, not a flag on the object that gets rebuilt',
+     /const firedThisSession = new Set\(\)/.test(main));
+  ck('  keyed on the job AND the due time, so a new reminder still fires',
+     /`\$\{rem\.sn\}@\$\{rem\.dueAt\}`/.test(fn));
+
+  // The whole point: claim it before the first await, not after.
+  const add = fn.indexOf('firedThisSession.add');
+  const fire = fn.indexOf('fireReminder(rem)');
+  ck('  and claimed BEFORE the async call, not after', add > 0 && fire > 0 && add < fire);
+
+  ck('nothing fires without passing the guard',
+     (fn.match(/fireReminder\(/g) || []).length === 1);
+  ck('an already-fired reminder is still skipped', /rem\.fired \|\|/.test(fn));
+}
+
 console.log(`\n${pass} passed, ${fail} failed\n`);
 process.exit(fail?1:0);

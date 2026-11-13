@@ -5982,10 +5982,30 @@ async function fireReminder(rem) {
   catch (_) { rem.fired = true; }   // at least don't repeat it this session
 }
 
+// Reminders already fired in this tab, keyed by job AND due time.
+//
+// fireReminder is async: it awaits the service worker and then writes
+// fired:true. Until that write lands, the reminder still reads as unfired -
+// and checkDueReminders runs again on EVERY reminders snapshot as well as on
+// a 30s tick, while each snapshot rebuilds remindersBySn with fresh objects
+// that discard any flag set on the old ones. So the same reminder fired once
+// per pass until the write arrived, which is the stack of identical overdue
+// toasts seen on the website. The service-worker path hid it, because those
+// notifications carry a tag and replace each other; the in-app fallback has
+// nothing to collapse them.
+//
+// Keyed on dueAt as well as sn so that setting a NEW reminder for the same
+// job still fires.
+const firedThisSession = new Set();
+
 function checkDueReminders() {
   const now = Date.now();
   remindersBySn.forEach(rem => {
-    if (rem && !rem.fired && Number(rem.dueAt) <= now) fireReminder(rem);
+    if (!rem || rem.fired || !(Number(rem.dueAt) <= now)) return;
+    const key = `${rem.sn}@${rem.dueAt}`;
+    if (firedThisSession.has(key)) return;   // fired, or still in flight
+    firedThisSession.add(key);               // before the first await, not after
+    fireReminder(rem);
   });
   paintReminderButtons();
 }
