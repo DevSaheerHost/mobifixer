@@ -303,3 +303,29 @@ input:focus {
   .row-head { align-items: start; }
   .right { padding-top: 0.1rem; }
 }
+
+/* ---- controls ----------------------------------------------------------- */
+.acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  padding-top: 0.75rem;
+  margin-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+.act {
+  padding: 0.45rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.act:active { background: var(--surface-3); }
+/* The two that change what a shop can do are coloured, and sit last. */
+.act.warn   { color: var(--inactive); border-color: rgba(240, 161, 50, 0.4); }
+.act.danger { color: #ff6b6b; border-color: rgba(255, 107, 107, 0.4); }
+
+.pill.locked { background: rgba(255, 107, 107, 0.16); color: #ff9b9b; }

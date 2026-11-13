@@ -154,7 +154,15 @@ console.log('\nThe page itself');
   ck('the shop list is fetched shallow', /shallow=true/.test(js));
   ck('  and job counts too, so no job bodies are downloaded',
      /shallow\(`shops\/\$\{shop\}\/service`/.test(js));
-  ck('presence is the only live listener', (js.match(/onValue\(/g) || []).length === 2);
+  // Live listeners are fine on small nodes and ruinous on big ones. These
+  // three are a presence map, a boolean and Firebase's own socket state;
+  // what must never appear here is a listener on a shop's jobs or stock.
+  const live = [...js.matchAll(/onValue\(ref\(db, ([^)]*)\)/g)].map(m => m[1]);
+  ck('live listeners are only on small nodes', live.length === 3, live.join(' | '));
+  ck('  presence and suspended, and nothing heavier',
+     live.some(x => /presence/.test(x)) && live.some(x => /suspended/.test(x))
+     && !live.some(x => /service|stock|staff|activity/.test(x)));
+  ck('  plus the socket itself', /onValue\(ref\(db, '\.info\/connected'\)/.test(js));
 
   // Shop names, owner names and user agents are all written by somebody else.
   ck('nothing user-written becomes markup', !/innerHTML/.test(js));

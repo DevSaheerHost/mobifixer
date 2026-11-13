@@ -1510,6 +1510,21 @@ Loading changelog...
   </div>
 </div>
 
+<!-- ########## SHOP LOCKED ########## -->
+<!--
+  Shown when an admin has suspended this shop. The database refuses the
+  shop's writes either way; this is so the person holding the phone is told
+  why, instead of watching every save fail silently.
+-->
+<div class="lock_overlay" id="lockOverlay">
+  <div class="lock-card" role="alertdialog" aria-modal="true"
+       aria-labelledby="lockTitle" aria-describedby="lockBody">
+    <i class="fa-solid fa-lock" aria-hidden="true"></i>
+    <h3 id="lockTitle">This shop is locked</h3>
+    <p id="lockBody"></p>
+  </div>
+</div>
+
 <!-- ########## EXIT CONFIRM ########## -->
 <!--
   Android's back on the home screen means leave. A plain exit is indistinguishable

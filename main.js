@@ -17,6 +17,7 @@ import { onAuthStateChanged, getAuth, signOut, sendPasswordResetEmail } from "ht
 import { getDatabase, ref, onChildAdded, onChildChanged, update, query, limitToLast, orderByKey, remove , onValue, push, goOffline, goOnline, onDisconnect, serverTimestamp}
 from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 import { startPresence } from './presence.js';
+import { shouldSignOut, lockState, unseenMessage } from './shopControls.js';
 
 // DOM helpers
 const $ = s => document.querySelector(s);
@@ -5151,8 +5152,70 @@ onAuthStateChanged(auth, async (user) => {
     shopName,
     author: localStorage.getItem('author') || '',
   });
+
+  watchAdminControls(user);
 });
+
 /* ########## END SHOP ACCESS ########## */
+
+// ---------------------------------------------------------------------------
+// What an admin set on this shop
+//
+// Three fields, watched live so a change lands without a reload: suspended,
+// signOutAfter and adminMessage. None of these is the security boundary -
+// the rules refuse a suspended shop's writes on the server whatever happens
+// here. This is so the shop is told why, rather than watching every save fail
+// for no stated reason.
+const SESSION_START = Date.now();
+
+function watchAdminControls(user) {
+  let signedOut = false;
+
+  onValue(ref(db, `shops/${shopName}/signOutAfter`), (snap) => {
+    if (signedOut) return;
+    if (!shouldSignOut({ signOutAfter: snap.val(), sessionStart: SESSION_START })) return;
+    signedOut = true;
+    // Compared against when this session started, not against now, or a
+    // cut-off in the past would turn out every future sign-in too and the
+    // shop could never get back in.
+    signOut(auth).catch(() => {}).finally(() => {
+      localStorage.removeItem('shopName');
+      location = './auth/index.html';
+    });
+  });
+
+  onValue(ref(db, `shops/${shopName}/suspended`), (snap) => {
+    const { locked, title, body } = lockState({ suspended: snap.val() });
+    document.body.classList.toggle('shop-locked', locked);
+    const panel = $('#lockOverlay');
+    if (!panel) return;
+    panel.classList.toggle('active', locked);
+    if (locked) {
+      $('#lockTitle').textContent = title;
+      $('#lockBody').textContent = body;
+    }
+  });
+
+  onValue(ref(db, `shops/${shopName}/adminMessage`), (snap) => {
+    const msg = unseenMessage(snap.val());
+    if (!msg) return;
+    // The same sheet the update prompt uses, so one place knows what a
+    // dialog in this app looks like.
+    showUpdateSheet({
+      title: msg.title,
+      version: '',
+      notes: msg.body,
+      confirmLabel: 'Got it',
+      hint: '',
+      onConfirm: () => {},
+    });
+    // Marked read on sight rather than on the tap: a shop that swipes it away
+    // has still seen it, and showing it again on every load would be nagging.
+    update(ref(db, `shops/${shopName}/adminMessage`), { seenAt: Date.now() })
+      .catch(() => { /* suspended shops may still do this; a failure is not fatal */ });
+  });
+}
+
 
 
 

@@ -8,9 +8,9 @@
  * imitate. An account that is not in /admins simply gets 401s.
  */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail }
   from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
-import { getDatabase, ref, onValue, get, child }
+import { getDatabase, ref, onValue, get, child, update, set, remove }
   from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
 import { shopRow, sortRows, filterRows, totals, deviceList, FILTERS } from './dashboard.js';
@@ -154,6 +154,16 @@ async function startWatching(user) {
       render();
     }, () => { /* denied or dropped: the row stays as it is */ });
     presenceUnsubs.push(un);
+
+    // Live too, so the button flips the moment it takes effect rather than
+    // on the next reload - and so a shop locked from another tab shows here.
+    const unSus = onValue(ref(db, `shops/${shop}/suspended`), (snap) => {
+      const row = state.rows.get(shop) || { shop };
+      row.suspended = snap.val() === true;
+      state.rows.set(shop, row);
+      render();
+    }, () => {});
+    presenceUnsubs.push(unSus);
   }
 
   // Firebase's own view of the socket, so a dead connection is visible
@@ -245,6 +255,9 @@ function render() {
     const right = el('div', 'right');
     if (r.onlineApk) right.appendChild(el('span', 'pill apk', `${r.onlineApk} app`));
     if (r.onlineWeb) right.appendChild(el('span', 'pill web', `${r.onlineWeb} web`));
+    if ((state.rows.get(r.shop) || {}).suspended === true) {
+      right.appendChild(el('span', 'pill locked', 'locked'));
+    }
     if (!r.isOnline) right.appendChild(el('span', 'pill', r.status));
     head.appendChild(right);
 
@@ -268,6 +281,24 @@ function render() {
           box.appendChild(line);
         }
       }
+      // The controls, under the devices. Destructive ones last, and the
+      // lock button says which way it will go rather than just "lock".
+      const acts = el('div', 'acts');
+      const act = (label, cls, fn) => {
+        const b = el('button', `act ${cls || ''}`.trim(), label);
+        b.type = 'button';
+        b.onclick = fn;
+        acts.appendChild(b);
+      };
+      const raw = state.rows.get(r.shop) || {};
+      act('Message', '', () => controls.message(r.shop));
+      act('Edit owner', '', () => controls.editOwner(r.shop, r));
+      act('Send reset email', '', () => controls.resetPassword(r.shop, r.ownerEmail));
+      act('Sign out all devices', 'warn', () => controls.signOutEveryone(r.shop));
+      act(raw.suspended === true ? 'Unlock shop' : 'Lock shop', 'danger',
+          () => controls.suspend(r.shop, raw.suspended !== true));
+      box.appendChild(acts);
+
       row.appendChild(box);
     }
 
@@ -276,6 +307,88 @@ function render() {
 
   $('#empty').classList.toggle('hidden', shown.length > 0);
 }
+
+// ---------------------------------------------------------------------------
+// The controls
+//
+// Every one of these is refused by the rules unless this account is in
+// /admins, so none of them is trusted here. What this code owes the person
+// using it is a confirmation naming the shop, and an honest report of what
+// happened - a control that silently fails is worse than one that is absent.
+
+const note = (text) => { $('#footNote').textContent = text; };
+
+/** Confirm by shop name, because these act on somebody else's business. */
+const confirmFor = (shop, what) => window.confirm(`${what}\n\nShop: ${shop}`);
+
+const controls = {
+  async suspend(shop, on) {
+    if (!confirmFor(shop, on ? 'Lock this shop? It will not be able to save anything until unlocked.'
+                             : 'Unlock this shop?')) return;
+    try {
+      await set(ref(db, `shops/${shop}/suspended`), on);
+      note(on ? `${shop} is locked.` : `${shop} is unlocked.`);
+    } catch (e) { note(`Could not change ${shop}: ${e.message}`); }
+  },
+
+  async signOutEveryone(shop) {
+    if (!confirmFor(shop, 'Sign out every device on this shop? They will have to sign in again.')) return;
+    try {
+      // Now, not a future time: the rules refuse a cut-off ahead of the
+      // clock, and a session is compared against when it started.
+      await set(ref(db, `shops/${shop}/signOutAfter`), Date.now());
+      note(`Every device on ${shop} has been signed out.`);
+    } catch (e) { note(`Could not sign out ${shop}: ${e.message}`); }
+  },
+
+  async message(shop) {
+    const body = window.prompt(`Message to ${shop}:`);
+    if (!body || !body.trim()) return;
+    try {
+      await update(ref(db, `shops/${shop}/adminMessage`), {
+        title: 'A message from MobiFixer',
+        body: body.trim().slice(0, 500),
+        at: Date.now(),
+      });
+      note(`Message sent to ${shop}.`);
+    } catch (e) { note(`Could not send to ${shop}: ${e.message}`); }
+  },
+
+  async resetPassword(shop, email) {
+    if (!email) { note(`${shop} has no email address on its record.`); return; }
+    // Firebase's own reset email. A browser cannot SET a password - that
+    // needs the Admin SDK on a server - so this sends the shop a link and
+    // they choose the new one. Said plainly in the confirmation, because
+    // "reset password" sounds like it does more than it does.
+    if (!confirmFor(shop, `Send a password reset email to ${email}?\n\n`
+      + 'They choose the new password from the link. Nothing changes until they do.')) return;
+    try {
+      await sendPasswordResetEmail(auth, email);
+      note(`Reset email sent to ${email}.`);
+    } catch (e) { note(`Could not send the reset: ${e.message}`); }
+  },
+
+  async editOwner(shop, row) {
+    const name = window.prompt(`Owner name for ${shop}:`, row.ownerName || '');
+    if (name === null) return;
+    const email = window.prompt(
+      `Owner email for ${shop}:\n\nThis is the address the sign-in looks up. `
+      + 'Getting it wrong locks the shop out.', row.ownerEmail || '');
+    if (email === null) return;
+    try {
+      const writes = [];
+      if (name.trim() !== (row.ownerName || '')) {
+        writes.push(set(ref(db, `shops/${shop}/owner/name`), name.trim()));
+      }
+      if (email.trim() !== (row.ownerEmail || '')) {
+        writes.push(set(ref(db, `shops/${shop}/owner/email`), email.trim()));
+      }
+      if (!writes.length) { note('Nothing changed.'); return; }
+      await Promise.all(writes);
+      note(`${shop} updated. Reload to see it.`);
+    } catch (e) { note(`Could not update ${shop}: ${e.message}`); }
+  },
+};
 
 $('#search').oninput = (e) => { state.search = e.target.value; render(); };
 
