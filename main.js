@@ -17,6 +17,7 @@ import { onAuthStateChanged, getAuth, signOut, sendPasswordResetEmail } from "ht
 import { getDatabase, ref, onChildAdded, onChildChanged, update, query, limitToLast, orderByKey, remove , onValue, push, goOffline, goOnline, onDisconnect, serverTimestamp}
 from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 import { startPresence } from './presence.js';
+import { untilText } from './nativeLogic.js';
 import { shouldSignOut, lockState, unseenMessage } from './shopControls.js';
 
 // DOM helpers
@@ -5936,6 +5937,31 @@ const fmtWhen = (ts) => {
   return `${d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} at ${time}`;
 };
 
+/**
+ * Say, under the picker, when the chosen moment actually is.
+ *
+ * The box is pre-filled with now + 1 hour, so from 11pm onwards its DATE is
+ * already tomorrow. Changing only the time then books the reminder a day
+ * later than intended - a valid value, so nothing could reject it, and the
+ * reminder simply never arrives that night. This is what makes that visible:
+ * "in 2 minutes" and "in 1 day" do not look alike.
+ */
+function previewCustom() {
+  const hint = document.querySelector('#remindHint');
+  const v = document.querySelector('#remindCustom')?.value;
+  if (!hint) return;
+  if (!v) { hint.textContent = ''; hint.classList.remove('warn'); return; }
+
+  const ts = new Date(v).getTime();
+  if (!Number.isFinite(ts)) { hint.textContent = ''; return; }
+
+  const past = ts <= Date.now();
+  hint.textContent = past
+    ? 'That time has already gone.'
+    : `${fmtWhen(ts)} · ${untilText(ts)}`;
+  hint.classList.toggle('warn', past);
+}
+
 const fmtOverdue = (ts) => {
   const mins = Math.round((Date.now() - ts) / 60000);
   if (mins < 60) return `${mins} min ago`;
@@ -6333,9 +6359,12 @@ function openRemindSheet(sn) {
   const existing = $('#remindExisting');
   if (rem && !rem.fired) {
     existing.classList.remove('hidden');
+    // "today at 11:58 pm" read one minute after midnight sounds like it has
+    // just gone; it was in fact 23 hours away. The distance removes the doubt.
     $('#remindExistingText').textContent = rem.dueAt <= Date.now()
       ? `Was due ${fmtOverdue(rem.dueAt)}`
-      : `Set for ${fmtWhen(rem.dueAt)}${rem.createdBy ? ' by ' + rem.createdBy : ''}`;
+      : `Set for ${fmtWhen(rem.dueAt)} (${untilText(rem.dueAt)})`
+        + `${rem.createdBy ? ' by ' + rem.createdBy : ''}`;
   } else {
     existing.classList.add('hidden');
   }
@@ -6351,8 +6380,7 @@ function openRemindSheet(sn) {
   const soon = new Date(now.getTime() + 60 * 60 * 1000);
   custom.min = localInputValue(now);
   custom.value = localInputValue(soon);
-  $('#remindHint').textContent = '';
-  $('#remindHint').classList.remove('warn');
+  previewCustom();
 
   remindOverlay.classList.add('active');
 }
@@ -6377,7 +6405,11 @@ async function saveReminder(dueAt) {
       createdBy: localStorage.getItem('author') || 'Unknown'
     });
     closeRemindSheet();
-    showNotice({ title: 'Reminder set', body: `#${sn} · ${fmtWhen(dueAt)}`, type: 'info', delay: 4 });
+    // The distance here too: the confirmation is the last chance to notice a
+    // reminder booked for tomorrow when today was meant.
+    showNotice({ title: 'Reminder set',
+                 body: `#${sn} · ${fmtWhen(dueAt)} · ${untilText(dueAt)}`,
+                 type: 'info', delay: 5 });
     logActivity('reminder', { sn, detail: fmtWhen(dueAt) });
     // Ask for permission only now - the person has just asked to be reminded -
     // and register the device with it, rather than waiting for the next load.
@@ -6403,6 +6435,9 @@ if (remindOverlay) {
     if (chip.dataset.at === 'tomorrow-10') { d.setDate(d.getDate() + 1); d.setHours(10, 0, 0, 0); }
     saveReminder(d.getTime());
   });
+
+  $('#remindCustom')?.addEventListener('input', previewCustom);
+  $('#remindCustom')?.addEventListener('change', previewCustom);
 
   $('#remindSetCustom')?.addEventListener('click', () => {
     const v = $('#remindCustom').value;

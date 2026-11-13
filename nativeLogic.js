@@ -247,3 +247,35 @@ export const actionStatus = (actionId) => {
   const a = JOB_ACTIONS.find(x => x.id === actionId);
   return a ? a.status : null;
 };
+
+/**
+ * How far away a future moment is, in words.
+ *
+ * The reminder sheet's date box is pre-filled with now + 1 hour. Set a
+ * reminder at 11:56 pm and that box already reads tomorrow's date - so
+ * changing only the time to 11:58 pm quietly books it for 11:58 pm TOMORROW,
+ * a day later than intended. It is not a wrong value, so nothing could warn
+ * about it, and the reminder simply never arrived that night.
+ *
+ * Saying the distance out loud beside the picker makes a day-out obvious
+ * before it is saved: "in 2 minutes" against "in 23 hours" is not a mistake
+ * anyone makes twice.
+ */
+export const untilText = (ts, now = Date.now()) => {
+  const ms = Number(ts) - Number(now);
+  if (!Number.isFinite(ms)) return '';
+  if (ms <= 0) return 'in the past';
+
+  // Tested on the boundary, not assumed: rounding first made 30 seconds say
+  // "in 1 minute" while 20 seconds said "less than a minute".
+  if (ms < 60000) return 'in less than a minute';
+
+  const mins = Math.round(ms / 60000);
+  if (mins < 60) return `in ${mins} minute${mins === 1 ? '' : 's'}`;
+
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `in ${hrs} hour${hrs === 1 ? '' : 's'}`;
+
+  const days = Math.round(hrs / 24);
+  return `in ${days} day${days === 1 ? '' : 's'}`;
+};

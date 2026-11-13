@@ -154,5 +154,45 @@ console.log('\nA due reminder fires once, not once per snapshot');
   ck('an already-fired reminder is still skipped', /rem\.fired \|\|/.test(fn));
 }
 
+console.log('\nHow far away a reminder is, said out loud');
+{
+  const { untilText } = await import('../nativeLogic.js');
+  const now = new Date('2026-11-13T23:56:00').getTime();
+  const at = (iso) => new Date(iso).getTime();
+
+  // The reported case: set at 11:56 pm for "11:58 pm". The picker is
+  // pre-filled with now + 1 hour, so its date box already read the 14th;
+  // changing only the time booked it a day late, and the reminder never came.
+  ck('two minutes reads as two minutes', untilText(at('2026-11-13T23:58:00'), now) === 'in 2 minutes');
+  ck('  and the day-late version does not look like it',
+     untilText(at('2026-11-14T23:58:00'), now) === 'in 1 day');
+
+  ck('under a minute', untilText(now + 30_000, now) === 'in less than a minute');
+  ck('singular minute', untilText(now + 60_000, now) === 'in 1 minute');
+  ck('hours', untilText(now + 3 * 3_600_000, now) === 'in 3 hours');
+  ck('days', untilText(now + 3 * 86_400_000, now) === 'in 3 days');
+  ck('something already gone says so', untilText(now - 1000, now) === 'in the past');
+  ck('rubbish says nothing', untilText('soon', now) === '');
+}
+
+console.log('\nThe picker shows it before saving');
+{
+  const main = readFileSync('main.js', 'utf8');
+
+  ck('there is a live preview under the picker', /function previewCustom/.test(main));
+  ck('  it updates as the value changes',
+     /#remindCustom'\)\?\.addEventListener\('input', previewCustom\)/.test(main)
+     && /#remindCustom'\)\?\.addEventListener\('change', previewCustom\)/.test(main));
+  ck('  it shows when, and how far away', /\$\{fmtWhen\(ts\)\} · \$\{untilText\(ts\)\}/.test(main));
+  ck('  and warns when the time has already gone', /That time has already gone/.test(main));
+  ck('  it is shown when the sheet opens, not only on a change',
+     /custom\.value = localInputValue\(soon\);\s*\n\s*previewCustom\(\);/.test(main));
+
+  ck('the confirmation repeats the distance',
+     /Reminder set[\s\S]{0,160}untilText\(dueAt\)/.test(main));
+  ck('an existing reminder says how far away it is',
+     /Set for \$\{fmtWhen\(rem\.dueAt\)\} \(\$\{untilText\(rem\.dueAt\)\}\)/.test(main));
+}
+
 console.log(`\n${pass} passed, ${fail} failed\n`);
 process.exit(fail?1:0);
