@@ -5184,6 +5184,11 @@ onAuthStateChanged(auth, async (user) => {
 // for no stated reason.
 const SESSION_START = Date.now();
 
+// The last message an admin sent, kept so the lock screen can quote it as the
+// reason. Module scope on purpose: the two listeners below are independent and
+// either can arrive first.
+let adminMessageCache = null;
+
 function watchAdminControls(user) {
   let signedOut = false;
 
@@ -5200,8 +5205,9 @@ function watchAdminControls(user) {
     });
   });
 
-  onValue(ref(db, `shops/${shopName}/suspended`), (snap) => {
-    const { locked, title, body } = lockState({ suspended: snap.val() });
+  let suspended = false;
+  const paintLock = () => {
+    const { locked, title, body } = lockState({ suspended, adminMessage: adminMessageCache });
     document.body.classList.toggle('shop-locked', locked);
     const panel = $('#lockOverlay');
     if (!panel) return;
@@ -5210,20 +5216,32 @@ function watchAdminControls(user) {
       $('#lockTitle').textContent = title;
       $('#lockBody').textContent = body;
     }
+  };
+
+  onValue(ref(db, `shops/${shopName}/suspended`), (snap) => {
+    suspended = snap.val() === true;
+    paintLock();
   });
 
   onValue(ref(db, `shops/${shopName}/adminMessage`), (snap) => {
+    adminMessageCache = snap.val() || null;
+    paintLock();                       // a locked shop quotes the reason
+
     const msg = unseenMessage(snap.val());
     if (!msg) return;
-    // The same sheet the update prompt uses, so one place knows what a
-    // dialog in this app looks like.
-    showUpdateSheet({
+
+    // showNotice, NOT showUpdateSheet. showUpdateSheet is declared inside
+    // watchReminders() rather than at module scope, along with
+    // closeUpdateSheet and showExitConfirm - everything else that calls them
+    // lives in there too, so it has always worked and the nesting is easy to
+    // miss. Calling it from here threw ReferenceError at the one moment it
+    // mattered: when an admin actually sent a message. showNotice is genuinely
+    // module scope, and is what the rest of the app announces things with.
+    showNotice({
       title: msg.title,
-      version: '',
-      notes: msg.body,
-      confirmLabel: 'Got it',
-      hint: '',
-      onConfirm: () => {},
+      body: msg.body,
+      type: 'info',
+      delay: 12,
     });
     // Marked read on sight rather than on the tap: a shop that swipes it away
     // has still seen it, and showing it again on every load would be nagging.
