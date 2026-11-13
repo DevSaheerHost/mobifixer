@@ -25,6 +25,15 @@ and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ---
 
 
+## [5.1.9] - 2026-11-13
+
+- A reminder that fell due while the app was shut could announce itself several times over when you next opened it, stacking identical notices. It appears once now.
+- When a change cannot be saved, the app says why instead of showing "permission denied". If MobiFixer has locked your shop, it tells you that, and that nothing you have already saved is lost.
+- Reminders, the back button, notifications and update checks were all dead in 5.1.6 and came back in 5.1.8. If you are still on 5.1.6 or earlier, this is the one to install.
+- Behind the scenes: this version reports whether the shop is connected, so support can see at a glance whether a problem is the app or the connection.
+
+---
+
 ## [5.1.8] - 2026-11-12
 
 - The eye for showing your password had slipped out of the password box and was sitting underneath it, half over the border. It is back inside the box, on the right, where you tap it.
