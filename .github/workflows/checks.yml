@@ -20,6 +20,8 @@ jobs:
       - run: npm ci
       - name: Syntax-check every JavaScript file
         run: node scripts/check.mjs
+      - name: Nothing names a function it cannot see
+        run: node scripts/test-module-scope.mjs
       - name: Cashbook shop-authorization regression tests
         run: node scripts/test-auth.mjs
       - name: Cashbook AI context regression tests
