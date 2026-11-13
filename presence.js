@@ -48,9 +48,14 @@ export const deviceId = (store = globalThis.localStorage) => {
 };
 
 /** What a connected device writes about itself. Pure, so it can be checked. */
-export const presenceRecord = ({ platform, author, ua, at }) => ({
+export const presenceRecord = ({ platform, author, ua, at, version }) => ({
   online: true,
   platform,
+  // Which build is actually running, so "is that phone on the new version?"
+  // is answerable from the dashboard instead of guessed. An APK showing as
+  // 'web' turned out to be an old build with no presence code at all, and
+  // there was no way to see that.
+  version: String(version || '0.0.0'),
   author: author || 'Unknown',
   // Trimmed: the dashboard wants "which device", not a fingerprint, and a
   // full UA string is 200+ characters of noise per row.
@@ -68,7 +73,7 @@ export const presenceRecord = ({ platform, author, ua, at }) => ({
  */
 export const startPresence = ({
   db, ref, onValue, onDisconnect, update, set, serverTimestamp,
-  shopName, author, win = globalThis.window,
+  shopName, author, version, win = globalThis.window,
 }) => {
   if (!db || !shopName) return { stop: () => {}, reason: 'no-shop' };
 
@@ -89,6 +94,7 @@ export const startPresence = ({
       .then(() => update(me, presenceRecord({
         platform: platformOf(win),
         author,
+        version,
         ua: (win && win.navigator && win.navigator.userAgent) || '',
         at: serverTimestamp(),
       })))

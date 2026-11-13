@@ -48,13 +48,28 @@ console.log('\nOne id per device');
 
 console.log('\nWhat a connected device writes');
 {
-  const r = presenceRecord({ platform: 'apk', author: 'Shahin', ua: 'x'.repeat(300), at: 'SERVER_TS' });
+  const r = presenceRecord({ platform: 'apk', author: 'Shahin', ua: 'x'.repeat(300), at: 'SERVER_TS', version: '5.1.9' });
   ck('it says it is online', r.online === true);
   ck('  with its platform and who is on it', r.platform === 'apk' && r.author === 'Shahin');
   ck('  the user agent is trimmed, not stored whole', r.ua.length === 120);
   ck('  and both times are the server\'s, never the phone\'s',
      r.since === 'SERVER_TS' && r.lastSeen === 'SERVER_TS');
   ck('an unnamed device is still attributable', presenceRecord({ platform: 'web' }).author === 'Unknown');
+
+  // An APK reporting as 'web' turned out to be an old build with no presence
+  // code at all, and nothing on the dashboard could show that. The running
+  // version is now part of the record.
+  ck('it says which build is running', r.version === '5.1.9');
+  ck('  and an unknown one is 0.0.0, never blank',
+     presenceRecord({ platform: 'web' }).version === '0.0.0');
+
+  const main = readFileSync('main.js', 'utf8');
+  ck('main.js reports the bundle version, not the APK version',
+     /const runningVersion = CURRENT_VERSION \|\|/.test(main)
+     && /version: runningVersion/.test(main));
+  ck('  reusing the value already read, not fetching build.json twice',
+     (main.match(/fetch\('\.\/build\.json'/g) || []).length === 2
+     && /CURRENT_VERSION \|\| await fetch/.test(main));
 }
 
 console.log('\nReconnecting re-arms the departure');

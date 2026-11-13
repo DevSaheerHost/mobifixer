@@ -82,6 +82,9 @@ export const deviceList = (presence = {}, now = Date.now()) =>
     .map(([id, d]) => ({
       id,
       platform: d.platform === 'apk' ? 'apk' : 'web',
+      // A device that predates version reporting says so, rather than being
+      // shown as some version it is not.
+      version: d.version || 'unknown',
       author: d.author || 'Unknown',
       online: d.online === true,
       lastSeen: Number(d.lastSeen) || 0,

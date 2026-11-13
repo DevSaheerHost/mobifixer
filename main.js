@@ -5158,10 +5158,20 @@ onAuthStateChanged(auth, async (user) => {
   // Report this device as connected, now that the shop is known to be this
   // account's. After the mismatch branch on purpose: a refused sign-in must
   // not leave a presence row on a shop it does not belong to.
+  // The version of the bundle actually running - which after an over-the-air
+  // update is not the version of the APK that installed it. CURRENT_VERSION
+  // is already read from build.json at start-up; only re-read it if presence
+  // somehow gets here first, rather than fetching the same file twice.
+  const runningVersion = CURRENT_VERSION || await fetch('./build.json', { cache: 'no-store' })
+    .then(r => (r.ok ? r.json() : null))
+    .then(j => (j && j.version) || '0.0.0')
+    .catch(() => '0.0.0');
+
   startPresence({
     db, ref, onValue, onDisconnect, update, set, serverTimestamp,
     shopName,
     author: localStorage.getItem('author') || '',
+    version: runningVersion,
   });
 
   watchAdminControls(user);

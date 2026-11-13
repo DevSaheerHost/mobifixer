@@ -276,7 +276,8 @@ function render() {
         for (const d of devices) {
           const line = el('div', 'device');
           line.appendChild(el('span', `dot ${d.online ? 'online' : 'offline'}`));
-          line.appendChild(el('span', 'who2', `${d.author} · ${d.platform === 'apk' ? 'app' : 'web'}`));
+          line.appendChild(el('span', 'who2',
+            `${d.author} · ${d.platform === 'apk' ? 'app' : 'web'} · ${d.version}`));
           line.appendChild(el('span', 'when', d.online ? 'online now' : d.lastSeenText));
           box.appendChild(line);
         }
